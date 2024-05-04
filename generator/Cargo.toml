@@ -1,0 +1,9 @@
+[package]
+name = "arm5te-generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.82"
+serde = { version = "1.0.200", features = ["derive"] }
+serde_yml = "0.0.5"
