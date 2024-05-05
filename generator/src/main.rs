@@ -5,7 +5,7 @@ mod token;
 
 use std::{fs, path::Path};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use isa::Isa;
 
 use crate::disasm::generate_disasm;
@@ -17,12 +17,12 @@ const BUCKET_BITMASK: u32 = 0x21f00000;
 fn main() -> Result<()> {
     let arm = Isa::load(Path::new("arm.yaml"))?;
     arm.validate()?;
-    let opcodes = arm.get_all_opcodes()?;
     println!("{} opcodes", arm.opcodes.len());
-    println!("{} total opcodes", opcodes.len());
+    // let opcodes = arm.get_all_opcodes()?;
+    // println!("{} total opcodes", opcodes.len());
 
-    let tokens = generate_disasm(&arm, BUCKET_BITMASK)?;
-    let file = syn::parse2(tokens)?;
+    let tokens = generate_disasm(&arm, BUCKET_BITMASK).context("While generating tokens for disassembler")?;
+    let file = syn::parse2(tokens).context("While parsing tokens for disassembler")?;
     let formatted = prettyplease::unparse(&file);
     fs::write("disasm/src/generated.rs", formatted)?;
 

@@ -496,13 +496,13 @@ opcodes:
     pattern: 0xe1200070
     args: [immed_8_20, immed_0_4]
 
-  - name: blx
+  - name: blx$i
     desc: Branch and Link and Exchange to Thumb (immediate target)
     bitmask: 0xfe000000
     pattern: 0xfa000000
     args: [H, signed_immed_24]
 
-  - name: blx
+  - name: blx$r
     desc: Branch and Link and Exchange to Thumb (register target)
     bitmask: 0x0ffffff0
     pattern: 0x012fff30
@@ -587,7 +587,7 @@ opcodes:
     defs: [CRd]
     uses: [Rn]
 
-  - name: ldm
+  - name: ldm$w
     desc: Load Multiple (writeback)
     bitmask: 0x0e700000
     pattern: 0x08300000
@@ -605,7 +605,7 @@ opcodes:
     defs: [register_list]
     uses: [Rn]
 
-  - name: ldm
+  - name: ldm$p
     desc: Load Multiple (privileged)
     bitmask: 0x0e708000
     pattern: 0x08500000
@@ -614,7 +614,7 @@ opcodes:
     defs: [register_list_15]
     uses: [Rn]
 
-  - name: ldm
+  - name: ldm$pc$w
     desc: Load Multiple (including PC, writeback)
     bitmask: 0x0e708000
     pattern: 0x08708000
@@ -623,7 +623,7 @@ opcodes:
     defs: [Rn, register_list_15]
     uses: [Rn]
 
-  - name: ldm
+  - name: ldm$pc
     desc: Load Multiple (including PC)
     bitmask: 0x0e708000
     pattern: 0x08508000
@@ -782,7 +782,7 @@ opcodes:
     args: [R, Rd]
     defs: [Rd]
 
-  - name: msr
+  - name: msr$i
     desc: Move to Status Register from ARM Register
     bitmask: 0x0fb0f000
     pattern: 0x0320f000
@@ -902,7 +902,7 @@ opcodes:
     defs: [Rn]
     uses: [Rd, Rs, Rm]
 
-  - name: smlal
+  - name: smlal$c
     desc: Signed Multiply Accumulate Long
     bitmask: 0x0fe000f0
     pattern: 0x00e00090
@@ -911,7 +911,7 @@ opcodes:
     defs: [RdHi, RdLo]
     uses: [RdHi, RdLo, Rs, Rm]
 
-  - name: smlal
+  - name: smlal$xy
     desc: Signed Multiply Accumulate Long
     bitmask: 0x0ff00090
     pattern: 0x01400080
@@ -973,7 +973,7 @@ opcodes:
     args: [Rn, register_list]
     uses: [Rn, register_list]
 
-  - name: stm
+  - name: stm$w
     desc: Store Multiple (writeback)
     bitmask: 0x0e700000
     pattern: 0x08200000
@@ -982,7 +982,7 @@ opcodes:
     defs: [Rn]
     uses: [Rn, register_list]
 
-  - name: stm
+  - name: stm$p
     desc: Store Multiple (privileged)
     bitmask: 0x0e700000
     pattern: 0x08400000

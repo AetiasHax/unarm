@@ -361,18 +361,33 @@ impl Opcode {
         bucket.try_into().unwrap()
     }
 
+    pub fn name(&self) -> &str {
+        if let Some((name, _)) = self.name.split_once('$') {
+            name
+        } else {
+            &self.name
+        }
+    }
+
     pub fn doc(&self) -> String {
-        format!(" {}: {}", self.name, self.desc)
+        format!(" {}: {}", self.name().to_uppercase(), self.desc)
     }
 
     pub fn enum_name(&self) -> String {
-        let mut chars = self.name.chars();
-        let mut name = match chars.next() {
-            None => return "".to_string(),
-            Some(c) => c.to_uppercase().to_string(),
-        };
-        chars.for_each(|c| c.to_lowercase().for_each(|c| name.push(c)));
-        name
+        // Split by $ delimiter, capitalize all the words, then join them
+        // e.g. smlal$xy => SmlalXy
+        self.name
+            .split('$')
+            .map(|s| {
+                let mut chars = s.chars();
+                let mut name = match chars.next() {
+                    None => return "".to_string(),
+                    Some(c) => c.to_uppercase().to_string(),
+                };
+                chars.for_each(|c| c.to_lowercase().for_each(|c| name.push(c)));
+                name
+            })
+            .collect()
     }
 }
 
