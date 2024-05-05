@@ -1,9 +1,13 @@
 [package]
-name = "arm5te-generator"
+name = "armv5te-generator"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0.82"
+prettyplease = "0.2.19"
+proc-macro2 = "1.0.81"
+quote = "1.0.36"
 serde = { version = "1.0.200", features = ["derive"] }
 serde_yml = "0.0.5"
+syn = "2.0.60"

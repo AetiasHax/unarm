@@ -1,2 +1,2 @@
 [workspace]
-members = ["generator"]
+members = ["disasm", "generator"]
