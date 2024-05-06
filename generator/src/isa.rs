@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs::File, ops::Range, path::Path};
+use std::{cmp::Ordering, fmt::Display, fs::File, ops::Range, path::Path};
 
 use anyhow::{bail, Context, Result};
 
@@ -59,7 +59,7 @@ impl Isa {
         let num_buckets = 1 << bitmask.count_ones();
         let mut buckets: Vec<Vec<Opcode>> = vec![vec![]; num_buckets];
         for opcode in self.opcodes.iter() {
-            let bucket = opcode.opcode_bucket(bitmask);
+            let bucket = opcode.bucket_index(bitmask);
             buckets[bucket].push(opcode.clone());
         }
         buckets
@@ -69,7 +69,7 @@ impl Isa {
         let num_buckets = 1 << bitmask.count_ones();
         let mut buckets: Vec<u8> = vec![0; num_buckets];
         for opcode in self.opcodes.iter() {
-            let bucket = opcode.opcode_bucket(bitmask);
+            let bucket = opcode.bucket_index(bitmask);
             buckets[bucket] += 1;
         }
         buckets
@@ -346,8 +346,11 @@ impl Opcode {
         }
     }
 
-    pub fn opcode_bucket(&self, mut bitmask: u32) -> usize {
-        let mut bucket = 0;
+    pub fn bucket_index(&self, mut bitmask: u32) -> usize {
+        let code = self.pattern;
+        let mut index = 0;
+        let mut total_shift = 0;
+        let mut bucket_bits = 0;
         while bitmask != 0 {
             let zero_shift = bitmask.trailing_zeros();
             bitmask >>= zero_shift;
@@ -355,10 +358,18 @@ impl Opcode {
             let bits = (1 << one_shift) - 1;
             bitmask >>= one_shift;
 
-            bucket <<= one_shift;
-            bucket |= (self.pattern >> zero_shift) & bits;
+            total_shift += zero_shift;
+            let mask = bits << total_shift;
+            let bucket_shift: i32 = total_shift as i32 - bucket_bits as i32;
+            match bucket_shift.cmp(&0) {
+                Ordering::Greater => index |= (code & mask) >> bucket_shift,
+                Ordering::Less => index |= (code & mask) << bucket_shift,
+                Ordering::Equal => index |= code & mask,
+            };
+            bucket_bits += one_shift;
+            total_shift += one_shift;
         }
-        bucket.try_into().unwrap()
+        index.try_into().unwrap()
     }
 
     pub fn name(&self) -> &str {

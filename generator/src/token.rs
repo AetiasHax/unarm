@@ -15,7 +15,7 @@ impl<T: LowerHex> LowerHex for HexLiteral<T> {
 
 impl<T: LowerHex> ToTokens for HexLiteral<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let s = format!("{:#x}", self);
+        let s = format!("0x{:08x}", self);
         tokens.extend(TokenStream::from_str(&s).unwrap());
     }
 }

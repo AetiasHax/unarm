@@ -11,8 +11,8 @@ use isa::Isa;
 use crate::disasm::generate_disasm;
 
 /// Best bucket bitmask with 6 set bits, found by find_best_bucket_bitmask.
-/// 35 of 64 non-empty buckets, maximum of 7 opcodes per bucket.
-const BUCKET_BITMASK: u32 = 0x21f00000;
+/// 37 of 64 non-empty buckets, maximum of 5 opcodes per bucket.
+const BUCKET_BITMASK: u32 = 0x05700010;
 
 fn main() -> Result<()> {
     let arm = Isa::load(Path::new("arm.yaml"))?;
@@ -20,6 +20,8 @@ fn main() -> Result<()> {
     println!("{} opcodes", arm.opcodes.len());
     // let opcodes = arm.get_all_opcodes()?;
     // println!("{} total opcodes", opcodes.len());
+
+    // find_best_bucket_bitmask(&arm, 6);
 
     let tokens = generate_disasm(&arm, BUCKET_BITMASK).context("While generating tokens for disassembler")?;
     let file = syn::parse2(tokens).context("While parsing tokens for disassembler")?;
