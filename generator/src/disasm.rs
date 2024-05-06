@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use anyhow::Result;
+use anyhow::{bail, Context, Result};
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::Ident;
@@ -28,7 +28,11 @@ pub fn generate_disasm(isa: &Isa, bucket_bitmask: u32) -> Result<TokenStream> {
     // Generate field accessors
     let field_accessors_tokens = generate_field_accessors(isa);
 
-    // TODO: Generate modifier accessors
+    // Generate modifier case enums
+    let case_enums_tokens = generate_modifier_case_enums(isa);
+
+    // Generate modifier accessors
+    let modifier_accessors_tokens = generate_modifier_accessors(isa)?;
 
     let bucket_count = Literal::u8_unsuffixed(bucket_count);
     Ok(quote! {
@@ -81,10 +85,138 @@ pub fn generate_disasm(isa: &Isa, bucket_bitmask: u32) -> Result<TokenStream> {
 
         impl Ins {
             #field_accessors_tokens
+            #modifier_accessors_tokens
         }
+
+        #case_enums_tokens
 
         #bucket_index_tokens
     })
+}
+
+fn generate_modifier_accessors(isa: &Isa) -> Result<TokenStream> {
+    let mut modifier_accessors_tokens = TokenStream::new();
+    for modifier in isa.modifiers.iter() {
+        let (ret_type, inner) = match (modifier.bitmask, modifier.pattern, &modifier.cases) {
+            (Some(bitmask), Some(pattern), None) => {
+                let bitmask_token = HexLiteral(bitmask);
+                let pattern_token = HexLiteral(pattern);
+                (
+                    Ident::new("bool", Span::call_site()),
+                    quote! { (self.code & #bitmask_token) == #pattern_token },
+                )
+            }
+            (bitmask, None, Some(cases)) => {
+                let enum_name = modifier.enum_name();
+                let enum_ident = Ident::new(&enum_name, Span::call_site());
+
+                let sorted_cases = {
+                    let mut sorted_cases = Vec::from(cases.clone());
+                    // When bitmask A is a subset of B, then B must be first, otherwise we will never choose B
+                    sorted_cases.sort_by_key(|case| 32 - case.bitmask.unwrap_or(0).count_ones());
+                    sorted_cases
+                };
+
+                if let Some(bitmask) = bitmask {
+                    let bitmask_token = HexLiteral(bitmask);
+                    let mut match_tokens = TokenStream::new();
+                    for case in sorted_cases.iter() {
+                        let pattern_token = HexLiteral(case.pattern);
+                        let variant_name = case.variant_name();
+                        let variant_ident = Ident::new(&variant_name, Span::call_site());
+                        match_tokens.extend(quote! {
+                            #pattern_token => #enum_ident::#variant_ident,
+                        });
+                    }
+
+                    (
+                        enum_ident,
+                        quote! {
+                            match self.code & #bitmask_token {
+                                #match_tokens
+                                _ => unreachable!(),
+                            }
+                        },
+                    )
+                } else {
+                    let mut if_tokens = vec![];
+                    for case in sorted_cases.iter() {
+                        let bitmask = case.bitmask.with_context(|| {
+                            format!("Modifier case '{}' in modifier '{}' has no bitmask", case.name, modifier.name)
+                        })?;
+                        let bitmask_token = HexLiteral(bitmask);
+                        let pattern_token = HexLiteral(case.pattern);
+                        let variant_name = case.variant_name();
+                        let variant_ident = Ident::new(&variant_name, Span::call_site());
+                        if_tokens.push(quote! {
+                            if (self.code & #bitmask_token) == #pattern_token {
+                                #enum_ident::#variant_ident
+                            }
+                        });
+                    }
+
+                    (
+                        enum_ident,
+                        quote! {
+                            #(#if_tokens)else*
+                            else {
+                                unreachable!()
+                            }
+                        },
+                    )
+                }
+            }
+            (None, Some(_), None) => bail!("Can't generate modifier accessor '{}' with only a pattern", modifier.name),
+            (_, Some(_), Some(_)) => bail!(
+                "Can't generate modifier accessor '{}' with a pattern and cases",
+                modifier.name
+            ),
+            (Some(_), None, None) => bail!("Can't generate modifier accessor '{}' with only a bitmask", modifier.name),
+            (None, None, None) => bail!(
+                "Can't generate modifier accessor '{}' without a pattern, bitmask and/or cases",
+                modifier.name
+            ),
+        };
+
+        let doc = modifier.doc();
+        let fn_name = format_ident!("modifier_{}", modifier.name.to_lowercase());
+
+        modifier_accessors_tokens.extend(quote! {
+            #[doc = #doc]
+            pub const fn #fn_name(&self) -> #ret_type {
+                #inner
+            }
+        })
+    }
+    Ok(modifier_accessors_tokens)
+}
+
+fn generate_modifier_case_enums(isa: &Isa) -> TokenStream {
+    let mut case_enums_tokens = TokenStream::new();
+    for modifier in isa.modifiers.iter() {
+        if let Some(cases) = &modifier.cases {
+            let mut variants_tokens = TokenStream::new();
+            for case in cases.iter() {
+                let variant_name = case.variant_name();
+                let variant_ident = Ident::new(&variant_name, Span::call_site());
+                let doc = case.doc();
+                variants_tokens.extend(quote! {
+                    #[doc = #doc]
+                    #variant_ident,
+                });
+            }
+            let enum_name = modifier.enum_name();
+            let enum_ident = Ident::new(&enum_name, Span::call_site());
+            let doc = modifier.doc();
+            case_enums_tokens.extend(quote! {
+                #[doc = #doc]
+                pub enum #enum_ident {
+                    #variants_tokens
+                }
+            })
+        }
+    }
+    case_enums_tokens
 }
 
 fn generate_field_accessors(isa: &Isa) -> TokenStream {
@@ -113,6 +245,7 @@ fn generate_field_accessors(isa: &Isa) -> TokenStream {
 
         field_accessors_tokens.extend(quote! {
             #[doc = #doc]
+            #[inline(always)]
             pub const fn #fn_name(&self) -> #ret_type {
                 #inner
             }

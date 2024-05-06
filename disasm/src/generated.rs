@@ -497,149 +497,432 @@ impl Opcode {
 }
 impl Ins {
     /// cond: Condition Code
+    #[inline(always)]
     pub const fn field_cond(&self) -> u8 {
         ((self.code & 0xf0000000) >> 28) as u8
     }
     /// Rn: First source operand register
+    #[inline(always)]
     pub const fn field_rn(&self) -> u8 {
         ((self.code & 0x000f0000) >> 16) as u8
     }
     /// Rm: Second source operand register
+    #[inline(always)]
     pub const fn field_rm(&self) -> u8 {
         (self.code & 0x0000000f) as u8
     }
     /// Rd: Destination register
+    #[inline(always)]
     pub const fn field_rd(&self) -> u8 {
         ((self.code & 0x0000f000) >> 12) as u8
     }
     /// Rs: Register containing shift offset
+    #[inline(always)]
     pub const fn field_rs(&self) -> u8 {
         ((self.code & 0x00000f00) >> 8) as u8
     }
     /// RdHi: Upper 32-bit long destination register
+    #[inline(always)]
     pub const fn field_rdhi(&self) -> u8 {
         ((self.code & 0x000f0000) >> 16) as u8
     }
     /// RdLo: Lower 32-bit long destination register
+    #[inline(always)]
     pub const fn field_rdlo(&self) -> u8 {
         ((self.code & 0x0000f000) >> 12) as u8
     }
     /// register_list: List of registers
+    #[inline(always)]
     pub const fn field_register_list(&self) -> u16 {
         (self.code & 0x0000ffff) as u16
     }
     /// register_list_15: List of registers, except PC
+    #[inline(always)]
     pub const fn field_register_list_15(&self) -> u16 {
         (self.code & 0x00007fff) as u16
     }
     /// CRn: First source coprocessor register
+    #[inline(always)]
     pub const fn field_crn(&self) -> u8 {
         ((self.code & 0x000f0000) >> 16) as u8
     }
     /// CRm: Second source coprocessor register
+    #[inline(always)]
     pub const fn field_crm(&self) -> u8 {
         (self.code & 0x0000000f) as u8
     }
     /// CRd: Destination coprocessor register
+    #[inline(always)]
     pub const fn field_crd(&self) -> u8 {
         ((self.code & 0x0000f000) >> 12) as u8
     }
     /// W: Write back to base register
+    #[inline(always)]
     pub const fn field_w(&self) -> bool {
         ((self.code & 0x00200000) >> 21) != 0
     }
     /// rotate_imm: Immediate rotate offset
+    #[inline(always)]
     pub const fn field_rotate_imm(&self) -> u8 {
         ((self.code & 0x00000f00) >> 8) as u8
     }
     /// immed_8: 8-bit immediate
+    #[inline(always)]
     pub const fn field_immed_8(&self) -> u8 {
         (self.code & 0x000000ff) as u8
     }
     /// immed_24: 24-bit immediate
+    #[inline(always)]
     pub const fn field_immed_24(&self) -> u32 {
         (self.code & 0x00ffffff) as u32
     }
     /// immedH: High nibble immediate
+    #[inline(always)]
     pub const fn field_immedh(&self) -> u8 {
         ((self.code & 0x00000f00) >> 8) as u8
     }
     /// immedL: Low nibble immediate
+    #[inline(always)]
     pub const fn field_immedl(&self) -> u8 {
         (self.code & 0x0000000f) as u8
     }
     /// shift_imm: Immediate shift offset
+    #[inline(always)]
     pub const fn field_shift_imm(&self) -> u8 {
         ((self.code & 0x00000f80) >> 7) as u8
     }
     /// shift: Type of shift operation
+    #[inline(always)]
     pub const fn field_shift(&self) -> u8 {
         ((self.code & 0x00000060) >> 5) as u8
     }
     /// U: Add (1) or subtract (0)
+    #[inline(always)]
     pub const fn field_u(&self) -> bool {
         ((self.code & 0x00800000) >> 23) != 0
     }
     /// B: Byte (1) or word (0)
+    #[inline(always)]
     pub const fn field_b(&self) -> bool {
         ((self.code & 0x00400000) >> 22) != 0
     }
     /// R: Move SPSR (1) or CPSR (0)
+    #[inline(always)]
     pub const fn field_r(&self) -> bool {
         ((self.code & 0x00400000) >> 22) != 0
     }
     /// offset_8: 8-bit immediate offset
+    #[inline(always)]
     pub const fn field_offset_8(&self) -> u8 {
         (self.code & 0x000000ff) as u8
     }
     /// offset_12: 12-bit immediate offset
+    #[inline(always)]
     pub const fn field_offset_12(&self) -> u16 {
         (self.code & 0x00000fff) as u16
     }
     /// option: Additional instruction options for coprocessor
+    #[inline(always)]
     pub const fn field_option(&self) -> u8 {
         (self.code & 0x000000ff) as u8
     }
     /// H: Add 2 to BLX target address
+    #[inline(always)]
     pub const fn field_h(&self) -> bool {
         ((self.code & 0x01000000) >> 24) != 0
     }
     /// signed_immed_24: Signed 24-bit immediate
+    #[inline(always)]
     pub const fn field_signed_immed_24(&self) -> u32 {
         (self.code & 0x00ffffff) as u32
     }
     /// immed_8_20: 12-bit immediate in bits 8..20
+    #[inline(always)]
     pub const fn field_immed_8_20(&self) -> u16 {
         ((self.code & 0x000fff00) >> 8) as u16
     }
     /// immed_0_4: 4-bit immediate in bits 0..4
+    #[inline(always)]
     pub const fn field_immed_0_4(&self) -> u8 {
         (self.code & 0x0000000f) as u8
     }
     /// field_mask: Status fields to set
+    #[inline(always)]
     pub const fn field_field_mask(&self) -> u8 {
         ((self.code & 0x000f0000) >> 16) as u8
     }
     /// opcode: Coprocessor operation to perform (user-defined)
+    #[inline(always)]
     pub const fn field_opcode(&self) -> u8 {
         ((self.code & 0x000000f0) >> 4) as u8
     }
     /// codat_opcode_1: Coprocessor operation to perform (user-defined, used by CDP instruction)
+    #[inline(always)]
     pub const fn field_codat_opcode_1(&self) -> u8 {
         ((self.code & 0x00f00000) >> 20) as u8
     }
     /// comov_opcode_1: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
+    #[inline(always)]
     pub const fn field_comov_opcode_1(&self) -> u8 {
         ((self.code & 0x00e00000) >> 21) as u8
     }
     /// opcode_2: Coprocessor operation to perform (user-defined)
+    #[inline(always)]
     pub const fn field_opcode_2(&self) -> u8 {
         ((self.code & 0x000000e0) >> 5) as u8
     }
     /// cp_num: Coprocessor number
+    #[inline(always)]
     pub const fn field_cp_num(&self) -> u8 {
         ((self.code & 0x00000f00) >> 8) as u8
     }
+    /// S: Update condition status flags
+    pub const fn modifier_s(&self) -> bool {
+        (self.code & 0x00100000) == 0x00100000
+    }
+    /// L: Long coprocessor load (e.g. double instead of float)
+    pub const fn modifier_l(&self) -> bool {
+        (self.code & 0x00400000) == 0x00400000
+    }
+    /// y: Second multiply operand in bottom (0) or top (1) half
+    pub const fn modifier_y(&self) -> bool {
+        (self.code & 0x00000040) == 0x00000040
+    }
+    /// x: First multiply operand in bottom (0) or top (1) half
+    pub const fn modifier_x(&self) -> bool {
+        (self.code & 0x00000020) == 0x00000020
+    }
+    /// cond: Condition code
+    pub const fn modifier_cond(&self) -> Cond {
+        match self.code & 0xf0000000 {
+            0x00000000 => Cond::Eq,
+            0x10000000 => Cond::Ne,
+            0x20000000 => Cond::Hs,
+            0x30000000 => Cond::Lo,
+            0x40000000 => Cond::Mi,
+            0x50000000 => Cond::Pl,
+            0x60000000 => Cond::Vs,
+            0x70000000 => Cond::Vc,
+            0x80000000 => Cond::Hi,
+            0x90000000 => Cond::Ls,
+            0xa0000000 => Cond::Ge,
+            0xb0000000 => Cond::Lt,
+            0xc0000000 => Cond::Gt,
+            0xd0000000 => Cond::Le,
+            0xe0000000 => Cond::Al,
+            _ => unreachable!(),
+        }
+    }
+    /// addr_data: Data-processing operands
+    pub const fn modifier_addr_data(&self) -> AddrData {
+        if (self.code & 0x0e000ff0) == 0x00000000 {
+            AddrData::Reg
+        } else if (self.code & 0x0e000ff0) == 0x00000060 {
+            AddrData::Rrx
+        } else if (self.code & 0x0e0000f0) == 0x00000010 {
+            AddrData::LslReg
+        } else if (self.code & 0x0e0000f0) == 0x00000030 {
+            AddrData::LsrReg
+        } else if (self.code & 0x0e0000f0) == 0x00000050 {
+            AddrData::AsrReg
+        } else if (self.code & 0x0e0000f0) == 0x00000070 {
+            AddrData::RorReg
+        } else if (self.code & 0x0e000070) == 0x00000000 {
+            AddrData::LslImm
+        } else if (self.code & 0x0e000070) == 0x00000020 {
+            AddrData::LsrImm
+        } else if (self.code & 0x0e000070) == 0x00000040 {
+            AddrData::AsrImm
+        } else if (self.code & 0x0e000070) == 0x00000060 {
+            AddrData::RorImm
+        } else if (self.code & 0x0e000000) == 0x02000000 {
+            AddrData::Imm
+        } else {
+            unreachable!()
+        }
+    }
+    /// addr_ldr_str: Load and Store Word or Unsigned Byte
+    pub const fn modifier_addr_ldr_str(&self) -> AddrLdrStr {
+        if (self.code & 0x0f200ff0) == 0x07000000 {
+            AddrLdrStr::Reg
+        } else if (self.code & 0x0f200ff0) == 0x07200000 {
+            AddrLdrStr::RegPre
+        } else if (self.code & 0x0f200ff0) == 0x06000000 {
+            AddrLdrStr::RegPost
+        } else if (self.code & 0x0f200010) == 0x07000000 {
+            AddrLdrStr::Scl
+        } else if (self.code & 0x0f200010) == 0x07200000 {
+            AddrLdrStr::SclPre
+        } else if (self.code & 0x0f200010) == 0x06000000 {
+            AddrLdrStr::SclPost
+        } else if (self.code & 0x0f200000) == 0x05000000 {
+            AddrLdrStr::Imm
+        } else if (self.code & 0x0f200000) == 0x05200000 {
+            AddrLdrStr::ImmPre
+        } else if (self.code & 0x0f200000) == 0x04000000 {
+            AddrLdrStr::ImmPost
+        } else {
+            unreachable!()
+        }
+    }
+    /// addr_misc_ldr_str: Miscellaneous Loads and Stores
+    pub const fn modifier_addr_misc_ldr_str(&self) -> AddrMiscLdrStr {
+        if (self.code & 0x0f600f90) == 0x01000090 {
+            AddrMiscLdrStr::Reg
+        } else if (self.code & 0x0f600f90) == 0x01200090 {
+            AddrMiscLdrStr::RegPre
+        } else if (self.code & 0x0f600f90) == 0x00000090 {
+            AddrMiscLdrStr::RegPost
+        } else if (self.code & 0x0f600090) == 0x01400090 {
+            AddrMiscLdrStr::Imm
+        } else if (self.code & 0x0f600090) == 0x01600090 {
+            AddrMiscLdrStr::ImmPre
+        } else if (self.code & 0x0f600090) == 0x00400090 {
+            AddrMiscLdrStr::ImmPost
+        } else {
+            unreachable!()
+        }
+    }
+    /// addr_ldm_stm: Load and Store Multiple
+    pub const fn modifier_addr_ldm_stm(&self) -> AddrLdmStm {
+        match self.code & 0x01800000 {
+            0x00800000 => AddrLdmStm::Ia,
+            0x01800000 => AddrLdmStm::Ib,
+            0x00000000 => AddrLdmStm::Da,
+            0x01000000 => AddrLdmStm::Db,
+            _ => unreachable!(),
+        }
+    }
+    /// addr_coproc: Load and Store Coprocessor
+    pub const fn modifier_addr_coproc(&self) -> AddrCoproc {
+        if (self.code & 0x01200000) == 0x01000000 {
+            AddrCoproc::Imm
+        } else if (self.code & 0x01200000) == 0x01200000 {
+            AddrCoproc::ImmPre
+        } else if (self.code & 0x01200000) == 0x00200000 {
+            AddrCoproc::ImmPost
+        } else if (self.code & 0x01200000) == 0x00000000 {
+            AddrCoproc::Unidx
+        } else {
+            unreachable!()
+        }
+    }
+}
+/// cond: Condition code
+pub enum Cond {
+    /// eq: Equal
+    Eq,
+    /// ne: Not equal
+    Ne,
+    /// hs: Unsigned higher or same
+    Hs,
+    /// lo: Unsigned lower
+    Lo,
+    /// mi: Minus/negative
+    Mi,
+    /// pl: Plus/positive or zero
+    Pl,
+    /// vs: Overflow
+    Vs,
+    /// vc: No overflow
+    Vc,
+    /// hi: Unsigned higher
+    Hi,
+    /// ls: Unsigned lower or same
+    Ls,
+    /// ge: Signed greater than or equal
+    Ge,
+    /// lt: Signed less than
+    Lt,
+    /// gt: Signed greater than
+    Gt,
+    /// le: Signed less than or equal
+    Le,
+    /// al: Always
+    Al,
+}
+/// addr_data: Data-processing operands
+pub enum AddrData {
+    /// imm: Immediate
+    Imm,
+    /// reg: Register
+    Reg,
+    /// lsl_imm: Logical shift left by immediate
+    LslImm,
+    /// lsl_reg: Logical shift left by register
+    LslReg,
+    /// lsr_imm: Logical shift right by immediate
+    LsrImm,
+    /// lsr_reg: Logical shift right by register
+    LsrReg,
+    /// asr_imm: Arithmetic shift right by immediate
+    AsrImm,
+    /// asr_reg: Arithmetic shift right by register
+    AsrReg,
+    /// ror_imm: Rotate right by immediate
+    RorImm,
+    /// ror_reg: Rotate right by register
+    RorReg,
+    /// rrx: Rotate right with extend
+    Rrx,
+}
+/// addr_ldr_str: Load and Store Word or Unsigned Byte
+pub enum AddrLdrStr {
+    /// imm: Immediate offset
+    Imm,
+    /// reg: Register offset
+    Reg,
+    /// scl: Scaled register offset
+    Scl,
+    /// imm_pre: Immediate pre-indexed
+    ImmPre,
+    /// reg_pre: Register pre-indexed
+    RegPre,
+    /// scl_pre: Scaled register pre-indexed
+    SclPre,
+    /// imm_post: Immediate post-indexed
+    ImmPost,
+    /// reg_post: Register post-indexed
+    RegPost,
+    /// scl_post: Scaled register post-indexed
+    SclPost,
+}
+/// addr_misc_ldr_str: Miscellaneous Loads and Stores
+pub enum AddrMiscLdrStr {
+    /// imm: Immediate offset
+    Imm,
+    /// reg: Register offset
+    Reg,
+    /// imm_pre: Immediate pre-indexed
+    ImmPre,
+    /// reg_pre: Register pre-indexed
+    RegPre,
+    /// imm_post: Immediate post-indexed
+    ImmPost,
+    /// reg_post: Register post-indexed
+    RegPost,
+}
+/// addr_ldm_stm: Load and Store Multiple
+pub enum AddrLdmStm {
+    /// ia: Increment After
+    Ia,
+    /// ib: Increment Before
+    Ib,
+    /// da: Decrement After
+    Da,
+    /// db: Decrement Before
+    Db,
+}
+/// addr_coproc: Load and Store Coprocessor
+pub enum AddrCoproc {
+    /// imm: Immediate offset
+    Imm,
+    /// imm_pre: Immediate pre-indexed
+    ImmPre,
+    /// imm_post: Immediate post-indexed
+    ImmPost,
+    /// unidx: Unindexed
+    Unidx,
 }
 fn bucket_index(code: u32) -> usize {
     let mut index = 0;

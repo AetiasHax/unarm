@@ -386,8 +386,8 @@ modifiers:
         bitmask: 0x0f600090
         pattern: 0x00400090
         args: [U, immedH, immedL]
-      - name: reg_pre
-        desc: Register pre-indexed
+      - name: reg_post
+        desc: Register post-indexed
         bitmask: 0x0f600f90
         pattern: 0x00000090
         args: [U, Rm]

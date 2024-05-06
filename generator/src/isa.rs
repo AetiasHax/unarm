@@ -178,6 +178,14 @@ impl Modifier {
             ]))
         }
     }
+
+    pub fn doc(&self) -> String {
+        format!(" {}: {}", self.name, self.desc)
+    }
+
+    pub fn enum_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
 }
 
 #[derive(Deserialize, Default, Clone)]
@@ -246,6 +254,18 @@ impl ModifierCase {
             args: self.args.clone(),
             defs: self.defs.clone(),
             uses: self.uses.clone(),
+        }
+    }
+
+    pub fn variant_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
+
+    pub fn doc(&self) -> String {
+        if let Some(desc) = &self.desc {
+            format!(" {}: {}", self.name, desc)
+        } else {
+            format!(" {}", self.name)
         }
     }
 }
@@ -391,18 +411,7 @@ impl Opcode {
     pub fn enum_name(&self) -> String {
         // Split by $ delimiter, capitalize all the words, then join them
         // e.g. smlal$xy => SmlalXy
-        self.name
-            .split('$')
-            .map(|s| {
-                let mut chars = s.chars();
-                let mut name = match chars.next() {
-                    None => return "".to_string(),
-                    Some(c) => c.to_uppercase().to_string(),
-                };
-                chars.for_each(|c| c.to_lowercase().for_each(|c| name.push(c)));
-                name
-            })
-            .collect()
+        capitalize_with_delimiter(self.name.clone(), '$')
     }
 }
 
@@ -456,4 +465,18 @@ fn join_strings(a: Option<Box<[String]>>, b: &Option<Box<[String]>>) -> Option<B
     } else {
         Some(slice)
     }
+}
+
+fn capitalize_with_delimiter(s: String, delim: char) -> String {
+    s.split(delim)
+        .map(|s| {
+            let mut chars = s.chars();
+            let mut name = match chars.next() {
+                None => return "".to_string(),
+                Some(c) => c.to_uppercase().to_string(),
+            };
+            chars.for_each(|c| c.to_lowercase().for_each(|c| name.push(c)));
+            name
+        })
+        .collect()
 }
