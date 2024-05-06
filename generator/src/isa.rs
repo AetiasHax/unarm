@@ -88,11 +88,15 @@ impl Field {
         ((1 << self.bits.0.len()) - 1) << self.bits.0.start
     }
 
-    pub fn validate(&self) -> Result<()> {
+    fn validate(&self) -> Result<()> {
         if self.get_bitmask() == 0 {
             bail!("Field {} has no bitmask", self.name)
         }
         Ok(())
+    }
+
+    pub fn doc(&self) -> String {
+        format!(" {}: {}", self.name, self.desc)
     }
 }
 
@@ -138,7 +142,7 @@ impl Modifier {
         }
     }
 
-    pub fn validate(&self, isa: &Isa) -> Result<()> {
+    fn validate(&self, isa: &Isa) -> Result<()> {
         let bitmask = self
             .get_full_bitmask(isa)
             .with_context(|| format!("While validating modifier '{}'", self.name))?;
@@ -205,7 +209,7 @@ impl ModifierCase {
         }
     }
 
-    pub fn validate(&self, isa: &Isa, parent: &Modifier) -> Result<()> {
+    fn validate(&self, isa: &Isa, parent: &Modifier) -> Result<()> {
         if self.get_bitmask(isa, parent)? == 0 {
             bail!("Modifier case '{}' has no bitmask", self.name)
         }
@@ -259,7 +263,7 @@ pub struct Opcode {
 }
 
 impl Opcode {
-    pub fn validate(&self, isa: &Isa) -> Result<()> {
+    fn validate(&self, isa: &Isa) -> Result<()> {
         if self.pattern & !self.bitmask != 0 {
             bail!(
                 "Opcode '{}' has pattern bits 0x{:08x} outside its bitmask 0x{:08x}",
@@ -414,7 +418,7 @@ impl Display for Opcode {
     }
 }
 
-pub struct BitRange(Range<u8>);
+pub struct BitRange(pub Range<u8>);
 
 impl<'de> Deserialize<'de> for BitRange {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
