@@ -68,6 +68,15 @@ static LOOKUP_TABLE: [(u8, u8); 64] = [
     (0, 0),
     (0, 0),
 ];
+/// Maps an instruction to a bucket in the lookup table.
+fn bucket_index(code: u32) -> usize {
+    let mut index = 0;
+    index |= (code & 0x00000010) >> 4;
+    index |= (code & 0x00700000) >> 19;
+    index |= (code & 0x01000000) >> 20;
+    index |= (code & 0x04000000) >> 21;
+    index.try_into().unwrap()
+}
 /// These tuples contain a bitmask and pattern for each opcode.
 static OPCODE_PATTERNS: [(u32, u32); 78] = [
     // BLX: Branch and Link and Exchange to Thumb (immediate target)
@@ -556,11 +565,6 @@ impl Ins {
     pub const fn field_crd(&self) -> u8 {
         ((self.code & 0x0000f000) >> 12) as u8
     }
-    /// W: Write back to base register
-    #[inline(always)]
-    pub const fn field_w(&self) -> bool {
-        ((self.code & 0x00200000) >> 21) != 0
-    }
     /// rotate_imm: Immediate rotate offset
     #[inline(always)]
     pub const fn field_rotate_imm(&self) -> u8 {
@@ -600,11 +604,6 @@ impl Ins {
     #[inline(always)]
     pub const fn field_u(&self) -> bool {
         ((self.code & 0x00800000) >> 23) != 0
-    }
-    /// B: Byte (1) or word (0)
-    #[inline(always)]
-    pub const fn field_b(&self) -> bool {
-        ((self.code & 0x00400000) >> 22) != 0
     }
     /// R: Move SPSR (1) or CPSR (0)
     #[inline(always)]
@@ -677,22 +676,27 @@ impl Ins {
         ((self.code & 0x00000f00) >> 8) as u8
     }
     /// S: Update condition status flags
+    #[inline(always)]
     pub const fn modifier_s(&self) -> bool {
         (self.code & 0x00100000) == 0x00100000
     }
     /// L: Long coprocessor load (e.g. double instead of float)
+    #[inline(always)]
     pub const fn modifier_l(&self) -> bool {
         (self.code & 0x00400000) == 0x00400000
     }
     /// y: Second multiply operand in bottom (0) or top (1) half
+    #[inline(always)]
     pub const fn modifier_y(&self) -> bool {
         (self.code & 0x00000040) == 0x00000040
     }
     /// x: First multiply operand in bottom (0) or top (1) half
+    #[inline(always)]
     pub const fn modifier_x(&self) -> bool {
         (self.code & 0x00000020) == 0x00000020
     }
     /// cond: Condition code
+    #[inline(always)]
     pub const fn modifier_cond(&self) -> Cond {
         match self.code & 0xf0000000 {
             0x00000000 => Cond::Eq,
@@ -714,27 +718,16 @@ impl Ins {
         }
     }
     /// addr_data: Data-processing operands
+    #[inline(always)]
     pub const fn modifier_addr_data(&self) -> AddrData {
         if (self.code & 0x0e000ff0) == 0x00000000 {
             AddrData::Reg
         } else if (self.code & 0x0e000ff0) == 0x00000060 {
             AddrData::Rrx
-        } else if (self.code & 0x0e0000f0) == 0x00000010 {
-            AddrData::LslReg
-        } else if (self.code & 0x0e0000f0) == 0x00000030 {
-            AddrData::LsrReg
-        } else if (self.code & 0x0e0000f0) == 0x00000050 {
-            AddrData::AsrReg
-        } else if (self.code & 0x0e0000f0) == 0x00000070 {
-            AddrData::RorReg
-        } else if (self.code & 0x0e000070) == 0x00000000 {
-            AddrData::LslImm
-        } else if (self.code & 0x0e000070) == 0x00000020 {
-            AddrData::LsrImm
-        } else if (self.code & 0x0e000070) == 0x00000040 {
-            AddrData::AsrImm
-        } else if (self.code & 0x0e000070) == 0x00000060 {
-            AddrData::RorImm
+        } else if (self.code & 0x0e000090) == 0x00000010 {
+            AddrData::ShiftReg
+        } else if (self.code & 0x0e000010) == 0x00000000 {
+            AddrData::ShiftImm
         } else if (self.code & 0x0e000000) == 0x02000000 {
             AddrData::Imm
         } else {
@@ -742,6 +735,7 @@ impl Ins {
         }
     }
     /// addr_ldr_str: Load and Store Word or Unsigned Byte
+    #[inline(always)]
     pub const fn modifier_addr_ldr_str(&self) -> AddrLdrStr {
         if (self.code & 0x0f200ff0) == 0x07000000 {
             AddrLdrStr::Reg
@@ -766,6 +760,7 @@ impl Ins {
         }
     }
     /// addr_misc_ldr_str: Miscellaneous Loads and Stores
+    #[inline(always)]
     pub const fn modifier_addr_misc_ldr_str(&self) -> AddrMiscLdrStr {
         if (self.code & 0x0f600f90) == 0x01000090 {
             AddrMiscLdrStr::Reg
@@ -784,6 +779,7 @@ impl Ins {
         }
     }
     /// addr_ldm_stm: Load and Store Multiple
+    #[inline(always)]
     pub const fn modifier_addr_ldm_stm(&self) -> AddrLdmStm {
         match self.code & 0x01800000 {
             0x00800000 => AddrLdmStm::Ia,
@@ -794,6 +790,7 @@ impl Ins {
         }
     }
     /// addr_coproc: Load and Store Coprocessor
+    #[inline(always)]
     pub const fn modifier_addr_coproc(&self) -> AddrCoproc {
         if (self.code & 0x01200000) == 0x01000000 {
             AddrCoproc::Imm
@@ -847,22 +844,10 @@ pub enum AddrData {
     Imm,
     /// reg: Register
     Reg,
-    /// lsl_imm: Logical shift left by immediate
-    LslImm,
-    /// lsl_reg: Logical shift left by register
-    LslReg,
-    /// lsr_imm: Logical shift right by immediate
-    LsrImm,
-    /// lsr_reg: Logical shift right by register
-    LsrReg,
-    /// asr_imm: Arithmetic shift right by immediate
-    AsrImm,
-    /// asr_reg: Arithmetic shift right by register
-    AsrReg,
-    /// ror_imm: Rotate right by immediate
-    RorImm,
-    /// ror_reg: Rotate right by register
-    RorReg,
+    /// shift_imm: Shift by immediate
+    ShiftImm,
+    /// shift_reg: Shift by register
+    ShiftReg,
     /// rrx: Rotate right with extend
     Rrx,
 }
@@ -924,11 +909,117 @@ pub enum AddrCoproc {
     /// unidx: Unindexed
     Unidx,
 }
-fn bucket_index(code: u32) -> usize {
-    let mut index = 0;
-    index |= (code & 0x00000010) >> 4;
-    index |= (code & 0x00700000) >> 19;
-    index |= (code & 0x01000000) >> 20;
-    index |= (code & 0x04000000) >> 21;
-    index.try_into().unwrap()
+pub type Arguments = [Argument; 6];
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+pub enum Argument {
+    #[default]
+    None,
+    /// reg: General-purpose register
+    Reg(Reg),
+    /// reg_list: List of general-purpose registers
+    RegList(u32),
+    /// co_reg: Coprocessor register
+    CoReg(CoReg),
+    /// status_reg: Status register
+    StatusReg(StatusReg),
+    /// status_mask: Status field mask
+    StatusMask(StatusMask),
+    /// shift_imm: Immediate shift offset
+    ShiftImm(u32),
+    /// shift: Type of shift operation
+    Shift(Shift),
+    /// u_imm: Unsigned immediate
+    UImm(u32),
+    /// s_imm: Signed immediate
+    SImm(i32),
+    /// offset: Immediate offset
+    Offset(u32),
+    /// add: Add
+    Add(bool),
+    /// blx_half: Add 2 to BLX target address
+    BlxHalf(bool),
+    /// co_option: Additional instruction options for coprocessor
+    CoOption(u32),
+    /// co_opcode: Coprocessor operation to perform (user-defined)
+    CoOpcode(u32),
+    /// coproc_num: Coprocessor number
+    CoprocNum(u32),
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Reg {
+    R0 = 0,
+    R1 = 1,
+    R2 = 2,
+    R3 = 3,
+    R4 = 4,
+    R5 = 5,
+    R6 = 6,
+    R7 = 7,
+    R8 = 8,
+    R9 = 9,
+    R10 = 10,
+    /// fp: Frame Pointer
+    Fp = 11,
+    /// ip: Intra Procedure call scratch register
+    Ip = 12,
+    /// sp: Stack Pointer
+    Sp = 13,
+    /// lr: Link Register
+    Lr = 14,
+    /// pc: Program Counter
+    Pc = 15,
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum CoReg {
+    Cp0 = 0,
+    Cp1 = 1,
+    Cp2 = 2,
+    Cp3 = 3,
+    Cp4 = 4,
+    Cp5 = 5,
+    Cp6 = 6,
+    Cp7 = 7,
+    Cp8 = 8,
+    Cp9 = 9,
+    Cp10 = 10,
+    Cp11 = 11,
+    Cp12 = 12,
+    Cp13 = 13,
+    Cp14 = 14,
+    Cp15 = 15,
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum StatusReg {
+    Cpsr = 0,
+    Spsr = 1,
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum StatusMask {
+    C = 1,
+    X = 2,
+    Xc = 3,
+    S = 4,
+    Sc = 5,
+    Sx = 6,
+    Sxc = 7,
+    F = 8,
+    Fc = 9,
+    Fx = 10,
+    Fxc = 11,
+    Fs = 12,
+    Fsc = 13,
+    Fsx = 14,
+    Fsxc = 15,
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Shift {
+    Lsl = 0,
+    Lsr = 1,
+    Asr = 2,
+    RorOrRrx = 3,
 }

@@ -1,145 +1,335 @@
+args:
+  - name: reg
+    desc: General-purpose register
+    values:
+      - name: r0
+        value: 0
+      - name: r1
+        value: 1
+      - name: r2
+        value: 2
+      - name: r3
+        value: 3
+      - name: r4
+        value: 4
+      - name: r5
+        value: 5
+      - name: r6
+        value: 6
+      - name: r7
+        value: 7
+      - name: r8
+        value: 8
+      - name: r9
+        value: 9
+      - name: r10
+        value: 10
+      - name: fp
+        desc: Frame Pointer
+        value: 11
+      - name: ip
+        desc: Intra Procedure call scratch register
+        value: 12
+      - name: sp
+        desc: Stack Pointer
+        value: 13
+      - name: lr
+        desc: Link Register
+        value: 14
+      - name: pc
+        desc: Program Counter
+        value: 15
+
+  - name: reg_list
+    desc: List of general-purpose registers
+
+  - name: co_reg
+    desc: Coprocessor register
+    values:
+      - name: cp0
+        value: 0
+      - name: cp1
+        value: 1
+      - name: cp2
+        value: 2
+      - name: cp3
+        value: 3
+      - name: cp4
+        value: 4
+      - name: cp5
+        value: 5
+      - name: cp6
+        value: 6
+      - name: cp7
+        value: 7
+      - name: cp8
+        value: 8
+      - name: cp9
+        value: 9
+      - name: cp10
+        value: 10
+      - name: cp11
+        value: 11
+      - name: cp12
+        value: 12
+      - name: cp13
+        value: 13
+      - name: cp14
+        value: 14
+      - name: cp15
+        value: 15
+
+  - name: status_reg
+    desc: Status register
+    values:
+      - name: cpsr
+        value: 0
+      - name: spsr
+        value: 1
+
+  - name: status_mask
+    desc: Status field mask
+    values:
+      - name: c
+        value: 1
+      - name: x
+        value: 2
+      - name: xc
+        value: 3
+      - name: s
+        value: 4
+      - name: sc
+        value: 5
+      - name: sx
+        value: 6
+      - name: sxc
+        value: 7
+      - name: f
+        value: 8
+      - name: fc
+        value: 9
+      - name: fx
+        value: 10
+      - name: fxc
+        value: 11
+      - name: fs
+        value: 12
+      - name: fsc
+        value: 13
+      - name: fsx
+        value: 14
+      - name: fsxc
+        value: 15
+
+  - name: shift_imm
+    desc: Immediate shift offset
+
+  - name: shift
+    desc: Type of shift operation
+    values:
+      - name: lsl
+        value: 0
+      - name: lsr
+        value: 1
+      - name: asr
+        value: 2
+      - name: ror_or_rrx
+        value: 3
+
+  - name: u_imm
+    desc: Unsigned immediate
+
+  - name: s_imm
+    desc: Signed immediate
+    signed: true
+
+  - name: offset
+    desc: Immediate offset
+
+  - name: add
+    desc: Add
+    boolean: true
+
+  - name: blx_half
+    desc: Add 2 to BLX target address
+    boolean: true
+
+  - name: co_option
+    desc: Additional instruction options for coprocessor
+
+  - name: co_opcode
+    desc: Coprocessor operation to perform (user-defined)
+
+  - name: coproc_num
+    desc: Coprocessor number
+
 fields:
   - name: cond
     desc: Condition Code
     bits: 28..32
 
   - name: Rn
+    arg: reg
     desc: First source operand register
     bits: 16..20
 
   - name: Rm
+    arg: reg
     desc: Second source operand register
     bits: 0..4
 
   - name: Rd
+    arg: reg
     desc: Destination register
     bits: 12..16
 
   - name: Rs
+    arg: reg
     desc: Register containing shift offset
     bits: 8..12
 
   - name: RdHi
+    arg: reg
     desc: Upper 32-bit long destination register
     bits: 16..20
 
   - name: RdLo
+    arg: reg
     desc: Lower 32-bit long destination register
     bits: 12..16
 
   - name: register_list
+    arg: reg_list
     desc: List of registers
     bits: 0..16
 
   - name: register_list_15
+    arg: reg_list
     desc: List of registers, except PC
     bits: 0..15
 
   - name: CRn
+    arg: co_reg
     desc: First source coprocessor register
     bits: 16..20
 
   - name: CRm
+    arg: co_reg
     desc: Second source coprocessor register
     bits: 0..4
 
   - name: CRd
+    arg: co_reg
     desc: Destination coprocessor register
     bits: 12..16
 
-  - name: W
-    desc: Write back to base register
-    bits: 21..22
-
   - name: rotate_imm
+    arg: shift_imm
     desc: Immediate rotate offset
     bits: 8..12
 
   - name: immed_8
+    arg: u_imm
     desc: 8-bit immediate
     bits: 0..8
 
   - name: immed_24
+    arg: u_imm
     desc: 24-bit immediate
     bits: 0..24
 
   - name: immedH
+    arg: u_imm
     desc: High nibble immediate
     bits: 8..12
 
   - name: immedL
+    arg: u_imm
     desc: Low nibble immediate
     bits: 0..4
 
   - name: shift_imm
+    arg: shift_imm
     desc: Immediate shift offset
     bits: 7..12
 
   - name: shift
+    arg: shift
     desc: Type of shift operation
     bits: 5..7
 
   - name: U
+    arg: add
     desc: Add (1) or subtract (0)
     bits: 23..24
 
-  - name: B
-    desc: Byte (1) or word (0)
-    bits: 22..23
-
   - name: R
+    arg: status_reg
     desc: Move SPSR (1) or CPSR (0)
     bits: 22..23
 
   - name: offset_8
+    arg: offset
     desc: 8-bit immediate offset
     bits: 0..8
 
   - name: offset_12
+    arg: offset
     desc: 12-bit immediate offset
     bits: 0..12
 
   - name: option
+    arg: co_option
     desc: Additional instruction options for coprocessor
     bits: 0..8
 
   - name: H
+    arg: blx_half
     desc: Add 2 to BLX target address
     bits: 24..25
 
   - name: signed_immed_24
+    arg: s_imm
     desc: Signed 24-bit immediate
     bits: 0..24
 
   - name: immed_8_20
+    arg: u_imm
     desc: 12-bit immediate in bits 8..20
     bits: 8..20
 
   - name: immed_0_4
+    arg: u_imm
     desc: 4-bit immediate in bits 0..4
     bits: 0..4
 
   - name: field_mask
+    arg: status_mask
     desc: Status fields to set
     bits: 16..20
 
   - name: opcode
+    arg: co_opcode
     desc: Coprocessor operation to perform (user-defined)
     bits: 4..8
 
   - name: codat_opcode_1
+    arg: co_opcode
     desc: Coprocessor operation to perform (user-defined, used by CDP instruction)
     bits: 20..24
 
   - name: comov_opcode_1
+    arg: co_opcode
     desc: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
     bits: 21..24
 
   - name: opcode_2
+    arg: co_opcode
     desc: Coprocessor operation to perform (user-defined)
     bits: 5..8
 
   - name: cp_num
+    arg: coproc_num
     desc: Coprocessor number
     bits: 8..12
 
@@ -248,53 +438,17 @@ modifiers:
         pattern: 0x00000000
         args: [Rm]
         uses: [Rm]
-      - name: lsl_imm
-        desc: Logical shift left by immediate
-        bitmask: 0x0e000070
+      - name: shift_imm
+        desc: Shift by immediate
+        bitmask: 0x0e000010
         pattern: 0x00000000
-        args: [shift_imm, Rm]
+        args: [shift_imm, shift, Rm]
         uses: [Rm]
-      - name: lsl_reg
-        desc: Logical shift left by register
-        bitmask: 0x0e0000f0
+      - name: shift_reg
+        desc: Shift by register
+        bitmask: 0x0e000090
         pattern: 0x00000010
-        args: [Rs, Rm]
-        uses: [Rs, Rm]
-      - name: lsr_imm
-        desc: Logical shift right by immediate
-        bitmask: 0x0e000070
-        pattern: 0x00000020
-        args: [shift_imm, Rm]
-        uses: [Rm]
-      - name: lsr_reg
-        desc: Logical shift right by register
-        bitmask: 0x0e0000f0
-        pattern: 0x00000030
-        args: [Rs, Rm]
-        uses: [Rs, Rm]
-      - name: asr_imm
-        desc: Arithmetic shift right by immediate
-        bitmask: 0x0e000070
-        pattern: 0x00000040
-        args: [shift_imm, Rm]
-        uses: [Rm]
-      - name: asr_reg
-        desc: Arithmetic shift right by register
-        bitmask: 0x0e0000f0
-        pattern: 0x00000050
-        args: [Rs, Rm]
-        uses: [Rs, Rm]
-      - name: ror_imm
-        desc: Rotate right by immediate
-        bitmask: 0x0e000070
-        pattern: 0x00000060
-        args: [shift_imm, Rm]
-        uses: [Rm]
-      - name: ror_reg
-        desc: Rotate right by register
-        bitmask: 0x0e0000f0
-        pattern: 0x00000070
-        args: [Rs, Rm]
+        args: [Rs, shift, Rm]
         uses: [Rs, Rm]
       - name: rrx
         desc: Rotate right with extend
@@ -310,51 +464,51 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x0f200000
         pattern: 0x05000000
-        args: [U, B, offset_12]
+        args: [U, offset_12]
       - name: reg
         desc: Register offset
         bitmask: 0x0f200ff0
         pattern: 0x07000000
-        args: [U, B, Rm]
+        args: [U, Rm]
         uses: [Rm]
       - name: scl
         desc: Scaled register offset
         bitmask: 0x0f200010
         pattern: 0x07000000
-        args: [U, B, shift_imm, shift, Rm]
+        args: [U, shift_imm, shift, Rm]
         uses: [Rm]
       - name: imm_pre
         desc: Immediate pre-indexed
         bitmask: 0x0f200000
         pattern: 0x05200000
-        args: [U, B, offset_12]
+        args: [U, offset_12]
       - name: reg_pre
         desc: Register pre-indexed
         bitmask: 0x0f200ff0
         pattern: 0x07200000
-        args: [U, B, Rm]
+        args: [U, Rm]
         uses: [Rm]
       - name: scl_pre
         desc: Scaled register pre-indexed
         bitmask: 0x0f200010
         pattern: 0x07200000
-        args: [U, B, shift_imm, shift, Rm]
+        args: [U, shift_imm, shift, Rm]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x0f200000
         pattern: 0x04000000
-        args: [U, B, offset_12]
+        args: [U, offset_12]
       - name: reg_post
         desc: Register post-indexed
         bitmask: 0x0f200ff0
         pattern: 0x06000000
-        args: [U, B, Rm]
+        args: [U, Rm]
         uses: [Rm]
       - name: scl_post
         desc: Scaled register post-indexed
         bitmask: 0x0f200010
         pattern: 0x06000000
-        args: [U, B, shift_imm, shift, Rm]
+        args: [U, shift_imm, shift, Rm]
 
   - name: addr_misc_ldr_str
     desc: Miscellaneous Loads and Stores

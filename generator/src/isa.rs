@@ -8,6 +8,7 @@ use crate::iter::cartesian;
 
 #[derive(Deserialize)]
 pub struct Isa {
+    pub args: Box<[Arg]>,
     pub fields: Box<[Field]>,
     pub modifiers: Box<[Modifier]>,
     pub opcodes: Box<[Opcode]>,
@@ -48,6 +49,17 @@ impl Isa {
             .with_context(|| format!("Failed to find field '{name}'"))
     }
 
+    pub fn get_max_args(&self) -> Result<usize> {
+        let mut max = 0;
+        for opcode in self.opcodes.iter() {
+            let args = opcode.get_max_args(self)?;
+            if args > max {
+                max = args;
+            }
+        }
+        Ok(max)
+    }
+
     pub fn get_all_opcodes(&self) -> Result<Box<[Opcode]>> {
         let opcodes: Result<Vec<_>> = self.opcodes.iter().map(|opcode| opcode.get_variants(self)).collect();
         let opcodes = opcodes?;
@@ -77,8 +89,51 @@ impl Isa {
 }
 
 #[derive(Deserialize)]
+pub struct Arg {
+    pub name: String,
+    pub desc: String,
+    pub values: Option<Box<[ArgValue]>>,
+    #[serde(default)]
+    pub signed: bool,
+    #[serde(default)]
+    pub boolean: bool,
+}
+
+impl Arg {
+    pub fn variant_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
+
+    pub fn doc(&self) -> String {
+        format!(" {}: {}", self.name, self.desc)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ArgValue {
+    pub name: String,
+    pub desc: Option<String>,
+    pub value: u8,
+}
+
+impl ArgValue {
+    pub fn variant_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
+
+    pub fn doc(&self) -> String {
+        if let Some(desc) = &self.desc {
+            format!(" {}: {}", self.name, desc)
+        } else {
+            "".to_string()
+        }
+    }
+}
+
+#[derive(Deserialize)]
 pub struct Field {
     pub name: String,
+    pub arg: Option<String>,
     pub desc: String,
     pub bits: BitRange,
 }
@@ -97,6 +152,10 @@ impl Field {
 
     pub fn doc(&self) -> String {
         format!(" {}: {}", self.name, self.desc)
+    }
+
+    pub fn accessor_name(&self) -> String {
+        format!("field_{}", self.name.to_lowercase())
     }
 }
 
@@ -181,6 +240,10 @@ impl Modifier {
 
     pub fn doc(&self) -> String {
         format!(" {}: {}", self.name, self.desc)
+    }
+
+    pub fn accessor_name(&self) -> String {
+        format!("modifier_{}", self.name.to_lowercase())
     }
 
     pub fn enum_name(&self) -> String {
@@ -330,15 +393,8 @@ impl Opcode {
     }
 
     pub fn get_variants(&self, isa: &Isa) -> Result<Box<[Opcode]>> {
-        if let Some(modifiers) = &self.modifiers {
-            let modifiers: Result<Vec<_>> = modifiers
-                .iter()
-                .map(|m| {
-                    let modifier = isa.get_modifier(m)?;
-                    modifier.get_cases()
-                })
-                .collect();
-            let modifiers = modifiers?;
+        let modifiers = self.get_modifier_cases(isa)?;
+        if !modifiers.is_empty() {
             let variants: Vec<_> = cartesian(&modifiers)
                 .map(|cases| cases.iter().fold(self.clone(), |acc, case| acc.apply_case(case)))
                 .collect();
@@ -412,6 +468,40 @@ impl Opcode {
         // Split by $ delimiter, capitalize all the words, then join them
         // e.g. smlal$xy => SmlalXy
         capitalize_with_delimiter(self.name.clone(), '$')
+    }
+
+    pub fn ident_name(&self) -> String {
+        self.name.replace('$', "_")
+    }
+
+    fn get_modifier_cases(&self, isa: &Isa) -> Result<Vec<Box<[ModifierCase]>>> {
+        if let Some(modifiers) = &self.modifiers {
+            let modifiers: Result<Vec<_>> = modifiers
+                .iter()
+                .map(|m| {
+                    let modifier = isa.get_modifier(m)?;
+                    modifier.get_cases()
+                })
+                .collect();
+            modifiers
+        } else {
+            Ok(vec![])
+        }
+    }
+
+    fn get_max_args(&self, isa: &Isa) -> Result<usize> {
+        let base_args = self.args.as_ref().map(|args| args.len()).unwrap_or(0);
+        let modifiers = self.get_modifier_cases(isa)?;
+        let max_case_args = cartesian(&modifiers)
+            .map(|modifiers| {
+                modifiers
+                    .iter()
+                    .map(|case| case.args.as_ref().map(|args| args.len()).unwrap_or(0))
+                    .sum()
+            })
+            .max()
+            .unwrap_or(0);
+        Ok(base_args + max_case_args)
     }
 }
 
