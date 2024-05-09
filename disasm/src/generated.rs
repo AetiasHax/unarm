@@ -2270,6 +2270,19 @@ impl Ins {
             AddrLdrStr::Illegal
         }
     }
+    /// addr_ldrt_strt: Load and Store Word or Unsigned Byte with Translation
+    #[inline(always)]
+    pub const fn modifier_addr_ldrt_strt(&self) -> AddrLdrtStrt {
+        if (self.code & 0x0f200ff0) == 0x06200000 {
+            AddrLdrtStrt::RegPost
+        } else if (self.code & 0x0f200010) == 0x06200000 {
+            AddrLdrtStrt::SclPost
+        } else if (self.code & 0x0f200000) == 0x04200000 {
+            AddrLdrtStrt::ImmPost
+        } else {
+            AddrLdrtStrt::Illegal
+        }
+    }
     /// addr_misc_ldr_str: Miscellaneous Loads and Stores
     #[inline(always)]
     pub const fn modifier_addr_misc_ldr_str(&self) -> AddrMiscLdrStr {
@@ -2379,6 +2392,16 @@ pub enum AddrLdrStr {
     RegPre,
     /// scl_pre: Scaled register pre-indexed
     SclPre,
+    /// imm_post: Immediate post-indexed
+    ImmPost,
+    /// reg_post: Register post-indexed
+    RegPost,
+    /// scl_post: Scaled register post-indexed
+    SclPost,
+}
+/// addr_ldrt_strt: Load and Store Word or Unsigned Byte with Translation
+pub enum AddrLdrtStrt {
+    Illegal,
     /// imm_post: Immediate post-indexed
     ImmPost,
     /// reg_post: Register post-indexed
@@ -24948,8 +24971,8 @@ fn parse_ldrb(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_cond(), ins.modifier_addr_ldr_str()) {
-        (Cond::Eq, AddrLdrStr::Imm) => {
+    *out = match (ins.modifier_cond(), ins.modifier_addr_ldrt_strt()) {
+        (Cond::Eq, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbteq",
                 args: [
@@ -24962,7 +24985,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Imm) => {
+        (Cond::Ne, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtne",
                 args: [
@@ -24975,7 +24998,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Imm) => {
+        (Cond::Hs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbths",
                 args: [
@@ -24988,7 +25011,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Imm) => {
+        (Cond::Lo, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtlo",
                 args: [
@@ -25001,7 +25024,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Imm) => {
+        (Cond::Mi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtmi",
                 args: [
@@ -25014,7 +25037,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Imm) => {
+        (Cond::Pl, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtpl",
                 args: [
@@ -25027,7 +25050,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Imm) => {
+        (Cond::Vs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtvs",
                 args: [
@@ -25040,7 +25063,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Imm) => {
+        (Cond::Vc, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtvc",
                 args: [
@@ -25053,7 +25076,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Imm) => {
+        (Cond::Hi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbthi",
                 args: [
@@ -25066,7 +25089,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Imm) => {
+        (Cond::Ls, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtls",
                 args: [
@@ -25079,7 +25102,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Imm) => {
+        (Cond::Ge, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtge",
                 args: [
@@ -25092,7 +25115,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Imm) => {
+        (Cond::Lt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtlt",
                 args: [
@@ -25105,7 +25128,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Imm) => {
+        (Cond::Gt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtgt",
                 args: [
@@ -25118,7 +25141,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Imm) => {
+        (Cond::Le, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbtle",
                 args: [
@@ -25131,7 +25154,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Imm) => {
+        (Cond::Al, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrbt",
                 args: [
@@ -25144,7 +25167,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Reg) => {
+        (Cond::Eq, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbteq",
                 args: [
@@ -25157,7 +25180,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Reg) => {
+        (Cond::Ne, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtne",
                 args: [
@@ -25170,7 +25193,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Reg) => {
+        (Cond::Hs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbths",
                 args: [
@@ -25183,7 +25206,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Reg) => {
+        (Cond::Lo, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtlo",
                 args: [
@@ -25196,7 +25219,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Reg) => {
+        (Cond::Mi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtmi",
                 args: [
@@ -25209,7 +25232,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Reg) => {
+        (Cond::Pl, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtpl",
                 args: [
@@ -25222,7 +25245,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Reg) => {
+        (Cond::Vs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtvs",
                 args: [
@@ -25235,7 +25258,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Reg) => {
+        (Cond::Vc, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtvc",
                 args: [
@@ -25248,7 +25271,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Reg) => {
+        (Cond::Hi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbthi",
                 args: [
@@ -25261,7 +25284,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Reg) => {
+        (Cond::Ls, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtls",
                 args: [
@@ -25274,7 +25297,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Reg) => {
+        (Cond::Ge, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtge",
                 args: [
@@ -25287,7 +25310,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Reg) => {
+        (Cond::Lt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtlt",
                 args: [
@@ -25300,7 +25323,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Reg) => {
+        (Cond::Gt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtgt",
                 args: [
@@ -25313,7 +25336,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Reg) => {
+        (Cond::Le, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbtle",
                 args: [
@@ -25326,7 +25349,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Reg) => {
+        (Cond::Al, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrbt",
                 args: [
@@ -25339,7 +25362,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Scl) => {
+        (Cond::Eq, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbteq",
                 args: [
@@ -25352,7 +25375,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Scl) => {
+        (Cond::Ne, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtne",
                 args: [
@@ -25365,7 +25388,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Scl) => {
+        (Cond::Hs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbths",
                 args: [
@@ -25378,7 +25401,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Scl) => {
+        (Cond::Lo, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtlo",
                 args: [
@@ -25391,7 +25414,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Scl) => {
+        (Cond::Mi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtmi",
                 args: [
@@ -25404,7 +25427,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Scl) => {
+        (Cond::Pl, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtpl",
                 args: [
@@ -25417,7 +25440,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Scl) => {
+        (Cond::Vs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtvs",
                 args: [
@@ -25430,7 +25453,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Scl) => {
+        (Cond::Vc, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtvc",
                 args: [
@@ -25443,7 +25466,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Scl) => {
+        (Cond::Hi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbthi",
                 args: [
@@ -25456,7 +25479,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Scl) => {
+        (Cond::Ls, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtls",
                 args: [
@@ -25469,7 +25492,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Scl) => {
+        (Cond::Ge, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtge",
                 args: [
@@ -25482,7 +25505,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Scl) => {
+        (Cond::Lt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtlt",
                 args: [
@@ -25495,7 +25518,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Scl) => {
+        (Cond::Gt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtgt",
                 args: [
@@ -25508,7 +25531,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Scl) => {
+        (Cond::Le, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbtle",
                 args: [
@@ -25521,1177 +25544,7 @@ fn parse_ldrbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Scl) => {
-            ParsedIns {
-                mnemonic: "ldrbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPost) => {
+        (Cond::Al, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrbt",
                 args: [
@@ -31468,8 +30321,8 @@ fn parse_ldrsh(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_cond(), ins.modifier_addr_ldr_str()) {
-        (Cond::Eq, AddrLdrStr::Imm) => {
+    *out = match (ins.modifier_cond(), ins.modifier_addr_ldrt_strt()) {
+        (Cond::Eq, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrteq",
                 args: [
@@ -31482,7 +30335,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Imm) => {
+        (Cond::Ne, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtne",
                 args: [
@@ -31495,7 +30348,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Imm) => {
+        (Cond::Hs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrths",
                 args: [
@@ -31508,7 +30361,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Imm) => {
+        (Cond::Lo, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtlo",
                 args: [
@@ -31521,7 +30374,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Imm) => {
+        (Cond::Mi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtmi",
                 args: [
@@ -31534,7 +30387,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Imm) => {
+        (Cond::Pl, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtpl",
                 args: [
@@ -31547,7 +30400,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Imm) => {
+        (Cond::Vs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtvs",
                 args: [
@@ -31560,7 +30413,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Imm) => {
+        (Cond::Vc, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtvc",
                 args: [
@@ -31573,7 +30426,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Imm) => {
+        (Cond::Hi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrthi",
                 args: [
@@ -31586,7 +30439,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Imm) => {
+        (Cond::Ls, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtls",
                 args: [
@@ -31599,7 +30452,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Imm) => {
+        (Cond::Ge, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtge",
                 args: [
@@ -31612,7 +30465,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Imm) => {
+        (Cond::Lt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtlt",
                 args: [
@@ -31625,7 +30478,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Imm) => {
+        (Cond::Gt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtgt",
                 args: [
@@ -31638,7 +30491,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Imm) => {
+        (Cond::Le, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrtle",
                 args: [
@@ -31651,7 +30504,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Imm) => {
+        (Cond::Al, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "ldrt",
                 args: [
@@ -31664,7 +30517,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Reg) => {
+        (Cond::Eq, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrteq",
                 args: [
@@ -31677,7 +30530,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Reg) => {
+        (Cond::Ne, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtne",
                 args: [
@@ -31690,7 +30543,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Reg) => {
+        (Cond::Hs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrths",
                 args: [
@@ -31703,7 +30556,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Reg) => {
+        (Cond::Lo, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtlo",
                 args: [
@@ -31716,7 +30569,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Reg) => {
+        (Cond::Mi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtmi",
                 args: [
@@ -31729,7 +30582,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Reg) => {
+        (Cond::Pl, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtpl",
                 args: [
@@ -31742,7 +30595,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Reg) => {
+        (Cond::Vs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtvs",
                 args: [
@@ -31755,7 +30608,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Reg) => {
+        (Cond::Vc, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtvc",
                 args: [
@@ -31768,7 +30621,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Reg) => {
+        (Cond::Hi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrthi",
                 args: [
@@ -31781,7 +30634,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Reg) => {
+        (Cond::Ls, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtls",
                 args: [
@@ -31794,7 +30647,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Reg) => {
+        (Cond::Ge, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtge",
                 args: [
@@ -31807,7 +30660,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Reg) => {
+        (Cond::Lt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtlt",
                 args: [
@@ -31820,7 +30673,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Reg) => {
+        (Cond::Gt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtgt",
                 args: [
@@ -31833,7 +30686,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Reg) => {
+        (Cond::Le, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrtle",
                 args: [
@@ -31846,7 +30699,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Reg) => {
+        (Cond::Al, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "ldrt",
                 args: [
@@ -31859,7 +30712,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Scl) => {
+        (Cond::Eq, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrteq",
                 args: [
@@ -31872,7 +30725,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Scl) => {
+        (Cond::Ne, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtne",
                 args: [
@@ -31885,7 +30738,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Scl) => {
+        (Cond::Hs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrths",
                 args: [
@@ -31898,7 +30751,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Scl) => {
+        (Cond::Lo, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtlo",
                 args: [
@@ -31911,7 +30764,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Scl) => {
+        (Cond::Mi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtmi",
                 args: [
@@ -31924,7 +30777,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Scl) => {
+        (Cond::Pl, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtpl",
                 args: [
@@ -31937,7 +30790,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Scl) => {
+        (Cond::Vs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtvs",
                 args: [
@@ -31950,7 +30803,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Scl) => {
+        (Cond::Vc, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtvc",
                 args: [
@@ -31963,7 +30816,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Scl) => {
+        (Cond::Hi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrthi",
                 args: [
@@ -31976,7 +30829,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Scl) => {
+        (Cond::Ls, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtls",
                 args: [
@@ -31989,7 +30842,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Scl) => {
+        (Cond::Ge, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtge",
                 args: [
@@ -32002,7 +30855,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Scl) => {
+        (Cond::Lt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtlt",
                 args: [
@@ -32015,7 +30868,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Scl) => {
+        (Cond::Gt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtgt",
                 args: [
@@ -32028,7 +30881,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Scl) => {
+        (Cond::Le, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrtle",
                 args: [
@@ -32041,1177 +30894,7 @@ fn parse_ldrt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Scl) => {
-            ParsedIns {
-                mnemonic: "ldrt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "ldrt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "ldrt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "ldrt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "ldrt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "ldrt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "ldrtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPost) => {
+        (Cond::Al, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "ldrt",
                 args: [
@@ -59879,8 +57562,8 @@ fn parse_strb(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_cond(), ins.modifier_addr_ldr_str()) {
-        (Cond::Eq, AddrLdrStr::Imm) => {
+    *out = match (ins.modifier_cond(), ins.modifier_addr_ldrt_strt()) {
+        (Cond::Eq, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbteq",
                 args: [
@@ -59893,7 +57576,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Imm) => {
+        (Cond::Ne, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtne",
                 args: [
@@ -59906,7 +57589,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Imm) => {
+        (Cond::Hs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbths",
                 args: [
@@ -59919,7 +57602,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Imm) => {
+        (Cond::Lo, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtlo",
                 args: [
@@ -59932,7 +57615,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Imm) => {
+        (Cond::Mi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtmi",
                 args: [
@@ -59945,7 +57628,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Imm) => {
+        (Cond::Pl, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtpl",
                 args: [
@@ -59958,7 +57641,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Imm) => {
+        (Cond::Vs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtvs",
                 args: [
@@ -59971,7 +57654,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Imm) => {
+        (Cond::Vc, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtvc",
                 args: [
@@ -59984,7 +57667,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Imm) => {
+        (Cond::Hi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbthi",
                 args: [
@@ -59997,7 +57680,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Imm) => {
+        (Cond::Ls, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtls",
                 args: [
@@ -60010,7 +57693,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Imm) => {
+        (Cond::Ge, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtge",
                 args: [
@@ -60023,7 +57706,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Imm) => {
+        (Cond::Lt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtlt",
                 args: [
@@ -60036,7 +57719,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Imm) => {
+        (Cond::Gt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtgt",
                 args: [
@@ -60049,7 +57732,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Imm) => {
+        (Cond::Le, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbtle",
                 args: [
@@ -60062,7 +57745,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Imm) => {
+        (Cond::Al, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strbt",
                 args: [
@@ -60075,7 +57758,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Reg) => {
+        (Cond::Eq, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbteq",
                 args: [
@@ -60088,7 +57771,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Reg) => {
+        (Cond::Ne, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtne",
                 args: [
@@ -60101,7 +57784,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Reg) => {
+        (Cond::Hs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbths",
                 args: [
@@ -60114,7 +57797,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Reg) => {
+        (Cond::Lo, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtlo",
                 args: [
@@ -60127,7 +57810,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Reg) => {
+        (Cond::Mi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtmi",
                 args: [
@@ -60140,7 +57823,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Reg) => {
+        (Cond::Pl, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtpl",
                 args: [
@@ -60153,7 +57836,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Reg) => {
+        (Cond::Vs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtvs",
                 args: [
@@ -60166,7 +57849,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Reg) => {
+        (Cond::Vc, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtvc",
                 args: [
@@ -60179,7 +57862,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Reg) => {
+        (Cond::Hi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbthi",
                 args: [
@@ -60192,7 +57875,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Reg) => {
+        (Cond::Ls, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtls",
                 args: [
@@ -60205,7 +57888,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Reg) => {
+        (Cond::Ge, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtge",
                 args: [
@@ -60218,7 +57901,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Reg) => {
+        (Cond::Lt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtlt",
                 args: [
@@ -60231,7 +57914,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Reg) => {
+        (Cond::Gt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtgt",
                 args: [
@@ -60244,7 +57927,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Reg) => {
+        (Cond::Le, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbtle",
                 args: [
@@ -60257,7 +57940,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Reg) => {
+        (Cond::Al, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strbt",
                 args: [
@@ -60270,7 +57953,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Scl) => {
+        (Cond::Eq, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbteq",
                 args: [
@@ -60283,7 +57966,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Scl) => {
+        (Cond::Ne, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtne",
                 args: [
@@ -60296,7 +57979,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Scl) => {
+        (Cond::Hs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbths",
                 args: [
@@ -60309,7 +57992,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Scl) => {
+        (Cond::Lo, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtlo",
                 args: [
@@ -60322,7 +58005,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Scl) => {
+        (Cond::Mi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtmi",
                 args: [
@@ -60335,7 +58018,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Scl) => {
+        (Cond::Pl, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtpl",
                 args: [
@@ -60348,7 +58031,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Scl) => {
+        (Cond::Vs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtvs",
                 args: [
@@ -60361,7 +58044,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Scl) => {
+        (Cond::Vc, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtvc",
                 args: [
@@ -60374,7 +58057,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Scl) => {
+        (Cond::Hi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbthi",
                 args: [
@@ -60387,7 +58070,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Scl) => {
+        (Cond::Ls, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtls",
                 args: [
@@ -60400,7 +58083,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Scl) => {
+        (Cond::Ge, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtge",
                 args: [
@@ -60413,7 +58096,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Scl) => {
+        (Cond::Lt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtlt",
                 args: [
@@ -60426,7 +58109,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Scl) => {
+        (Cond::Gt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtgt",
                 args: [
@@ -60439,7 +58122,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Scl) => {
+        (Cond::Le, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbtle",
                 args: [
@@ -60452,1177 +58135,7 @@ fn parse_strbt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Scl) => {
-            ParsedIns {
-                mnemonic: "strbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strbt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strbtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPost) => {
+        (Cond::Al, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strbt",
                 args: [
@@ -64025,8 +60538,8 @@ fn parse_strh(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_strt(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_cond(), ins.modifier_addr_ldr_str()) {
-        (Cond::Eq, AddrLdrStr::Imm) => {
+    *out = match (ins.modifier_cond(), ins.modifier_addr_ldrt_strt()) {
+        (Cond::Eq, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strteq",
                 args: [
@@ -64039,7 +60552,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Imm) => {
+        (Cond::Ne, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtne",
                 args: [
@@ -64052,7 +60565,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Imm) => {
+        (Cond::Hs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strths",
                 args: [
@@ -64065,7 +60578,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Imm) => {
+        (Cond::Lo, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtlo",
                 args: [
@@ -64078,7 +60591,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Imm) => {
+        (Cond::Mi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtmi",
                 args: [
@@ -64091,7 +60604,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Imm) => {
+        (Cond::Pl, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtpl",
                 args: [
@@ -64104,7 +60617,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Imm) => {
+        (Cond::Vs, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtvs",
                 args: [
@@ -64117,7 +60630,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Imm) => {
+        (Cond::Vc, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtvc",
                 args: [
@@ -64130,7 +60643,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Imm) => {
+        (Cond::Hi, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strthi",
                 args: [
@@ -64143,7 +60656,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Imm) => {
+        (Cond::Ls, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtls",
                 args: [
@@ -64156,7 +60669,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Imm) => {
+        (Cond::Ge, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtge",
                 args: [
@@ -64169,7 +60682,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Imm) => {
+        (Cond::Lt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtlt",
                 args: [
@@ -64182,7 +60695,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Imm) => {
+        (Cond::Gt, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtgt",
                 args: [
@@ -64195,7 +60708,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Imm) => {
+        (Cond::Le, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strtle",
                 args: [
@@ -64208,7 +60721,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Imm) => {
+        (Cond::Al, AddrLdrtStrt::ImmPost) => {
             ParsedIns {
                 mnemonic: "strt",
                 args: [
@@ -64221,7 +60734,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Reg) => {
+        (Cond::Eq, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strteq",
                 args: [
@@ -64234,7 +60747,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Reg) => {
+        (Cond::Ne, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtne",
                 args: [
@@ -64247,7 +60760,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Reg) => {
+        (Cond::Hs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strths",
                 args: [
@@ -64260,7 +60773,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Reg) => {
+        (Cond::Lo, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtlo",
                 args: [
@@ -64273,7 +60786,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Reg) => {
+        (Cond::Mi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtmi",
                 args: [
@@ -64286,7 +60799,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Reg) => {
+        (Cond::Pl, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtpl",
                 args: [
@@ -64299,7 +60812,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Reg) => {
+        (Cond::Vs, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtvs",
                 args: [
@@ -64312,7 +60825,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Reg) => {
+        (Cond::Vc, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtvc",
                 args: [
@@ -64325,7 +60838,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Reg) => {
+        (Cond::Hi, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strthi",
                 args: [
@@ -64338,7 +60851,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Reg) => {
+        (Cond::Ls, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtls",
                 args: [
@@ -64351,7 +60864,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Reg) => {
+        (Cond::Ge, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtge",
                 args: [
@@ -64364,7 +60877,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Reg) => {
+        (Cond::Lt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtlt",
                 args: [
@@ -64377,7 +60890,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Reg) => {
+        (Cond::Gt, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtgt",
                 args: [
@@ -64390,7 +60903,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Reg) => {
+        (Cond::Le, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strtle",
                 args: [
@@ -64403,7 +60916,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Reg) => {
+        (Cond::Al, AddrLdrtStrt::RegPost) => {
             ParsedIns {
                 mnemonic: "strt",
                 args: [
@@ -64416,7 +60929,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Eq, AddrLdrStr::Scl) => {
+        (Cond::Eq, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strteq",
                 args: [
@@ -64429,7 +60942,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, AddrLdrStr::Scl) => {
+        (Cond::Ne, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtne",
                 args: [
@@ -64442,7 +60955,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, AddrLdrStr::Scl) => {
+        (Cond::Hs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strths",
                 args: [
@@ -64455,7 +60968,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, AddrLdrStr::Scl) => {
+        (Cond::Lo, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtlo",
                 args: [
@@ -64468,7 +60981,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, AddrLdrStr::Scl) => {
+        (Cond::Mi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtmi",
                 args: [
@@ -64481,7 +60994,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, AddrLdrStr::Scl) => {
+        (Cond::Pl, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtpl",
                 args: [
@@ -64494,7 +61007,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, AddrLdrStr::Scl) => {
+        (Cond::Vs, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtvs",
                 args: [
@@ -64507,7 +61020,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, AddrLdrStr::Scl) => {
+        (Cond::Vc, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtvc",
                 args: [
@@ -64520,7 +61033,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, AddrLdrStr::Scl) => {
+        (Cond::Hi, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strthi",
                 args: [
@@ -64533,7 +61046,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, AddrLdrStr::Scl) => {
+        (Cond::Ls, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtls",
                 args: [
@@ -64546,7 +61059,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, AddrLdrStr::Scl) => {
+        (Cond::Ge, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtge",
                 args: [
@@ -64559,7 +61072,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, AddrLdrStr::Scl) => {
+        (Cond::Lt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtlt",
                 args: [
@@ -64572,7 +61085,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, AddrLdrStr::Scl) => {
+        (Cond::Gt, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtgt",
                 args: [
@@ -64585,7 +61098,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, AddrLdrStr::Scl) => {
+        (Cond::Le, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strtle",
                 args: [
@@ -64598,1177 +61111,7 @@ fn parse_strt(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, AddrLdrStr::Scl) => {
-            ParsedIns {
-                mnemonic: "strt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPre) => {
-            ParsedIns {
-                mnemonic: "strt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPre) => {
-            ParsedIns {
-                mnemonic: "strt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPre) => {
-            ParsedIns {
-                mnemonic: "strt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::ImmPost) => {
-            ParsedIns {
-                mnemonic: "strt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Offset(ins.field_offset_12()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::RegPost) => {
-            ParsedIns {
-                mnemonic: "strt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strteq",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ne, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtne",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strths",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lo, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtlo",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Mi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtmi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Pl, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtpl",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vs, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtvs",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Vc, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtvc",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Hi, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strthi",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ls, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtls",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Ge, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtge",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Lt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtlt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Gt, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtgt",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Le, AddrLdrStr::SclPost) => {
-            ParsedIns {
-                mnemonic: "strtle",
-                args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Add(ins.field_u()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_shift()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                ],
-            }
-        }
-        (Cond::Al, AddrLdrStr::SclPost) => {
+        (Cond::Al, AddrLdrtStrt::SclPost) => {
             ParsedIns {
                 mnemonic: "strt",
                 args: [

@@ -506,6 +506,26 @@ modifiers:
         pattern: 0x06000000
         args: [U, Rm, shift, shift_imm]
 
+  - name: addr_ldrt_strt
+    desc: Load and Store Word or Unsigned Byte with Translation
+    cases:
+      - name: imm_post
+        desc: Immediate post-indexed
+        bitmask: 0x0f200000
+        pattern: 0x04200000
+        args: [U, offset_12]
+      - name: reg_post
+        desc: Register post-indexed
+        bitmask: 0x0f200ff0
+        pattern: 0x06200000
+        args: [U, Rm]
+        uses: [Rm]
+      - name: scl_post
+        desc: Scaled register post-indexed
+        bitmask: 0x0f200010
+        pattern: 0x06200000
+        args: [U, Rm, shift, shift_imm]
+
   - name: addr_misc_ldr_str
     desc: Miscellaneous Loads and Stores
     cases:
@@ -804,7 +824,7 @@ opcodes:
     desc: Load Register Byte with Translation
     bitmask: 0x0d700000
     pattern: 0x04700000
-    modifiers: [cond, addr_ldr_str]
+    modifiers: [cond, addr_ldrt_strt]
     args: [Rn, Rd]
     defs: [Rd]
     uses: [Rn]
@@ -849,7 +869,7 @@ opcodes:
     desc: Load Register with Translation
     bitmask: 0x0d700000
     pattern: 0x04300000
-    modifiers: [cond, addr_ldr_str]
+    modifiers: [cond, addr_ldrt_strt]
     args: [Rn, Rd]
     defs: [Rd]
     uses: [Rn]
@@ -1160,7 +1180,7 @@ opcodes:
     desc: Store Register Byte with Translation
     bitmask: 0x0d700000
     pattern: 0x04600000
-    modifiers: [cond, addr_ldr_str]
+    modifiers: [cond, addr_ldrt_strt]
     args: [Rn, Rd]
     uses: [Rn, Rd]
 
@@ -1184,7 +1204,7 @@ opcodes:
     desc: Store Register with Translation
     bitmask: 0x0d700000
     pattern: 0x04200000
-    modifiers: [cond, addr_ldr_str]
+    modifiers: [cond, addr_ldrt_strt]
     args: [Rn, Rd]
     uses: [Rn, Rd]
 
