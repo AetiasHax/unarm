@@ -23,6 +23,9 @@ impl Isa {
     }
 
     pub fn validate(&self) -> Result<()> {
+        for arg in self.args.iter() {
+            arg.validate()?;
+        }
         for field in self.fields.iter() {
             field.validate()?;
         }
@@ -47,6 +50,13 @@ impl Isa {
             .iter()
             .find(|f| f.name == name)
             .with_context(|| format!("Failed to find field '{name}'"))
+    }
+
+    pub fn get_arg(&self, name: &str) -> Result<&Arg> {
+        self.args
+            .iter()
+            .find(|a| a.name == name)
+            .with_context(|| format!("Failed to find argument '{name}'"))
     }
 
     pub fn get_max_args(&self) -> Result<usize> {
@@ -107,6 +117,36 @@ impl Arg {
     pub fn doc(&self) -> String {
         format!(" {}: {}", self.name, self.desc)
     }
+
+    pub fn validate(&self) -> Result<()> {
+        match (&self.values, self.signed, self.boolean) {
+            (None, true, true) => bail!("Arg '{}' is both signed and boolean", self.name),
+            (Some(_), true, true) => bail!("Arg '{}' has values and is both signed and boolean", self.name),
+            (Some(_), true, false) => bail!("Arg '{}' has values and is signed", self.name),
+            (Some(_), false, true) => bail!("Arg '{}' has values and is boolean", self.name),
+            _ => {}
+        }
+        if !self.is_continuous() {
+            bail!("Arg '{}' is not continuous", self.name);
+        }
+        Ok(())
+    }
+
+    pub fn is_continuous(&self) -> bool {
+        if let Some(values) = &self.values {
+            let sorted_values = {
+                let mut sorted_values: Vec<_> = values.iter().collect();
+                sorted_values.sort_unstable_by_key(|v| v.value);
+                sorted_values
+            };
+            for values in sorted_values.windows(2) {
+                if values[0].value + 1 != values[1].value {
+                    return false;
+                }
+            }
+        }
+        true
+    }
 }
 
 #[derive(Deserialize)]
@@ -133,7 +173,7 @@ impl ArgValue {
 #[derive(Deserialize)]
 pub struct Field {
     pub name: String,
-    pub arg: Option<String>,
+    pub arg: String,
     pub desc: String,
     pub bits: BitRange,
 }

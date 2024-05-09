@@ -164,10 +164,6 @@ args:
     desc: Coprocessor number
 
 fields:
-  - name: cond
-    desc: Condition Code
-    bits: 28..32
-
   - name: Rn
     arg: reg
     desc: First source operand register
@@ -442,13 +438,13 @@ modifiers:
         desc: Shift by immediate
         bitmask: 0x0e000010
         pattern: 0x00000000
-        args: [shift_imm, shift, Rm]
+        args: [Rm, shift, shift_imm]
         uses: [Rm]
       - name: shift_reg
         desc: Shift by register
         bitmask: 0x0e000090
         pattern: 0x00000010
-        args: [Rs, shift, Rm]
+        args: [Rm, shift, Rs]
         uses: [Rs, Rm]
       - name: rrx
         desc: Rotate right with extend
@@ -475,7 +471,7 @@ modifiers:
         desc: Scaled register offset
         bitmask: 0x0f200010
         pattern: 0x07000000
-        args: [U, shift_imm, shift, Rm]
+        args: [U, Rm, shift, shift_imm]
         uses: [Rm]
       - name: imm_pre
         desc: Immediate pre-indexed
@@ -492,7 +488,7 @@ modifiers:
         desc: Scaled register pre-indexed
         bitmask: 0x0f200010
         pattern: 0x07200000
-        args: [U, shift_imm, shift, Rm]
+        args: [U, Rm, shift, shift_imm]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x0f200000
@@ -508,7 +504,7 @@ modifiers:
         desc: Scaled register post-indexed
         bitmask: 0x0f200010
         pattern: 0x06000000
-        args: [U, shift_imm, shift, Rm]
+        args: [U, Rm, shift, shift_imm]
 
   - name: addr_misc_ldr_str
     desc: Miscellaneous Loads and Stores
@@ -1234,7 +1230,7 @@ opcodes:
     args: [Rn]
     uses: [Rn]
 
-  - name: test
+  - name: tst
     desc: Test
     bitmask: 0x0df0f000
     pattern: 0x01100000

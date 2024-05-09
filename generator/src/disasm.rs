@@ -141,6 +141,25 @@ fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
                     }
                 });
 
+                if !arg.is_continuous() {
+                    bail!("No support for discontinuous args currently")
+                }
+                let min_value = values.iter().min_by_key(|v| v.value).unwrap();
+                let max_value = values.iter().max_by_key(|v| v.value).unwrap();
+                let min_value_token = Literal::u8_unsuffixed(min_value.value);
+                let max_value_token = Literal::u8_unsuffixed(max_value.value);
+                argument_sub_enum_tokens.extend(quote! {
+                    impl #variant_ident {
+                        pub fn parse(value: u8) -> Option<Self> {
+                            if value >= #min_value_token && value <= #max_value_token {
+                                unsafe { Some(std::mem::transmute::<u8, Self>(value)) }
+                            } else {
+                                None
+                            }
+                        }
+                    }
+                });
+
                 quote! { (#variant_ident) }
             }
 
@@ -310,7 +329,7 @@ fn generate_field_accessors(isa: &Isa) -> TokenStream {
         let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
         let shift_token = Literal::u8_unsuffixed(shift);
 
-        let body_tokens = if shift > 0 {
+        let body_tokens = if shift > 0 && num_bits > 1 {
             quote! { (self.code & #bitmask) >> #shift_token }
         } else {
             quote! { self.code & #bitmask }
