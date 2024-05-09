@@ -702,16 +702,16 @@ impl Opcode {
                     } else if (code & 0x0c500000) == 0x04500000 {
                         return Opcode::Ldrb;
                     }
-                } else if (code & 0x00000010) == 0x00000010 {
-                    if (code & 0xff100010) == 0xfe100010 {
-                        return Opcode::Mrc2;
-                    } else if (code & 0xff000010) == 0xfe000010 {
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0xff000010) == 0xfe000000 {
                         return Opcode::Cdp2;
-                    } else if (code & 0x0f100010) == 0x0e100010 {
-                        return Opcode::Mrc;
+                    } else if (code & 0x0f000010) == 0x0e000000 {
+                        return Opcode::Cdp;
                     }
-                } else if (code & 0x0f000010) == 0x0e000000 {
-                    return Opcode::Cdp;
+                } else if (code & 0xff100010) == 0xfe100010 {
+                    return Opcode::Mrc2;
+                } else if (code & 0x0f100010) == 0x0e100010 {
+                    return Opcode::Mrc;
                 }
             } else if (code & 0x00400000) == 0x00000000 {
                 if (code & 0x00200000) == 0x00000000 {
@@ -1283,16 +1283,16 @@ impl Opcode {
                         } else if (code & 0x0c500000) == 0x04400000 {
                             return Opcode::Strb;
                         }
-                    } else if (code & 0x00000010) == 0x00000010 {
-                        if (code & 0xff100010) == 0xfe000010 {
-                            return Opcode::Mcr2;
-                        } else if (code & 0xff000010) == 0xfe000010 {
+                    } else if (code & 0x00000010) == 0x00000000 {
+                        if (code & 0xff000010) == 0xfe000000 {
                             return Opcode::Cdp2;
-                        } else if (code & 0x0f100010) == 0x0e000010 {
-                            return Opcode::Mcr;
+                        } else if (code & 0x0f000010) == 0x0e000000 {
+                            return Opcode::Cdp;
                         }
-                    } else if (code & 0x0f000010) == 0x0e000000 {
-                        return Opcode::Cdp;
+                    } else if (code & 0xff100010) == 0xfe000010 {
+                        return Opcode::Mcr2;
+                    } else if (code & 0x0f100010) == 0x0e000010 {
+                        return Opcode::Mcr;
                     }
                 } else if (code & 0x00200000) == 0x00000000 {
                     if (code & 0x08000000) == 0x00000000 {
@@ -1678,14 +1678,16 @@ impl Opcode {
                     return Opcode::Stc;
                 }
             } else if (code & 0x00000010) == 0x00000000 {
-                if (code & 0x04000000) == 0x04000000 {
-                    if (code & 0x0f000010) == 0x0e000000 {
-                        return Opcode::Cdp;
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0xfe000000) == 0xfa000000 {
+                        return Opcode::BlxI;
+                    } else if (code & 0x0f000000) == 0x0a000000 {
+                        return Opcode::B;
                     }
-                } else if (code & 0xfe000000) == 0xfa000000 {
-                    return Opcode::BlxI;
-                } else if (code & 0x0f000000) == 0x0a000000 {
-                    return Opcode::B;
+                } else if (code & 0xff000010) == 0xfe000000 {
+                    return Opcode::Cdp2;
+                } else if (code & 0x0f000010) == 0x0e000000 {
+                    return Opcode::Cdp;
                 }
             } else if (code & 0x04000000) == 0x00000000 {
                 if (code & 0xfe000000) == 0xfa000000 {
@@ -1695,8 +1697,6 @@ impl Opcode {
                 }
             } else if (code & 0xff100010) == 0xfe000010 {
                 return Opcode::Mcr2;
-            } else if (code & 0xff000010) == 0xfe000010 {
-                return Opcode::Cdp2;
             } else if (code & 0x0f100010) == 0x0e000010 {
                 return Opcode::Mcr;
             }

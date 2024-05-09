@@ -680,7 +680,7 @@ opcodes:
   - name: cdp2
     desc: Coprocessor Data Processing (unconditional, extended)
     bitmask: 0xff000010
-    pattern: 0xfe000010
+    pattern: 0xfe000000
     args: [codat_opcode_1, CRn, CRd, cp_num, opcode_2, CRm]
     defs: [CRd]
     uses: [CRn, CRm]
