@@ -518,6 +518,10 @@ impl Opcode {
         self.name.replace('$', "_")
     }
 
+    pub fn parser_name(&self) -> String {
+        format!("parse_{}", self.ident_name())
+    }
+
     pub fn get_modifier_cases(&self, isa: &Isa) -> Result<Vec<Box<[ModifierCase]>>> {
         if let Some(modifiers) = &self.modifiers {
             let modifiers: Result<Vec<_>> = modifiers

@@ -4,7 +4,12 @@ mod disasm;
 
 #[cfg(test)]
 mod tests {
-    use crate::{disasm::Ins, generated::Opcode};
+    use std::collections::HashMap;
+
+    use crate::{
+        disasm::{Ins, ParsedIns},
+        generated::Opcode,
+    };
 
     #[derive(Default, Clone, Copy)]
     struct OpcodeTest {
@@ -13,7 +18,7 @@ mod tests {
     }
 
     #[test]
-    fn all_instructions() {
+    fn all_opcodes() {
         let mut opcode_counts = vec![OpcodeTest::default(); Opcode::count()].into_boxed_slice();
         opcode_counts
             .iter_mut()
@@ -29,6 +34,20 @@ mod tests {
         for opcode in opcode_counts.iter() {
             assert!(opcode.count > 0);
         }
+    }
+
+    #[test]
+    fn all_instructions() {
+        let mut mnemonic_counts: HashMap<&str, u32> = HashMap::with_capacity(15000);
+        for code in 0..=u32::MAX {
+            let ins = Ins::new(code);
+            if ins.op == Opcode::Illegal {
+                continue;
+            }
+            let parsed = ParsedIns::parse(ins);
+            *mnemonic_counts.entry(parsed.mnemonic).or_insert(0) += 1;
+        }
+        println!("Mnemonics: {}", mnemonic_counts.len());
     }
 
     #[test]

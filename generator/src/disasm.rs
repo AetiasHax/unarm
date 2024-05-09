@@ -2,11 +2,11 @@ use std::cmp::Ordering;
 
 use anyhow::{bail, Context, Result};
 use proc_macro2::{Literal, Span, TokenStream};
-use quote::{format_ident, quote};
+use quote::quote;
 use syn::Ident;
 
 use crate::{
-    isa::{Isa, Opcode},
+    isa::{Field, Isa, Opcode},
     iter::cartesian,
     token::HexLiteral,
 };
@@ -20,7 +20,7 @@ pub fn generate_disasm(isa: &Isa, bucket_bitmask: u32) -> Result<TokenStream> {
     // We could use a binary search on sorted_opcodes, but we can do better. We generate a lookup table which maps a bucket
     // index to the range of opcodes in sorted_opcodes with that bucket index.
     let bucket_count = 1 << bucket_bitmask.count_ones();
-    let lookup_table = create_lookup_table(bucket_count, sorted_opcodes);
+    let lookup_table = create_lookup_table(bucket_count, &sorted_opcodes);
     let lookup_table_tokens = generate_lookup_table_tokens(lookup_table);
 
     // Generate bucket index function
@@ -40,7 +40,7 @@ pub fn generate_disasm(isa: &Isa, bucket_bitmask: u32) -> Result<TokenStream> {
 
     // Generate parse functions
     let max_args = isa.get_max_args()?;
-    let parse_functions = generate_parse_functions(isa, max_args)?;
+    let parse_functions = generate_parse_functions(isa, max_args, &sorted_opcodes, &num_opcodes_token)?;
 
     let bucket_count = Literal::u8_unsuffixed(bucket_count);
     let max_args = Literal::usize_unsuffixed(max_args);
@@ -110,7 +110,12 @@ pub fn generate_disasm(isa: &Isa, bucket_bitmask: u32) -> Result<TokenStream> {
     })
 }
 
-fn generate_parse_functions(isa: &Isa, max_args: usize) -> Result<TokenStream, anyhow::Error> {
+fn generate_parse_functions(
+    isa: &Isa,
+    max_args: usize,
+    sorted_opcodes: &[(Opcode, u8)],
+    num_opcodes_token: &Literal,
+) -> Result<TokenStream, anyhow::Error> {
     let mut parse_functions = TokenStream::new();
     for opcode in isa.opcodes.iter() {
         let modifiers = if let Some(modifiers) = &opcode.modifiers {
@@ -135,101 +140,147 @@ fn generate_parse_functions(isa: &Isa, max_args: usize) -> Result<TokenStream, a
             .unwrap_or(Ok(vec![]))?;
 
         let modifier_cases = opcode.get_modifier_cases(isa)?;
-        let case_bodies = {
+        let body = {
             let mut case_bodies: Vec<TokenStream> = vec![];
-            for cases in cartesian(&modifier_cases) {
-                let case_values = cases.iter().zip(modifiers.iter()).map(|(case, modifier)| {
-                    if modifier.pattern.is_some() {
-                        if case.pattern != 0 {
-                            quote! { true }
-                        } else {
-                            quote! { false }
-                        }
-                    } else {
-                        let enum_name = Ident::new(&modifier.enum_name(), Span::call_site());
-                        let variant_name = Ident::new(&case.variant_name(), Span::call_site());
-                        quote! { #enum_name::#variant_name }
-                    }
-                });
-                let suffix = cases
-                    .iter()
-                    .map(|case| case.suffix.clone().unwrap_or("".to_string()))
-                    .collect::<String>();
-                let mnemonic = opcode.name().to_string() + &suffix;
-                let case_args = {
-                    let mut case_args = opcode_args.clone();
-                    for case in cases.iter() {
-                        if let Some(args) = &case.args {
-                            for arg in args.iter() {
-                                let arg = isa.get_field(arg)?;
-                                case_args.push(arg);
-                            }
-                        }
-                    }
-                    case_args
-                };
-
-                let args = (0..max_args)
-                    .map(|i| {
-                        if i < case_args.len() {
-                            let field = case_args[i];
-                            let accessor = Ident::new(&field.accessor_name(), Span::call_site());
-                            let arg = isa.get_arg(&field.arg)?;
-                            let arg_variant = Ident::new(&arg.variant_name(), Span::call_site());
-                            match (&arg.values, arg.signed, arg.boolean) {
-                                (None, true, false) | (None, false, true) | (None, false, false) | (Some(_), false, false) => {
-                                    Ok(quote! { Argument::#arg_variant(ins.#accessor()) })
-                                }
-                                (Some(_), false, true) => bail!(
-                                    "Can't generate arg '{}' (for opcode '{}') which has values and is boolean",
-                                    arg.name,
-                                    opcode.name
-                                ),
-                                (Some(_), true, false) => bail!(
-                                    "Can't generate arg '{}' (for opcode '{}') which has values and is signed",
-                                    arg.name,
-                                    opcode.name
-                                ),
-                                (Some(_), true, true) => bail!(
-                                    "Can't generate arg '{}' (for opcode '{}') which has values and is signed and boolean",
-                                    arg.name,
-                                    opcode.name
-                                ),
-                                (None, true, true) => bail!(
-                                    "Can't generate arg '{}' (for opcode '{}') which is signed and boolean",
-                                    arg.name,
-                                    opcode.name
-                                ),
-                            }
-                        } else {
-                            Ok(quote! { Argument::None })
-                        }
-                    })
-                    .collect::<Result<Vec<_>>>()?;
-                case_bodies.push(quote! {
-                    (#(#case_values),*) => ParsedIns {
+            if modifier_cases.is_empty() {
+                let mnemonic = opcode.name().to_string();
+                let args = generate_mnemonic_args(isa, opcode, max_args, opcode_args)?;
+                quote! {
+                    *out = ParsedIns {
                         mnemonic: #mnemonic,
                         args: [ #(#args),* ],
                     }
-                })
+                }
+            } else {
+                for cases in cartesian(&modifier_cases) {
+                    let mut case_values = cases.iter().zip(modifiers.iter()).map(|(case, modifier)| {
+                        if modifier.pattern.is_some() {
+                            if case.pattern != 0 {
+                                quote! { true }
+                            } else {
+                                quote! { false }
+                            }
+                        } else {
+                            let enum_name = Ident::new(&modifier.enum_name(), Span::call_site());
+                            let variant_name = Ident::new(&case.variant_name(), Span::call_site());
+                            quote! { #enum_name::#variant_name }
+                        }
+                    });
+                    let suffix = cases
+                        .iter()
+                        .map(|case| case.suffix.clone().unwrap_or("".to_string()))
+                        .collect::<String>();
+                    let mnemonic = opcode.name().to_string() + &suffix;
+                    let case_args = {
+                        let mut case_args = opcode_args.clone();
+                        for case in cases.iter() {
+                            if let Some(args) = &case.args {
+                                for arg in args.iter() {
+                                    let arg = isa.get_field(arg)?;
+                                    case_args.push(arg);
+                                }
+                            }
+                        }
+                        case_args
+                    };
+
+                    let args = generate_mnemonic_args(isa, opcode, max_args, case_args)?;
+                    if case_values.len() > 1 {
+                        case_bodies.push(quote! {
+                            (#(#case_values),*) => ParsedIns {
+                                mnemonic: #mnemonic,
+                                args: [ #(#args),* ],
+                            }
+                        });
+                    } else {
+                        let case_value = case_values.next().unwrap();
+                        case_bodies.push(quote! {
+                            #case_value => ParsedIns {
+                                mnemonic: #mnemonic,
+                                args: [ #(#args),* ],
+                            }
+                        });
+                    }
+                }
+                if modifier_values.len() > 1 {
+                    quote! {
+                        *out = match (#(#modifier_values),*) {
+                            #(#case_bodies),*
+                        }
+                    }
+                } else {
+                    let modifier_value = &modifier_values[0];
+                    quote! {
+                        *out = match #modifier_value {
+                            #(#case_bodies),*
+                        }
+                    }
+                }
             }
-            case_bodies
         };
 
-        let body = quote! {
-            *out = match (#(#modifier_values),*) {
-                #(#case_bodies),*
-            }
-        };
-
-        let parse_fn = format_ident!("parse_{}", opcode.ident_name());
+        let parse_fn = Ident::new(&opcode.parser_name(), Span::call_site());
         parse_functions.extend(quote! {
             fn #parse_fn(out: &mut ParsedIns, ins: Ins) {
                 #body
             }
         })
     }
+    let parser_fns = sorted_opcodes
+        .iter()
+        .map(|(op, _)| Ident::new(&op.parser_name(), Span::call_site()));
+    parse_functions.extend(quote! {
+        type MnemonicParser = fn(&mut ParsedIns, Ins);
+        static MNEMONIC_PARSERS: [MnemonicParser; #num_opcodes_token] = [
+            #(#parser_fns),*
+        ];
+        #[inline]
+        pub fn parse(out: &mut ParsedIns, ins: Ins) {
+            MNEMONIC_PARSERS[ins.op as usize](out, ins);
+        }
+    });
     Ok(parse_functions)
+}
+
+fn generate_mnemonic_args(isa: &Isa, opcode: &Opcode, max_args: usize, args: Vec<&Field>) -> Result<Vec<TokenStream>> {
+    let args = (0..max_args)
+        .map(|i| {
+            if i < args.len() {
+                let field = args[i];
+                let accessor = Ident::new(&field.accessor_name(), Span::call_site());
+                let arg = isa.get_arg(&field.arg)?;
+                let arg_variant = Ident::new(&arg.variant_name(), Span::call_site());
+                match (&arg.values, arg.signed, arg.boolean) {
+                    (None, true, false) | (None, false, true) | (None, false, false) | (Some(_), false, false) => {
+                        Ok(quote! { Argument::#arg_variant(ins.#accessor()) })
+                    }
+                    (Some(_), false, true) => bail!(
+                        "Can't generate arg '{}' (for opcode '{}') which has values and is boolean",
+                        arg.name,
+                        opcode.name
+                    ),
+                    (Some(_), true, false) => bail!(
+                        "Can't generate arg '{}' (for opcode '{}') which has values and is signed",
+                        arg.name,
+                        opcode.name
+                    ),
+                    (Some(_), true, true) => bail!(
+                        "Can't generate arg '{}' (for opcode '{}') which has values and is signed and boolean",
+                        arg.name,
+                        opcode.name
+                    ),
+                    (None, true, true) => bail!(
+                        "Can't generate arg '{}' (for opcode '{}') which is signed and boolean",
+                        arg.name,
+                        opcode.name
+                    ),
+                }
+            } else {
+                Ok(quote! { Argument::None })
+            }
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(args)
 }
 
 fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
@@ -483,7 +534,7 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
         let (ret_type, inner) = match (&arg.values, arg.signed, arg.boolean) {
             (None, true, false) => (quote! { i32 }, quote! { (#body_tokens) as i32 }),
             (None, false, true) => (quote! { bool }, quote! { (#body_tokens) != 0 }),
-            (None, false, false) => (quote! { u32 }, quote! { (#body_tokens) as u32 }),
+            (None, false, false) => (quote! { u32 }, quote! { #body_tokens }),
             (Some(_), false, false) => (quote! { #arg_ident }, quote! { #arg_ident::parse((#body_tokens) as u8) }),
             _ => unreachable!(),
         };
@@ -554,7 +605,7 @@ fn generate_lookup_table_tokens(lookup_table: Vec<(u8, u8)>) -> TokenStream {
     lookup_table_tokens
 }
 
-fn create_lookup_table(bucket_count: u8, sorted_opcodes: Vec<(Opcode, u8)>) -> Vec<(u8, u8)> {
+fn create_lookup_table(bucket_count: u8, sorted_opcodes: &[(Opcode, u8)]) -> Vec<(u8, u8)> {
     (0..bucket_count)
         .map(|bucket| {
             let start = sorted_opcodes

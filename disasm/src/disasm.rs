@@ -1,4 +1,4 @@
-use crate::generated::{Arguments, Opcode};
+use crate::generated::{parse, Arguments, Opcode};
 
 pub struct Ins {
     pub code: u32,
@@ -12,7 +12,16 @@ impl Ins {
     }
 }
 
+#[derive(Default)]
 pub struct ParsedIns {
     pub mnemonic: &'static str,
     pub args: Arguments,
+}
+
+impl ParsedIns {
+    pub fn parse(ins: Ins) -> Self {
+        let mut out = Self::default();
+        parse(&mut out, ins);
+        out
+    }
 }
