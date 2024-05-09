@@ -26,7 +26,7 @@ pub fn generate_disasm(isa: &Isa, bucket_bitmask: u32) -> Result<TokenStream> {
     let bucket_index_tokens = generate_bucket_index_function(bucket_bitmask);
 
     // Generate field accessors
-    let field_accessors_tokens = generate_field_accessors(isa);
+    let field_accessors_tokens = generate_field_accessors(isa)?;
 
     // Generate modifier case enums
     let case_enums_tokens = generate_modifier_case_enums(isa);
@@ -321,7 +321,7 @@ fn generate_modifier_case_enums(isa: &Isa) -> TokenStream {
     case_enums_tokens
 }
 
-fn generate_field_accessors(isa: &Isa) -> TokenStream {
+fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
     let mut field_accessors_tokens = TokenStream::new();
     for field in isa.fields.iter() {
         let num_bits = field.bits.0.len();
@@ -335,13 +335,16 @@ fn generate_field_accessors(isa: &Isa) -> TokenStream {
             quote! { self.code & #bitmask }
         };
 
+        let arg = isa.get_arg(&field.arg)?;
+        let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
+
         let doc = field.doc();
         let fn_name = Ident::new(&field.accessor_name(), Span::call_site());
-        let (ret_type, inner) = match num_bits {
-            1 => (Ident::new("bool", Span::call_site()), quote! { (#body_tokens) != 0 }),
-            2..=8 => (Ident::new("u8", Span::call_site()), quote! { (#body_tokens) as u8 }),
-            9..=16 => (Ident::new("u16", Span::call_site()), quote! { (#body_tokens) as u16 }),
-            17..=32 => (Ident::new("u32", Span::call_site()), quote! { (#body_tokens) as u32 }),
+        let (ret_type, inner) = match (&arg.values, arg.signed, arg.boolean) {
+            (None, true, false) => (quote! { i32 }, quote! { (#body_tokens) as i32 }),
+            (None, false, true) => (quote! { bool }, quote! { (#body_tokens) != 0 }),
+            (None, false, false) => (quote! { u32 }, quote! { (#body_tokens) as u32 }),
+            (Some(_), false, false) => (quote! { #arg_ident }, quote! { #arg_ident::parse((#body_tokens) as u32) }),
             _ => unreachable!(),
         };
 
@@ -353,7 +356,7 @@ fn generate_field_accessors(isa: &Isa) -> TokenStream {
             }
         });
     }
-    field_accessors_tokens
+    Ok(field_accessors_tokens)
 }
 
 fn generate_bucket_index_function(bucket_bitmask: u32) -> TokenStream {
