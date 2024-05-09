@@ -16,7 +16,7 @@ pub fn generate_disasm(isa: &Isa) -> Result<TokenStream> {
 
     // Generate opcode search function
     let mut opcodes = isa.opcodes.to_vec();
-    let tree = SearchTree::optimize(&opcodes, 8).unwrap();
+    let tree = SearchTree::optimize(&opcodes, u32::MAX).unwrap();
     let body = generate_search_node(Some(Box::new(tree)), &mut opcodes);
     let opcode_find_tokens = quote! {
         #[inline]
