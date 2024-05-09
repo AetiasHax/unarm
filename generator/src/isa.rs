@@ -328,19 +328,23 @@ impl ModifierCase {
     }
 
     pub fn from_modifier(modifier: &Modifier, negative: bool) -> Result<Self> {
-        let (desc, suffix) = if !negative {
-            (Some(modifier.desc.clone()), modifier.suffix.clone())
+        let (desc, suffix, pattern) = if !negative {
+            (
+                Some(modifier.desc.clone()),
+                modifier.suffix.clone(),
+                modifier.pattern.with_context(|| {
+                    format!("No modifier case pattern to inherit from parent modifier '{}'", modifier.name)
+                })?,
+            )
         } else {
-            (None, modifier.nsuffix.clone())
+            (None, modifier.nsuffix.clone(), 0)
         };
         Ok(Self {
             name: modifier.name.clone(),
             desc,
             suffix,
             bitmask: modifier.bitmask,
-            pattern: modifier
-                .pattern
-                .with_context(|| format!("No modifier case pattern to inherit from parent modifier '{}'", modifier.name))?,
+            pattern,
             args: None,
             defs: None,
             uses: None,
@@ -514,7 +518,7 @@ impl Opcode {
         self.name.replace('$', "_")
     }
 
-    fn get_modifier_cases(&self, isa: &Isa) -> Result<Vec<Box<[ModifierCase]>>> {
+    pub fn get_modifier_cases(&self, isa: &Isa) -> Result<Vec<Box<[ModifierCase]>>> {
         if let Some(modifiers) = &self.modifiers {
             let modifiers: Result<Vec<_>> = modifiers
                 .iter()
