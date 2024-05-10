@@ -2030,6 +2030,11 @@ pub struct ShiftReg {
     shift: Shift,
     reg: Reg,
 }
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct FieldMask {
+    status_reg: StatusReg,
+    status_mask: StatusMask,
+}
 impl Ins {
     /// Rn: First source operand register
     #[inline(always)]
@@ -2189,8 +2194,11 @@ impl Ins {
     }
     /// field_mask: Status fields to set
     #[inline(always)]
-    pub const fn field_field_mask(&self) -> StatusMask {
-        StatusMask::parse(((self.code & 0x000f0000) >> 16) as u8)
+    pub const fn field_field_mask(&self) -> FieldMask {
+        FieldMask {
+            status_reg: { StatusReg::parse(((self.code & 0x00400000) >> 22) as u8) },
+            status_mask: { StatusMask::parse(((self.code & 0x000f0000) >> 16) as u8) },
+        }
     }
     /// opcode: Coprocessor operation to perform (user-defined)
     #[inline(always)]
@@ -2515,6 +2523,8 @@ pub enum Argument {
     ShiftImm(ShiftImm),
     /// shift_reg: Register shift offset
     ShiftReg(ShiftReg),
+    /// field_mask: Status fields to set
+    FieldMask(FieldMask),
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -34419,9 +34429,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msreq",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34432,9 +34442,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrne",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34445,9 +34455,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrhs",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34458,9 +34468,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrlo",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34471,9 +34481,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrmi",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34484,9 +34494,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrpl",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34497,9 +34507,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrvs",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34510,9 +34520,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrvc",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34523,9 +34533,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrhi",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34536,9 +34546,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrls",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34549,9 +34559,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrge",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34562,9 +34572,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrlt",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34575,9 +34585,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrgt",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34588,9 +34598,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrle",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34601,9 +34611,9 @@ fn parse_msr_i(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msr",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::UImm(ins.field_rotated_immed_8()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34631,9 +34641,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msreq",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34644,9 +34654,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrne",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34657,9 +34667,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrhs",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34670,9 +34680,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrlo",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34683,9 +34693,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrmi",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34696,9 +34706,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrpl",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34709,9 +34719,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrvs",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34722,9 +34732,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrvc",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34735,9 +34745,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrhi",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34748,9 +34758,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrls",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34761,9 +34771,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrge",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34774,9 +34784,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrlt",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34787,9 +34797,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrgt",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34800,9 +34810,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msrle",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -34813,9 +34823,9 @@ fn parse_msr(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "msr",
                 args: [
-                    Argument::StatusReg(ins.field_r()),
-                    Argument::StatusMask(ins.field_field_mask()),
+                    Argument::FieldMask(ins.field_field_mask()),
                     Argument::Reg(ins.field_rm()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,

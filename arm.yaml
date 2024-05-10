@@ -331,9 +331,14 @@ fields:
         shift: 4
 
   - name: field_mask
-    arg: status_mask
     desc: Status fields to set
-    bits: 16..20
+    args:
+      - name: reg
+        arg: status_reg
+        bits: 22..23
+      - name: mask
+        arg: status_mask
+        bits: 16..20
 
   - name: opcode
     arg: co_opcode
@@ -999,16 +1004,16 @@ opcodes:
     bitmask: 0x0fb0f000
     pattern: 0x0320f000
     modifiers: [cond]
-    args: [R, field_mask, rotated_immed_8]
-    defs: [R]
+    args: [field_mask, rotated_immed_8]
+    defs: [field_mask]
 
   - name: msr
     desc: Move to Status Register from ARM Register
     bitmask: 0x0fb0fff0
     pattern: 0x0120f000
     modifiers: [cond]
-    args: [R, field_mask, Rm]
-    defs: [R]
+    args: [field_mask, Rm]
+    defs: [field_mask]
     uses: [Rm]
 
   - name: mul
