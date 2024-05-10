@@ -180,7 +180,7 @@ fn generate_parse_functions(
                         .iter()
                         .map(|case| case.suffix.clone().unwrap_or("".to_string()))
                         .collect::<String>();
-                    let mnemonic = opcode.name().to_string() + &suffix;
+                    let mnemonic = opcode.base_name().to_string() + &suffix + &opcode.suffix;
                     let case_args = {
                         let mut case_args = opcode_args.clone();
                         for case in cases.iter() {
@@ -278,22 +278,22 @@ fn generate_mnemonic_args(isa: &Isa, opcode: &Opcode, max_args: usize, args: Vec
                     (Some(_), false, true) => bail!(
                         "Can't generate arg '{}' (for opcode '{}') which has values and is boolean",
                         arg.name,
-                        opcode.name
+                        opcode.name()
                     ),
                     (Some(_), true, false) => bail!(
                         "Can't generate arg '{}' (for opcode '{}') which has values and is signed",
                         arg.name,
-                        opcode.name
+                        opcode.name()
                     ),
                     (Some(_), true, true) => bail!(
                         "Can't generate arg '{}' (for opcode '{}') which has values and is signed and boolean",
                         arg.name,
-                        opcode.name
+                        opcode.name()
                     ),
                     (None, true, true) => bail!(
                         "Can't generate arg '{}' (for opcode '{}') which is signed and boolean",
                         arg.name,
-                        opcode.name
+                        opcode.name()
                     ),
                 }
             } else {

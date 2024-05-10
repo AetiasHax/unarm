@@ -7,6 +7,7 @@ use serde::Deserialize;
 use crate::iter::cartesian;
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Isa {
     pub args: Box<[Arg]>,
     pub fields: Box<[Field]>,
@@ -99,6 +100,7 @@ impl Isa {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Arg {
     pub name: String,
     pub desc: String,
@@ -150,6 +152,7 @@ impl Arg {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ArgValue {
     pub name: String,
     pub desc: Option<String>,
@@ -171,11 +174,14 @@ impl ArgValue {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Field {
     pub name: String,
     pub arg: String,
     pub desc: String,
     pub bits: BitRange,
+    #[serde(default)]
+    allow_collide: bool,
 }
 
 impl Field {
@@ -200,6 +206,7 @@ impl Field {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Modifier {
     pub name: String,
     pub desc: String,
@@ -292,6 +299,7 @@ impl Modifier {
 }
 
 #[derive(Deserialize, Default, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct ModifierCase {
     pub name: String,
     pub desc: Option<String>,
@@ -378,9 +386,12 @@ impl ModifierCase {
 }
 
 #[derive(Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct Opcode {
-    pub name: String,
+    name: String,
     pub desc: String,
+    #[serde(default)]
+    pub suffix: String,
     pub bitmask: u32,
     pub pattern: u32,
     pub modifiers: Option<Box<[String]>>,
@@ -418,7 +429,7 @@ impl Opcode {
                     .get_field(arg)
                     .with_context(|| format!("While validating opcode '{}'", self.name))?;
                 let bitmask = arg.get_bitmask();
-                if bitmask_acc & bitmask != 0 {
+                if !arg.allow_collide && (bitmask_acc & bitmask) != 0 {
                     bail!(
                         "Argument '{}' (0x{:08x}) collides with other bitmasks in opcode '{}' (0x{:08x})",
                         arg.name,
@@ -427,7 +438,7 @@ impl Opcode {
                         bitmask_acc
                     )
                 }
-                bitmask_acc |= arg.get_bitmask();
+                bitmask_acc |= bitmask;
             }
         }
         if bitmask_acc != u32::MAX {
@@ -461,6 +472,7 @@ impl Opcode {
         Self {
             name: self.name + &case.suffix.clone().unwrap_or("".to_string()),
             desc,
+            suffix: self.suffix,
             bitmask: self.bitmask | case.bitmask.unwrap_or(0),
             pattern: self.pattern | case.pattern,
             modifiers: None,
@@ -496,12 +508,16 @@ impl Opcode {
         index.try_into().unwrap()
     }
 
-    pub fn name(&self) -> &str {
+    pub fn base_name(&self) -> &str {
         if let Some((name, _)) = self.name.split_once('$') {
             name
         } else {
             &self.name
         }
+    }
+
+    pub fn name(&self) -> String {
+        self.base_name().to_owned() + &self.suffix
     }
 
     pub fn doc(&self) -> String {
