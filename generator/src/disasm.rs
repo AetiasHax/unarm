@@ -593,9 +593,17 @@ fn generate_field_accessor_body(bits: &BitRange, ops: Option<&[FieldOp]>) -> Tok
     let mut base_value = generate_field_code_shift(bits, 0);
     if let Some(ops) = ops {
         for op in ops.iter() {
-            let operand = generate_field_code_shift(&op.bits, op.shift);
+            let operand = match (&op.bits, &op.value) {
+                (None, Some(value)) => {
+                    let lit = Literal::i32_unsuffixed(*value);
+                    quote! { #lit }
+                }
+                (Some(bits), None) => generate_field_code_shift(bits, op.shift),
+                _ => panic!(),
+            };
             base_value = match op.r#type {
                 FieldOpType::RotateRight => quote! { (#base_value).rotate_right(#operand) },
+                FieldOpType::LeftShift => quote! { (#base_value) << (#operand) },
             };
         }
     }

@@ -207,7 +207,9 @@ impl Field {
         };
         if let Some(ops) = &self.ops {
             for op in ops.iter() {
-                bitmask |= op.bits.bitmask();
+                if let Some(bits) = &op.bits {
+                    bitmask |= bits.bitmask();
+                }
             }
         }
         bitmask
@@ -229,6 +231,11 @@ impl Field {
                 if self.ops.is_some() {
                     bail!("Field {} has args and ops", self.name)
                 }
+            }
+        }
+        if let Some(ops) = &self.ops {
+            for op in ops.iter() {
+                op.validate(self)?;
             }
         }
         Ok(())
@@ -259,14 +266,27 @@ pub struct FieldArg {
 #[serde(deny_unknown_fields)]
 pub struct FieldOp {
     pub r#type: FieldOpType,
-    pub bits: BitRange,
+    pub bits: Option<BitRange>,
+    pub value: Option<i32>,
     #[serde(default)]
     pub shift: i32,
 }
 
-#[derive(Deserialize)]
+impl FieldOp {
+    pub fn validate(&self, field: &Field) -> Result<()> {
+        match (&self.bits, self.value) {
+            (None, None) => bail!("Field op {:?} for field {} has no bits nor value", self.r#type, field.name),
+            (Some(_), Some(_)) => bail!("Field op {:?} for field {} has both bits and value", self.r#type, field.name),
+            _ => {}
+        }
+        Ok(())
+    }
+}
+
+#[derive(Deserialize, Debug)]
 pub enum FieldOpType {
     RotateRight,
+    LeftShift,
 }
 
 #[derive(Deserialize)]

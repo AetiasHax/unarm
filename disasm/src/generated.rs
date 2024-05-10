@@ -2135,7 +2135,7 @@ impl Ins {
     /// offset_8: 8-bit immediate offset
     #[inline(always)]
     pub const fn field_offset_8(&self) -> u32 {
-        self.code & 0x000000ff
+        (self.code & 0x000000ff) << (2)
     }
     /// offset_12: 12-bit immediate offset
     #[inline(always)]

@@ -280,6 +280,9 @@ fields:
     arg: offset
     desc: 8-bit immediate offset
     bits: 0..8
+    ops:
+      - type: LeftShift
+        value: 2
 
   - name: offset_12
     arg: offset
