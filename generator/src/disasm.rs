@@ -4,7 +4,7 @@ use quote::quote;
 use syn::Ident;
 
 use crate::{
-    isa::{BitRange, Field, FieldOp, FieldOpType, Isa, Opcode},
+    isa::{Arg, BitRange, Field, FieldOp, FieldOpType, Isa, Opcode},
     iter::cartesian,
     search::SearchTree,
     token::HexLiteral,
@@ -540,15 +540,15 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
             (Some(arg), Some(bits), None) => {
                 let arg = isa.get_arg(arg)?;
                 let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
-                let field_body = generate_field_accessor_body(bits, field.ops.as_deref());
-
-                match (&arg.values, arg.signed, arg.boolean) {
-                    (None, true, false) => (quote! { i32 }, quote! { (#field_body) as i32 }),
-                    (None, false, true) => (quote! { bool }, quote! { (#field_body) != 0 }),
-                    (None, false, false) => (quote! { u32 }, quote! { #field_body }),
-                    (Some(_), false, false) => (quote! { #arg_ident }, quote! { #arg_ident::parse((#field_body) as u8) }),
+                let body = generate_field_accessor_body(arg, bits, field.ops.as_deref());
+                let ret_type = match (&arg.values, arg.signed, arg.boolean) {
+                    (None, true, false) => quote! { i32 },
+                    (None, false, true) => quote! { bool },
+                    (None, false, false) => quote! { u32 },
+                    (Some(_), false, false) => quote! { #arg_ident },
                     _ => panic!(),
-                }
+                };
+                (ret_type, body)
             }
             (None, None, Some(args)) => {
                 let struct_ident = Ident::new(&field.struct_name(), Span::call_site());
@@ -557,21 +557,18 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
                     .map(|arg| {
                         let bits = &arg.bits;
                         let arg = isa.get_arg(&arg.arg)?;
-                        let arg_body = generate_field_accessor_body(bits, None);
-                        let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
+                        let value = generate_field_accessor_body(arg, bits, None);
                         let struct_field = Ident::new(&arg.name, Span::call_site());
 
-                        let inner = match (&arg.values, arg.signed, arg.boolean) {
-                            (None, true, false) => quote! { (#arg_body) as i32 },
-                            (None, false, true) => quote! { (#arg_body) != 0 },
-                            (None, false, false) => quote! { #arg_body },
-                            (Some(_), false, false) => quote! { #arg_ident::parse((#arg_body) as u8) },
-                            _ => panic!(),
-                        };
-                        Ok(quote! { #struct_field: #inner })
+                        Ok(quote! { #struct_field: #value })
                     })
                     .collect::<Result<Vec<_>>>()?;
-                (quote! { #struct_ident }, quote! { #struct_ident { #(#struct_fields),* }})
+                (
+                    quote! { #struct_ident },
+                    quote! { {
+                        #struct_ident { #(#struct_fields),* }
+                    }},
+                )
             }
             _ => panic!(),
         };
@@ -581,33 +578,57 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
         field_accessors_tokens.extend(quote! {
             #[doc = #doc]
             #[inline(always)]
-            pub const fn #fn_name(&self) -> #ret_type {
-                #inner
-            }
+            pub const fn #fn_name(&self) -> #ret_type #inner
         });
     }
     Ok(field_accessors_tokens)
 }
 
-fn generate_field_accessor_body(bits: &BitRange, ops: Option<&[FieldOp]>) -> TokenStream {
-    let mut base_value = generate_field_code_shift(bits, 0);
+fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldOp]>) -> TokenStream {
+    let base_value = generate_field_code_shift(bits, 0);
+    let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
+    let base_value = match (&arg.values, arg.signed, arg.boolean) {
+        (None, true, false) => quote! { (#base_value) as i32 },
+        (None, false, true) => quote! { (#base_value) != 0 },
+        (None, false, false) => quote! { #base_value },
+        (Some(_), false, false) => quote! { #arg_ident::parse((#base_value) as u8) },
+        _ => panic!(),
+    };
+
     if let Some(ops) = ops {
-        for op in ops.iter() {
-            let operand = match (&op.bits, &op.value) {
-                (None, Some(value)) => {
-                    let lit = Literal::i32_unsuffixed(*value);
-                    quote! { #lit }
+        let value_ops = ops
+            .iter()
+            .map(|op| {
+                let operand = match (&op.bits, &op.value) {
+                    (None, Some(value)) => {
+                        let lit = Literal::i32_unsuffixed(*value);
+                        quote! { #lit }
+                    }
+                    (Some(bits), None) => generate_field_code_shift(bits, op.shift),
+                    _ => panic!(),
+                };
+                match op.r#type {
+                    FieldOpType::RotateRight => quote! { value = value.rotate_right(#operand); },
+                    FieldOpType::LeftShift => quote! { value <<= #operand; },
+                    FieldOpType::Negate => quote! { value = if #operand != 0 { -value } else { value }; },
                 }
-                (Some(bits), None) => generate_field_code_shift(bits, op.shift),
-                _ => panic!(),
-            };
-            base_value = match op.r#type {
-                FieldOpType::RotateRight => quote! { (#base_value).rotate_right(#operand) },
-                FieldOpType::LeftShift => quote! { (#base_value) << (#operand) },
-            };
+            })
+            .collect::<Vec<_>>();
+
+        quote! {
+            {
+                let mut value = #base_value;
+                #(#value_ops)*
+                value
+            }
+        }
+    } else {
+        quote! {
+            {
+                #base_value
+            }
         }
     }
-    base_value
 }
 
 fn generate_field_code_shift(bits: &BitRange, extra_shift: i32) -> TokenStream {

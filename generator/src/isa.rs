@@ -287,6 +287,7 @@ impl FieldOp {
 pub enum FieldOpType {
     RotateRight,
     LeftShift,
+    Negate,
 }
 
 #[derive(Deserialize)]

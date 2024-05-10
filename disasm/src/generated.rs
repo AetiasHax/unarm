@@ -2089,7 +2089,9 @@ impl Ins {
     /// rotated_immed_8: 8-bit immediate
     #[inline(always)]
     pub const fn field_rotated_immed_8(&self) -> u32 {
-        (self.code & 0x000000ff).rotate_right((self.code & 0x00000f00) >> 7)
+        let mut value = self.code & 0x000000ff;
+        value = value.rotate_right((self.code & 0x00000f00) >> 7);
+        value
     }
     /// immed_24: 24-bit immediate
     #[inline(always)]
@@ -2110,16 +2112,16 @@ impl Ins {
     #[inline(always)]
     pub const fn field_shift_imm(&self) -> ShiftImm {
         ShiftImm {
-            shift: Shift::parse(((self.code & 0x00000060) >> 5) as u8),
-            shift_imm: (self.code & 0x00000f80) >> 7,
+            shift: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
+            shift_imm: { (self.code & 0x00000f80) >> 7 },
         }
     }
     /// shift_reg: Register shift offset
     #[inline(always)]
     pub const fn field_shift_reg(&self) -> ShiftReg {
         ShiftReg {
-            shift: Shift::parse(((self.code & 0x00000060) >> 5) as u8),
-            reg: Reg::parse(((self.code & 0x00000f00) >> 8) as u8),
+            shift: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
+            reg: { Reg::parse(((self.code & 0x00000f00) >> 8) as u8) },
         }
     }
     /// U: Add (1) or subtract (0)
@@ -2134,13 +2136,16 @@ impl Ins {
     }
     /// offset_8: 8-bit immediate offset
     #[inline(always)]
-    pub const fn field_offset_8(&self) -> u32 {
-        (self.code & 0x000000ff) << (2)
+    pub const fn field_offset_8(&self) -> i32 {
+        let mut value = (self.code & 0x000000ff) as i32;
+        value <<= 2;
+        value = if self.code & 0x00800000 != 0 { -value } else { value };
+        value
     }
     /// offset_12: 12-bit immediate offset
     #[inline(always)]
-    pub const fn field_offset_12(&self) -> u32 {
-        self.code & 0x00000fff
+    pub const fn field_offset_12(&self) -> i32 {
+        (self.code & 0x00000fff) as i32
     }
     /// option: Additional instruction options for coprocessor
     #[inline(always)]
@@ -2327,14 +2332,14 @@ impl Ins {
     /// addr_coproc: Load and Store Coprocessor
     #[inline(always)]
     pub const fn modifier_addr_coproc(&self) -> AddrCoproc {
-        if (self.code & 0x01200000) == 0x01000000 {
+        if (self.code & 0x01a00000) == 0x00800000 {
+            AddrCoproc::Unidx
+        } else if (self.code & 0x01200000) == 0x01000000 {
             AddrCoproc::Imm
         } else if (self.code & 0x01200000) == 0x01200000 {
             AddrCoproc::ImmPre
         } else if (self.code & 0x01200000) == 0x00200000 {
             AddrCoproc::ImmPost
-        } else if (self.code & 0x01200000) == 0x00000000 {
-            AddrCoproc::Unidx
         } else {
             AddrCoproc::Illegal
         }
@@ -2480,7 +2485,7 @@ pub enum Argument {
     /// s_imm: Signed immediate
     SImm(i32),
     /// offset: Immediate offset
-    Offset(u32),
+    Offset(i32),
     /// add: Add
     Add(bool),
     /// blx_half: Add 2 to BLX target address
@@ -15763,8 +15768,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15776,8 +15781,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15789,8 +15794,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15802,8 +15807,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15815,8 +15820,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15828,8 +15833,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15841,8 +15846,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15854,8 +15859,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15867,8 +15872,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15880,8 +15885,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15893,8 +15898,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15906,8 +15911,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15919,8 +15924,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15932,8 +15937,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15945,8 +15950,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15958,8 +15963,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15971,8 +15976,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15984,8 +15989,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -15997,8 +16002,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16010,8 +16015,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16023,8 +16028,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16036,8 +16041,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16049,8 +16054,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16062,8 +16067,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16075,8 +16080,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16088,8 +16093,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16101,8 +16106,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16114,8 +16119,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16127,8 +16132,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16140,8 +16145,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16153,8 +16158,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16166,8 +16171,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16179,8 +16184,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16192,8 +16197,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16205,8 +16210,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16218,8 +16223,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16231,8 +16236,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16244,8 +16249,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16257,8 +16262,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16270,8 +16275,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16283,8 +16288,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16296,8 +16301,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16309,8 +16314,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16322,8 +16327,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16335,8 +16340,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16348,8 +16353,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16361,8 +16366,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16374,8 +16379,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16387,8 +16392,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16400,8 +16405,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16413,8 +16418,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16426,8 +16431,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16439,8 +16444,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16452,8 +16457,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16465,8 +16470,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16478,8 +16483,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16491,8 +16496,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16504,8 +16509,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16517,8 +16522,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16530,8 +16535,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16543,8 +16548,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16556,8 +16561,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16569,8 +16574,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16582,8 +16587,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16595,8 +16600,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16608,8 +16613,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16621,8 +16626,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16634,8 +16639,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16647,8 +16652,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16660,8 +16665,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16673,8 +16678,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16686,8 +16691,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16699,8 +16704,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16712,8 +16717,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16725,8 +16730,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16738,8 +16743,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16751,8 +16756,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16764,8 +16769,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16777,8 +16782,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16790,8 +16795,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16803,8 +16808,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16816,8 +16821,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16829,8 +16834,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16842,8 +16847,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16855,8 +16860,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16868,8 +16873,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16881,8 +16886,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16894,8 +16899,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16907,8 +16912,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16920,8 +16925,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16933,8 +16938,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16946,8 +16951,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16959,8 +16964,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16972,8 +16977,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16985,8 +16990,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -16998,8 +17003,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17011,8 +17016,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17024,8 +17029,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17037,8 +17042,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17050,8 +17055,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17063,8 +17068,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17076,8 +17081,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17089,8 +17094,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17102,8 +17107,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17115,8 +17120,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17128,8 +17133,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17141,8 +17146,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17154,8 +17159,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17167,8 +17172,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17180,8 +17185,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17193,8 +17198,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17206,8 +17211,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17219,8 +17224,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17232,8 +17237,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17245,8 +17250,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17258,8 +17263,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17271,8 +17276,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17284,8 +17289,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17297,8 +17302,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17310,8 +17315,8 @@ fn parse_ldc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17340,8 +17345,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17353,8 +17358,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17366,8 +17371,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17379,8 +17384,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17392,8 +17397,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17405,8 +17410,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17418,8 +17423,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -17431,8 +17436,8 @@ fn parse_ldc2(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50069,8 +50074,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50082,8 +50087,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50095,8 +50100,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50108,8 +50113,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50121,8 +50126,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50134,8 +50139,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50147,8 +50152,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50160,8 +50165,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50173,8 +50178,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50186,8 +50191,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50199,8 +50204,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50212,8 +50217,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50225,8 +50230,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50238,8 +50243,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50251,8 +50256,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50264,8 +50269,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50277,8 +50282,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50290,8 +50295,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50303,8 +50308,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50316,8 +50321,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50329,8 +50334,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50342,8 +50347,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50355,8 +50360,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50368,8 +50373,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50381,8 +50386,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50394,8 +50399,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50407,8 +50412,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50420,8 +50425,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50433,8 +50438,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50446,8 +50451,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50459,8 +50464,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50472,8 +50477,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50485,8 +50490,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50498,8 +50503,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50511,8 +50516,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50524,8 +50529,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50537,8 +50542,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50550,8 +50555,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50563,8 +50568,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50576,8 +50581,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50589,8 +50594,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50602,8 +50607,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50615,8 +50620,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50628,8 +50633,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50641,8 +50646,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50654,8 +50659,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50667,8 +50672,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50680,8 +50685,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50693,8 +50698,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50706,8 +50711,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50719,8 +50724,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50732,8 +50737,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50745,8 +50750,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50758,8 +50763,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50771,8 +50776,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50784,8 +50789,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50797,8 +50802,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50810,8 +50815,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50823,8 +50828,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50836,8 +50841,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50849,8 +50854,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50862,8 +50867,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50875,8 +50880,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50888,8 +50893,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50901,8 +50906,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50914,8 +50919,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50927,8 +50932,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50940,8 +50945,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50953,8 +50958,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50966,8 +50971,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50979,8 +50984,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -50992,8 +50997,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51005,8 +51010,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51018,8 +51023,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51031,8 +51036,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51044,8 +51049,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51057,8 +51062,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51070,8 +51075,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51083,8 +51088,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51096,8 +51101,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51109,8 +51114,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51122,8 +51127,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51135,8 +51140,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51148,8 +51153,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51161,8 +51166,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51174,8 +51179,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51187,8 +51192,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51200,8 +51205,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51213,8 +51218,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51226,8 +51231,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_8()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51239,8 +51244,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51252,8 +51257,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51265,8 +51270,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51278,8 +51283,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51291,8 +51296,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51304,8 +51309,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51317,8 +51322,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51330,8 +51335,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51343,8 +51348,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51356,8 +51361,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51369,8 +51374,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51382,8 +51387,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51395,8 +51400,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51408,8 +51413,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51421,8 +51426,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51434,8 +51439,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51447,8 +51452,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51460,8 +51465,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51473,8 +51478,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51486,8 +51491,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51499,8 +51504,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51512,8 +51517,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51525,8 +51530,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51538,8 +51543,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51551,8 +51556,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51564,8 +51569,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51577,8 +51582,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51590,8 +51595,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51603,8 +51608,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -51616,8 +51621,8 @@ fn parse_stc(out: &mut ParsedIns, ins: Ins) {
                     Argument::CoprocNum(ins.field_coproc()),
                     Argument::CoReg(ins.field_crd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::CoOption(ins.field_option()),
+                    Argument::None,
                     Argument::None,
                 ],
             }

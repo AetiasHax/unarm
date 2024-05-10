@@ -147,6 +147,7 @@ args:
 
   - name: offset
     desc: Immediate offset
+    signed: true
 
   - name: add
     desc: Add
@@ -283,6 +284,8 @@ fields:
     ops:
       - type: LeftShift
         value: 2
+      - type: Negate
+        bits: 23..24
 
   - name: offset_12
     arg: offset
@@ -616,25 +619,25 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x01200000
         pattern: 0x01000000
-        args: [Rn, U, offset_8]
+        args: [Rn, offset_8]
         uses: [Rn]
       - name: imm_pre
         desc: Immediate pre-indexed
         bitmask: 0x01200000
         pattern: 0x01200000
-        args: [Rn, U, offset_8]
+        args: [Rn, offset_8]
         uses: [Rn]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x01200000
         pattern: 0x00200000
-        args: [Rn, U, offset_8]
+        args: [Rn, offset_8]
         uses: [Rn]
       - name: unidx
         desc: Unindexed
-        bitmask: 0x01200000
-        pattern: 0x00000000
-        args: [Rn, U, option]
+        bitmask: 0x01a00000
+        pattern: 0x00800000
+        args: [Rn, option]
         uses: [Rn]
 
 opcodes:
