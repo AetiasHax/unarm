@@ -238,13 +238,15 @@ fields:
     bits: 0..24
 
   - name: immed_8
-    arg: u_imm
+    arg: s_imm
     desc: 8-bit immediate in bits 0..4 and 8..12
     bits: 0..4
     ops:
       - type: Or
         bits: 8..12
         shift: 4
+      - type: Negate
+        bits: 23..24
 
   - name: shift_imm
     desc: Immediate shift offset
@@ -575,7 +577,7 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x0f600090
         pattern: 0x01400090
-        args: [Rn, U, immed_8]
+        args: [Rn, immed_8]
         uses: [Rn]
       - name: reg
         desc: Register offset
@@ -587,7 +589,7 @@ modifiers:
         desc: Immediate pre-indexed
         bitmask: 0x0f600090
         pattern: 0x01600090
-        args: [Rn, U, immed_8]
+        args: [Rn, immed_8]
         uses: [Rn]
       - name: reg_pre
         desc: Register pre-indexed
@@ -599,7 +601,7 @@ modifiers:
         desc: Immediate post-indexed
         bitmask: 0x0f600090
         pattern: 0x00400090
-        args: [Rn, U, immed_8]
+        args: [Rn, immed_8]
         uses: [Rn]
       - name: reg_post
         desc: Register post-indexed

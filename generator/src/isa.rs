@@ -283,7 +283,7 @@ impl FieldOp {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq, Eq)]
 pub enum FieldOpType {
     RotateRight,
     LeftShift,

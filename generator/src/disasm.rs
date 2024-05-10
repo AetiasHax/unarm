@@ -542,7 +542,15 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
             (Some(arg), Some(bits), None) => {
                 let arg = isa.get_arg(arg)?;
                 let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
-                let body = generate_field_accessor_body(arg, bits, field.ops.as_deref());
+
+                let has_negate_op = field
+                    .ops
+                    .as_ref()
+                    .map(|ops| ops.iter().any(|op| op.r#type == FieldOpType::Negate))
+                    .unwrap_or(false);
+                let sign_extend = arg.signed && !has_negate_op;
+
+                let body = generate_field_accessor_body(arg, bits, field.ops.as_deref(), sign_extend);
                 let ret_type = match (&arg.values, arg.signed, arg.boolean) {
                     (None, true, false) => quote! { i32 },
                     (None, false, true) => quote! { bool },
@@ -559,7 +567,7 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
                     .map(|arg| {
                         let bits = &arg.bits;
                         let arg = isa.get_arg(&arg.arg)?;
-                        let value = generate_field_accessor_body(arg, bits, None);
+                        let value = generate_field_accessor_body(arg, bits, None, true);
                         let struct_field = Ident::new(&arg.name, Span::call_site());
 
                         Ok(quote! { #struct_field: #value })
@@ -586,8 +594,8 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
     Ok(field_accessors_tokens)
 }
 
-fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldOp]>) -> TokenStream {
-    let base_value = generate_field_code_shift(bits, arg.signed, true, 0);
+fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldOp]>, sign_extend: bool) -> TokenStream {
+    let base_value = generate_field_code_shift(bits, arg.signed, sign_extend, 0);
     let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
     let base_value = match (&arg.values, arg.boolean) {
         (None, true) => quote! { (#base_value) != 0 },
