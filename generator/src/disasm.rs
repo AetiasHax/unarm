@@ -587,7 +587,7 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
 }
 
 fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldOp]>) -> TokenStream {
-    let base_value = generate_field_code_shift(bits, arg.signed, 0);
+    let base_value = generate_field_code_shift(bits, arg.signed, true, 0);
     let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
     let base_value = match (&arg.values, arg.boolean) {
         (None, true) => quote! { (#base_value) != 0 },
@@ -604,7 +604,12 @@ fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldO
                         let lit = Literal::i32_unsuffixed(*value);
                         quote! { #lit }
                     }
-                    (Some(bits), None) => generate_field_code_shift(bits, arg.signed, op.shift),
+                    (Some(bits), None) => match op.r#type {
+                        FieldOpType::Negate => generate_field_code_shift(bits, false, false, op.shift),
+                        FieldOpType::RotateRight | FieldOpType::LeftShift | FieldOpType::Or => {
+                            generate_field_code_shift(bits, arg.signed, false, op.shift)
+                        }
+                    },
                     _ => panic!(),
                 };
                 match op.r#type {
@@ -632,7 +637,7 @@ fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldO
     }
 }
 
-fn generate_field_code_shift(bits: &BitRange, signed: bool, extra_shift: i32) -> TokenStream {
+fn generate_field_code_shift(bits: &BitRange, signed: bool, sign_extend: bool, extra_shift: i32) -> TokenStream {
     let num_bits = bits.0.len();
     let shift = bits.0.start;
     let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
@@ -653,7 +658,13 @@ fn generate_field_code_shift(bits: &BitRange, signed: bool, extra_shift: i32) ->
     };
 
     if signed {
-        quote! { (#value) as i32 }
+        let extend_bits = 32 - bits.0.end;
+        if sign_extend && extend_bits > 0 {
+            let extend_bits = Literal::u8_unsuffixed(extend_bits);
+            quote! { (((#value) as i32) << #extend_bits) >> #extend_bits }
+        } else {
+            quote! { (#value) as i32 }
+        }
     } else {
         value
     }

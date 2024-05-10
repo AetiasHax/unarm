@@ -2142,24 +2142,16 @@ impl Ins {
     /// offset_8: 8-bit immediate offset
     #[inline(always)]
     pub const fn field_offset_8(&self) -> i32 {
-        let mut value = (self.code & 0x000000ff) as i32;
+        let mut value = (((self.code & 0x000000ff) as i32) << 24) >> 24;
         value <<= 2;
-        value = if ((self.code & 0x00800000) >> 23) as i32 != 0 {
-            -value
-        } else {
-            value
-        };
+        value = if (self.code & 0x00800000) >> 23 != 0 { -value } else { value };
         value
     }
     /// offset_12: 12-bit immediate offset
     #[inline(always)]
     pub const fn field_offset_12(&self) -> i32 {
-        let mut value = (self.code & 0x00000fff) as i32;
-        value = if ((self.code & 0x00800000) >> 23) as i32 != 0 {
-            -value
-        } else {
-            value
-        };
+        let mut value = (((self.code & 0x00000fff) as i32) << 20) >> 20;
+        value = if (self.code & 0x00800000) >> 23 != 0 { -value } else { value };
         value
     }
     /// option: Additional instruction options for coprocessor
@@ -2175,12 +2167,12 @@ impl Ins {
     /// signed_immed_24: Signed 24-bit immediate
     #[inline(always)]
     pub const fn field_signed_immed_24(&self) -> i32 {
-        (self.code & 0x00ffffff) as i32
+        (((self.code & 0x00ffffff) as i32) << 8) >> 8
     }
     /// blx_offset: 24-bit signed BLX target offset
     #[inline(always)]
     pub const fn field_blx_offset(&self) -> i32 {
-        let mut value = (self.code & 0x00ffffff) as i32;
+        let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
         value <<= 2;
         value |= ((self.code & 0x01000000) >> 23) as i32;
         value
