@@ -4,7 +4,7 @@ use quote::quote;
 use syn::Ident;
 
 use crate::{
-    isa::{Field, Isa, Opcode},
+    isa::{BitRange, Field, Isa, Opcode},
     iter::cartesian,
     search::SearchTree,
     token::HexLiteral,
@@ -25,6 +25,9 @@ pub fn generate_disasm(isa: &Isa) -> Result<TokenStream> {
             Opcode::Illegal
         }
     };
+
+    // Generate field structs
+    let field_structs = generate_field_structs(isa)?;
 
     // Generate field accessors
     let field_accessors_tokens = generate_field_accessors(isa)?;
@@ -71,6 +74,8 @@ pub fn generate_disasm(isa: &Isa) -> Result<TokenStream> {
                 #num_opcodes_token
             }
         }
+
+        #field_structs
 
         impl Ins {
             #field_accessors_tokens
@@ -154,7 +159,7 @@ fn generate_parse_functions(
             let mut case_bodies: Vec<TokenStream> = vec![];
             if modifier_cases.is_empty() {
                 let mnemonic = opcode.name().to_string();
-                let args = generate_mnemonic_args(isa, opcode, max_args, opcode_args)?;
+                let args = generate_mnemonic_args(isa, max_args, opcode_args)?;
                 quote! {
                     *out = ParsedIns {
                         mnemonic: #mnemonic,
@@ -194,7 +199,7 @@ fn generate_parse_functions(
                         case_args
                     };
 
-                    let args = generate_mnemonic_args(isa, opcode, max_args, case_args)?;
+                    let args = generate_mnemonic_args(isa, max_args, case_args)?;
                     if case_values.len() > 1 {
                         case_bodies.push(quote! {
                             (#(#case_values),*) => ParsedIns {
@@ -263,39 +268,21 @@ fn generate_parse_functions(
     Ok(parse_functions)
 }
 
-fn generate_mnemonic_args(isa: &Isa, opcode: &Opcode, max_args: usize, args: Vec<&Field>) -> Result<Vec<TokenStream>> {
+fn generate_mnemonic_args(isa: &Isa, max_args: usize, args: Vec<&Field>) -> Result<Vec<TokenStream>> {
     let args = (0..max_args)
         .map(|i| {
             if i < args.len() {
                 let field = args[i];
                 let accessor = Ident::new(&field.accessor_name(), Span::call_site());
-                let arg = isa.get_arg(&field.arg)?;
-                let arg_variant = Ident::new(&arg.variant_name(), Span::call_site());
-                match (&arg.values, arg.signed, arg.boolean) {
-                    (None, true, false) | (None, false, true) | (None, false, false) | (Some(_), false, false) => {
-                        Ok(quote! { Argument::#arg_variant(ins.#accessor()) })
+                let arg_variant = match (&field.arg, &field.args) {
+                    (Some(arg), None) => {
+                        let arg = isa.get_arg(arg)?;
+                        Ident::new(&arg.variant_name(), Span::call_site())
                     }
-                    (Some(_), false, true) => bail!(
-                        "Can't generate arg '{}' (for opcode '{}') which has values and is boolean",
-                        arg.name,
-                        opcode.name()
-                    ),
-                    (Some(_), true, false) => bail!(
-                        "Can't generate arg '{}' (for opcode '{}') which has values and is signed",
-                        arg.name,
-                        opcode.name()
-                    ),
-                    (Some(_), true, true) => bail!(
-                        "Can't generate arg '{}' (for opcode '{}') which has values and is signed and boolean",
-                        arg.name,
-                        opcode.name()
-                    ),
-                    (None, true, true) => bail!(
-                        "Can't generate arg '{}' (for opcode '{}') which is signed and boolean",
-                        arg.name,
-                        opcode.name()
-                    ),
-                }
+                    (None, Some(_)) => Ident::new(&field.struct_name(), Span::call_site()),
+                    _ => panic!(),
+                };
+                Ok(quote! { Argument::#arg_variant(ins.#accessor()) })
             } else {
                 Ok(quote! { Argument::None })
             }
@@ -390,10 +377,22 @@ fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
             ),
         };
 
-        argument_variants.extend(quote! {
-            #[doc = #doc]
-            #variant_ident #contents,
-        })
+        if !arg.hidden {
+            argument_variants.extend(quote! {
+                #[doc = #doc]
+                #variant_ident #contents,
+            })
+        }
+    }
+    for field in isa.fields.iter() {
+        if field.args.is_some() {
+            let doc = field.doc();
+            let variant_ident = Ident::new(&field.struct_name(), Span::call_site());
+            argument_variants.extend(quote! {
+                #[doc = #doc]
+                #variant_ident(#variant_ident),
+            });
+        }
     }
     let argument_enum_tokens = quote! {
         #[derive(Default, Clone, Copy, PartialEq, Eq)]
@@ -537,30 +536,48 @@ fn generate_modifier_case_enums(isa: &Isa) -> TokenStream {
 fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
     let mut field_accessors_tokens = TokenStream::new();
     for field in isa.fields.iter() {
-        let num_bits = field.bits.0.len();
-        let shift = field.bits.0.start;
-        let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
-        let shift_token = Literal::u8_unsuffixed(shift);
+        let (ret_type, inner) = match (&field.arg, &field.bits, &field.args) {
+            (Some(arg), Some(bits), None) => {
+                let arg = isa.get_arg(arg)?;
+                let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
+                let field_body = generate_field_accessor_body(bits);
 
-        let body_tokens = if shift > 0 && num_bits > 1 {
-            quote! { (self.code & #bitmask) >> #shift_token }
-        } else {
-            quote! { self.code & #bitmask }
+                match (&arg.values, arg.signed, arg.boolean) {
+                    (None, true, false) => (quote! { i32 }, quote! { (#field_body) as i32 }),
+                    (None, false, true) => (quote! { bool }, quote! { (#field_body) != 0 }),
+                    (None, false, false) => (quote! { u32 }, quote! { #field_body }),
+                    (Some(_), false, false) => (quote! { #arg_ident }, quote! { #arg_ident::parse((#field_body) as u8) }),
+                    _ => panic!(),
+                }
+            }
+            (None, None, Some(args)) => {
+                let struct_ident = Ident::new(&field.struct_name(), Span::call_site());
+                let struct_fields = args
+                    .iter()
+                    .map(|arg| {
+                        let bits = &arg.bits;
+                        let arg = isa.get_arg(&arg.arg)?;
+                        let arg_body = generate_field_accessor_body(bits);
+                        let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
+                        let struct_field = Ident::new(&arg.name, Span::call_site());
+
+                        let inner = match (&arg.values, arg.signed, arg.boolean) {
+                            (None, true, false) => quote! { (#arg_body) as i32 },
+                            (None, false, true) => quote! { (#arg_body) != 0 },
+                            (None, false, false) => quote! { #arg_body },
+                            (Some(_), false, false) => quote! { #arg_ident::parse((#arg_body) as u8) },
+                            _ => panic!(),
+                        };
+                        Ok(quote! { #struct_field: #inner })
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                (quote! { #struct_ident }, quote! { #struct_ident { #(#struct_fields),* }})
+            }
+            _ => panic!(),
         };
-
-        let arg = isa.get_arg(&field.arg)?;
-        let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
 
         let doc = field.doc();
         let fn_name = Ident::new(&field.accessor_name(), Span::call_site());
-        let (ret_type, inner) = match (&arg.values, arg.signed, arg.boolean) {
-            (None, true, false) => (quote! { i32 }, quote! { (#body_tokens) as i32 }),
-            (None, false, true) => (quote! { bool }, quote! { (#body_tokens) != 0 }),
-            (None, false, false) => (quote! { u32 }, quote! { #body_tokens }),
-            (Some(_), false, false) => (quote! { #arg_ident }, quote! { #arg_ident::parse((#body_tokens) as u8) }),
-            _ => unreachable!(),
-        };
-
         field_accessors_tokens.extend(quote! {
             #[doc = #doc]
             #[inline(always)]
@@ -570,6 +587,46 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
         });
     }
     Ok(field_accessors_tokens)
+}
+
+fn generate_field_accessor_body(bits: &BitRange) -> TokenStream {
+    let num_bits = bits.0.len();
+    let shift = bits.0.start;
+    let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
+    let shift_token = Literal::u8_unsuffixed(shift);
+
+    if shift > 0 && num_bits > 1 {
+        quote! { (self.code & #bitmask) >> #shift_token }
+    } else {
+        quote! { self.code & #bitmask }
+    }
+}
+
+fn generate_field_structs(isa: &Isa) -> Result<TokenStream> {
+    let structs = isa
+        .fields
+        .iter()
+        .filter_map(|field| field.args.as_ref().map(|args| (field, args)))
+        .map(|(field, args)| {
+            let struct_fields = args
+                .iter()
+                .map(|arg| {
+                    let arg = isa.get_arg(&arg.arg)?;
+                    let field_ident = Ident::new(&arg.name, Span::call_site());
+                    let field_type = Ident::new(&arg.type_name(), Span::call_site());
+                    Ok(quote! { #field_ident: #field_type })
+                })
+                .collect::<Result<Vec<_>>>()?;
+            let struct_ident = Ident::new(&field.struct_name(), Span::call_site());
+            Ok(quote! {
+                #[derive(Clone, Copy, PartialEq, Eq)]
+                pub struct #struct_ident {
+                    #(#struct_fields),*
+                }
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(quote! { #(#structs)* })
 }
 
 fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStream, Literal) {

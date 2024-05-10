@@ -123,6 +123,7 @@ args:
 
   - name: shift_imm
     desc: Immediate shift offset
+    hidden: true
 
   - name: shift
     desc: Type of shift operation
@@ -135,6 +136,7 @@ args:
         value: 2
       - name: ror_or_rrx
         value: 3
+    hidden: true
 
   - name: u_imm
     desc: Unsigned immediate
@@ -246,14 +248,24 @@ fields:
     bits: 0..4
 
   - name: shift_imm
-    arg: shift_imm
     desc: Immediate shift offset
-    bits: 7..12
+    args:
+      - name: op
+        arg: shift
+        bits: 5..7
+      - name: imm
+        arg: shift_imm
+        bits: 7..12
 
-  - name: shift
-    arg: shift
-    desc: Type of shift operation
-    bits: 5..7
+  - name: shift_reg
+    desc: Register shift offset
+    args:
+      - name: op
+        arg: shift
+        bits: 5..7
+      - name: reg
+        arg: reg
+        bits: 8..12
 
   - name: U
     arg: add
@@ -439,14 +451,14 @@ modifiers:
         desc: Shift by immediate
         bitmask: 0x0e000010
         pattern: 0x00000000
-        args: [Rm, shift, shift_imm]
+        args: [Rm, shift_imm]
         uses: [Rm]
       - name: shift_reg
         desc: Shift by register
         bitmask: 0x0e000090
         pattern: 0x00000010
-        args: [Rm, shift, Rs]
-        uses: [Rs, Rm]
+        args: [Rm, shift_reg]
+        uses: [shift_reg, Rm]
       - name: rrx
         desc: Rotate right with extend
         bitmask: 0x0e000ff0
@@ -473,7 +485,7 @@ modifiers:
         desc: Scaled register offset
         bitmask: 0x0f200010
         pattern: 0x07000000
-        args: [Rn, U, Rm, shift, shift_imm]
+        args: [Rn, U, Rm, shift_imm]
         uses: [Rn, Rm]
       - name: imm_pre
         desc: Immediate pre-indexed
@@ -491,7 +503,7 @@ modifiers:
         desc: Scaled register pre-indexed
         bitmask: 0x0f200010
         pattern: 0x07200000
-        args: [Rn, U, Rm, shift, shift_imm]
+        args: [Rn, U, Rm, shift_imm]
         uses: [Rn]
       - name: imm_post
         desc: Immediate post-indexed
@@ -509,7 +521,7 @@ modifiers:
         desc: Scaled register post-indexed
         bitmask: 0x0f200010
         pattern: 0x06000000
-        args: [Rn, U, Rm, shift, shift_imm]
+        args: [Rn, U, Rm, shift_imm]
         uses: [Rn]
 
   - name: addr_ldrt_strt
@@ -531,7 +543,7 @@ modifiers:
         desc: Scaled register post-indexed
         bitmask: 0x0f200010
         pattern: 0x06200000
-        args: [Rn, U, Rm, shift, shift_imm]
+        args: [Rn, U, Rm, shift_imm]
         uses: [Rn]
 
   - name: addr_misc_ldr_str

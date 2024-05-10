@@ -109,9 +109,21 @@ pub struct Arg {
     pub signed: bool,
     #[serde(default)]
     pub boolean: bool,
+    #[serde(default)]
+    pub hidden: bool,
 }
 
 impl Arg {
+    pub fn type_name(&self) -> String {
+        match (&self.values, self.signed, self.boolean) {
+            (None, true, false) => "i32".to_string(),
+            (None, false, true) => "bool".to_string(),
+            (None, false, false) => "u32".to_string(),
+            (Some(_), false, false) => capitalize_with_delimiter(self.name.clone(), '_'),
+            _ => panic!(),
+        }
+    }
+
     pub fn variant_name(&self) -> String {
         capitalize_with_delimiter(self.name.clone(), '_')
     }
@@ -177,21 +189,36 @@ impl ArgValue {
 #[serde(deny_unknown_fields)]
 pub struct Field {
     pub name: String,
-    pub arg: String,
+    pub arg: Option<String>,
     pub desc: String,
-    pub bits: BitRange,
+    pub bits: Option<BitRange>,
     #[serde(default)]
     allow_collide: bool,
+    pub args: Option<Box<[FieldArg]>>,
 }
 
 impl Field {
     pub fn get_bitmask(&self) -> u32 {
-        ((1 << self.bits.0.len()) - 1) << self.bits.0.start
+        match (&self.bits, &self.args) {
+            (Some(bits), None) => bits.bitmask(),
+            (None, Some(args)) => args.iter().map(|a| a.bits.bitmask()).reduce(|a, b| a | b).unwrap_or(0),
+            _ => panic!(),
+        }
     }
 
     fn validate(&self) -> Result<()> {
         if self.get_bitmask() == 0 {
             bail!("Field {} has no bitmask", self.name)
+        }
+        match (&self.arg, &self.args) {
+            (None, None) => bail!("Field {} has no arg or args", self.name),
+            (Some(_), Some(_)) => bail!("Field {} has both arg and args", self.name),
+            (Some(_), None) => {
+                if self.bits.is_none() {
+                    bail!("Field {} has args but no bits", self.name)
+                }
+            }
+            _ => {}
         }
         Ok(())
     }
@@ -203,6 +230,18 @@ impl Field {
     pub fn accessor_name(&self) -> String {
         format!("field_{}", self.name.to_lowercase())
     }
+
+    pub fn struct_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FieldArg {
+    pub name: String,
+    pub arg: String,
+    pub bits: BitRange,
 }
 
 #[derive(Deserialize)]
@@ -582,6 +621,12 @@ impl Display for Opcode {
 }
 
 pub struct BitRange(pub Range<u8>);
+
+impl BitRange {
+    pub fn bitmask(&self) -> u32 {
+        ((1 << self.0.len()) - 1) << self.0.start
+    }
+}
 
 impl<'de> Deserialize<'de> for BitRange {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
