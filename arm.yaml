@@ -321,15 +321,14 @@ fields:
         bits: 24..25
         shift: 1
 
-  - name: immed_8_20
+  - name: immed_16
     arg: u_imm
-    desc: 12-bit immediate in bits 8..20
-    bits: 8..20
-
-  - name: immed_0_4
-    arg: u_imm
-    desc: 4-bit immediate in bits 0..4
+    desc: 16-bit immediate in bits 0..4 and 8..20
     bits: 0..4
+    ops:
+      - type: Or
+        bits: 8..20
+        shift: 4
 
   - name: field_mask
     arg: status_mask
@@ -709,7 +708,7 @@ opcodes:
     desc: Breakpoint
     bitmask: 0xfff000f0
     pattern: 0xe1200070
-    args: [immed_8_20, immed_0_4]
+    args: [immed_16]
 
   - name: blx$i
     desc: Branch and Link and Exchange to Thumb (immediate target)

@@ -2180,15 +2180,12 @@ impl Ins {
         value |= ((self.code & 0x01000000) >> 23) as i32;
         value
     }
-    /// immed_8_20: 12-bit immediate in bits 8..20
+    /// immed_16: 16-bit immediate in bits 0..4 and 8..20
     #[inline(always)]
-    pub const fn field_immed_8_20(&self) -> u32 {
-        (self.code & 0x000fff00) >> 8
-    }
-    /// immed_0_4: 4-bit immediate in bits 0..4
-    #[inline(always)]
-    pub const fn field_immed_0_4(&self) -> u32 {
-        self.code & 0x0000000f
+    pub const fn field_immed_16(&self) -> u32 {
+        let mut value = self.code & 0x0000000f;
+        value |= (self.code & 0x000fff00) >> 4;
+        value
     }
     /// field_mask: Status fields to set
     #[inline(always)]
@@ -10943,8 +10940,8 @@ fn parse_bkpt(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "bkpt",
         args: [
-            Argument::UImm(ins.field_immed_8_20()),
-            Argument::UImm(ins.field_immed_0_4()),
+            Argument::UImm(ins.field_immed_16()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,

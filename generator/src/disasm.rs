@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use anyhow::{bail, Context, Result};
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::quote;
@@ -634,12 +636,20 @@ fn generate_field_code_shift(bits: &BitRange, signed: bool, extra_shift: i32) ->
     let num_bits = bits.0.len();
     let shift = bits.0.start;
     let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
-    let shift_token = Literal::u32_unsuffixed((shift as i32 - extra_shift).try_into().unwrap());
 
-    let value = if shift > 0 {
-        quote! { (self.code & #bitmask) >> #shift_token }
-    } else {
-        quote! { self.code & #bitmask }
+    let value_shift = shift as i32 - extra_shift;
+    let value = match value_shift.cmp(&0) {
+        Ordering::Less => {
+            let shift_token = Literal::u32_unsuffixed((-value_shift).try_into().unwrap());
+            quote! { (self.code & #bitmask) << #shift_token }
+        }
+        Ordering::Equal => {
+            quote! { self.code & #bitmask }
+        }
+        Ordering::Greater => {
+            let shift_token = Literal::u32_unsuffixed(value_shift.try_into().unwrap());
+            quote! { (self.code & #bitmask) >> #shift_token }
+        }
     };
 
     if signed {
