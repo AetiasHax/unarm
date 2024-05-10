@@ -310,6 +310,17 @@ fields:
     desc: Signed 24-bit immediate
     bits: 0..24
 
+  - name: blx_offset
+    arg: s_imm
+    desc: 24-bit signed BLX target offset
+    bits: 0..24
+    ops:
+      - type: LeftShift
+        value: 2
+      - type: Or
+        bits: 24..25
+        shift: 1
+
   - name: immed_8_20
     arg: u_imm
     desc: 12-bit immediate in bits 8..20
@@ -704,7 +715,7 @@ opcodes:
     desc: Branch and Link and Exchange to Thumb (immediate target)
     bitmask: 0xfe000000
     pattern: 0xfa000000
-    args: [H, signed_immed_24]
+    args: [blx_offset]
 
   - name: blx$r
     desc: Branch and Link and Exchange to Thumb (register target)

@@ -288,6 +288,7 @@ pub enum FieldOpType {
     RotateRight,
     LeftShift,
     Negate,
+    Or,
 }
 
 #[derive(Deserialize)]

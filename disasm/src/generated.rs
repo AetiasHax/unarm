@@ -2127,26 +2127,34 @@ impl Ins {
     /// U: Add (1) or subtract (0)
     #[inline(always)]
     pub const fn field_u(&self) -> bool {
-        (self.code & 0x00800000) != 0
+        ((self.code & 0x00800000) >> 23) != 0
     }
     /// R: Move SPSR (1) or CPSR (0)
     #[inline(always)]
     pub const fn field_r(&self) -> StatusReg {
-        StatusReg::parse((self.code & 0x00400000) as u8)
+        StatusReg::parse(((self.code & 0x00400000) >> 22) as u8)
     }
     /// offset_8: 8-bit immediate offset
     #[inline(always)]
     pub const fn field_offset_8(&self) -> i32 {
         let mut value = (self.code & 0x000000ff) as i32;
         value <<= 2;
-        value = if self.code & 0x00800000 != 0 { -value } else { value };
+        value = if ((self.code & 0x00800000) >> 23) as i32 != 0 {
+            -value
+        } else {
+            value
+        };
         value
     }
     /// offset_12: 12-bit immediate offset
     #[inline(always)]
     pub const fn field_offset_12(&self) -> i32 {
         let mut value = (self.code & 0x00000fff) as i32;
-        value = if self.code & 0x00800000 != 0 { -value } else { value };
+        value = if ((self.code & 0x00800000) >> 23) as i32 != 0 {
+            -value
+        } else {
+            value
+        };
         value
     }
     /// option: Additional instruction options for coprocessor
@@ -2157,12 +2165,20 @@ impl Ins {
     /// H: Add 2 to BLX target address
     #[inline(always)]
     pub const fn field_h(&self) -> bool {
-        (self.code & 0x01000000) != 0
+        ((self.code & 0x01000000) >> 24) != 0
     }
     /// signed_immed_24: Signed 24-bit immediate
     #[inline(always)]
     pub const fn field_signed_immed_24(&self) -> i32 {
         (self.code & 0x00ffffff) as i32
+    }
+    /// blx_offset: 24-bit signed BLX target offset
+    #[inline(always)]
+    pub const fn field_blx_offset(&self) -> i32 {
+        let mut value = (self.code & 0x00ffffff) as i32;
+        value <<= 2;
+        value |= ((self.code & 0x01000000) >> 23) as i32;
+        value
     }
     /// immed_8_20: 12-bit immediate in bits 8..20
     #[inline(always)]
@@ -10940,8 +10956,8 @@ fn parse_blx_i(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "blx",
         args: [
-            Argument::BlxHalf(ins.field_h()),
-            Argument::SImm(ins.field_signed_immed_24()),
+            Argument::SImm(ins.field_blx_offset()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,

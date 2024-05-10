@@ -585,14 +585,12 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
 }
 
 fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldOp]>) -> TokenStream {
-    let base_value = generate_field_code_shift(bits, 0);
+    let base_value = generate_field_code_shift(bits, arg.signed, 0);
     let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
-    let base_value = match (&arg.values, arg.signed, arg.boolean) {
-        (None, true, false) => quote! { (#base_value) as i32 },
-        (None, false, true) => quote! { (#base_value) != 0 },
-        (None, false, false) => quote! { #base_value },
-        (Some(_), false, false) => quote! { #arg_ident::parse((#base_value) as u8) },
-        _ => panic!(),
+    let base_value = match (&arg.values, arg.boolean) {
+        (None, true) => quote! { (#base_value) != 0 },
+        (Some(_), false) => quote! { #arg_ident::parse((#base_value) as u8) },
+        _ => base_value,
     };
 
     if let Some(ops) = ops {
@@ -604,13 +602,14 @@ fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldO
                         let lit = Literal::i32_unsuffixed(*value);
                         quote! { #lit }
                     }
-                    (Some(bits), None) => generate_field_code_shift(bits, op.shift),
+                    (Some(bits), None) => generate_field_code_shift(bits, arg.signed, op.shift),
                     _ => panic!(),
                 };
                 match op.r#type {
                     FieldOpType::RotateRight => quote! { value = value.rotate_right(#operand); },
                     FieldOpType::LeftShift => quote! { value <<= #operand; },
                     FieldOpType::Negate => quote! { value = if #operand != 0 { -value } else { value }; },
+                    FieldOpType::Or => quote! { value |= #operand; },
                 }
             })
             .collect::<Vec<_>>();
@@ -631,16 +630,22 @@ fn generate_field_accessor_body(arg: &Arg, bits: &BitRange, ops: Option<&[FieldO
     }
 }
 
-fn generate_field_code_shift(bits: &BitRange, extra_shift: i32) -> TokenStream {
+fn generate_field_code_shift(bits: &BitRange, signed: bool, extra_shift: i32) -> TokenStream {
     let num_bits = bits.0.len();
     let shift = bits.0.start;
     let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
     let shift_token = Literal::u32_unsuffixed((shift as i32 - extra_shift).try_into().unwrap());
 
-    if shift > 0 && num_bits > 1 {
+    let value = if shift > 0 {
         quote! { (self.code & #bitmask) >> #shift_token }
     } else {
         quote! { self.code & #bitmask }
+    };
+
+    if signed {
+        quote! { (#value) as i32 }
+    } else {
+        value
     }
 }
 
