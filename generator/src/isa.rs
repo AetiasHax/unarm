@@ -195,15 +195,22 @@ pub struct Field {
     #[serde(default)]
     allow_collide: bool,
     pub args: Option<Box<[FieldArg]>>,
+    pub ops: Option<Box<[FieldOp]>>,
 }
 
 impl Field {
     pub fn get_bitmask(&self) -> u32 {
-        match (&self.bits, &self.args) {
+        let mut bitmask = match (&self.bits, &self.args) {
             (Some(bits), None) => bits.bitmask(),
             (None, Some(args)) => args.iter().map(|a| a.bits.bitmask()).reduce(|a, b| a | b).unwrap_or(0),
             _ => panic!(),
+        };
+        if let Some(ops) = &self.ops {
+            for op in ops.iter() {
+                bitmask |= op.bits.bitmask();
+            }
         }
+        bitmask
     }
 
     fn validate(&self) -> Result<()> {
@@ -215,10 +222,14 @@ impl Field {
             (Some(_), Some(_)) => bail!("Field {} has both arg and args", self.name),
             (Some(_), None) => {
                 if self.bits.is_none() {
-                    bail!("Field {} has args but no bits", self.name)
+                    bail!("Field {} has arg but no bits", self.name)
                 }
             }
-            _ => {}
+            (None, Some(_)) => {
+                if self.ops.is_some() {
+                    bail!("Field {} has args and ops", self.name)
+                }
+            }
         }
         Ok(())
     }
@@ -242,6 +253,20 @@ pub struct FieldArg {
     pub name: String,
     pub arg: String,
     pub bits: BitRange,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FieldOp {
+    pub r#type: FieldOpType,
+    pub bits: BitRange,
+    #[serde(default)]
+    pub shift: i32,
+}
+
+#[derive(Deserialize)]
+pub enum FieldOpType {
+    RotateRight,
 }
 
 #[derive(Deserialize)]

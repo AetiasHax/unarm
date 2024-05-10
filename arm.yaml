@@ -222,15 +222,14 @@ fields:
     desc: Destination coprocessor register
     bits: 12..16
 
-  - name: rotate_imm
-    arg: shift_imm
-    desc: Immediate rotate offset
-    bits: 8..12
-
-  - name: immed_8
+  - name: rotated_immed_8
     arg: u_imm
     desc: 8-bit immediate
     bits: 0..8
+    ops:
+      - type: RotateRight
+        bits: 8..12
+        shift: 1
 
   - name: immed_24
     arg: u_imm
@@ -440,7 +439,7 @@ modifiers:
         desc: Immediate
         bitmask: 0x0e000000
         pattern: 0x02000000
-        args: [rotate_imm, immed_8]
+        args: [rotated_immed_8]
       - name: reg
         desc: Register
         bitmask: 0x0e000ff0
@@ -981,7 +980,7 @@ opcodes:
     bitmask: 0x0fb0f000
     pattern: 0x0320f000
     modifiers: [cond]
-    args: [R, field_mask, rotate_imm, immed_8]
+    args: [R, field_mask, rotated_immed_8]
     defs: [R]
 
   - name: msr

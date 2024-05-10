@@ -4,7 +4,7 @@ use quote::quote;
 use syn::Ident;
 
 use crate::{
-    isa::{BitRange, Field, Isa, Opcode},
+    isa::{BitRange, Field, FieldOp, FieldOpType, Isa, Opcode},
     iter::cartesian,
     search::SearchTree,
     token::HexLiteral,
@@ -540,7 +540,7 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
             (Some(arg), Some(bits), None) => {
                 let arg = isa.get_arg(arg)?;
                 let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
-                let field_body = generate_field_accessor_body(bits);
+                let field_body = generate_field_accessor_body(bits, field.ops.as_deref());
 
                 match (&arg.values, arg.signed, arg.boolean) {
                     (None, true, false) => (quote! { i32 }, quote! { (#field_body) as i32 }),
@@ -557,7 +557,7 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
                     .map(|arg| {
                         let bits = &arg.bits;
                         let arg = isa.get_arg(&arg.arg)?;
-                        let arg_body = generate_field_accessor_body(bits);
+                        let arg_body = generate_field_accessor_body(bits, None);
                         let arg_ident = Ident::new(&arg.variant_name(), Span::call_site());
                         let struct_field = Ident::new(&arg.name, Span::call_site());
 
@@ -589,11 +589,24 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
     Ok(field_accessors_tokens)
 }
 
-fn generate_field_accessor_body(bits: &BitRange) -> TokenStream {
+fn generate_field_accessor_body(bits: &BitRange, ops: Option<&[FieldOp]>) -> TokenStream {
+    let mut base_value = generate_field_code_shift(bits, 0);
+    if let Some(ops) = ops {
+        for op in ops.iter() {
+            let operand = generate_field_code_shift(&op.bits, op.shift);
+            base_value = match op.r#type {
+                FieldOpType::RotateRight => quote! { (#base_value).rotate_right(#operand) },
+            };
+        }
+    }
+    base_value
+}
+
+fn generate_field_code_shift(bits: &BitRange, extra_shift: i32) -> TokenStream {
     let num_bits = bits.0.len();
     let shift = bits.0.start;
     let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
-    let shift_token = Literal::u8_unsuffixed(shift);
+    let shift_token = Literal::u32_unsuffixed((shift as i32 - extra_shift).try_into().unwrap());
 
     if shift > 0 && num_bits > 1 {
         quote! { (self.code & #bitmask) >> #shift_token }
