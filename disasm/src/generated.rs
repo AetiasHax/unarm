@@ -2145,7 +2145,9 @@ impl Ins {
     /// offset_12: 12-bit immediate offset
     #[inline(always)]
     pub const fn field_offset_12(&self) -> i32 {
-        (self.code & 0x00000fff) as i32
+        let mut value = (self.code & 0x00000fff) as i32;
+        value = if self.code & 0x00800000 != 0 { -value } else { value };
+        value
     }
     /// option: Additional instruction options for coprocessor
     #[inline(always)]
@@ -21450,8 +21452,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21463,8 +21465,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21476,8 +21478,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21489,8 +21491,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21502,8 +21504,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21515,8 +21517,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21528,8 +21530,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21541,8 +21543,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21554,8 +21556,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21567,8 +21569,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21580,8 +21582,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21593,8 +21595,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21606,8 +21608,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21619,8 +21621,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -21632,8 +21634,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22035,8 +22037,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22048,8 +22050,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22061,8 +22063,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22074,8 +22076,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22087,8 +22089,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22100,8 +22102,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22113,8 +22115,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22126,8 +22128,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22139,8 +22141,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22152,8 +22154,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22165,8 +22167,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22178,8 +22180,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22191,8 +22193,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22204,8 +22206,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22217,8 +22219,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22620,8 +22622,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22633,8 +22635,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22646,8 +22648,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22659,8 +22661,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22672,8 +22674,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22685,8 +22687,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22698,8 +22700,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22711,8 +22713,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22724,8 +22726,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22737,8 +22739,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22750,8 +22752,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22763,8 +22765,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22776,8 +22778,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22789,8 +22791,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -22802,8 +22804,8 @@ fn parse_ldr(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23222,8 +23224,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23235,8 +23237,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23248,8 +23250,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23261,8 +23263,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23274,8 +23276,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23287,8 +23289,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23300,8 +23302,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23313,8 +23315,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23326,8 +23328,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23339,8 +23341,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23352,8 +23354,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23365,8 +23367,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23378,8 +23380,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23391,8 +23393,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23404,8 +23406,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23807,8 +23809,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23820,8 +23822,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23833,8 +23835,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23846,8 +23848,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23859,8 +23861,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23872,8 +23874,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23885,8 +23887,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23898,8 +23900,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23911,8 +23913,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23924,8 +23926,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23937,8 +23939,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23950,8 +23952,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23963,8 +23965,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23976,8 +23978,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -23989,8 +23991,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24392,8 +24394,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24405,8 +24407,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24418,8 +24420,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24431,8 +24433,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24444,8 +24446,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24457,8 +24459,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24470,8 +24472,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24483,8 +24485,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24496,8 +24498,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24509,8 +24511,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24522,8 +24524,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24535,8 +24537,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24548,8 +24550,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24561,8 +24563,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24574,8 +24576,8 @@ fn parse_ldr_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -24994,8 +24996,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25007,8 +25009,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25020,8 +25022,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25033,8 +25035,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25046,8 +25048,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25059,8 +25061,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25072,8 +25074,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25085,8 +25087,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25098,8 +25100,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25111,8 +25113,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25124,8 +25126,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25137,8 +25139,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25150,8 +25152,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25163,8 +25165,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -25176,8 +25178,8 @@ fn parse_ldr_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30344,8 +30346,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30357,8 +30359,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30370,8 +30372,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30383,8 +30385,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30396,8 +30398,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30409,8 +30411,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30422,8 +30424,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30435,8 +30437,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30448,8 +30450,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30461,8 +30463,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30474,8 +30476,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30487,8 +30489,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30500,8 +30502,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30513,8 +30515,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -30526,8 +30528,8 @@ fn parse_ldr_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -39170,8 +39172,8 @@ fn parse_pld(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "pld",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -39209,8 +39211,8 @@ fn parse_pld(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "pld",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -39248,8 +39250,8 @@ fn parse_pld(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "pld",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -54041,8 +54043,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54054,8 +54056,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54067,8 +54069,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54080,8 +54082,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54093,8 +54095,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54106,8 +54108,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54119,8 +54121,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54132,8 +54134,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54145,8 +54147,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54158,8 +54160,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54171,8 +54173,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54184,8 +54186,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54197,8 +54199,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54210,8 +54212,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54223,8 +54225,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54626,8 +54628,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54639,8 +54641,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54652,8 +54654,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54665,8 +54667,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54678,8 +54680,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54691,8 +54693,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54704,8 +54706,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54717,8 +54719,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54730,8 +54732,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54743,8 +54745,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54756,8 +54758,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54769,8 +54771,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54782,8 +54784,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54795,8 +54797,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -54808,8 +54810,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55211,8 +55213,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55224,8 +55226,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55237,8 +55239,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55250,8 +55252,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55263,8 +55265,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55276,8 +55278,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55289,8 +55291,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55302,8 +55304,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55315,8 +55317,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55328,8 +55330,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55341,8 +55343,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55354,8 +55356,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55367,8 +55369,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55380,8 +55382,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55393,8 +55395,8 @@ fn parse_str(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55813,8 +55815,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55826,8 +55828,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55839,8 +55841,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55852,8 +55854,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55865,8 +55867,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55878,8 +55880,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55891,8 +55893,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55904,8 +55906,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55917,8 +55919,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55930,8 +55932,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55943,8 +55945,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55956,8 +55958,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55969,8 +55971,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55982,8 +55984,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -55995,8 +55997,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56398,8 +56400,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56411,8 +56413,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56424,8 +56426,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56437,8 +56439,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56450,8 +56452,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56463,8 +56465,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56476,8 +56478,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56489,8 +56491,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56502,8 +56504,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56515,8 +56517,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56528,8 +56530,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56541,8 +56543,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56554,8 +56556,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56567,8 +56569,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56580,8 +56582,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56983,8 +56985,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -56996,8 +56998,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57009,8 +57011,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57022,8 +57024,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57035,8 +57037,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57048,8 +57050,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57061,8 +57063,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57074,8 +57076,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57087,8 +57089,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57100,8 +57102,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57113,8 +57115,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57126,8 +57128,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57139,8 +57141,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57152,8 +57154,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57165,8 +57167,8 @@ fn parse_str_b(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57585,8 +57587,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57598,8 +57600,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57611,8 +57613,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57624,8 +57626,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57637,8 +57639,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57650,8 +57652,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57663,8 +57665,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57676,8 +57678,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57689,8 +57691,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57702,8 +57704,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57715,8 +57717,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57728,8 +57730,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57741,8 +57743,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57754,8 +57756,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57767,8 +57769,8 @@ fn parse_str_bt(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60561,8 +60563,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60574,8 +60576,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60587,8 +60589,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60600,8 +60602,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60613,8 +60615,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60626,8 +60628,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60639,8 +60641,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60652,8 +60654,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60665,8 +60667,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60678,8 +60680,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60691,8 +60693,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60704,8 +60706,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60717,8 +60719,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60730,8 +60732,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -60743,8 +60745,8 @@ fn parse_str_t(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
-                    Argument::Add(ins.field_u()),
                     Argument::Offset(ins.field_offset_12()),
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],

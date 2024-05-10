@@ -291,6 +291,9 @@ fields:
     arg: offset
     desc: 12-bit immediate offset
     bits: 0..12
+    ops:
+      - type: Negate
+        bits: 23..24
 
   - name: option
     arg: co_option
@@ -478,7 +481,7 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x0f200000
         pattern: 0x05000000
-        args: [Rn, U, offset_12]
+        args: [Rn, offset_12]
         uses: [Rn]
       - name: reg
         desc: Register offset
@@ -496,7 +499,7 @@ modifiers:
         desc: Immediate pre-indexed
         bitmask: 0x0f200000
         pattern: 0x05200000
-        args: [Rn, U, offset_12]
+        args: [Rn, offset_12]
         uses: [Rn]
       - name: reg_pre
         desc: Register pre-indexed
@@ -514,7 +517,7 @@ modifiers:
         desc: Immediate post-indexed
         bitmask: 0x0f200000
         pattern: 0x04000000
-        args: [Rn, U, offset_12]
+        args: [Rn, offset_12]
         uses: [Rn]
       - name: reg_post
         desc: Register post-indexed
@@ -536,7 +539,7 @@ modifiers:
         desc: Immediate post-indexed
         bitmask: 0x0f200000
         pattern: 0x04200000
-        args: [Rn, U, offset_12]
+        args: [Rn, offset_12]
         uses: [Rn]
       - name: reg_post
         desc: Register post-indexed
