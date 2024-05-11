@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    generated::{parse, Argument, Arguments, FieldMask, Opcode, RegOffset, ShiftImm, ShiftReg},
+    generated::{parse, Argument, Arguments, FieldMask, Opcode, RegOffset, RegPostOffset, ShiftImm, ShiftReg},
     CoReg, Reg, Shift, StatusMask, StatusReg,
 };
 
@@ -38,14 +38,47 @@ impl ParsedIns {
 
 impl Display for ParsedIns {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.mnemonic)?;
+        write!(f, "{} ", self.mnemonic)?;
         let mut comma = false;
+        let mut deref = false;
+        let mut writeback = false;
         for arg in self.args_iter() {
-            if comma {
-                write!(f, ",")?;
+            if deref {
+                match arg {
+                    Argument::PostOffset(_) | Argument::RegPostOffset(_) | Argument::CoOption(_) => {
+                        deref = false;
+                        write!(f, "]")?;
+                        if writeback {
+                            write!(f, "!")?;
+                            writeback = false;
+                        }
+                    }
+                    _ => {}
+                }
             }
-            write!(f, " {}", arg)?;
+            if comma {
+                write!(f, ", ")?;
+            }
+            match arg {
+                Argument::RegDeref(_) => {
+                    deref = true;
+                    write!(f, "[")?
+                }
+                Argument::RegDerefWb(_) => {
+                    deref = true;
+                    writeback = true;
+                    write!(f, "[")?
+                }
+                _ => {}
+            }
+            write!(f, "{}", arg)?;
             comma = true;
+        }
+        if deref {
+            write!(f, "]")?;
+            if writeback {
+                write!(f, "!")?;
+            }
         }
         Ok(())
     }
@@ -88,6 +121,11 @@ impl Display for Argument {
             Argument::Rrx => write!(f, "rrx"),
             Argument::RegOffset(x) => write!(f, "{}", x),
             Argument::FieldMask(x) => write!(f, "{}", x),
+            Argument::RegDeref(x) => write!(f, "{}", x),
+            Argument::RegDerefWb(x) => write!(f, "{}", x),
+            Argument::PostOffset((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
+            Argument::RegPostOffset(x) => write!(f, "{}", x),
+            Argument::BranchDest((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
         }
     }
 }
@@ -206,6 +244,15 @@ impl Display for RegOffset {
     }
 }
 
+impl Display for RegPostOffset {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if !self.add {
+            write!(f, "-")?;
+        }
+        write!(f, "{}", self.reg)
+    }
+}
+
 impl Display for FieldMask {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}_{}", self.reg, self.mask)
@@ -253,7 +300,7 @@ impl<'a> Iterator for InsIter<'a> {
             return None;
         }
         let bytes = [self.data[0], self.data[1], self.data[2], self.data[3]];
-        let ins = Ins::new(u32::from_be_bytes(bytes));
+        let ins = Ins::new(u32::from_le_bytes(bytes));
         let addr = self.address;
         self.address += 4;
         self.data = &self.data[4..];

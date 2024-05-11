@@ -44,6 +44,14 @@ args:
     desc: General-purpose register with writeback
     alias: reg
 
+  - name: reg_deref
+    desc: Base register
+    alias: reg
+
+  - name: reg_deref_wb
+    desc: Base register with writeback
+    alias: reg
+
   - name: reg_list
     desc: List of general-purpose registers
 
@@ -162,6 +170,14 @@ args:
     desc: Immediate offset
     signed: true
 
+  - name: post_offset
+    desc: Immediate post-indexed offset
+    signed: true
+
+  - name: branch_dest
+    desc: Branch destination
+    signed: true
+
   - name: add
     desc: Add
     boolean: true
@@ -190,6 +206,16 @@ fields:
   - name: Rn_wb
     arg: reg_wb
     desc: Source operand register with writeback
+    bits: 16..20
+
+  - name: Rn_deref
+    arg: reg_deref
+    desc: Base register
+    bits: 16..20
+
+  - name: Rn_deref_wb
+    arg: reg_deref_wb
+    desc: Base register with writeback
     bits: 16..20
 
   - name: Rm
@@ -258,15 +284,43 @@ fields:
     desc: 24-bit immediate
     bits: 0..24
 
-  - name: immed_8
-    arg: s_imm
-    desc: 8-bit immediate in bits 0..4 and 8..12
+  - name: offset_8
+    arg: offset
+    desc: 8-bit immediate offset
     bits: 0..4
     extra_bits: 4
     ops:
       - type: Or
         bits: 8..12
         shift: 4
+      - type: Negate
+        bits: 23..24
+
+  - name: post_offset_8
+    arg: post_offset
+    desc: 8-bit immediate post-indexed offset
+    bits: 0..4
+    extra_bits: 4
+    ops:
+      - type: Or
+        bits: 8..12
+        shift: 4
+      - type: Negate
+        bits: 23..24
+
+  - name: offset_12
+    arg: offset
+    desc: 12-bit immediate offset
+    bits: 0..12
+    ops:
+      - type: Negate
+        bits: 23..24
+
+  - name: post_offset_12
+    arg: post_offset
+    desc: 12-bit immediate post-indexed offset
+    bits: 0..12
+    ops:
       - type: Negate
         bits: 23..24
 
@@ -308,27 +362,29 @@ fields:
         arg: reg
         bits: 0..4
 
+  - name: reg_post_offset
+    desc: Register post-indexed offset
+    args:
+      - name: add
+        arg: add
+        bits: 23..24
+      - name: reg
+        arg: reg
+        bits: 0..4
+
   - name: R
     arg: status_reg
     desc: Move SPSR (1) or CPSR (0)
     bits: 22..23
 
-  - name: offset_8
+  - name: coproc_offset
     arg: offset
-    desc: 8-bit immediate offset
+    desc: 8-bit immediate coprocessor offset
     bits: 0..8
     extra_bits: 2
     ops:
       - type: LeftShift
         value: 2
-      - type: Negate
-        bits: 23..24
-
-  - name: offset_12
-    arg: offset
-    desc: 12-bit immediate offset
-    bits: 0..12
-    ops:
       - type: Negate
         bits: 23..24
 
@@ -343,7 +399,7 @@ fields:
     bits: 24..25
 
   - name: branch_offset
-    arg: s_imm
+    arg: branch_dest
     desc: 24-bit signed B/BL target offset
     bits: 0..24
     extra_bits: 2
@@ -354,7 +410,7 @@ fields:
         value: 8
 
   - name: blx_offset
-    arg: s_imm
+    arg: branch_dest
     desc: 24-bit signed BLX target offset
     bits: 0..24
     extra_bits: 2
@@ -543,56 +599,56 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x0f200000
         pattern: 0x05000000
-        args: [Rn, offset_12]
-        uses: [Rn]
+        args: [Rn_deref, offset_12]
+        uses: [Rn_deref]
       - name: reg
         desc: Register offset
         bitmask: 0x0f200ff0
         pattern: 0x07000000
-        args: [Rn, reg_offset]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_offset]
+        uses: [Rn_deref, reg_offset]
       - name: scl
         desc: Scaled register offset
         bitmask: 0x0f200010
         pattern: 0x07000000
-        args: [Rn, reg_offset, shift_imm]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_offset, shift_imm]
+        uses: [Rn_deref, reg_offset]
       - name: imm_pre
         desc: Immediate pre-indexed
         bitmask: 0x0f200000
         pattern: 0x05200000
-        args: [Rn, offset_12]
-        uses: [Rn]
+        args: [Rn_deref_wb, offset_12]
+        uses: [Rn_deref_wb]
       - name: reg_pre
         desc: Register pre-indexed
         bitmask: 0x0f200ff0
         pattern: 0x07200000
-        args: [Rn, reg_offset]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref_wb, reg_offset]
+        uses: [Rn_deref_wb, reg_offset]
       - name: scl_pre
         desc: Scaled register pre-indexed
         bitmask: 0x0f200010
         pattern: 0x07200000
-        args: [Rn, reg_offset, shift_imm]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref_wb, reg_offset, shift_imm]
+        uses: [Rn_deref_wb, reg_offset]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x0f200000
         pattern: 0x04000000
-        args: [Rn, offset_12]
-        uses: [Rn]
+        args: [Rn_deref, post_offset_12]
+        uses: [Rn_deref]
       - name: reg_post
         desc: Register post-indexed
         bitmask: 0x0f200ff0
         pattern: 0x06000000
-        args: [Rn, reg_offset]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_post_offset]
+        uses: [Rn_deref, reg_post_offset]
       - name: scl_post
         desc: Scaled register post-indexed
         bitmask: 0x0f200010
         pattern: 0x06000000
-        args: [Rn, reg_offset, shift_imm]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_post_offset, shift_imm]
+        uses: [Rn_deref, reg_post_offset]
 
   - name: addr_ldrt_strt
     desc: Load and Store Word or Unsigned Byte with Translation
@@ -601,20 +657,20 @@ modifiers:
         desc: Immediate post-indexed
         bitmask: 0x0f200000
         pattern: 0x04200000
-        args: [Rn, offset_12]
-        uses: [Rn]
+        args: [Rn_deref, post_offset_12]
+        uses: [Rn_deref]
       - name: reg_post
         desc: Register post-indexed
         bitmask: 0x0f200ff0
         pattern: 0x06200000
-        args: [Rn, reg_offset]
-        uses: [Rn, Rm]
+        args: [Rn_deref, reg_post_offset]
+        uses: [Rn_deref, reg_post_offset]
       - name: scl_post
         desc: Scaled register post-indexed
         bitmask: 0x0f200010
         pattern: 0x06200000
-        args: [Rn, reg_offset, shift_imm]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_post_offset, shift_imm]
+        uses: [Rn_deref, reg_post_offset]
 
   - name: addr_misc_ldr_str
     desc: Miscellaneous Loads and Stores
@@ -623,38 +679,38 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x0f600090
         pattern: 0x01400090
-        args: [Rn, immed_8]
-        uses: [Rn]
+        args: [Rn_deref, offset_8]
+        uses: [Rn_deref]
       - name: reg
         desc: Register offset
         bitmask: 0x0f600f90
         pattern: 0x01000090
-        args: [Rn, reg_offset]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_offset]
+        uses: [Rn_deref, reg_offset]
       - name: imm_pre
         desc: Immediate pre-indexed
         bitmask: 0x0f600090
         pattern: 0x01600090
-        args: [Rn, immed_8]
-        uses: [Rn]
+        args: [Rn_deref, offset_8]
+        uses: [Rn_deref]
       - name: reg_pre
         desc: Register pre-indexed
         bitmask: 0x0f600f90
         pattern: 0x01200090
-        args: [Rn, reg_offset]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_offset]
+        uses: [Rn_deref, reg_offset]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x0f600090
         pattern: 0x00400090
-        args: [Rn, immed_8]
-        uses: [Rn]
+        args: [Rn_deref, post_offset_8]
+        uses: [Rn_deref]
       - name: reg_post
         desc: Register post-indexed
         bitmask: 0x0f600f90
         pattern: 0x00000090
-        args: [Rn, reg_offset]
-        uses: [Rn, reg_offset]
+        args: [Rn_deref, reg_post_offset]
+        uses: [Rn_deref, reg_post_offset]
 
   - name: addr_ldm_stm
     desc: Load and Store Multiple
@@ -684,26 +740,26 @@ modifiers:
         desc: Immediate offset
         bitmask: 0x01200000
         pattern: 0x01000000
-        args: [Rn, offset_8]
-        uses: [Rn]
+        args: [Rn_deref, coproc_offset]
+        uses: [Rn_deref]
       - name: imm_pre
         desc: Immediate pre-indexed
         bitmask: 0x01200000
         pattern: 0x01200000
-        args: [Rn, offset_8]
-        uses: [Rn]
+        args: [Rn_deref, coproc_offset]
+        uses: [Rn_deref]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x01200000
         pattern: 0x00200000
-        args: [Rn, offset_8]
-        uses: [Rn]
+        args: [Rn_deref, coproc_offset]
+        uses: [Rn_deref]
       - name: unidx
         desc: Unindexed
         bitmask: 0x01a00000
         pattern: 0x00800000
-        args: [Rn, option]
-        uses: [Rn]
+        args: [Rn_deref, option]
+        uses: [Rn_deref]
 
 opcodes:
   - name: adc
@@ -1242,17 +1298,17 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08200000
     modifiers: [cond, addr_ldm_stm]
-    args: [Rn, registers]
-    defs: [Rn]
-    uses: [Rn, registers]
+    args: [Rn_wb, registers]
+    defs: [Rn_wb]
+    uses: [Rn_wb, registers]
 
   - name: stm$p
     desc: Store Multiple (privileged)
     bitmask: 0x0e700000
     pattern: 0x08400000
     modifiers: [cond, addr_ldm_stm]
-    args: [Rn, registers]
-    uses: [Rn, registers]
+    args: [Rn, registers_c]
+    uses: [Rn, registers_c]
 
   - name: str
     desc: Store Register
