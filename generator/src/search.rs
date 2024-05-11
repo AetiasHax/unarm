@@ -76,30 +76,20 @@ impl SearchTree {
         }
 
         let node = Self::narrow_down(opcodes);
-        // println!("{{");
         if let Some(mut node) = node {
-            // println!("\"size\":{}", opcodes.len());
             let (left, right) = node.filter(opcodes);
             if left.len() > 1 {
-                // println!(",\"left\":");
                 if let Some(left) = Self::optimize(&left, max_depth - 1) {
                     node.left = Some(Box::new(left));
-                } else {
-                    // println!("\"opcode {}\"", left[0].name);
                 }
             }
             if right.len() > 1 {
-                // println!(",\"right\":");
                 if let Some(right) = Self::optimize(&right, max_depth - 1) {
                     node.right = Some(Box::new(right));
-                } else {
-                    // println!("\"opcode {}\"", right[0].name);
                 }
             }
-            // println!("}}");
             Some(node)
         } else {
-            // println!("}}");
             None
         }
     }

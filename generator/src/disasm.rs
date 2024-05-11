@@ -515,7 +515,7 @@ fn generate_modifier_accessors(isa: &Isa) -> Result<TokenStream> {
 
         modifier_accessors_tokens.extend(quote! {
             #[doc = #doc]
-            // #[inline(always)]
+            #[inline(always)]
             pub const fn #fn_name(&self) -> #ret_type {
                 #inner
             }
@@ -610,7 +610,7 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
         let fn_name = Ident::new(&field.accessor_name(), Span::call_site());
         field_accessors_tokens.extend(quote! {
             #[doc = #doc]
-            // #[inline(always)]
+            #[inline(always)]
             pub const fn #fn_name(&self) -> #ret_type #inner
         });
     }

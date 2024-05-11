@@ -273,7 +273,6 @@ impl Display for SignedHex {
             hex += "0";
         }
         write!(f, "#")?;
-        // if self.value & (1 << (self.size - 1)) != 0 {
         if self.value.is_negative() {
             write!(f, "-")?;
         }

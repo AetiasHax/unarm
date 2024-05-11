@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fmt::Display, fs::File, ops::Range, path::Path};
+use std::{fs::File, ops::Range, path::Path};
 
 use anyhow::{bail, Context, Result};
 
@@ -69,33 +69,6 @@ impl Isa {
             }
         }
         Ok(max)
-    }
-
-    pub fn get_all_opcodes(&self) -> Result<Box<[Opcode]>> {
-        let opcodes: Result<Vec<_>> = self.opcodes.iter().map(|opcode| opcode.get_variants(self)).collect();
-        let opcodes = opcodes?;
-        let opcodes: Vec<_> = opcodes.iter().flat_map(|op| op.iter()).cloned().collect();
-        Ok(opcodes.into_boxed_slice())
-    }
-
-    pub fn calc_opcode_buckets(&self, bitmask: u32) -> Vec<Vec<Opcode>> {
-        let num_buckets = 1 << bitmask.count_ones();
-        let mut buckets: Vec<Vec<Opcode>> = vec![vec![]; num_buckets];
-        for opcode in self.opcodes.iter() {
-            let bucket = opcode.bucket_index(bitmask);
-            buckets[bucket].push(opcode.clone());
-        }
-        buckets
-    }
-
-    pub fn count_opcode_buckets(&self, bitmask: u32) -> Vec<u8> {
-        let num_buckets = 1 << bitmask.count_ones();
-        let mut buckets: Vec<u8> = vec![0; num_buckets];
-        for opcode in self.opcodes.iter() {
-            let bucket = opcode.bucket_index(bitmask);
-            buckets[bucket] += 1;
-        }
-        buckets
     }
 }
 
@@ -567,67 +540,6 @@ impl Opcode {
         Ok(())
     }
 
-    pub fn get_variants(&self, isa: &Isa) -> Result<Box<[Opcode]>> {
-        let modifiers = self.get_modifier_cases(isa)?;
-        if !modifiers.is_empty() {
-            let variants: Vec<_> = cartesian(&modifiers)
-                .map(|cases| cases.iter().fold(self.clone(), |acc, case| acc.apply_case(case)))
-                .collect();
-            Ok(variants.into_boxed_slice())
-        } else {
-            Ok(Box::new([self.clone()]))
-        }
-    }
-
-    fn apply_case(self, case: &ModifierCase) -> Self {
-        let args = join_strings(self.args, &case.args);
-        let defs = join_strings(self.defs, &case.defs);
-        let uses = join_strings(self.uses, &case.uses);
-
-        let desc = match &case.desc {
-            Some(case_desc) => self.desc + ", " + case_desc,
-            None => self.desc,
-        };
-
-        Self {
-            name: self.name + &case.suffix.clone().unwrap_or("".to_string()),
-            desc,
-            suffix: self.suffix,
-            bitmask: self.bitmask | case.bitmask.unwrap_or(0),
-            pattern: self.pattern | case.pattern,
-            modifiers: None,
-            args,
-            defs,
-            uses,
-        }
-    }
-
-    pub fn bucket_index(&self, mut bitmask: u32) -> usize {
-        let code = self.pattern;
-        let mut index = 0;
-        let mut total_shift = 0;
-        let mut bucket_bits = 0;
-        while bitmask != 0 {
-            let zero_shift = bitmask.trailing_zeros();
-            bitmask >>= zero_shift;
-            let one_shift = bitmask.trailing_ones();
-            let bits = (1 << one_shift) - 1;
-            bitmask >>= one_shift;
-
-            total_shift += zero_shift;
-            let mask = bits << total_shift;
-            let bucket_shift: i32 = total_shift as i32 - bucket_bits as i32;
-            match bucket_shift.cmp(&0) {
-                Ordering::Greater => index |= (code & mask) >> bucket_shift,
-                Ordering::Less => index |= (code & mask) << bucket_shift,
-                Ordering::Equal => index |= code & mask,
-            };
-            bucket_bits += one_shift;
-            total_shift += one_shift;
-        }
-        index.try_into().unwrap()
-    }
-
     pub fn base_name(&self) -> &str {
         if let Some((name, _)) = self.name.split_once('$') {
             name
@@ -689,18 +601,6 @@ impl Opcode {
     }
 }
 
-impl Display for Opcode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{} - {}", self.name, self.desc)?;
-        writeln!(f, "bitmask: 0x{:08x}", self.bitmask)?;
-        writeln!(f, "pattern: 0x{:08x}", self.pattern)?;
-        // writeln!(f, "args: {}", self.args.clone().unwrap_or(Box::new([])).join(", "))?;
-        // writeln!(f, "defs: {}", self.defs.clone().unwrap_or(Box::new([])).join(", "))?;
-        // writeln!(f, "uses: {}", self.uses.clone().unwrap_or(Box::new([])).join(", "))?;
-        Ok(())
-    }
-}
-
 pub struct BitRange(pub Range<u8>);
 
 impl BitRange {
@@ -729,21 +629,6 @@ impl<'de> Deserialize<'de> for BitRange {
                 end: bit_idx + 1,
             }))
         }
-    }
-}
-
-fn join_strings(a: Option<Box<[String]>>, b: &Option<Box<[String]>>) -> Option<Box<[String]>> {
-    let slice = a
-        .iter()
-        .flat_map(|a| a.iter())
-        .cloned()
-        .chain(b.iter().flat_map(|b| b.iter()).cloned())
-        .collect::<Vec<_>>()
-        .into_boxed_slice();
-    if slice.is_empty() {
-        None
-    } else {
-        Some(slice)
     }
 }
 

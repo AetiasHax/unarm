@@ -2047,72 +2047,89 @@ pub struct FieldMask {
 }
 impl Ins {
     /// Rn: First source operand register
+    #[inline(always)]
     pub const fn field_rn(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// Rn_wb: Source operand register with writeback
+    #[inline(always)]
     pub const fn field_rn_wb(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// Rn_deref: Base register
+    #[inline(always)]
     pub const fn field_rn_deref(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// Rn_deref_wb: Base register with writeback
+    #[inline(always)]
     pub const fn field_rn_deref_wb(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// Rm: Second source operand register
+    #[inline(always)]
     pub const fn field_rm(&self) -> Reg {
         Reg::parse((self.code & 0x0000000f) as u8)
     }
     /// Rd: Destination register
+    #[inline(always)]
     pub const fn field_rd(&self) -> Reg {
         Reg::parse(((self.code & 0x0000f000) >> 12) as u8)
     }
     /// Rs: Register containing shift offset
+    #[inline(always)]
     pub const fn field_rs(&self) -> Reg {
         Reg::parse(((self.code & 0x00000f00) >> 8) as u8)
     }
     /// RdHi: Upper 32-bit long destination register
+    #[inline(always)]
     pub const fn field_rdhi(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// RdLo: Lower 32-bit long destination register
+    #[inline(always)]
     pub const fn field_rdlo(&self) -> Reg {
         Reg::parse(((self.code & 0x0000f000) >> 12) as u8)
     }
     /// registers: List of registers
+    #[inline(always)]
     pub const fn field_registers(&self) -> u32 {
         self.code & 0x0000ffff
     }
     /// registers_c: List of registers (with ^ suffix)
+    #[inline(always)]
     pub const fn field_registers_c(&self) -> u32 {
         self.code & 0x0000ffff
     }
     /// CRn: First source coprocessor register
+    #[inline(always)]
     pub const fn field_crn(&self) -> CoReg {
         CoReg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// CRm: Second source coprocessor register
+    #[inline(always)]
     pub const fn field_crm(&self) -> CoReg {
         CoReg::parse((self.code & 0x0000000f) as u8)
     }
     /// CRd: Destination coprocessor register
+    #[inline(always)]
     pub const fn field_crd(&self) -> CoReg {
         CoReg::parse(((self.code & 0x0000f000) >> 12) as u8)
     }
     /// rotated_immed_8: 8-bit immediate
+    #[inline(always)]
     pub const fn field_rotated_immed_8(&self) -> u32 {
         let mut value = self.code & 0x000000ff;
         value = value.rotate_right((self.code & 0x00000f00) >> 7);
         value
     }
     /// immed_24: 24-bit immediate
+    #[inline(always)]
     pub const fn field_immed_24(&self) -> u32 {
         self.code & 0x00ffffff
     }
     /// offset_8: 8-bit immediate offset
+    #[inline(always)]
     pub const fn field_offset_8(&self) -> (i32, u8) {
         let mut value = (self.code & 0x0000000f) as i32;
         value |= ((self.code & 0x00000f00) >> 4) as i32;
@@ -2120,6 +2137,7 @@ impl Ins {
         (value, 8)
     }
     /// post_offset_8: 8-bit immediate post-indexed offset
+    #[inline(always)]
     pub const fn field_post_offset_8(&self) -> (i32, u8) {
         let mut value = (self.code & 0x0000000f) as i32;
         value |= ((self.code & 0x00000f00) >> 4) as i32;
@@ -2127,18 +2145,21 @@ impl Ins {
         (value, 8)
     }
     /// offset_12: 12-bit immediate offset
+    #[inline(always)]
     pub const fn field_offset_12(&self) -> (i32, u8) {
         let mut value = (self.code & 0x00000fff) as i32;
         value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
         (value, 12)
     }
     /// post_offset_12: 12-bit immediate post-indexed offset
+    #[inline(always)]
     pub const fn field_post_offset_12(&self) -> (i32, u8) {
         let mut value = (self.code & 0x00000fff) as i32;
         value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
         (value, 12)
     }
     /// shift_imm: Immediate shift offset
+    #[inline(always)]
     pub const fn field_shift_imm(&self) -> ShiftImm {
         ShiftImm {
             op: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
@@ -2154,6 +2175,7 @@ impl Ins {
         }
     }
     /// shift_reg: Register shift offset
+    #[inline(always)]
     pub const fn field_shift_reg(&self) -> ShiftReg {
         ShiftReg {
             op: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
@@ -2161,6 +2183,7 @@ impl Ins {
         }
     }
     /// reg_offset: Register offset
+    #[inline(always)]
     pub const fn field_reg_offset(&self) -> RegOffset {
         RegOffset {
             add: { ((self.code & 0x00800000) >> 23) != 0 },
@@ -2168,6 +2191,7 @@ impl Ins {
         }
     }
     /// reg_post_offset: Register post-indexed offset
+    #[inline(always)]
     pub const fn field_reg_post_offset(&self) -> RegPostOffset {
         RegPostOffset {
             add: { ((self.code & 0x00800000) >> 23) != 0 },
@@ -2175,10 +2199,12 @@ impl Ins {
         }
     }
     /// R: Move SPSR (1) or CPSR (0)
+    #[inline(always)]
     pub const fn field_r(&self) -> StatusReg {
         StatusReg::parse(((self.code & 0x00400000) >> 22) as u8)
     }
     /// coproc_offset: 8-bit immediate coprocessor offset
+    #[inline(always)]
     pub const fn field_coproc_offset(&self) -> (i32, u8) {
         let mut value = (self.code & 0x000000ff) as i32;
         value <<= 2;
@@ -2186,14 +2212,17 @@ impl Ins {
         (value, 10)
     }
     /// option: Additional instruction options for coprocessor
+    #[inline(always)]
     pub const fn field_option(&self) -> u32 {
         self.code & 0x000000ff
     }
     /// H: Add 2 to BLX target address
+    #[inline(always)]
     pub const fn field_h(&self) -> bool {
         ((self.code & 0x01000000) >> 24) != 0
     }
     /// branch_offset: 24-bit signed B/BL target offset
+    #[inline(always)]
     pub const fn field_branch_offset(&self) -> (i32, u8) {
         let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
         value <<= 2;
@@ -2201,6 +2230,7 @@ impl Ins {
         (value, 26)
     }
     /// blx_offset: 24-bit signed BLX target offset
+    #[inline(always)]
     pub const fn field_blx_offset(&self) -> (i32, u8) {
         let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
         value <<= 2;
@@ -2209,12 +2239,14 @@ impl Ins {
         (value, 26)
     }
     /// immed_16: 16-bit immediate in bits 0..4 and 8..20
+    #[inline(always)]
     pub const fn field_immed_16(&self) -> u32 {
         let mut value = self.code & 0x0000000f;
         value |= (self.code & 0x000fff00) >> 4;
         value
     }
     /// field_mask: Status fields to set
+    #[inline(always)]
     pub const fn field_field_mask(&self) -> FieldMask {
         FieldMask {
             reg: { StatusReg::parse(((self.code & 0x00400000) >> 22) as u8) },
@@ -2222,42 +2254,52 @@ impl Ins {
         }
     }
     /// opcode: Coprocessor operation to perform (user-defined)
+    #[inline(always)]
     pub const fn field_opcode(&self) -> u32 {
         (self.code & 0x000000f0) >> 4
     }
     /// codat_opcode_1: Coprocessor operation to perform (user-defined, used by CDP instruction)
+    #[inline(always)]
     pub const fn field_codat_opcode_1(&self) -> u32 {
         (self.code & 0x00f00000) >> 20
     }
     /// comov_opcode_1: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
+    #[inline(always)]
     pub const fn field_comov_opcode_1(&self) -> u32 {
         (self.code & 0x00e00000) >> 21
     }
     /// opcode_2: Coprocessor operation to perform (user-defined)
+    #[inline(always)]
     pub const fn field_opcode_2(&self) -> u32 {
         (self.code & 0x000000e0) >> 5
     }
     /// coproc: Coprocessor number
+    #[inline(always)]
     pub const fn field_coproc(&self) -> u32 {
         (self.code & 0x00000f00) >> 8
     }
     /// S: Update condition status flags
+    #[inline(always)]
     pub const fn modifier_s(&self) -> bool {
         (self.code & 0x00100000) == 0x00100000
     }
     /// L: Long coprocessor load (e.g. double instead of float)
+    #[inline(always)]
     pub const fn modifier_l(&self) -> bool {
         (self.code & 0x00400000) == 0x00400000
     }
     /// y: Second multiply operand in bottom (0) or top (1) half
+    #[inline(always)]
     pub const fn modifier_y(&self) -> bool {
         (self.code & 0x00000040) == 0x00000040
     }
     /// x: First multiply operand in bottom (0) or top (1) half
+    #[inline(always)]
     pub const fn modifier_x(&self) -> bool {
         (self.code & 0x00000020) == 0x00000020
     }
     /// cond: Condition code
+    #[inline(always)]
     pub const fn modifier_cond(&self) -> Cond {
         match self.code & 0xf0000000 {
             0x00000000 => Cond::Eq,
@@ -2279,6 +2321,7 @@ impl Ins {
         }
     }
     /// addr_data: Data-processing operands
+    #[inline(always)]
     pub const fn modifier_addr_data(&self) -> AddrData {
         if (self.code & 0x0e000ff0) == 0x00000000 {
             AddrData::Reg
@@ -2295,6 +2338,7 @@ impl Ins {
         }
     }
     /// addr_ldr_str: Load and Store Word or Unsigned Byte
+    #[inline(always)]
     pub const fn modifier_addr_ldr_str(&self) -> AddrLdrStr {
         if (self.code & 0x0f200ff0) == 0x07000000 {
             AddrLdrStr::Reg
@@ -2319,6 +2363,7 @@ impl Ins {
         }
     }
     /// addr_ldrt_strt: Load and Store Word or Unsigned Byte with Translation
+    #[inline(always)]
     pub const fn modifier_addr_ldrt_strt(&self) -> AddrLdrtStrt {
         if (self.code & 0x0f200ff0) == 0x06200000 {
             AddrLdrtStrt::RegPost
@@ -2331,6 +2376,7 @@ impl Ins {
         }
     }
     /// addr_misc_ldr_str: Miscellaneous Loads and Stores
+    #[inline(always)]
     pub const fn modifier_addr_misc_ldr_str(&self) -> AddrMiscLdrStr {
         if (self.code & 0x0f600f90) == 0x01000090 {
             AddrMiscLdrStr::Reg
@@ -2349,6 +2395,7 @@ impl Ins {
         }
     }
     /// addr_ldm_stm: Load and Store Multiple
+    #[inline(always)]
     pub const fn modifier_addr_ldm_stm(&self) -> AddrLdmStm {
         match self.code & 0x01800000 {
             0x00800000 => AddrLdmStm::Ia,
@@ -2359,6 +2406,7 @@ impl Ins {
         }
     }
     /// addr_coproc: Load and Store Coprocessor
+    #[inline(always)]
     pub const fn modifier_addr_coproc(&self) -> AddrCoproc {
         if (self.code & 0x01a00000) == 0x00800000 {
             AddrCoproc::Unidx
