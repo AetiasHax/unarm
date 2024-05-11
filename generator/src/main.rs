@@ -18,7 +18,7 @@ fn main() -> Result<()> {
     let tokens = generate_disasm(&arm).context("While generating tokens for disassembler")?;
     let file = syn::parse2(tokens).context("While parsing tokens for disassembler")?;
     let formatted = prettyplease::unparse(&file);
-    fs::write("disasm/src/generated.rs", formatted)?;
+    fs::write("disasm/src/arm/generated.rs", formatted)?;
 
     Ok(())
 }

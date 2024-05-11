@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::{
+use crate::arm::{
     generated::{parse, Argument, Arguments, FieldMask, Opcode, RegOffset, RegPostOffset, ShiftImm, ShiftReg},
     CoReg, Reg, Shift, StatusMask, StatusReg,
 };
