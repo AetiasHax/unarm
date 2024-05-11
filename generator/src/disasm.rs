@@ -346,7 +346,7 @@ fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
                 }
 
                 argument_sub_enum_tokens.extend(quote! {
-                    #[derive(Clone, Copy, PartialEq, Eq)]
+                    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
                     #[repr(u8)]
                     pub enum #variant_ident {
                         #sub_variants
@@ -402,7 +402,7 @@ fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
         }
     }
     let argument_enum_tokens = quote! {
-        #[derive(Default, Clone, Copy, PartialEq, Eq)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
         pub enum Argument {
             #[default]
             None,
@@ -543,6 +543,7 @@ fn generate_modifier_case_enums(isa: &Isa) -> TokenStream {
             let doc = modifier.doc();
             case_enums_tokens.extend(quote! {
                 #[doc = #doc]
+                #[derive(Debug, Clone, Copy, PartialEq, Eq)]
                 pub enum #enum_ident {
                     Illegal,
                     #variants_tokens
@@ -730,7 +731,7 @@ fn generate_field_structs(isa: &Isa) -> Result<TokenStream> {
                 .collect::<Result<Vec<_>>>()?;
             let struct_ident = Ident::new(&field.struct_name(), Span::call_site());
             Ok(quote! {
-                #[derive(Clone, Copy, PartialEq, Eq)]
+                #[derive(Clone, Copy, PartialEq, Eq, Debug)]
                 pub struct #struct_ident {
                     #(#struct_fields),*
                 }

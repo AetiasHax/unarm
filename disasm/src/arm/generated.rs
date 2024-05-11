@@ -2020,27 +2020,27 @@ impl Opcode {
         78
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ShiftImm {
     pub op: Shift,
     pub imm: u32,
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ShiftReg {
     pub op: Shift,
     pub reg: Reg,
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct RegOffset {
     pub add: bool,
     pub reg: Reg,
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct RegPostOffset {
     pub add: bool,
     pub reg: Reg,
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct FieldMask {
     pub reg: StatusReg,
     pub mask: StatusMask,
@@ -2422,6 +2422,7 @@ impl Ins {
     }
 }
 /// cond: Condition code
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cond {
     Illegal,
     /// eq: Equal
@@ -2456,6 +2457,7 @@ pub enum Cond {
     Al,
 }
 /// addr_data: Data-processing operands
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrData {
     Illegal,
     /// imm: Immediate
@@ -2470,6 +2472,7 @@ pub enum AddrData {
     Rrx,
 }
 /// addr_ldr_str: Load and Store Word or Unsigned Byte
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrLdrStr {
     Illegal,
     /// imm: Immediate offset
@@ -2492,6 +2495,7 @@ pub enum AddrLdrStr {
     SclPost,
 }
 /// addr_ldrt_strt: Load and Store Word or Unsigned Byte with Translation
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrLdrtStrt {
     Illegal,
     /// imm_post: Immediate post-indexed
@@ -2502,6 +2506,7 @@ pub enum AddrLdrtStrt {
     SclPost,
 }
 /// addr_misc_ldr_str: Miscellaneous Loads and Stores
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrMiscLdrStr {
     Illegal,
     /// imm: Immediate offset
@@ -2518,6 +2523,7 @@ pub enum AddrMiscLdrStr {
     RegPost,
 }
 /// addr_ldm_stm: Load and Store Multiple
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrLdmStm {
     Illegal,
     /// ia: Increment After
@@ -2530,6 +2536,7 @@ pub enum AddrLdmStm {
     Db,
 }
 /// addr_coproc: Load and Store Coprocessor
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrCoproc {
     Illegal,
     /// imm: Immediate offset
@@ -2542,7 +2549,7 @@ pub enum AddrCoproc {
     Unidx,
 }
 pub type Arguments = [Argument; 6];
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Argument {
     #[default]
     None,
@@ -2591,7 +2598,7 @@ pub enum Argument {
     /// field_mask: Status fields to set
     FieldMask(FieldMask),
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Reg {
     Illegal = 255,
@@ -2626,7 +2633,7 @@ impl Reg {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum CoReg {
     Illegal = 255,
@@ -2656,7 +2663,7 @@ impl CoReg {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum StatusReg {
     Illegal = 255,
@@ -2672,7 +2679,7 @@ impl StatusReg {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum StatusMask {
     Illegal = 255,
@@ -2701,7 +2708,7 @@ impl StatusMask {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Shift {
     Illegal = 255,
