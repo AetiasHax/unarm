@@ -407,7 +407,7 @@ fn get_arg_variant_type(arg: &Arg) -> TokenStream {
         (None, true, false) => quote! { (i32, u8) },
         (None, false, true) => quote! { bool },
         (None, false, false) => quote! { u32 },
-        (Some(values), false, false) => {
+        (Some(_), false, false) => {
             let variant = Ident::new(&arg.variant_name(), Span::call_site());
             quote! { #variant }
         }
@@ -573,8 +573,9 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
                     .map(|arg| {
                         let name = &arg.name;
                         let bits = &arg.bits;
+                        let ops = &arg.ops;
                         let arg = isa.get_arg(&arg.arg)?;
-                        let value = generate_field_accessor_body(field, arg, bits, None, false);
+                        let value = generate_field_accessor_body(field, arg, bits, ops.as_deref(), false);
                         let struct_field = Ident::new(name, Span::call_site());
 
                         Ok(quote! { #struct_field: #value })
@@ -626,12 +627,7 @@ fn generate_field_accessor_body(
                         let lit = Literal::i32_unsuffixed(*value);
                         quote! { #lit }
                     }
-                    (Some(bits), None) => match op.r#type {
-                        FieldOpType::Negate => generate_field_code_shift(bits, false, false, op.shift),
-                        FieldOpType::RotateRight | FieldOpType::LeftShift | FieldOpType::Or | FieldOpType::Add => {
-                            generate_field_code_shift(bits, arg.signed, false, op.shift)
-                        }
-                    },
+                    (Some(bits), None) => generate_field_code_shift(bits, arg.signed && op.r#type.signed(), false, op.shift),
                     _ => panic!(),
                 };
                 match op.r#type {
@@ -640,6 +636,13 @@ fn generate_field_accessor_body(
                     FieldOpType::Negate => quote! { value = if #operand == 0 { -value } else { value }; },
                     FieldOpType::Or => quote! { value |= #operand; },
                     FieldOpType::Add => quote! { value += #operand; },
+                    FieldOpType::ArmShiftImm => quote! {
+                        value = match #operand {
+                            #[comment = " In ARM, shifting right by 0 actually shifts by 32"]
+                            1 | 2 => if value == 0 { 32 } else { value }
+                            _ => value
+                        };
+                    },
                 }
             })
             .collect::<Vec<_>>();

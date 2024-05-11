@@ -2110,7 +2110,15 @@ impl Ins {
     pub const fn field_shift_imm(&self) -> ShiftImm {
         ShiftImm {
             op: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
-            imm: { (self.code & 0x00000f80) >> 7 },
+            imm: {
+                let mut value = (self.code & 0x00000f80) >> 7;
+                value = match (self.code & 0x00000060) >> 5 {
+                    // In ARM, shifting right by 0 actually shifts by 32
+                    1 | 2 => if value == 0 { 32 } else { value }
+                    _ => value,
+                };
+                value
+            },
         }
     }
     /// shift_reg: Register shift offset

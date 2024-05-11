@@ -275,6 +275,7 @@ pub struct FieldArg {
     pub name: String,
     pub arg: String,
     pub bits: BitRange,
+    pub ops: Option<Box<[FieldOp]>>,
 }
 
 #[derive(Deserialize)]
@@ -298,13 +299,23 @@ impl FieldOp {
     }
 }
 
-#[derive(Deserialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum FieldOpType {
     RotateRight,
     LeftShift,
     Negate,
     Or,
     Add,
+    ArmShiftImm,
+}
+
+impl FieldOpType {
+    pub fn signed(self) -> bool {
+        match self {
+            Self::Negate => false,
+            _ => true,
+        }
+    }
 }
 
 #[derive(Deserialize)]

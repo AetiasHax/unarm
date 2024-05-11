@@ -275,6 +275,9 @@ fields:
       - name: imm
         arg: shift_imm
         bits: 7..12
+        ops:
+          - type: ArmShiftImm
+            bits: 5..7
 
   - name: shift_reg
     desc: Register shift offset
