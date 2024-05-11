@@ -25,7 +25,7 @@ impl Isa {
 
     pub fn validate(&self) -> Result<()> {
         for arg in self.args.iter() {
-            arg.validate()?;
+            arg.validate(self)?;
         }
         for field in self.fields.iter() {
             field.validate()?;
@@ -104,6 +104,7 @@ impl Isa {
 pub struct Arg {
     pub name: String,
     pub desc: String,
+    pub alias: Option<String>,
     pub values: Option<Box<[ArgValue]>>,
     #[serde(default)]
     pub signed: bool,
@@ -132,7 +133,19 @@ impl Arg {
         format!(" {}: {}", self.name, self.desc)
     }
 
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self, isa: &Isa) -> Result<()> {
+        if let Some(alias) = &self.alias {
+            if alias == &self.name {
+                bail!("Arg '{}' is an alias for itself", self.name)
+            }
+            let alias = isa.get_arg(alias)?;
+            if alias.alias.is_some() {
+                bail!("Arg '{}' is an alias for '{}' which is also an alias", self.name, alias.name)
+            }
+            if self.values.is_some() || self.signed || self.boolean {
+                bail!("Arg '{}' has a value but is an alias for '{}'", self.name, alias.name)
+            }
+        }
         match (&self.values, self.signed, self.boolean) {
             (None, true, true) => bail!("Arg '{}' is both signed and boolean", self.name),
             (Some(_), true, true) => bail!("Arg '{}' has values and is both signed and boolean", self.name),
@@ -192,6 +205,8 @@ pub struct Field {
     pub arg: Option<String>,
     pub desc: String,
     pub bits: Option<BitRange>,
+    #[serde(default)]
+    pub extra_bits: usize,
     #[serde(default)]
     allow_collide: bool,
     pub args: Option<Box<[FieldArg]>>,
@@ -289,6 +304,7 @@ pub enum FieldOpType {
     LeftShift,
     Negate,
     Or,
+    Add,
 }
 
 #[derive(Deserialize)]

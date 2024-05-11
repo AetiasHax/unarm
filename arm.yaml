@@ -40,43 +40,51 @@ args:
         desc: Program Counter
         value: 15
 
+  - name: reg_wb
+    desc: General-purpose register with writeback
+    alias: reg
+
   - name: reg_list
     desc: List of general-purpose registers
+
+  - name: reg_list_c
+    desc: List of general-purpose registers (with ^ suffix)
+    alias: reg_list
 
   - name: co_reg
     desc: Coprocessor register
     values:
-      - name: cp0
+      - name: c0
         value: 0
-      - name: cp1
+      - name: c1
         value: 1
-      - name: cp2
+      - name: c2
         value: 2
-      - name: cp3
+      - name: c3
         value: 3
-      - name: cp4
+      - name: c4
         value: 4
-      - name: cp5
+      - name: c5
         value: 5
-      - name: cp6
+      - name: c6
         value: 6
-      - name: cp7
+      - name: c7
         value: 7
-      - name: cp8
+      - name: c8
         value: 8
-      - name: cp9
+      - name: c9
         value: 9
-      - name: cp10
+      - name: c10
         value: 10
-      - name: cp11
+      - name: c11
         value: 11
-      - name: cp12
+      - name: c12
         value: 12
-      - name: cp13
+      - name: c13
         value: 13
-      - name: cp14
+      - name: c14
         value: 14
-      - name: cp15
+      - name: c15
         value: 15
 
   - name: status_reg
@@ -89,6 +97,7 @@ args:
 
   - name: status_mask
     desc: Status field mask
+    hidden: true
     values:
       - name: c
         value: 1
@@ -152,10 +161,12 @@ args:
   - name: add
     desc: Add
     boolean: true
+    hidden: true
 
   - name: blx_half
     desc: Add 2 to BLX target address
     boolean: true
+    hidden: true
 
   - name: co_option
     desc: Additional instruction options for coprocessor
@@ -170,6 +181,11 @@ fields:
   - name: Rn
     arg: reg
     desc: First source operand register
+    bits: 16..20
+
+  - name: Rn_wb
+    arg: reg_wb
+    desc: Source operand register with writeback
     bits: 16..20
 
   - name: Rm
@@ -203,10 +219,11 @@ fields:
     bits: 0..16
     allow_collide: true
 
-  - name: registers_without_pc
-    arg: reg_list
-    desc: List of registers, except PC
-    bits: 0..15
+  - name: registers_c
+    arg: reg_list_c
+    desc: List of registers (with ^ suffix)
+    bits: 0..16
+    allow_collide: true
 
   - name: CRn
     arg: co_reg
@@ -241,6 +258,7 @@ fields:
     arg: s_imm
     desc: 8-bit immediate in bits 0..4 and 8..12
     bits: 0..4
+    extra_bits: 4
     ops:
       - type: Or
         bits: 8..12
@@ -287,6 +305,7 @@ fields:
     arg: offset
     desc: 8-bit immediate offset
     bits: 0..8
+    extra_bits: 2
     ops:
       - type: LeftShift
         value: 2
@@ -311,26 +330,36 @@ fields:
     desc: Add 2 to BLX target address
     bits: 24..25
 
-  - name: signed_immed_24
+  - name: branch_offset
     arg: s_imm
-    desc: Signed 24-bit immediate
+    desc: 24-bit signed B/BL target offset
     bits: 0..24
+    extra_bits: 2
+    ops:
+      - type: LeftShift
+        value: 2
+      - type: Add
+        value: 8
 
   - name: blx_offset
     arg: s_imm
     desc: 24-bit signed BLX target offset
     bits: 0..24
+    extra_bits: 2
     ops:
       - type: LeftShift
         value: 2
       - type: Or
         bits: 24..25
         shift: 1
+      - type: Add
+        value: 8
 
   - name: immed_16
     arg: u_imm
     desc: 16-bit immediate in bits 0..4 and 8..20
     bits: 0..4
+    extra_bits: 12
     ops:
       - type: Or
         bits: 8..20
@@ -632,7 +661,7 @@ modifiers:
         desc: Decrement After
         pattern: 0x00000000
       - name: db
-        suffix: sb
+        suffix: db
         desc: Decrement Before
         pattern: 0x01000000
 
@@ -697,14 +726,14 @@ opcodes:
     bitmask: 0x0f000000
     pattern: 0x0a000000
     modifiers: [cond]
-    args: [signed_immed_24]
+    args: [branch_offset]
 
   - name: bl
     desc: Branch and Link
     bitmask: 0x0f000000
     pattern: 0x0b000000
     modifiers: [cond]
-    args: [signed_immed_24]
+    args: [branch_offset]
 
   - name: bic
     desc: Bit Clear
@@ -815,9 +844,9 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08300000
     modifiers: [cond, addr_ldm_stm]
-    args: [Rn, registers]
-    defs: [Rn, registers]
-    uses: [Rn]
+    args: [Rn_wb, registers]
+    defs: [Rn_wb, registers]
+    uses: [Rn_wb]
 
   - name: ldm
     desc: Load Multiple
@@ -833,8 +862,8 @@ opcodes:
     bitmask: 0x0e708000
     pattern: 0x08500000
     modifiers: [cond, addr_ldm_stm]
-    args: [Rn, registers_without_pc]
-    defs: [registers_without_pc]
+    args: [Rn, registers_c]
+    defs: [registers_c]
     uses: [Rn]
 
   - name: ldm$pc$w
@@ -842,17 +871,17 @@ opcodes:
     bitmask: 0x0e708000
     pattern: 0x08708000
     modifiers: [cond, addr_ldm_stm]
-    args: [Rn, registers]
-    defs: [Rn, registers]
-    uses: [Rn]
+    args: [Rn_wb, registers_c]
+    defs: [Rn_wb, registers_c]
+    uses: [Rn_wb]
 
   - name: ldm$pc
     desc: Load Multiple (including PC)
     bitmask: 0x0e708000
     pattern: 0x08508000
     modifiers: [cond, addr_ldm_stm]
-    args: [Rn, registers]
-    defs: [registers]
+    args: [Rn, registers_c]
+    defs: [registers_c]
     uses: [Rn]
 
   - name: ldr

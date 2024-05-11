@@ -2022,118 +2022,105 @@ impl Opcode {
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct ShiftImm {
-    shift: Shift,
-    shift_imm: u32,
+    pub op: Shift,
+    pub imm: u32,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct ShiftReg {
-    shift: Shift,
-    reg: Reg,
+    pub op: Shift,
+    pub reg: Reg,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct RegOffset {
-    add: bool,
-    reg: Reg,
+    pub add: bool,
+    pub reg: Reg,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct FieldMask {
-    status_reg: StatusReg,
-    status_mask: StatusMask,
+    pub reg: StatusReg,
+    pub mask: StatusMask,
 }
 impl Ins {
     /// Rn: First source operand register
-    #[inline(always)]
     pub const fn field_rn(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
+    /// Rn_wb: Source operand register with writeback
+    pub const fn field_rn_wb(&self) -> Reg {
+        Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
+    }
     /// Rm: Second source operand register
-    #[inline(always)]
     pub const fn field_rm(&self) -> Reg {
         Reg::parse((self.code & 0x0000000f) as u8)
     }
     /// Rd: Destination register
-    #[inline(always)]
     pub const fn field_rd(&self) -> Reg {
         Reg::parse(((self.code & 0x0000f000) >> 12) as u8)
     }
     /// Rs: Register containing shift offset
-    #[inline(always)]
     pub const fn field_rs(&self) -> Reg {
         Reg::parse(((self.code & 0x00000f00) >> 8) as u8)
     }
     /// RdHi: Upper 32-bit long destination register
-    #[inline(always)]
     pub const fn field_rdhi(&self) -> Reg {
         Reg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// RdLo: Lower 32-bit long destination register
-    #[inline(always)]
     pub const fn field_rdlo(&self) -> Reg {
         Reg::parse(((self.code & 0x0000f000) >> 12) as u8)
     }
     /// registers: List of registers
-    #[inline(always)]
     pub const fn field_registers(&self) -> u32 {
         self.code & 0x0000ffff
     }
-    /// registers_without_pc: List of registers, except PC
-    #[inline(always)]
-    pub const fn field_registers_without_pc(&self) -> u32 {
-        self.code & 0x00007fff
+    /// registers_c: List of registers (with ^ suffix)
+    pub const fn field_registers_c(&self) -> u32 {
+        self.code & 0x0000ffff
     }
     /// CRn: First source coprocessor register
-    #[inline(always)]
     pub const fn field_crn(&self) -> CoReg {
         CoReg::parse(((self.code & 0x000f0000) >> 16) as u8)
     }
     /// CRm: Second source coprocessor register
-    #[inline(always)]
     pub const fn field_crm(&self) -> CoReg {
         CoReg::parse((self.code & 0x0000000f) as u8)
     }
     /// CRd: Destination coprocessor register
-    #[inline(always)]
     pub const fn field_crd(&self) -> CoReg {
         CoReg::parse(((self.code & 0x0000f000) >> 12) as u8)
     }
     /// rotated_immed_8: 8-bit immediate
-    #[inline(always)]
     pub const fn field_rotated_immed_8(&self) -> u32 {
         let mut value = self.code & 0x000000ff;
         value = value.rotate_right((self.code & 0x00000f00) >> 7);
         value
     }
     /// immed_24: 24-bit immediate
-    #[inline(always)]
     pub const fn field_immed_24(&self) -> u32 {
         self.code & 0x00ffffff
     }
     /// immed_8: 8-bit immediate in bits 0..4 and 8..12
-    #[inline(always)]
-    pub const fn field_immed_8(&self) -> i32 {
+    pub const fn field_immed_8(&self) -> (i32, u8) {
         let mut value = (self.code & 0x0000000f) as i32;
         value |= ((self.code & 0x00000f00) >> 4) as i32;
-        value = if (self.code & 0x00800000) >> 23 != 0 { -value } else { value };
-        value
+        value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
+        (value, 8)
     }
     /// shift_imm: Immediate shift offset
-    #[inline(always)]
     pub const fn field_shift_imm(&self) -> ShiftImm {
         ShiftImm {
-            shift: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
-            shift_imm: { (self.code & 0x00000f80) >> 7 },
+            op: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
+            imm: { (self.code & 0x00000f80) >> 7 },
         }
     }
     /// shift_reg: Register shift offset
-    #[inline(always)]
     pub const fn field_shift_reg(&self) -> ShiftReg {
         ShiftReg {
-            shift: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
+            op: { Shift::parse(((self.code & 0x00000060) >> 5) as u8) },
             reg: { Reg::parse(((self.code & 0x00000f00) >> 8) as u8) },
         }
     }
     /// reg_offset: Register offset
-    #[inline(always)]
     pub const fn field_reg_offset(&self) -> RegOffset {
         RegOffset {
             add: { ((self.code & 0x00800000) >> 23) != 0 },
@@ -2141,110 +2128,95 @@ impl Ins {
         }
     }
     /// R: Move SPSR (1) or CPSR (0)
-    #[inline(always)]
     pub const fn field_r(&self) -> StatusReg {
         StatusReg::parse(((self.code & 0x00400000) >> 22) as u8)
     }
     /// offset_8: 8-bit immediate offset
-    #[inline(always)]
-    pub const fn field_offset_8(&self) -> i32 {
+    pub const fn field_offset_8(&self) -> (i32, u8) {
         let mut value = (self.code & 0x000000ff) as i32;
         value <<= 2;
-        value = if (self.code & 0x00800000) >> 23 != 0 { -value } else { value };
-        value
+        value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
+        (value, 10)
     }
     /// offset_12: 12-bit immediate offset
-    #[inline(always)]
-    pub const fn field_offset_12(&self) -> i32 {
+    pub const fn field_offset_12(&self) -> (i32, u8) {
         let mut value = (self.code & 0x00000fff) as i32;
-        value = if (self.code & 0x00800000) >> 23 != 0 { -value } else { value };
-        value
+        value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
+        (value, 12)
     }
     /// option: Additional instruction options for coprocessor
-    #[inline(always)]
     pub const fn field_option(&self) -> u32 {
         self.code & 0x000000ff
     }
     /// H: Add 2 to BLX target address
-    #[inline(always)]
     pub const fn field_h(&self) -> bool {
         ((self.code & 0x01000000) >> 24) != 0
     }
-    /// signed_immed_24: Signed 24-bit immediate
-    #[inline(always)]
-    pub const fn field_signed_immed_24(&self) -> i32 {
-        (((self.code & 0x00ffffff) as i32) << 8) >> 8
+    /// branch_offset: 24-bit signed B/BL target offset
+    pub const fn field_branch_offset(&self) -> (i32, u8) {
+        let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
+        value <<= 2;
+        value += 8;
+        (value, 26)
     }
     /// blx_offset: 24-bit signed BLX target offset
-    #[inline(always)]
-    pub const fn field_blx_offset(&self) -> i32 {
+    pub const fn field_blx_offset(&self) -> (i32, u8) {
         let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
         value <<= 2;
         value |= ((self.code & 0x01000000) >> 23) as i32;
-        value
+        value += 8;
+        (value, 26)
     }
     /// immed_16: 16-bit immediate in bits 0..4 and 8..20
-    #[inline(always)]
     pub const fn field_immed_16(&self) -> u32 {
         let mut value = self.code & 0x0000000f;
         value |= (self.code & 0x000fff00) >> 4;
         value
     }
     /// field_mask: Status fields to set
-    #[inline(always)]
     pub const fn field_field_mask(&self) -> FieldMask {
         FieldMask {
-            status_reg: { StatusReg::parse(((self.code & 0x00400000) >> 22) as u8) },
-            status_mask: { StatusMask::parse(((self.code & 0x000f0000) >> 16) as u8) },
+            reg: { StatusReg::parse(((self.code & 0x00400000) >> 22) as u8) },
+            mask: { StatusMask::parse(((self.code & 0x000f0000) >> 16) as u8) },
         }
     }
     /// opcode: Coprocessor operation to perform (user-defined)
-    #[inline(always)]
     pub const fn field_opcode(&self) -> u32 {
         (self.code & 0x000000f0) >> 4
     }
     /// codat_opcode_1: Coprocessor operation to perform (user-defined, used by CDP instruction)
-    #[inline(always)]
     pub const fn field_codat_opcode_1(&self) -> u32 {
         (self.code & 0x00f00000) >> 20
     }
     /// comov_opcode_1: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
-    #[inline(always)]
     pub const fn field_comov_opcode_1(&self) -> u32 {
         (self.code & 0x00e00000) >> 21
     }
     /// opcode_2: Coprocessor operation to perform (user-defined)
-    #[inline(always)]
     pub const fn field_opcode_2(&self) -> u32 {
         (self.code & 0x000000e0) >> 5
     }
     /// coproc: Coprocessor number
-    #[inline(always)]
     pub const fn field_coproc(&self) -> u32 {
         (self.code & 0x00000f00) >> 8
     }
     /// S: Update condition status flags
-    #[inline(always)]
     pub const fn modifier_s(&self) -> bool {
         (self.code & 0x00100000) == 0x00100000
     }
     /// L: Long coprocessor load (e.g. double instead of float)
-    #[inline(always)]
     pub const fn modifier_l(&self) -> bool {
         (self.code & 0x00400000) == 0x00400000
     }
     /// y: Second multiply operand in bottom (0) or top (1) half
-    #[inline(always)]
     pub const fn modifier_y(&self) -> bool {
         (self.code & 0x00000040) == 0x00000040
     }
     /// x: First multiply operand in bottom (0) or top (1) half
-    #[inline(always)]
     pub const fn modifier_x(&self) -> bool {
         (self.code & 0x00000020) == 0x00000020
     }
     /// cond: Condition code
-    #[inline(always)]
     pub const fn modifier_cond(&self) -> Cond {
         match self.code & 0xf0000000 {
             0x00000000 => Cond::Eq,
@@ -2266,7 +2238,6 @@ impl Ins {
         }
     }
     /// addr_data: Data-processing operands
-    #[inline(always)]
     pub const fn modifier_addr_data(&self) -> AddrData {
         if (self.code & 0x0e000ff0) == 0x00000000 {
             AddrData::Reg
@@ -2283,7 +2254,6 @@ impl Ins {
         }
     }
     /// addr_ldr_str: Load and Store Word or Unsigned Byte
-    #[inline(always)]
     pub const fn modifier_addr_ldr_str(&self) -> AddrLdrStr {
         if (self.code & 0x0f200ff0) == 0x07000000 {
             AddrLdrStr::Reg
@@ -2308,7 +2278,6 @@ impl Ins {
         }
     }
     /// addr_ldrt_strt: Load and Store Word or Unsigned Byte with Translation
-    #[inline(always)]
     pub const fn modifier_addr_ldrt_strt(&self) -> AddrLdrtStrt {
         if (self.code & 0x0f200ff0) == 0x06200000 {
             AddrLdrtStrt::RegPost
@@ -2321,7 +2290,6 @@ impl Ins {
         }
     }
     /// addr_misc_ldr_str: Miscellaneous Loads and Stores
-    #[inline(always)]
     pub const fn modifier_addr_misc_ldr_str(&self) -> AddrMiscLdrStr {
         if (self.code & 0x0f600f90) == 0x01000090 {
             AddrMiscLdrStr::Reg
@@ -2340,7 +2308,6 @@ impl Ins {
         }
     }
     /// addr_ldm_stm: Load and Store Multiple
-    #[inline(always)]
     pub const fn modifier_addr_ldm_stm(&self) -> AddrLdmStm {
         match self.code & 0x01800000 {
             0x00800000 => AddrLdmStm::Ia,
@@ -2351,7 +2318,6 @@ impl Ins {
         }
     }
     /// addr_coproc: Load and Store Coprocessor
-    #[inline(always)]
     pub const fn modifier_addr_coproc(&self) -> AddrCoproc {
         if (self.code & 0x01a00000) == 0x00800000 {
             AddrCoproc::Unidx
@@ -2493,24 +2459,22 @@ pub enum Argument {
     None,
     /// reg: General-purpose register
     Reg(Reg),
+    /// reg_wb: General-purpose register with writeback
+    RegWb(Reg),
     /// reg_list: List of general-purpose registers
     RegList(u32),
+    /// reg_list_c: List of general-purpose registers (with ^ suffix)
+    RegListC(u32),
     /// co_reg: Coprocessor register
     CoReg(CoReg),
     /// status_reg: Status register
     StatusReg(StatusReg),
-    /// status_mask: Status field mask
-    StatusMask(StatusMask),
     /// u_imm: Unsigned immediate
     UImm(u32),
     /// s_imm: Signed immediate
-    SImm(i32),
+    SImm((i32, u8)),
     /// offset: Immediate offset
-    Offset(i32),
-    /// add: Add
-    Add(bool),
-    /// blx_half: Add 2 to BLX target address
-    BlxHalf(bool),
+    Offset((i32, u8)),
     /// co_option: Additional instruction options for coprocessor
     CoOption(u32),
     /// co_opcode: Coprocessor operation to perform (user-defined)
@@ -2565,22 +2529,22 @@ impl Reg {
 #[repr(u8)]
 pub enum CoReg {
     Illegal = 255,
-    Cp0 = 0,
-    Cp1 = 1,
-    Cp2 = 2,
-    Cp3 = 3,
-    Cp4 = 4,
-    Cp5 = 5,
-    Cp6 = 6,
-    Cp7 = 7,
-    Cp8 = 8,
-    Cp9 = 9,
-    Cp10 = 10,
-    Cp11 = 11,
-    Cp12 = 12,
-    Cp13 = 13,
-    Cp14 = 14,
-    Cp15 = 15,
+    C0 = 0,
+    C1 = 1,
+    C2 = 2,
+    C3 = 3,
+    C4 = 4,
+    C5 = 5,
+    C6 = 6,
+    C7 = 7,
+    C8 = 8,
+    C9 = 9,
+    C10 = 10,
+    C11 = 11,
+    C12 = 12,
+    C13 = 13,
+    C14 = 14,
+    C15 = 15,
 }
 impl CoReg {
     pub const fn parse(value: u8) -> Self {
@@ -8561,7 +8525,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "beq",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8574,7 +8538,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bne",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8587,7 +8551,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bhs",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8600,7 +8564,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blo",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8613,7 +8577,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bmi",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8626,7 +8590,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bpl",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8639,7 +8603,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bvs",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8652,7 +8616,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bvc",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8665,7 +8629,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bhi",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8678,7 +8642,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bls",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8691,7 +8655,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bge",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8704,7 +8668,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blt",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8717,7 +8681,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bgt",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8730,7 +8694,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ble",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8743,7 +8707,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "b",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8773,7 +8737,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bleq",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8786,7 +8750,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blne",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8799,7 +8763,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blhs",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8812,7 +8776,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bllo",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8825,7 +8789,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blmi",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8838,7 +8802,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blpl",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8851,7 +8815,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blvs",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8864,7 +8828,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blvc",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8877,7 +8841,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blhi",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8890,7 +8854,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blls",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8903,7 +8867,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blge",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8916,7 +8880,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bllt",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8929,7 +8893,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blgt",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8942,7 +8906,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blle",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -8955,7 +8919,7 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bl",
                 args: [
-                    Argument::SImm(ins.field_signed_immed_24()),
+                    Argument::SImm(ins.field_branch_offset()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -17488,7 +17452,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmeqia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17501,7 +17465,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmneia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17514,7 +17478,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhsia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17527,7 +17491,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmloia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17540,7 +17504,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmmiia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17553,7 +17517,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmplia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17566,7 +17530,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvsia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17579,7 +17543,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvcia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17592,7 +17556,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhiia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17605,7 +17569,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmlsia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17618,7 +17582,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgeia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17631,7 +17595,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmltia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17644,7 +17608,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgtia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17657,7 +17621,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmleia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17670,7 +17634,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17683,7 +17647,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmeqib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17696,7 +17660,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmneib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17709,7 +17673,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhsib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17722,7 +17686,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmloib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17735,7 +17699,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmmiib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17748,7 +17712,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmplib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17761,7 +17725,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvsib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17774,7 +17738,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvcib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17787,7 +17751,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhiib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17800,7 +17764,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmlsib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17813,7 +17777,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgeib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17826,7 +17790,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmltib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17839,7 +17803,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgtib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17852,7 +17816,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmleib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17865,7 +17829,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17878,7 +17842,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmeqda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17891,7 +17855,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmneda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17904,7 +17868,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhsda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17917,7 +17881,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmloda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17930,7 +17894,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmmida",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17943,7 +17907,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmplda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17956,7 +17920,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvsda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17969,7 +17933,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvcda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17982,7 +17946,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhida",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -17995,7 +17959,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmlsda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18008,7 +17972,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgeda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18021,7 +17985,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmltda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18034,7 +17998,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgtda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18047,7 +18011,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmleda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18060,7 +18024,7 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18071,9 +18035,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmeqsb",
+                mnemonic: "ldmeqdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18084,9 +18048,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmnesb",
+                mnemonic: "ldmnedb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18097,9 +18061,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhssb",
+                mnemonic: "ldmhsdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18110,9 +18074,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlosb",
+                mnemonic: "ldmlodb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18123,9 +18087,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmmisb",
+                mnemonic: "ldmmidb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18136,9 +18100,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmplsb",
+                mnemonic: "ldmpldb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18149,9 +18113,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvssb",
+                mnemonic: "ldmvsdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18162,9 +18126,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvcsb",
+                mnemonic: "ldmvcdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18175,9 +18139,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhisb",
+                mnemonic: "ldmhidb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18188,9 +18152,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlssb",
+                mnemonic: "ldmlsdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18201,9 +18165,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgesb",
+                mnemonic: "ldmgedb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18214,9 +18178,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmltsb",
+                mnemonic: "ldmltdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18227,9 +18191,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgtsb",
+                mnemonic: "ldmgtdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18240,9 +18204,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlesb",
+                mnemonic: "ldmledb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18253,9 +18217,9 @@ fn parse_ldm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmsb",
+                mnemonic: "ldmdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
+                    Argument::RegWb(ins.field_rn_wb()),
                     Argument::RegList(ins.field_registers()),
                     Argument::None,
                     Argument::None,
@@ -18868,7 +18832,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmeqsb",
+                mnemonic: "ldmeqdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18881,7 +18845,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmnesb",
+                mnemonic: "ldmnedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18894,7 +18858,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhssb",
+                mnemonic: "ldmhsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18907,7 +18871,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlosb",
+                mnemonic: "ldmlodb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18920,7 +18884,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmmisb",
+                mnemonic: "ldmmidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18933,7 +18897,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmplsb",
+                mnemonic: "ldmpldb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18946,7 +18910,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvssb",
+                mnemonic: "ldmvsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18959,7 +18923,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvcsb",
+                mnemonic: "ldmvcdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18972,7 +18936,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhisb",
+                mnemonic: "ldmhidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18985,7 +18949,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlssb",
+                mnemonic: "ldmlsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -18998,7 +18962,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgesb",
+                mnemonic: "ldmgedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -19011,7 +18975,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmltsb",
+                mnemonic: "ldmltdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -19024,7 +18988,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgtsb",
+                mnemonic: "ldmgtdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -19037,7 +19001,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlesb",
+                mnemonic: "ldmledb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -19050,7 +19014,7 @@ fn parse_ldm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmsb",
+                mnemonic: "ldmdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -19083,7 +19047,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmeqia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19096,7 +19060,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmneia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19109,7 +19073,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhsia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19122,7 +19086,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmloia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19135,7 +19099,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmmiia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19148,7 +19112,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmplia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19161,7 +19125,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvsia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19174,7 +19138,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvcia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19187,7 +19151,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhiia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19200,7 +19164,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmlsia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19213,7 +19177,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgeia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19226,7 +19190,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmltia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19239,7 +19203,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgtia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19252,7 +19216,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmleia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19265,7 +19229,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19278,7 +19242,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmeqib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19291,7 +19255,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmneib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19304,7 +19268,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhsib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19317,7 +19281,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmloib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19330,7 +19294,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmmiib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19343,7 +19307,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmplib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19356,7 +19320,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvsib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19369,7 +19333,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvcib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19382,7 +19346,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhiib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19395,7 +19359,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmlsib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19408,7 +19372,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgeib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19421,7 +19385,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmltib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19434,7 +19398,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgtib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19447,7 +19411,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmleib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19460,7 +19424,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19473,7 +19437,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmeqda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19486,7 +19450,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmneda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19499,7 +19463,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhsda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19512,7 +19476,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmloda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19525,7 +19489,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmmida",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19538,7 +19502,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmplda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19551,7 +19515,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvsda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19564,7 +19528,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvcda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19577,7 +19541,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhida",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19590,7 +19554,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmlsda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19603,7 +19567,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgeda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19616,7 +19580,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmltda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19629,7 +19593,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgtda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19642,7 +19606,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmleda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19655,7 +19619,7 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19665,10 +19629,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmeqsb",
+                mnemonic: "ldmeqdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19678,10 +19642,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmnesb",
+                mnemonic: "ldmnedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19691,10 +19655,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhssb",
+                mnemonic: "ldmhsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19704,10 +19668,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlosb",
+                mnemonic: "ldmlodb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19717,10 +19681,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmmisb",
+                mnemonic: "ldmmidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19730,10 +19694,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmplsb",
+                mnemonic: "ldmpldb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19743,10 +19707,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvssb",
+                mnemonic: "ldmvsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19756,10 +19720,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvcsb",
+                mnemonic: "ldmvcdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19769,10 +19733,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhisb",
+                mnemonic: "ldmhidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19782,10 +19746,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlssb",
+                mnemonic: "ldmlsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19795,10 +19759,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgesb",
+                mnemonic: "ldmgedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19808,10 +19772,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmltsb",
+                mnemonic: "ldmltdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19821,10 +19785,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgtsb",
+                mnemonic: "ldmgtdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19834,10 +19798,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlesb",
+                mnemonic: "ldmledb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19847,10 +19811,10 @@ fn parse_ldm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmsb",
+                mnemonic: "ldmdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers_without_pc()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19879,8 +19843,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmeqia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19892,8 +19856,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmneia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19905,8 +19869,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhsia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19918,8 +19882,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmloia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19931,8 +19895,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmmiia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19944,8 +19908,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmplia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19957,8 +19921,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvsia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19970,8 +19934,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvcia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19983,8 +19947,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhiia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -19996,8 +19960,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmlsia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20009,8 +19973,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgeia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20022,8 +19986,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmltia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20035,8 +19999,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgtia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20048,8 +20012,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmleia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20061,8 +20025,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmia",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20074,8 +20038,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmeqib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20087,8 +20051,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmneib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20100,8 +20064,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhsib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20113,8 +20077,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmloib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20126,8 +20090,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmmiib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20139,8 +20103,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmplib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20152,8 +20116,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvsib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20165,8 +20129,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvcib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20178,8 +20142,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhiib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20191,8 +20155,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmlsib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20204,8 +20168,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgeib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20217,8 +20181,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmltib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20230,8 +20194,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgtib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20243,8 +20207,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmleib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20256,8 +20220,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmib",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20269,8 +20233,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmeqda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20282,8 +20246,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmneda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20295,8 +20259,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhsda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20308,8 +20272,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmloda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20321,8 +20285,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmmida",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20334,8 +20298,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmplda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20347,8 +20311,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvsda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20360,8 +20324,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmvcda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20373,8 +20337,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmhida",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20386,8 +20350,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmlsda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20399,8 +20363,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgeda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20412,8 +20376,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmltda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20425,8 +20389,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmgtda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20438,8 +20402,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmleda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20451,8 +20415,8 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ldmda",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20462,10 +20426,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmeqsb",
+                mnemonic: "ldmeqdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20475,10 +20439,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmnesb",
+                mnemonic: "ldmnedb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20488,10 +20452,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhssb",
+                mnemonic: "ldmhsdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20501,10 +20465,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlosb",
+                mnemonic: "ldmlodb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20514,10 +20478,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmmisb",
+                mnemonic: "ldmmidb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20527,10 +20491,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmplsb",
+                mnemonic: "ldmpldb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20540,10 +20504,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvssb",
+                mnemonic: "ldmvsdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20553,10 +20517,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvcsb",
+                mnemonic: "ldmvcdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20566,10 +20530,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhisb",
+                mnemonic: "ldmhidb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20579,10 +20543,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlssb",
+                mnemonic: "ldmlsdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20592,10 +20556,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgesb",
+                mnemonic: "ldmgedb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20605,10 +20569,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmltsb",
+                mnemonic: "ldmltdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20618,10 +20582,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgtsb",
+                mnemonic: "ldmgtdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20631,10 +20595,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlesb",
+                mnemonic: "ldmledb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20644,10 +20608,10 @@ fn parse_ldm_pc_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmsb",
+                mnemonic: "ldmdb",
                 args: [
-                    Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegWb(ins.field_rn_wb()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20677,7 +20641,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmeqia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20690,7 +20654,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmneia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20703,7 +20667,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhsia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20716,7 +20680,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmloia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20729,7 +20693,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmmiia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20742,7 +20706,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmplia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20755,7 +20719,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvsia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20768,7 +20732,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvcia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20781,7 +20745,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhiia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20794,7 +20758,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmlsia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20807,7 +20771,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgeia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20820,7 +20784,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmltia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20833,7 +20797,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgtia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20846,7 +20810,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmleia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20859,7 +20823,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmia",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20872,7 +20836,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmeqib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20885,7 +20849,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmneib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20898,7 +20862,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhsib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20911,7 +20875,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmloib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20924,7 +20888,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmmiib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20937,7 +20901,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmplib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20950,7 +20914,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvsib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20963,7 +20927,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvcib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20976,7 +20940,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhiib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -20989,7 +20953,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmlsib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21002,7 +20966,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgeib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21015,7 +20979,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmltib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21028,7 +20992,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgtib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21041,7 +21005,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmleib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21054,7 +21018,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmib",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21067,7 +21031,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmeqda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21080,7 +21044,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmneda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21093,7 +21057,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhsda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21106,7 +21070,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmloda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21119,7 +21083,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmmida",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21132,7 +21096,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmplda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21145,7 +21109,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvsda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21158,7 +21122,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmvcda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21171,7 +21135,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmhida",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21184,7 +21148,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmlsda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21197,7 +21161,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgeda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21210,7 +21174,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmltda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21223,7 +21187,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmgtda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21236,7 +21200,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmleda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21249,7 +21213,7 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ldmda",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21259,10 +21223,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmeqsb",
+                mnemonic: "ldmeqdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21272,10 +21236,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmnesb",
+                mnemonic: "ldmnedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21285,10 +21249,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhssb",
+                mnemonic: "ldmhsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21298,10 +21262,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlosb",
+                mnemonic: "ldmlodb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21311,10 +21275,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmmisb",
+                mnemonic: "ldmmidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21324,10 +21288,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmplsb",
+                mnemonic: "ldmpldb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21337,10 +21301,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvssb",
+                mnemonic: "ldmvsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21350,10 +21314,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmvcsb",
+                mnemonic: "ldmvcdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21363,10 +21327,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmhisb",
+                mnemonic: "ldmhidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21376,10 +21340,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlssb",
+                mnemonic: "ldmlsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21389,10 +21353,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgesb",
+                mnemonic: "ldmgedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21402,10 +21366,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmltsb",
+                mnemonic: "ldmltdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21415,10 +21379,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmgtsb",
+                mnemonic: "ldmgtdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21428,10 +21392,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmlesb",
+                mnemonic: "ldmledb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -21441,10 +21405,10 @@ fn parse_ldm_pc(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "ldmsb",
+                mnemonic: "ldmdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
-                    Argument::RegList(ins.field_registers()),
+                    Argument::RegListC(ins.field_registers_c()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -52256,7 +52220,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmeqsb",
+                mnemonic: "stmeqdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52269,7 +52233,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmnesb",
+                mnemonic: "stmnedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52282,7 +52246,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmhssb",
+                mnemonic: "stmhsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52295,7 +52259,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlosb",
+                mnemonic: "stmlodb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52308,7 +52272,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmmisb",
+                mnemonic: "stmmidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52321,7 +52285,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmplsb",
+                mnemonic: "stmpldb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52334,7 +52298,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmvssb",
+                mnemonic: "stmvsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52347,7 +52311,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmvcsb",
+                mnemonic: "stmvcdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52360,7 +52324,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmhisb",
+                mnemonic: "stmhidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52373,7 +52337,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlssb",
+                mnemonic: "stmlsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52386,7 +52350,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmgesb",
+                mnemonic: "stmgedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52399,7 +52363,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmltsb",
+                mnemonic: "stmltdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52412,7 +52376,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmgtsb",
+                mnemonic: "stmgtdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52425,7 +52389,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlesb",
+                mnemonic: "stmledb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -52438,7 +52402,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmsb",
+                mnemonic: "stmdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53053,7 +53017,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmeqsb",
+                mnemonic: "stmeqdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53066,7 +53030,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmnesb",
+                mnemonic: "stmnedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53079,7 +53043,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmhssb",
+                mnemonic: "stmhsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53092,7 +53056,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlosb",
+                mnemonic: "stmlodb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53105,7 +53069,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmmisb",
+                mnemonic: "stmmidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53118,7 +53082,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmplsb",
+                mnemonic: "stmpldb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53131,7 +53095,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmvssb",
+                mnemonic: "stmvsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53144,7 +53108,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmvcsb",
+                mnemonic: "stmvcdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53157,7 +53121,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmhisb",
+                mnemonic: "stmhidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53170,7 +53134,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlssb",
+                mnemonic: "stmlsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53183,7 +53147,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmgesb",
+                mnemonic: "stmgedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53196,7 +53160,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmltsb",
+                mnemonic: "stmltdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53209,7 +53173,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmgtsb",
+                mnemonic: "stmgtdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53222,7 +53186,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlesb",
+                mnemonic: "stmledb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53235,7 +53199,7 @@ fn parse_stm_w(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmsb",
+                mnemonic: "stmdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53850,7 +53814,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Eq, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmeqsb",
+                mnemonic: "stmeqdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53863,7 +53827,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ne, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmnesb",
+                mnemonic: "stmnedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53876,7 +53840,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmhssb",
+                mnemonic: "stmhsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53889,7 +53853,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lo, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlosb",
+                mnemonic: "stmlodb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53902,7 +53866,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Mi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmmisb",
+                mnemonic: "stmmidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53915,7 +53879,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Pl, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmplsb",
+                mnemonic: "stmpldb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53928,7 +53892,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vs, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmvssb",
+                mnemonic: "stmvsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53941,7 +53905,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Vc, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmvcsb",
+                mnemonic: "stmvcdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53954,7 +53918,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Hi, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmhisb",
+                mnemonic: "stmhidb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53967,7 +53931,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ls, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlssb",
+                mnemonic: "stmlsdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53980,7 +53944,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Ge, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmgesb",
+                mnemonic: "stmgedb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -53993,7 +53957,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Lt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmltsb",
+                mnemonic: "stmltdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -54006,7 +53970,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Gt, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmgtsb",
+                mnemonic: "stmgtdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -54019,7 +53983,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Le, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmlesb",
+                mnemonic: "stmledb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -54032,7 +53996,7 @@ fn parse_stm_p(out: &mut ParsedIns, ins: Ins) {
         }
         (Cond::Al, AddrLdmStm::Db) => {
             ParsedIns {
-                mnemonic: "stmsb",
+                mnemonic: "stmdb",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::RegList(ins.field_registers()),
@@ -66664,5 +66628,19 @@ static MNEMONIC_PARSERS: [MnemonicParser; 78] = [
 ];
 #[inline]
 pub fn parse(out: &mut ParsedIns, ins: Ins) {
-    MNEMONIC_PARSERS[ins.op as usize](out, ins);
+    if ins.op != Opcode::Illegal {
+        MNEMONIC_PARSERS[ins.op as usize](out, ins);
+    } else {
+        *out = ParsedIns {
+            mnemonic: "<illegal>",
+            args: [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+    }
 }
