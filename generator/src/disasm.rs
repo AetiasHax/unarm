@@ -281,15 +281,23 @@ fn generate_mnemonic_args(isa: &Isa, max_args: usize, args: Vec<&Field>) -> Resu
             if i < args.len() {
                 let field = args[i];
                 let accessor = Ident::new(&field.accessor_name(), Span::call_site());
-                let arg_variant = match (&field.arg, &field.args) {
+                let access_variant = match (&field.arg, &field.args) {
                     (Some(arg), None) => {
                         let arg = isa.get_arg(arg)?;
-                        Ident::new(&arg.variant_name(), Span::call_site())
+                        let arg_variant = Ident::new(&arg.variant_name(), Span::call_site());
+                        if arg.empty {
+                            quote! { #arg_variant }
+                        } else {
+                            quote! { #arg_variant(ins.#accessor()) }
+                        }
                     }
-                    (None, Some(_)) => Ident::new(&field.struct_name(), Span::call_site()),
+                    (None, Some(_)) => {
+                        let field_variant = Ident::new(&field.struct_name(), Span::call_site());
+                        quote! { #field_variant(ins.#accessor()) }
+                    }
                     _ => panic!(),
                 };
-                Ok(quote! { Argument::#arg_variant(ins.#accessor()) })
+                Ok(quote! { Argument::#access_variant })
             } else {
                 Ok(quote! { Argument::None })
             }
@@ -306,9 +314,12 @@ fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
         let variant_ident = Ident::new(&variant_name, Span::call_site());
         let doc = arg.doc();
 
-        let contents = if let Some(alias) = &arg.alias {
+        let contents = if arg.empty {
+            quote! {}
+        } else if let Some(alias) = &arg.alias {
             let alias = isa.get_arg(alias)?;
-            get_arg_variant_type(alias)
+            let variant_type = get_arg_variant_type(alias);
+            quote! { (#variant_type) }
         } else {
             let contents = get_arg_variant_type(arg);
             if let Some(values) = &arg.values {
@@ -367,16 +378,16 @@ fn generate_argument_enums(isa: &Isa) -> Result<TokenStream> {
                     }
                 });
 
-                quote! { #variant_ident }
+                quote! { (#variant_ident) }
             } else {
-                contents
+                quote! { (#contents) }
             }
         };
 
         if !arg.hidden {
             argument_variants.extend(quote! {
                 #[doc = #doc]
-                #variant_ident(#contents),
+                #variant_ident #contents,
             })
         }
     }
@@ -561,6 +572,10 @@ fn generate_field_accessors(isa: &Isa) -> Result<TokenStream> {
                 } else {
                     arg
                 };
+
+                if value_arg.empty {
+                    continue;
+                }
 
                 let body = generate_field_accessor_body(field, value_arg, bits, field.ops.as_deref(), sign_extend);
                 let ret_type = get_arg_variant_type(value_arg);

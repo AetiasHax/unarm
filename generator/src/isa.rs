@@ -28,7 +28,7 @@ impl Isa {
             arg.validate(self)?;
         }
         for field in self.fields.iter() {
-            field.validate()?;
+            field.validate(self)?;
         }
         for modifier in self.modifiers.iter() {
             modifier.validate(self)?;
@@ -112,6 +112,8 @@ pub struct Arg {
     pub boolean: bool,
     #[serde(default)]
     pub hidden: bool,
+    #[serde(default)]
+    pub empty: bool,
 }
 
 impl Arg {
@@ -134,6 +136,7 @@ impl Arg {
     }
 
     pub fn validate(&self, isa: &Isa) -> Result<()> {
+        let has_value = self.values.is_some() || self.signed || self.boolean;
         if let Some(alias) = &self.alias {
             if alias == &self.name {
                 bail!("Arg '{}' is an alias for itself", self.name)
@@ -142,9 +145,12 @@ impl Arg {
             if alias.alias.is_some() {
                 bail!("Arg '{}' is an alias for '{}' which is also an alias", self.name, alias.name)
             }
-            if self.values.is_some() || self.signed || self.boolean {
+            if has_value {
                 bail!("Arg '{}' has a value but is an alias for '{}'", self.name, alias.name)
             }
+        }
+        if self.empty && has_value {
+            bail!("Arg '{}' is empty but has a value", self.name)
         }
         match (&self.values, self.signed, self.boolean) {
             (None, true, true) => bail!("Arg '{}' is both signed and boolean", self.name),
@@ -218,6 +224,7 @@ impl Field {
         let mut bitmask = match (&self.bits, &self.args) {
             (Some(bits), None) => bits.bitmask(),
             (None, Some(args)) => args.iter().map(|a| a.bits.bitmask()).reduce(|a, b| a | b).unwrap_or(0),
+            (None, None) => 0,
             _ => panic!(),
         };
         if let Some(ops) = &self.ops {
@@ -230,14 +237,14 @@ impl Field {
         bitmask
     }
 
-    fn validate(&self) -> Result<()> {
-        if self.get_bitmask() == 0 {
-            bail!("Field {} has no bitmask", self.name)
-        }
+    fn validate(&self, isa: &Isa) -> Result<()> {
+        let mut empty = false;
         match (&self.arg, &self.args) {
             (None, None) => bail!("Field {} has no arg or args", self.name),
             (Some(_), Some(_)) => bail!("Field {} has both arg and args", self.name),
-            (Some(_), None) => {
+            (Some(arg), None) => {
+                let arg = isa.get_arg(arg)?;
+                empty = arg.empty;
                 if self.bits.is_none() {
                     bail!("Field {} has arg but no bits", self.name)
                 }
@@ -247,6 +254,9 @@ impl Field {
                     bail!("Field {} has args and ops", self.name)
                 }
             }
+        }
+        if !empty && self.get_bitmask() == 0 {
+            bail!("Field {} has no bitmask", self.name)
         }
         if let Some(ops) = &self.ops {
             for op in ops.iter() {
@@ -311,10 +321,7 @@ pub enum FieldOpType {
 
 impl FieldOpType {
     pub fn signed(self) -> bool {
-        match self {
-            Self::Negate => false,
-            _ => true,
-        }
+        !matches!(self, Self::Negate)
     }
 }
 

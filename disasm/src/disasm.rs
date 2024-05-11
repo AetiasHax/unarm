@@ -85,6 +85,7 @@ impl Display for Argument {
             Argument::CoprocNum(x) => write!(f, "p{}", x),
             Argument::ShiftImm(x) => write!(f, "{}", x),
             Argument::ShiftReg(x) => write!(f, "{}", x),
+            Argument::Rrx => write!(f, "rrx"),
             Argument::RegOffset(x) => write!(f, "{}", x),
             Argument::FieldMask(x) => write!(f, "{}", x),
         }
@@ -179,7 +180,7 @@ impl Display for Shift {
             Shift::Lsl => write!(f, "lsl"),
             Shift::Lsr => write!(f, "lsr"),
             Shift::Asr => write!(f, "asr"),
-            Shift::RorOrRrx => write!(f, "ror"),
+            Shift::Ror => write!(f, "ror"),
         }
     }
 }

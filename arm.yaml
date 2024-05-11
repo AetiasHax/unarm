@@ -143,9 +143,13 @@ args:
         value: 1
       - name: asr
         value: 2
-      - name: ror_or_rrx
+      - name: ror
         value: 3
     hidden: true
+
+  - name: rrx
+    desc: Rotate right with extend
+    empty: true
 
   - name: u_imm
     desc: Unsigned immediate
@@ -288,6 +292,11 @@ fields:
       - name: reg
         arg: reg
         bits: 8..12
+
+  - name: rrx
+    arg: rrx
+    desc: Rotate right with extend
+    bits: 0..0
 
   - name: reg_offset
     desc: Register offset
@@ -524,7 +533,7 @@ modifiers:
         desc: Rotate right with extend
         bitmask: 0x0e000ff0
         pattern: 0x00000060
-        args: [Rm]
+        args: [Rm, rrx]
         uses: [Rm]
 
   - name: addr_ldr_str
