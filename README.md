@@ -4,7 +4,6 @@ Instruction decoder for the ARMv5TE instruction set, inspired by [ppc750cl](http
 
 ## Contents
 
-- [ARMv5TE](#armv5te-1)
 - [ARM disassembler](#arm-disassembler)
   - [Usage](#usage)
   - [Performance](#performance)
