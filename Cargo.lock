@@ -86,6 +86,14 @@ name = "armv5te"
 version = "0.1.0"
 
 [[package]]
+name = "armv5te-fuzz"
+version = "0.1.0"
+dependencies = [
+ "armv5te",
+ "num_cpus",
+]
+
+[[package]]
 name = "armv5te-generator"
 version = "0.1.0"
 dependencies = [

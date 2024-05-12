@@ -1,0 +1,13 @@
+[package]
+name = "armv5te-fuzz"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aetias <aetias@outlook.com>"]
+license = "MIT"
+description = "Fuzzer for armv5te"
+repository = "https://github.com/AetiasHax/armv5te"
+publish = false
+
+[dependencies]
+num_cpus = "1.16.0"
+armv5te = { path = "../disasm" }
