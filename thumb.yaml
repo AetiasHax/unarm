@@ -1,0 +1,868 @@
+ins_size: 16
+
+args:
+  - name: reg
+    desc: General-purpose register
+    values:
+      - name: r0
+        value: 0
+      - name: r1
+        value: 1
+      - name: r2
+        value: 2
+      - name: r3
+        value: 3
+      - name: r4
+        value: 4
+      - name: r5
+        value: 5
+      - name: r6
+        value: 6
+      - name: r7
+        value: 7
+      - name: r8
+        value: 8
+      - name: r9
+        value: 9
+      - name: r10
+        value: 10
+      - name: fp
+        desc: Frame Pointer
+        value: 11
+      - name: ip
+        desc: Intra Procedure call scratch register
+        value: 12
+      - name: sp
+        desc: Stack Pointer
+        value: 13
+      - name: lr
+        desc: Link Register
+        value: 14
+      - name: pc
+        desc: Program Counter
+        value: 15
+
+  - name: reg_wb
+    desc: General-purpose register with writeback
+    alias: reg
+
+  - name: reg_deref
+    desc: Base register
+    alias: reg
+
+  - name: reg_offset
+    desc: Offset register
+    alias: reg
+
+  - name: pc
+    desc: Program counter
+    empty: true
+
+  - name: pc_deref
+    desc: Program counter as base register
+    empty: true
+
+  - name: sp
+    desc: Stack pointer
+    empty: true
+
+  - name: sp_deref
+    desc: Stack pointer as base register
+    empty: true
+
+  - name: reg_list
+    desc: List of general-purpose registers
+
+  - name: reg_list_pc
+    desc: List of general-purpose registers, including PC
+
+  - name: u_imm
+    desc: Unsigned immediate
+
+  - name: s_imm
+    desc: Signed immediate
+    signed: true
+
+  - name: offset
+    desc: Immediate offset
+    signed: true
+
+fields:
+  - name: Rd_0
+    arg: reg
+    desc: Destination register
+    bits: 0..3
+
+  - name: Rd_8
+    arg: reg
+    desc: Destination register
+    bits: 8..11
+
+  - name: Rd_H1
+    arg: reg
+    desc: Destination register
+    bits: 0..3
+    extra_bits: 1
+    ops:
+      - type: Or
+        bits: 7..8
+        shift: 3
+
+  - name: Rn_0
+    arg: reg
+    desc: First source operand register
+    bits: 0..3
+
+  - name: Rn_3
+    arg: reg
+    desc: First source operand register
+    bits: 3..6
+
+  - name: Rn_3_deref
+    arg: reg_deref
+    desc: Base register
+    bits: 3..6
+
+  - name: Rn_8
+    arg: reg
+    desc: First source operand register
+    bits: 8..11
+
+  - name: Rn_8_wb
+    arg: reg_wb
+    desc: First source operand register
+    bits: 8..11
+
+  - name: Rn_H1
+    arg: reg
+    desc: First source operand register
+    bits: 0..3
+    extra_bits: 1
+    ops:
+      - type: Or
+        bits: 7..8
+        shift: 3
+
+  - name: Rd_H1
+    arg: reg
+    desc: Destination register
+    bits: 0..3
+    extra_bits: 1
+    ops:
+      - type: Or
+        bits: 7..8
+        shift: 3
+
+  - name: Rm_3
+    arg: reg
+    desc: Second source operand register
+    bits: 3..6
+
+  - name: Rm_6
+    arg: reg
+    desc: Second source operand register
+    bits: 6..9
+
+  - name: Rm_6_offset
+    arg: reg_offset
+    desc: Offset register
+    bits: 6..9
+
+  - name: Rm_H2
+    arg: reg
+    desc: Second source operand register
+    bits: 3..7
+
+  - name: Rs
+    arg: reg
+    desc: Register containing shift offset
+    bits: 3..6
+
+  - name: pc
+    arg: pc
+    desc: Program counter
+    bits: 0..0
+
+  - name: pc_deref
+    arg: pc_deref
+    desc: Program counter as base register
+    bits: 0..0
+
+  - name: sp
+    arg: sp
+    desc: Stack pointer
+    bits: 0..0
+
+  - name: sp_deref
+    arg: sp_deref
+    desc: Stack pointer as base register
+    bits: 0..0
+
+  - name: registers
+    arg: reg_list
+    desc: List of general-purpose registers
+    bits: 0..8
+
+  - name: registers_pc
+    arg: reg_list_pc
+    desc: List of general-purpose registers, including PC
+    bits: 0..9
+
+  - name: immed_3
+    arg: u_imm
+    desc: 3-bit immediate
+    bits: 6..9
+
+  - name: immed_8
+    arg: u_imm
+    desc: 8-bit immediate
+    bits: 0..8
+
+  - name: rel_immed_7
+    arg: u_imm
+    desc: Address-relative 7-bit immediate
+    bits: 0..7
+    extra_bits: 2
+    ops:
+      - type: LeftShift
+        value: 2
+
+  - name: rel_immed_8
+    arg: u_imm
+    desc: Address-relative 8-bit immediate
+    bits: 0..8
+    extra_bits: 2
+    ops:
+      - type: LeftShift
+        value: 2
+
+  - name: left_shift_imm
+    arg: u_imm
+    desc: 5-bit left shift offset
+    bits: 6..11
+
+  - name: right_shift_imm
+    arg: u_imm
+    desc: 5-bit right shift offset
+    bits: 6..11
+    ops:
+      - type: ArmShiftImm
+        value: 1
+
+  - name: branch_offset_8
+    arg: s_imm
+    desc: 9-bit signed B/BL target offset
+    bits: 0..8
+    extra_bits: 1
+    ops:
+      - type: LeftShift
+        value: 1
+      - type: Add
+        value: 4
+
+  - name: branch_offset_11
+    arg: s_imm
+    desc: 12-bit signed B/BL target offset
+    bits: 0..11
+    extra_bits: 1
+    ops:
+      - type: LeftShift
+        value: 1
+      - type: Add
+        value: 4
+
+  - name: high_branch_offset_11
+    arg: s_imm
+    desc: 23-bit signed BL/BLX target offset (high part)
+    bits: 0..11
+    extra_bits: 12
+    ops:
+      - type: LeftShift
+        value: 12
+      - type: Add
+        value: 4
+
+  - name: low_branch_offset_11
+    arg: u_imm
+    desc: 23-bit signed BL target offset (low part)
+    bits: 0..11
+    extra_bits: 1
+    ops:
+      - type: LeftShift
+        value: 1
+
+  - name: low_blx_offset_11
+    arg: u_imm
+    desc: 23-bit signed BLX target offset (low part)
+    bits: 0..11
+    extra_bits: 1
+    ops:
+      - type: LeftShift
+        value: 1
+      - type: And
+        value: 0xfffffffc
+
+  - name: offset_5
+    arg: offset
+    desc: 7-bit immediate offset
+    bits: 6..11
+    extra_bits: 2
+    ops:
+      - type: LeftShift
+        value: 2
+
+modifiers:
+  - name: cond
+    desc: Condition code
+    bitmask: 0x0f00
+    cases:
+      - name: eq
+        suffix: eq
+        desc: Equal
+        pattern: 0x0000
+      - name: ne
+        suffix: ne
+        desc: Not equal
+        pattern: 0x0100
+      - name: hs
+        suffix: hs
+        desc: Unsigned higher or same
+        pattern: 0x0200
+      - name: lo
+        suffix: lo
+        desc: Unsigned lower
+        pattern: 0x0300
+      - name: mi
+        suffix: mi
+        desc: Minus/negative
+        pattern: 0x0400
+      - name: pl
+        suffix: pl
+        desc: Plus/positive or zero
+        pattern: 0x0500
+      - name: vs
+        suffix: vs
+        desc: Overflow
+        pattern: 0x0600
+      - name: vc
+        suffix: vc
+        desc: No overflow
+        pattern: 0x0700
+      - name: hi
+        suffix: hi
+        desc: Unsigned higher
+        pattern: 0x0800
+      - name: ls
+        suffix: ls
+        desc: Unsigned lower or same
+        pattern: 0x0900
+      - name: ge
+        suffix: ge
+        desc: Signed greater than or equal
+        pattern: 0x0a00
+      - name: lt
+        suffix: lt
+        desc: Signed less than
+        pattern: 0x0b00
+      - name: gt
+        suffix: gt
+        desc: Signed greater than
+        pattern: 0x0c00
+      - name: le
+        suffix: le
+        desc: Signed less than or equal
+        pattern: 0x0d00
+      - name: al
+        desc: Always
+        pattern: 0x0e00
+
+opcodes:
+  - name: adc
+    desc: Add with Carry
+    bitmask: 0xffc0
+    pattern: 0x4140
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: add$3
+    desc: Add 3-bit immediate
+    bitmask: 0xfe00
+    pattern: 0x1c00
+    args: [Rd_0, Rn_3, immed_3]
+    defs: [Rd_0]
+    uses: [Rn_3]
+
+  - name: add$8
+    desc: Add 8-bit immediate
+    bitmask: 0xf800
+    pattern: 0x3000
+    args: [Rd_8, immed_8]
+    defs: [Rd_8]
+
+  - name: add$r
+    desc: Add register
+    bitmask: 0xfe00
+    pattern: 0x1800
+    args: [Rd_0, Rn_3, Rm_6]
+    defs: [Rd_0]
+
+  - name: add$hr
+    desc: Add high register
+    bitmask: 0xff00
+    pattern: 0x4400
+    args: [Rd_H1, Rm_H2]
+    defs: [Rd_H1]
+    uses: [Rm_H2]
+
+  - name: add$pc
+    desc: Add PC-relative address
+    bitmask: 0xf800
+    pattern: 0xa000
+    args: [Rd_8, pc, rel_immed_8]
+    defs: [Rd_8]
+    uses: [pc]
+
+  - name: add$sp
+    desc: Add SP-relative address
+    bitmask: 0xf800
+    pattern: 0xa800
+    args: [Rd_8, sp, rel_immed_8]
+    defs: [Rd_8]
+    uses: [sp]
+
+  - name: add$sp7
+    desc: Add 7-bit immediate multiple of 4 to SP
+    bitmask: 0xff80
+    pattern: 0xb000
+    args: [sp, rel_immed_7]
+    defs: [sp]
+
+  - name: and
+    desc: Bitwise AND
+    bitmask: 0xffc0
+    pattern: 0x4000
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: asr$i
+    desc: Arithmetic Shift Right by 5-bit immediate
+    bitmask: 0xf800
+    pattern: 0x1000
+    args: [Rd_0, Rm_3, right_shift_imm]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: asr$r
+    desc: Arithmetic Shift Right by register
+    bitmask: 0xffc0
+    pattern: 0x4100
+    args: [Rd_0, Rs]
+    defs: [Rd_0]
+    uses: [Rs]
+
+  - name: b
+    desc: Branch
+    bitmask: 0xf000
+    pattern: 0xd000
+    modifiers: [cond]
+    args: [branch_offset_8]
+
+  - name: b$long
+    desc: Branch (unconditional, long)
+    bitmask: 0xf800
+    pattern: 0xe000
+    args: [branch_offset_11]
+
+  - name: bic
+    desc: Bit Clear
+    bitmask: 0xffc0
+    pattern: 0x4280
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: bkpt
+    desc: Breakpoint
+    bitmask: 0xff00
+    pattern: 0xde00
+    args: [immed_8]
+
+  - name: bl$h
+    desc: Branch and Link (high part)
+    bitmask: 0xf800
+    pattern: 0xf000
+    args: [high_branch_offset_11]
+
+  - name: bl
+    desc: Branch and Link (low part)
+    bitmask: 0xf800
+    pattern: 0xf800
+    args: [low_branch_offset_11]
+
+  - name: blx$i
+    desc: Branch and Link and Exchange to ARM (low part, immediate target)
+    bitmask: 0xf800
+    pattern: 0xe800
+    args: [low_blx_offset_11]
+
+  - name: blx$r
+    desc: Branch and Link and Exchange to ARM (register target)
+    bitmask: 0xff87
+    pattern: 0x4780
+    args: [Rm_H2]
+    uses: [Rm_H2]
+
+  - name: bx$r
+    desc: Branch and Exchange
+    bitmask: 0xff87
+    pattern: 0x4700
+    args: [Rm_H2]
+    uses: [Rm_H2]
+
+  - name: cmn
+    desc: Compare Negative
+    bitmask: 0xffc0
+    pattern: 0x42c0
+    args: [Rn_0, Rm_3]
+    uses: [Rn_0, Rm_3]
+
+  - name: cmp$i
+    desc: Compare with immediate
+    bitmask: 0xf800
+    pattern: 0x2800
+    args: [Rn_8, immed_8]
+    uses: [Rn_8]
+
+  - name: cmp$r
+    desc: Compare with register
+    bitmask: 0xffc0
+    pattern: 0x4280
+    args: [Rn_0, Rm_3]
+    uses: [Rn_0, Rm_3]
+
+  - name: cmp$hr
+    desc: Compare with high register
+    bitmask: 0xff00
+    pattern: 0x4500
+    args: [Rn_H1, Rm_H2]
+    uses: [Rn_H1, Rm_H2]
+
+  - name: eor
+    desc: Exclusive OR
+    bitmask: 0xffc0
+    pattern: 0x4040
+    args: [Rd_0, Rm_3]
+    uses: [Rd_0, Rm_3]
+
+  - name: ldmia
+    desc: Load Multiple Increment After
+    bitmask: 0xf800
+    pattern: 0xc800
+    args: [Rn_8_wb, registers]
+    defs: [Rn_8_wb]
+    uses: [Rn_8_wb, registers]
+
+  - name: ldr$i
+    desc: Load Register with immediate offset
+    bitmask: 0xf800
+    pattern: 0x6800
+    args: [Rd_0, Rn_3_deref, offset_5]
+    defs: [Rd_0]
+    uses: [Rn_3_deref]
+
+  - name: ldr$r
+    desc: Load Register with register offset
+    bitmask: 0xfe00
+    pattern: 0x5800
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rd_0]
+    uses: [Rn_3_deref, Rm_6_offset]
+
+  - name: ldr$pc
+    desc: Load Register with PC-relative address
+    bitmask: 0xf800
+    pattern: 0x4800
+    args: [Rd_8, pc_deref, rel_immed_8]
+    defs: [Rd_8]
+    uses: [pc_deref]
+
+  - name: ldr$sp
+    desc: Load Register with SP-relative address
+    bitmask: 0xf800
+    pattern: 0x9800
+    args: [Rd_8, sp_deref, rel_immed_8]
+    defs: [Rd_8]
+    uses: [sp_deref]
+
+  - name: ldrb$i
+    desc: Load Register Byte with immediate offset
+    bitmask: 0xf800
+    pattern: 0x7800
+    args: [Rd_0, Rn_3_deref, offset_5]
+    defs: [Rd_0]
+    uses: [Rn_3_deref]
+
+  - name: ldrb$r
+    desc: Load Register Byte with register offset
+    bitmask: 0xfe00
+    pattern: 0x5c00
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rd_0]
+    uses: [Rn_3_deref, Rm_6_offset]
+
+  - name: ldrh$i
+    desc: Load Register Halfword with immediate offset
+    bitmask: 0xf800
+    pattern: 0x8800
+    args: [Rd_0, Rn_3_deref, offset_5]
+    defs: [Rd_0]
+    uses: [Rn_3_deref]
+
+  - name: ldrh$r
+    desc: Load Register Halfword with register offset
+    bitmask: 0xfe00
+    pattern: 0x5a00
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rd_0]
+    uses: [Rn_3_deref, Rm_6_offset]
+
+  - name: ldrsb
+    desc: Load Register Signed Byte
+    bitmask: 0xfe00
+    pattern: 0x5600
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rd_0]
+    uses: [Rn_3_deref, Rm_6_offset]
+
+  - name: ldrsh
+    desc: Load Register Signed Halfword
+    bitmask: 0xfe00
+    pattern: 0x5e00
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rd_0]
+    uses: [Rn_3_deref, Rm_6_offset]
+
+  - name: lsl$i
+    desc: Logical Shift Left by 5-bit immediate
+    bitmask: 0xf800
+    pattern: 0x1000
+    args: [Rd_0, Rm_3, left_shift_imm]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: lsl$r
+    desc: Logical Shift Left by register
+    bitmask: 0xffc0
+    pattern: 0x4080
+    args: [Rd_0, Rs]
+    defs: [Rd_0]
+    uses: [Rs]
+
+  - name: lsr$i
+    desc: Logical Shift Right by 5-bit immediate
+    bitmask: 0xf800
+    pattern: 0x0800
+    args: [Rd_0, Rm_3, right_shift_imm]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: lsr$r
+    desc: Logical Shift Right by register
+    bitmask: 0xffc0
+    pattern: 0x40c0
+    args: [Rd_0, Rs]
+    defs: [Rd_0]
+    uses: [Rs]
+
+  - name: mov$i
+    desc: Move immediate
+    bitmask: 0xf800
+    pattern: 0x2000
+    args: [Rd_8, immed_8]
+    defs: [Rd_8]
+
+  - name: mov$r
+    desc: Move register
+    bitmask: 0xffc0
+    pattern: 0x1c00
+    args: [Rd_0, Rn_3]
+    defs: [Rd_0]
+    uses: [Rn_3]
+
+  - name: mov$hr
+    desc: Move high register
+    bitmask: 0xff00
+    pattern: 0x4600
+    args: [Rd_H1, Rm_H2]
+    defs: [Rd_H1]
+    uses: [Rm_H2]
+
+  - name: mul
+    desc: Multiply
+    bitmask: 0xffc0
+    pattern: 0x4340
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: mvn
+    desc: Move Negative
+    bitmask: 0xffc0
+    pattern: 0x43c0
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: neg
+    desc: Negate
+    bitmask: 0xffc0
+    pattern: 0x4240
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: orr
+    desc: Bitwise OR
+    bitmask: 0xffc0
+    pattern: 0x4300
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: pop
+    desc: Pop multiple registers
+    bitmask: 0xfe00
+    pattern: 0xbc00
+    args: [registers_pc]
+    defs: [registers_pc]
+
+  - name: push
+    desc: Push multiple registers
+    bitmask: 0xfe00
+    pattern: 0xb400
+    args: [registers_pc]
+    uses: [registers_pc]
+
+  - name: ror
+    desc: Rotate Right
+    bitmask: 0xffc0
+    pattern: 0x41c0
+    args: [Rd_0, Rs]
+    defs: [Rd_0]
+    uses: [Rs]
+
+  - name: sbc
+    desc: Subtract with Carry
+    bitmask: 0xffc0
+    pattern: 0x4180
+    args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: stmia
+    desc: Store Multiple Increment After
+    bitmask: 0xf800
+    pattern: 0xc000
+    args: [Rn_8_wb, registers]
+    defs: [Rn_8_wb, registers]
+    uses: [Rn_8_wb]
+
+  - name: str$i
+    desc: Store Register with immediate offset
+    bitmask: 0xf800
+    pattern: 0x6000
+    args: [Rd_0, Rn_3_deref, offset_5]
+    defs: [Rn_3_deref]
+    uses: [Rd_0]
+
+  - name: str$r
+    desc: Store Register with register offset
+    bitmask: 0xfe00
+    pattern: 0x5000
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rn_3_deref]
+    uses: [Rd_0, Rm_6_offset]
+
+  - name: str$sp
+    desc: Store Register with SP-relative address
+    bitmask: 0xf800
+    pattern: 0x9000
+    args: [Rd_8, sp_deref, rel_immed_8]
+    defs: [sp_deref]
+    uses: [Rd_8]
+
+  - name: strb$i
+    desc: Store Register Byte with immediate offset
+    bitmask: 0xf800
+    pattern: 0x7000
+    args: [Rd_0, Rn_3_deref, offset_5]
+    defs: [Rn_3_deref]
+    uses: [Rd_0]
+
+  - name: strb$r
+    desc: Store Register Byte with register offset
+    bitmask: 0xfe00
+    pattern: 0x5400
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rn_3_deref]
+    uses: [Rd_0, Rm_6_offset]
+
+  - name: strh$i
+    desc: Store Register Halfword with immediate offset
+    bitmask: 0xf800
+    pattern: 0x8000
+    args: [Rd_0, Rn_3_deref, offset_5]
+    defs: [Rn_3_deref]
+    uses: [Rd_0]
+
+  - name: strh$r
+    desc: Store Register Halfword with register offset
+    bitmask: 0xfe00
+    pattern: 0x5200
+    args: [Rd_0, Rn_3_deref, Rm_6_offset]
+    defs: [Rn_3_deref]
+    uses: [Rd_0, Rm_6_offset]
+
+  - name: sub$3
+    desc: Subtract 3-bit immediate
+    bitmask: 0xfe00
+    pattern: 0x1e00
+    args: [Rd_0, Rn_3, immed_3]
+    defs: [Rd_0]
+    uses: [Rn_3]
+
+  - name: sub$8
+    desc: Subtract 8-bit immediate
+    bitmask: 0xf800
+    pattern: 0x3800
+    args: [Rd_8, immed_8]
+    defs: [Rd_8]
+
+  - name: Sub$r
+    desc: Subtract register
+    bitmask: 0xfe00
+    pattern: 0x1a00
+    args: [Rd_0, Rn_3, Rm_6]
+    defs: [Rd_0]
+
+  - name: sub$sp7
+    desc: Subtract 7-bit immediate multiple of 4 from SP
+    bitmask: 0xff80
+    pattern: 0xb080
+    args: [sp, rel_immed_7]
+    defs: [sp]
+
+  - name: swi
+    desc: Software Interrupt
+    bitmask: 0xff00
+    pattern: 0xdf00
+    args: [immed_8]
+
+  - name: tst
+    desc: Test
+    bitmask: 0xffc0
+    pattern: 0x4200
+    args: [Rn_0, Rm_3]
+    uses: [Rn_0, Rm_3]

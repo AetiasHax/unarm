@@ -640,7 +640,7 @@ fn generate_field_accessor_body(
             .map(|op| {
                 let operand = match (&op.bits, &op.value) {
                     (None, Some(value)) => {
-                        let lit = Literal::i32_unsuffixed(*value);
+                        let lit = HexLiteral(*value);
                         quote! { #lit }
                     }
                     (Some(bits), None) => generate_field_code_shift(bits, arg.signed && op.r#type.signed(), false, op.shift),
@@ -652,6 +652,7 @@ fn generate_field_accessor_body(
                     FieldOpType::Negate => quote! { value = if #operand == 0 { -value } else { value }; },
                     FieldOpType::Or => quote! { value |= #operand; },
                     FieldOpType::Add => quote! { value += #operand; },
+                    FieldOpType::And => quote! { value &= #operand; },
                     FieldOpType::ArmShiftImm => quote! {
                         value = match #operand {
                             #[comment = " In ARM, shifting right by 0 actually shifts by 32"]
@@ -680,12 +681,12 @@ fn generate_field_accessor_body(
     }
 }
 
-fn generate_field_code_shift(bits: &BitRange, signed: bool, sign_extend: bool, extra_shift: i32) -> TokenStream {
+fn generate_field_code_shift(bits: &BitRange, signed: bool, sign_extend: bool, extra_shift: u32) -> TokenStream {
     let num_bits = bits.0.len();
     let shift = bits.0.start;
     let bitmask = HexLiteral(((1 << num_bits) - 1) << shift);
 
-    let value_shift = shift as i32 - extra_shift;
+    let value_shift = shift as i32 - extra_shift as i32;
     let value = match value_shift.cmp(&0) {
         Ordering::Less => {
             let shift_token = Literal::u32_unsuffixed((-value_shift).try_into().unwrap());

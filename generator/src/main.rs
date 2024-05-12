@@ -15,6 +15,9 @@ fn main() -> Result<()> {
     let arm = Isa::load(Path::new("arm.yaml"))?;
     arm.validate()?;
 
+    let thumb = Isa::load(Path::new("thumb.yaml"))?;
+    thumb.validate()?;
+
     let tokens = generate_disasm(&arm).context("While generating tokens for disassembler")?;
     let file = syn::parse2(tokens).context("While parsing tokens for disassembler")?;
     let formatted = prettyplease::unparse(&file);

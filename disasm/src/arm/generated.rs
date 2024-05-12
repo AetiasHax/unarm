@@ -109,7 +109,7 @@ pub enum Opcode {
     BlxI = 7,
     /// BLX: Branch and Link and Exchange to Thumb (register target)
     BlxR = 8,
-    /// BX: Branch and Exchange to Thumb
+    /// BX: Branch and Exchange
     Bx = 9,
     /// CDP: Coprocessor Data Processing
     Cdp = 10,
@@ -2114,7 +2114,7 @@ impl Ins {
     #[inline(always)]
     pub const fn field_coproc_offset(&self) -> (i32, u8) {
         let mut value = (self.code & 0x000000ff) as i32;
-        value <<= 2;
+        value <<= 0x00000002;
         value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
         (value, 10)
     }
@@ -2122,7 +2122,7 @@ impl Ins {
     #[inline(always)]
     pub const fn field_coproc_post_offset(&self) -> (i32, u8) {
         let mut value = (self.code & 0x000000ff) as i32;
-        value <<= 2;
+        value <<= 0x00000002;
         value = if (self.code & 0x00800000) >> 23 == 0 { -value } else { value };
         (value, 10)
     }
@@ -2140,17 +2140,17 @@ impl Ins {
     #[inline(always)]
     pub const fn field_branch_offset(&self) -> (i32, u8) {
         let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
-        value <<= 2;
-        value += 8;
+        value <<= 0x00000002;
+        value += 0x00000008;
         (value, 26)
     }
     /// blx_offset: 24-bit signed BLX target offset
     #[inline(always)]
     pub const fn field_blx_offset(&self) -> (i32, u8) {
         let mut value = (((self.code & 0x00ffffff) as i32) << 8) >> 8;
-        value <<= 2;
+        value <<= 0x00000002;
         value |= ((self.code & 0x01000000) >> 23) as i32;
-        value += 8;
+        value += 0x00000008;
         (value, 26)
     }
     /// immed_16: 16-bit immediate in bits 0..4 and 8..20

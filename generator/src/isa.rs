@@ -9,6 +9,7 @@ use crate::iter::cartesian;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Isa {
+    pub ins_size: u32,
     pub args: Box<[Arg]>,
     pub fields: Box<[Field]>,
     pub modifiers: Box<[Modifier]>,
@@ -266,9 +267,9 @@ pub struct FieldArg {
 pub struct FieldOp {
     pub r#type: FieldOpType,
     pub bits: Option<BitRange>,
-    pub value: Option<i32>,
+    pub value: Option<u32>,
     #[serde(default)]
-    pub shift: i32,
+    pub shift: u32,
 }
 
 impl FieldOp {
@@ -289,6 +290,7 @@ pub enum FieldOpType {
     Negate,
     Or,
     Add,
+    And,
     ArmShiftImm,
 }
 
@@ -534,7 +536,8 @@ impl Opcode {
                 bitmask_acc |= bitmask;
             }
         }
-        if bitmask_acc != u32::MAX {
+        let complete_bitmask = ((1u64 << isa.ins_size) - 1).try_into().unwrap();
+        if bitmask_acc != complete_bitmask {
             bail!("Opcode '{}' has an incomplete bitmask 0x{:08x}", self.name, bitmask_acc)
         }
         Ok(())

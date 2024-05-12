@@ -1,3 +1,5 @@
+ins_size: 32
+
 args:
   - name: reg
     desc: General-purpose register
@@ -862,7 +864,7 @@ opcodes:
     uses: [Rm]
 
   - name: bx
-    desc: Branch and Exchange to Thumb
+    desc: Branch and Exchange
     bitmask: 0x0ffffff0
     pattern: 0x012fff10
     modifiers: [cond]
