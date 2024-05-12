@@ -388,6 +388,17 @@ fields:
       - type: Negate
         bits: 23..24
 
+  - name: coproc_post_offset
+    arg: post_offset
+    desc: 8-bit immediate coprocessor offset
+    bits: 0..8
+    extra_bits: 2
+    ops:
+      - type: LeftShift
+        value: 2
+      - type: Negate
+        bits: 23..24
+
   - name: option
     arg: co_option
     desc: Additional instruction options for coprocessor
@@ -613,6 +624,12 @@ modifiers:
         pattern: 0x07000000
         args: [Rn_deref, reg_offset, shift_imm]
         uses: [Rn_deref, reg_offset]
+      - name: rrx
+        desc: Scaled register offset
+        bitmask: 0x0f200ff0
+        pattern: 0x07000060
+        args: [Rn_deref, reg_offset, rrx]
+        uses: [Rn_deref, reg_offset]
       - name: imm_pre
         desc: Immediate pre-indexed
         bitmask: 0x0f200000
@@ -631,6 +648,12 @@ modifiers:
         pattern: 0x07200000
         args: [Rn_deref_wb, reg_offset, shift_imm]
         uses: [Rn_deref_wb, reg_offset]
+      - name: rrx_pre
+        desc: Scaled register offset
+        bitmask: 0x0f200ff0
+        pattern: 0x07200060
+        args: [Rn_deref_wb, reg_offset, rrx]
+        uses: [Rn_deref_wb, reg_offset]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x0f200000
@@ -648,6 +671,12 @@ modifiers:
         bitmask: 0x0f200010
         pattern: 0x06000000
         args: [Rn_deref, reg_post_offset, shift_imm]
+        uses: [Rn_deref, reg_post_offset]
+      - name: rrx_ppost
+        desc: Scaled register offset
+        bitmask: 0x0f200ff0
+        pattern: 0x06000060
+        args: [Rn_deref, reg_post_offset, rrx]
         uses: [Rn_deref, reg_post_offset]
 
   - name: addr_ldrt_strt
@@ -691,14 +720,14 @@ modifiers:
         desc: Immediate pre-indexed
         bitmask: 0x0f600090
         pattern: 0x01600090
-        args: [Rn_deref, offset_8]
-        uses: [Rn_deref]
+        args: [Rn_deref_wb, offset_8]
+        uses: [Rn_deref_wb]
       - name: reg_pre
         desc: Register pre-indexed
         bitmask: 0x0f600f90
         pattern: 0x01200090
-        args: [Rn_deref, reg_offset]
-        uses: [Rn_deref, reg_offset]
+        args: [Rn_deref_wb, reg_offset]
+        uses: [Rn_deref_wb, reg_offset]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x0f600090
@@ -746,13 +775,13 @@ modifiers:
         desc: Immediate pre-indexed
         bitmask: 0x01200000
         pattern: 0x01200000
-        args: [Rn_deref, coproc_offset]
-        uses: [Rn_deref]
+        args: [Rn_deref_wb, coproc_offset]
+        uses: [Rn_deref_wb]
       - name: imm_post
         desc: Immediate post-indexed
         bitmask: 0x01200000
         pattern: 0x00200000
-        args: [Rn_deref, coproc_offset]
+        args: [Rn_deref, coproc_post_offset]
         uses: [Rn_deref]
       - name: unidx
         desc: Unindexed
@@ -1141,7 +1170,7 @@ opcodes:
     bitmask: 0x0de00000
     pattern: 0x01800000
     modifiers: [cond, S, addr_data]
-    args: [Rn, Rd]
+    args: [Rd, Rn]
     defs: [Rd]
     uses: [Rn]
 
@@ -1285,6 +1314,14 @@ opcodes:
     args: [coproc, CRd]
     defs: [CRd]
 
+  - name: stc2
+    desc: Store Coprocessor (unconditional, extended)
+    bitmask: 0xfe100000
+    pattern: 0xfc000000
+    modifiers: [L, addr_coproc]
+    args: [coproc, CRd]
+    defs: [CRd]
+
   - name: stm
     desc: Store Multiple
     bitmask: 0x0e700000
@@ -1384,18 +1421,18 @@ opcodes:
     bitmask: 0x0ff00ff0
     pattern: 0x01000090
     modifiers: [cond]
-    args: [Rd, Rm, Rn]
+    args: [Rd, Rm, Rn_deref]
     defs: [Rd]
-    uses: [Rm, Rn]
+    uses: [Rm, Rn_deref]
 
   - name: swpb
     desc: Swap Byte
     bitmask: 0x0ff00ff0
     pattern: 0x01400090
     modifiers: [cond]
-    args: [Rd, Rm, Rn]
+    args: [Rd, Rm, Rn_deref]
     defs: [Rd]
-    uses: [Rm, Rn]
+    uses: [Rm, Rn_deref]
 
   - name: teq
     desc: Test Equivalence
