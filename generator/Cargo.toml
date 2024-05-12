@@ -2,6 +2,11 @@
 name = "armv5te-generator"
 version = "0.1.0"
 edition = "2021"
+authors = ["Aetias <aetias@outlook.com>"]
+license = "MIT"
+description = "Generates Rust code for armv5te"
+repository = "https://github.com/AetiasHax/armv5te"
+publish = false
 
 [dependencies]
 anyhow = "1.0.82"

@@ -2,5 +2,10 @@
 name = "armv5te"
 version = "0.1.0"
 edition = "2021"
+authors = ["Aetias <aetias@outlook.com>"]
+license = "MIT"
+description = "Disassembles ARMv5TE instructions"
+keywords = ["arm", "armv5te"]
+repository = "https://github.com/AetiasHax/armv5te"
 
 [dependencies]
