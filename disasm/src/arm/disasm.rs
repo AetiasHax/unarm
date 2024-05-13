@@ -1,8 +1,11 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::arm::{
-    generated::{parse, Argument, Arguments, FieldMask, Opcode, RegOffset, RegPostOffset, ShiftImm, ShiftReg},
-    CoReg, Reg, Shift, StatusMask, StatusReg,
+use crate::{
+    arm::{
+        generated::{parse, Argument, Arguments, FieldMask, Opcode, RegOffset, RegPostOffset, ShiftImm, ShiftReg},
+        CoReg, Reg, Shift, StatusMask, StatusReg,
+    },
+    display::SignedHex,
 };
 
 #[derive(Clone, Copy)]
@@ -256,27 +259,6 @@ impl Display for RegPostOffset {
 impl Display for FieldMask {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}_{}", self.reg, self.mask)
-    }
-}
-
-struct SignedHex {
-    value: i32,
-    size: u8,
-}
-
-impl Display for SignedHex {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let hex = format!("{:08x}", self.value.abs() & ((1 << self.size as i32) - 1));
-        let chars = self.size.div_ceil(4);
-        let mut hex: String = hex.chars().skip((8 - chars).into()).skip_while(|ch| *ch == '0').collect();
-        if hex.is_empty() {
-            hex += "0";
-        }
-        write!(f, "#")?;
-        if self.value.is_negative() {
-            write!(f, "-")?;
-        }
-        write!(f, "0x{}", hex)
     }
 }
 

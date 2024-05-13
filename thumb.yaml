@@ -143,16 +143,6 @@ fields:
         bits: 7..8
         shift: 3
 
-  - name: Rd_H1
-    arg: reg
-    desc: Destination register
-    bits: 0..3
-    extra_bits: 1
-    ops:
-      - type: Or
-        bits: 7..8
-        shift: 3
-
   - name: Rm_3
     arg: reg
     desc: Second source operand register
@@ -478,7 +468,7 @@ opcodes:
   - name: bic
     desc: Bit Clear
     bitmask: 0xffc0
-    pattern: 0x4280
+    pattern: 0x4380
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -647,7 +637,7 @@ opcodes:
   - name: lsl$i
     desc: Logical Shift Left by 5-bit immediate
     bitmask: 0xf800
-    pattern: 0x1000
+    pattern: 0x0000
     args: [Rd_0, Rm_3, left_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -840,7 +830,7 @@ opcodes:
     args: [Rd_8, immed_8]
     defs: [Rd_8]
 
-  - name: Sub$r
+  - name: sub$r
     desc: Subtract register
     bitmask: 0xfe00
     pattern: 0x1a00

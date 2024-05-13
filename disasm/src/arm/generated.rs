@@ -2001,12 +2001,12 @@ impl Ins {
     /// registers: List of registers
     #[inline(always)]
     pub const fn field_registers(&self) -> u32 {
-        self.code & 0x0000ffff
+        (self.code & 0x0000ffff)
     }
     /// registers_c: List of registers (with ^ suffix)
     #[inline(always)]
     pub const fn field_registers_c(&self) -> u32 {
-        self.code & 0x0000ffff
+        (self.code & 0x0000ffff)
     }
     /// CRn: First source coprocessor register
     #[inline(always)]
@@ -2033,7 +2033,7 @@ impl Ins {
     /// immed_24: 24-bit immediate
     #[inline(always)]
     pub const fn field_immed_24(&self) -> u32 {
-        self.code & 0x00ffffff
+        (self.code & 0x00ffffff)
     }
     /// offset_8: 8-bit immediate offset
     #[inline(always)]
@@ -2129,7 +2129,7 @@ impl Ins {
     /// option: Additional instruction options for coprocessor
     #[inline(always)]
     pub const fn field_option(&self) -> u32 {
-        self.code & 0x000000ff
+        (self.code & 0x000000ff)
     }
     /// H: Add 2 to BLX target address
     #[inline(always)]
@@ -2171,27 +2171,27 @@ impl Ins {
     /// opcode: Coprocessor operation to perform (user-defined)
     #[inline(always)]
     pub const fn field_opcode(&self) -> u32 {
-        (self.code & 0x000000f0) >> 4
+        ((self.code & 0x000000f0) >> 4)
     }
     /// codat_opcode_1: Coprocessor operation to perform (user-defined, used by CDP instruction)
     #[inline(always)]
     pub const fn field_codat_opcode_1(&self) -> u32 {
-        (self.code & 0x00f00000) >> 20
+        ((self.code & 0x00f00000) >> 20)
     }
     /// comov_opcode_1: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
     #[inline(always)]
     pub const fn field_comov_opcode_1(&self) -> u32 {
-        (self.code & 0x00e00000) >> 21
+        ((self.code & 0x00e00000) >> 21)
     }
     /// opcode_2: Coprocessor operation to perform (user-defined)
     #[inline(always)]
     pub const fn field_opcode_2(&self) -> u32 {
-        (self.code & 0x000000e0) >> 5
+        ((self.code & 0x000000e0) >> 5)
     }
     /// coproc: Coprocessor number
     #[inline(always)]
     pub const fn field_coproc(&self) -> u32 {
-        (self.code & 0x00000f00) >> 8
+        ((self.code & 0x00000f00) >> 8)
     }
     /// S: Update condition status flags
     #[inline(always)]
