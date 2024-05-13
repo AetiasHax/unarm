@@ -16,6 +16,11 @@ impl Ins {
         let op = Opcode::find(code);
         Self { code, op }
     }
+
+    /// Returns whether this is a BL half-instruction and should be combined with the upcoming instruction
+    pub fn is_half_bl(&self) -> bool {
+        self.op == Opcode::BlH
+    }
 }
 
 #[derive(Default)]
@@ -33,6 +38,20 @@ impl ParsedIns {
 
     pub fn args_iter(&self) -> impl Iterator<Item = &Argument> {
         self.args.iter().take_while(|a| **a != Argument::None)
+    }
+
+    /// Combines a pair of BL/BL or BL/BLX half-instructions into a full 32-bit instruction
+    pub fn combine_bl(&self, second: &Self) -> Self {
+        match (self.args[0], second.args[0]) {
+            (Argument::SImm((high, _)), Argument::UImm(low)) => Self {
+                mnemonic: second.mnemonic,
+                args: [Argument::SImm((high + (low as i32), 23)), Argument::None, Argument::None],
+            },
+            _ => Self {
+                mnemonic: "<illegal>",
+                args: [Argument::None, Argument::None, Argument::None],
+            },
+        }
     }
 }
 
