@@ -1057,6 +1057,8 @@ pub enum Argument {
     SImm((i32, u8)),
     /// offset: Immediate offset
     Offset((i32, u8)),
+    /// branch_dest: Branch destination
+    BranchDest((i32, u8)),
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
@@ -1205,7 +1207,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "beq",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1215,7 +1217,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bne",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1225,7 +1227,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bhs",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1235,7 +1237,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blo",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1245,7 +1247,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bmi",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1255,7 +1257,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bpl",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1265,7 +1267,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bvs",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1275,7 +1277,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bvc",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1285,7 +1287,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bhi",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1295,7 +1297,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bls",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1305,7 +1307,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bge",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1315,7 +1317,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "blt",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1325,7 +1327,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "bgt",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1335,7 +1337,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "ble",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -1345,7 +1347,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "b",
                 args: [
-                    Argument::SImm(ins.field_branch_offset_8()),
+                    Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
                 ],

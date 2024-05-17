@@ -87,6 +87,10 @@ args:
     desc: Immediate offset
     signed: true
 
+  - name: branch_dest
+    desc: Branch destination
+    signed: true
+
 fields:
   - name: Rd_0
     arg: reg
@@ -240,7 +244,7 @@ fields:
         value: 1
 
   - name: branch_offset_8
-    arg: s_imm
+    arg: branch_dest
     desc: 9-bit signed B/BL target offset
     bits: 0..8
     extra_bits: 1

@@ -45,7 +45,11 @@ impl ParsedIns {
         match (self.args[0], second.args[0]) {
             (Argument::SImm((high, _)), Argument::UImm(low)) => Self {
                 mnemonic: second.mnemonic,
-                args: [Argument::SImm((high + (low as i32), 23)), Argument::None, Argument::None],
+                args: [
+                    Argument::BranchDest((high + (low as i32), 23)),
+                    Argument::None,
+                    Argument::None,
+                ],
             },
             _ => Self {
                 mnemonic: "<illegal>",
@@ -117,6 +121,7 @@ impl Display for Argument {
             Argument::UImm(x) => write!(f, "#0x{:x}", x),
             Argument::SImm((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
             Argument::Offset((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
+            Argument::BranchDest((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
         }
     }
 }
