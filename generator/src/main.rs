@@ -1,3 +1,4 @@
+mod args;
 mod disasm;
 mod isa;
 mod iter;
@@ -7,11 +8,15 @@ mod token;
 use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
+use args::IsaArgs;
 use isa::Isa;
 
 use crate::disasm::generate_disasm;
 
 fn main() -> Result<()> {
+    let args = IsaArgs::load(Path::new("args.yaml"))?;
+    args.validate()?;
+
     let arm = Isa::load(Path::new("arm.yaml"))?;
     arm.validate()?;
 
