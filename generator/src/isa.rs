@@ -184,7 +184,7 @@ impl FieldValue {
             _ => {}
         }
         if let Self::Expr(expr) = self {
-            syn::parse_str::<Expr>(&expr)?;
+            syn::parse_str::<Expr>(expr)?;
         }
         Ok(())
     }

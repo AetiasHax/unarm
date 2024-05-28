@@ -1,2 +1,2 @@
 pub mod args;
-// pub mod disasm;
+pub mod disasm;

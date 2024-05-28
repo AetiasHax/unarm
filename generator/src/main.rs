@@ -10,7 +10,7 @@ use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
 use args::IsaArgs;
-use generate::args::generate_args;
+use generate::{args::generate_args, disasm::generate_disasm};
 use isa::Isa;
 
 fn main() -> Result<()> {
@@ -28,15 +28,15 @@ fn main() -> Result<()> {
     let formatted = prettyplease::unparse(&file);
     fs::write("disasm/src/args.rs", formatted)?;
 
-    // let tokens = generate_disasm(&arm, &args, "arm").context("While generating tokens for ARM disassembler")?;
-    // let file = syn::parse2(tokens).context("While parsing tokens for ARM disassembler")?;
-    // let formatted = prettyplease::unparse(&file);
-    // fs::write("disasm/src/arm/generated.rs", formatted)?;
+    let tokens = generate_disasm(&arm, &args, "arm").context("While generating tokens for ARM disassembler")?;
+    let file = syn::parse2(tokens).context("While parsing tokens for ARM disassembler")?;
+    let formatted = prettyplease::unparse(&file);
+    fs::write("disasm/src/arm/generated.rs", formatted)?;
 
-    // let tokens = generate_disasm(&thumb, &args, "thumb").context("While generating tokens for Thumb disassembler")?;
-    // let file = syn::parse2(tokens).context("While parsing tokens for Thumb disassembler")?;
-    // let formatted = prettyplease::unparse(&file);
-    // fs::write("disasm/src/thumb/generated.rs", formatted)?;
+    let tokens = generate_disasm(&thumb, &args, "thumb").context("While generating tokens for Thumb disassembler")?;
+    let file = syn::parse2(tokens).context("While parsing tokens for Thumb disassembler")?;
+    let formatted = prettyplease::unparse(&file);
+    fs::write("disasm/src/thumb/generated.rs", formatted)?;
 
     Ok(())
 }

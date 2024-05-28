@@ -88,7 +88,7 @@ fn generate_args_enum(isa_args: &IsaArgs) -> Result<TokenStream, anyhow::Error> 
         })
         .collect::<Result<Vec<_>>>()?;
     let args_enum = quote! {
-        pub enum Arguments {
+        pub enum Argument {
             #(#args_variants),*
         }
     };
