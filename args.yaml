@@ -1,69 +1,69 @@
 types:
-  - name: reg
+  - name: register
     desc: General-purpose register
     type: !Enum
-      r0:
+      - name: r0
         value: 0
-      r1:
+      - name: r1
         value: 1
-      r2:
+      - name: r2
         value: 2
-      r3:
+      - name: r3
         value: 3
-      r4:
+      - name: r4
         value: 4
-      r5:
+      - name: r5
         value: 5
-      r6:
+      - name: r6
         value: 6
-      r7:
+      - name: r7
         value: 7
-      r8:
+      - name: r8
         value: 8
-      r9:
+      - name: r9
         value: 9
-      r10:
+      - name: r10
         value: 10
-      fp:
+      - name: fp
         desc: Frame Pointer
         value: 11
-      ip:
+      - name: ip
         desc: Intra Procedure call scratch register
         value: 12
-      sp:
+      - name: sp
         desc: Stack Pointer
         value: 13
-      lr:
+      - name: lr
         desc: Link Register
         value: 14
-      pc:
+      - name: pc
         desc: Program Counter
         value: 15
 
   - name: status_reg
     desc: Status register
     type: !Enum
-      cpsr:
+      - name: cpsr
         value: 0
-      spsr:
+      - name: spsr
         value: 1
 
   - name: shift
     desc: Shift operation
     type: !Enum
-      lsl:
+      - name: lsl
         desc: Logical shift left
         value: 0
-      lsr:
+      - name: lsr
         desc: Logical shift right
         value: 1
-      asr:
+      - name: asr
         desc: Arithmetic shift right
         value: 2
-      ror:
+      - name: ror
         desc: Rotate right
         value: 3
-      rrx:
+      - name: rrx
         desc: Rotate right and extend
         value: 4
 
@@ -73,7 +73,7 @@ args:
     type: !Struct
       reg:
         desc: Register
-        type: !Custom reg
+        type: !Custom register
       deref:
         desc: Use as base register
         type: !Bool
@@ -94,37 +94,37 @@ args:
   - name: co_reg
     desc: Coprocessor register
     type: !Enum
-      c0:
+      - name: c0
         value: 0
-      c1:
+      - name: c1
         value: 1
-      c2:
+      - name: c2
         value: 2
-      c3:
+      - name: c3
         value: 3
-      c4:
+      - name: c4
         value: 4
-      c5:
+      - name: c5
         value: 5
-      c6:
+      - name: c6
         value: 6
-      c7:
+      - name: c7
         value: 7
-      c8:
+      - name: c8
         value: 8
-      c9:
+      - name: c9
         value: 9
-      c10:
+      - name: c10
         value: 10
-      c11:
+      - name: c11
         value: 11
-      c12:
+      - name: c12
         value: 12
-      c13:
+      - name: c13
         value: 13
-      c14:
+      - name: c14
         value: 14
-      c15:
+      - name: c15
         value: 15
 
   - name: status_reg
@@ -172,7 +172,7 @@ args:
         type: !Custom shift
       reg:
         desc: Register shift offset
-        type: !Custom reg
+        type: !Custom register
 
   - name: u_imm
     desc: Unsigned immediate
@@ -197,7 +197,7 @@ args:
     type: !Struct
       reg:
         desc: Offset value
-        type: !Custom reg
+        type: !Custom register
       post_indexed:
         desc: If true, add the offset to the base register and write-back AFTER derefencing the base register
         type: !Bool

@@ -6,13 +6,14 @@ use quote::quote;
 use syn::Ident;
 
 use crate::{
-    isa::{Arg, BitRange, Field, FieldOp, FieldOpType, Isa, Opcode},
+    args::IsaArgs,
+    isa::{BitRange, Field, Isa, Opcode},
     iter::cartesian,
     search::SearchTree,
     token::HexLiteral,
 };
 
-pub fn generate_disasm(isa: &Isa, module: &str) -> Result<TokenStream> {
+pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, module: &str) -> Result<TokenStream> {
     // Generate opcode enum and mnemonics array
     let (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes_token) = generate_opcode_tokens(&isa.opcodes);
 

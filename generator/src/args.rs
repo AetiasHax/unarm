@@ -1,8 +1,10 @@
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{collections::BTreeMap, fs::File, path::Path};
 
 use serde::Deserialize;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
+
+use crate::util::capitalize_with_delimiter;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -20,9 +22,6 @@ impl IsaArgs {
     }
 
     pub fn validate(&self) -> Result<()> {
-        for r#type in self.types.iter() {
-            r#type.validate()?;
-        }
         for arg in self.args.iter() {
             arg.validate(self)?;
         }
@@ -49,16 +48,20 @@ impl IsaArgs {
 pub struct Type {
     pub name: String,
     pub desc: String,
-    pub r#type: ArgType,
+    pub r#type: TypeKind,
 }
 
 impl Type {
-    pub fn validate(&self) -> Result<()> {
-        if let ArgType::Custom(_) = self.r#type {
-            bail!("Argument type '{}' can't be custom", self.name)
-        }
-        Ok(())
+    pub fn pascal_case_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
     }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub enum TypeKind {
+    Struct(BTreeMap<String, StructMember>),
+    Enum(Box<[EnumValue]>),
 }
 
 #[derive(Deserialize)]
@@ -76,13 +79,17 @@ impl Arg {
         }
         Ok(())
     }
+
+    pub fn pascal_case_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
 }
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum ArgType {
-    Struct(HashMap<String, StructMember>),
-    Enum(HashMap<String, EnumValue>),
+    Struct(BTreeMap<String, StructMember>),
+    Enum(Box<[EnumValue]>),
     U32,
     I32,
     Bool,
@@ -99,6 +106,13 @@ pub struct StructMember {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EnumValue {
+    pub name: String,
     pub desc: Option<String>,
     pub value: u32,
+}
+
+impl EnumValue {
+    pub fn pascal_case_name(&self) -> String {
+        capitalize_with_delimiter(self.name.clone(), '_')
+    }
 }
