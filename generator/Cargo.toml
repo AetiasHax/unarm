@@ -13,6 +13,7 @@ anyhow = "1.0.82"
 prettyplease = "0.2.19"
 proc-macro2 = "1.0.81"
 quote = "1.0.36"
+regex = "1.10.4"
 serde = { version = "1.0.200", features = ["derive"] }
 serde_yml = "0.0.5"
 syn = "2.0.60"

@@ -2,136 +2,130 @@ types:
   - name: reg
     desc: General-purpose register
     type: !Enum
-      values:
-        - name: r0
-          value: 0
-        - name: r1
-          value: 1
-        - name: r2
-          value: 2
-        - name: r3
-          value: 3
-        - name: r4
-          value: 4
-        - name: r5
-          value: 5
-        - name: r6
-          value: 6
-        - name: r7
-          value: 7
-        - name: r8
-          value: 8
-        - name: r9
-          value: 9
-        - name: r10
-          value: 10
-        - name: fp
-          desc: Frame Pointer
-          value: 11
-        - name: ip
-          desc: Intra Procedure call scratch register
-          value: 12
-        - name: sp
-          desc: Stack Pointer
-          value: 13
-        - name: lr
-          desc: Link Register
-          value: 14
-        - name: pc
-          desc: Program Counter
-          value: 15
+      r0:
+        value: 0
+      r1:
+        value: 1
+      r2:
+        value: 2
+      r3:
+        value: 3
+      r4:
+        value: 4
+      r5:
+        value: 5
+      r6:
+        value: 6
+      r7:
+        value: 7
+      r8:
+        value: 8
+      r9:
+        value: 9
+      r10:
+        value: 10
+      fp:
+        desc: Frame Pointer
+        value: 11
+      ip:
+        desc: Intra Procedure call scratch register
+        value: 12
+      sp:
+        desc: Stack Pointer
+        value: 13
+      lr:
+        desc: Link Register
+        value: 14
+      pc:
+        desc: Program Counter
+        value: 15
 
   - name: status_reg
     desc: Status register
     type: !Enum
-      values:
-        - name: cpsr
-          value: 0
-        - name: spsr
-          value: 1
+      cpsr:
+        value: 0
+      spsr:
+        value: 1
 
   - name: shift
     desc: Shift operation
     type: !Enum
-      values:
-        - name: lsl
-          desc: Logical shift left
-          value: 0
-        - name: lsr
-          desc: Logical shift right
-          value: 1
-        - name: asr
-          desc: Arithmetic shift right
-          value: 2
-        - name: ror
-          desc: Rotate right
-          value: 3
-        - name: rrx
-          desc: Rotate right and extend
-          value: 4
+      lsl:
+        desc: Logical shift left
+        value: 0
+      lsr:
+        desc: Logical shift right
+        value: 1
+      asr:
+        desc: Arithmetic shift right
+        value: 2
+      ror:
+        desc: Rotate right
+        value: 3
+      rrx:
+        desc: Rotate right and extend
+        value: 4
 
 args:
   - name: reg
     desc: General-purpose register
     type: !Struct
-      members:
-        - name: reg
-          desc: Register
-          type: !Custom reg
-        - name: deref
-          desc: Use as base register
-          type: !Bool
-        - name: writeback
-          desc: When used as a base register, update this register's value
-          type: !Bool
+      reg:
+        desc: Register
+        type: !Custom reg
+      deref:
+        desc: Use as base register
+        type: !Bool
+      writeback:
+        desc: When used as a base register, update this register's value
+        type: !Bool
 
   - name: reg_list
     desc: List of general-purpose registers
     type: !Struct
-      members:
-        - name: regs
-          desc: Bitfield of registers
-          type: !U32
-        - name: user_mode
-          desc: Access user-mode registers from elevated mode
-          type: !Bool
+      regs:
+        desc: Bitfield of registers
+        type: !U32
+      user_mode:
+        desc: Access user-mode registers from elevated mode
+        type: !Bool
 
   - name: co_reg
     desc: Coprocessor register
     type: !Enum
-      values:
-        - name: c0
-          value: 0
-        - name: c1
-          value: 1
-        - name: c2
-          value: 2
-        - name: c3
-          value: 3
-        - name: c4
-          value: 4
-        - name: c5
-          value: 5
-        - name: c6
-          value: 6
-        - name: c7
-          value: 7
-        - name: c8
-          value: 8
-        - name: c9
-          value: 9
-        - name: c10
-          value: 10
-        - name: c11
-          value: 11
-        - name: c12
-          value: 12
-        - name: c13
-          value: 13
-        - name: c14
-          value: 14
-        - name: c15
-          value: 15
+      c0:
+        value: 0
+      c1:
+        value: 1
+      c2:
+        value: 2
+      c3:
+        value: 3
+      c4:
+        value: 4
+      c5:
+        value: 5
+      c6:
+        value: 6
+      c7:
+        value: 7
+      c8:
+        value: 8
+      c9:
+        value: 9
+      c10:
+        value: 10
+      c11:
+        value: 11
+      c12:
+        value: 12
+      c13:
+        value: 13
+      c14:
+        value: 14
+      c15:
+        value: 15
 
   - name: status_reg
     desc: Status register
@@ -140,22 +134,21 @@ args:
   - name: status_mask
     desc: Status register mask
     type: !Struct
-      members:
-        - name: reg
-          desc: Status register
-          type: !Custom status_reg
-        - name: flags
-          desc: Flags field mask (f)
-          type: !Bool
-        - name: status
-          desc: Status field mask (s)
-          type: !Bool
-        - name: extension
-          desc: Extension field mask (x)
-          type: !Bool
-        - name: control
-          desc: Control field mask (c)
-          type: !Bool
+      reg:
+        desc: Status register
+        type: !Custom status_reg
+      flags:
+        desc: Flags field mask (f)
+        type: !Bool
+      status:
+        desc: Status field mask (s)
+        type: !Bool
+      extension:
+        desc: Extension field mask (x)
+        type: !Bool
+      control:
+        desc: Control field mask (c)
+        type: !Bool
 
   - name: shift
     desc: Shift operation
@@ -164,24 +157,22 @@ args:
   - name: shift_imm
     desc: Immediate shift offset
     type: !Struct
-      members:
-        - name: op
-          desc: Shift operation
-          type: !Custom shift
-        - name: imm
-          desc: Immediate shift offset
-          type: !U32
+      op:
+        desc: Shift operation
+        type: !Custom shift
+      imm:
+        desc: Immediate shift offset
+        type: !U32
 
   - name: shift_reg
     desc: Register shift offset
     type: !Struct
-      members:
-        - name: op
-          desc: Shift operation
-          type: !Custom shift
-        - name: imm
-          desc: Register shift offset
-          type: !Custom reg
+      op:
+        desc: Shift operation
+        type: !Custom shift
+      reg:
+        desc: Register shift offset
+        type: !Custom reg
 
   - name: u_imm
     desc: Unsigned immediate
@@ -194,27 +185,25 @@ args:
   - name: offset_imm
     desc: Signed immediate offset
     type: !Struct
-      members:
-        - name: value
-          desc: Offset value
-          type: !I32
-        - name: post_indexed
-          desc: If true, add the offset to the base register and write-back AFTER derefencing the base register
-          type: !Bool
+      value:
+        desc: Offset value
+        type: !I32
+      post_indexed:
+        desc: If true, add the offset to the base register and write-back AFTER derefencing the base register
+        type: !Bool
 
   - name: offset_reg
     desc: Register offset
     type: !Struct
-      members:
-        - name: reg
-          desc: Offset value
-          type: !Custom reg
-        - name: post_indexed
-          desc: If true, add the offset to the base register and write-back AFTER derefencing the base register
-          type: !Bool
-        - name: add
-          desc: If true, add the offset to the base register, otherwise subtract
-          type: !Bool
+      reg:
+        desc: Offset value
+        type: !Custom reg
+      post_indexed:
+        desc: If true, add the offset to the base register and write-back AFTER derefencing the base register
+        type: !Bool
+      add:
+        desc: If true, add the offset to the base register, otherwise subtract
+        type: !Bool
 
   - name: branch_dest
     desc: Branch destination offset

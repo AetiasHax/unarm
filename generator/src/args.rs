@@ -1,4 +1,4 @@
-use std::{fs::File, path::Path};
+use std::{collections::HashMap, fs::File, path::Path};
 
 use serde::Deserialize;
 
@@ -47,9 +47,9 @@ impl IsaArgs {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Type {
-    name: String,
-    desc: String,
-    r#type: ArgType,
+    pub name: String,
+    pub desc: String,
+    pub r#type: ArgType,
 }
 
 impl Type {
@@ -64,9 +64,9 @@ impl Type {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Arg {
-    name: String,
-    desc: String,
-    r#type: ArgType,
+    pub name: String,
+    pub desc: String,
+    pub r#type: ArgType,
 }
 
 impl Arg {
@@ -81,8 +81,8 @@ impl Arg {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum ArgType {
-    Struct { members: Box<[Arg]> },
-    Enum { values: Box<[EnumValue]> },
+    Struct(HashMap<String, StructMember>),
+    Enum(HashMap<String, EnumValue>),
     U32,
     I32,
     Bool,
@@ -91,8 +91,14 @@ pub enum ArgType {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct StructMember {
+    pub desc: String,
+    pub r#type: ArgType,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EnumValue {
-    name: String,
-    desc: Option<String>,
-    value: u32,
+    pub desc: Option<String>,
+    pub value: u32,
 }
