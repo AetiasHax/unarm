@@ -135,7 +135,7 @@ impl FieldValue {
                 Ok(mask)
             }
             FieldValue::Expr(expr) => {
-                let bits_regex = Regex::new(r"code\.bits\((\d+)\.\.(\d+)\)")?;
+                let bits_regex = Regex::new(r"code\.bits\((\d+),(\d+)\)")?;
                 let bit_regex = Regex::new(r"code\.bit\((\d+)\)")?;
 
                 let mut mask = 0;

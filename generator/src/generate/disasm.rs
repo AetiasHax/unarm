@@ -1,7 +1,11 @@
 use anyhow::{bail, Context, Result};
 use proc_macro2::{Literal, Span, TokenStream};
-use quote::quote;
-use syn::Ident;
+use quote::{quote, ToTokens};
+use syn::{
+    parse_quote,
+    visit_mut::{self, VisitMut},
+    Expr, ExprLit, Ident, Lit,
+};
 
 use crate::{
     args::{ArgType, IsaArgs},
@@ -447,7 +451,13 @@ fn generate_field_accessors(isa: &Isa, isa_args: &IsaArgs) -> Result<TokenStream
                                 }
                                 ArgType::U32 => expr,
                                 ArgType::I32 => expr,
-                                ArgType::Bool => quote! { (#expr) != 0 },
+                                ArgType::Bool => {
+                                    if let FieldValue::Bool(_) = value {
+                                        quote! { #expr }
+                                    } else {
+                                        quote! { (#expr) != 0 }
+                                    }
+                                }
                                 ArgType::Custom(custom_name) => {
                                     let custom_type = isa_args.get_type(custom_name)?;
                                     let custom_ident = Ident::new(&custom_type.pascal_case_name(), Span::call_site());
@@ -508,12 +518,93 @@ fn generate_field_accessors(isa: &Isa, isa_args: &IsaArgs) -> Result<TokenStream
     })
 }
 
+struct FoldFieldExpr;
+
+impl VisitMut for FoldFieldExpr {
+    fn visit_expr_mut(&mut self, node: &mut Expr) {
+        if let Expr::MethodCall(call) = node {
+            let lhs = call.receiver.as_ref();
+            match call.method.to_string().as_str() {
+                "bits" => {
+                    if call.args.len() != 2 {
+                        return;
+                    }
+                    let start = get_literal_value(&call.args[0]);
+                    let end = get_literal_value(&call.args[1]);
+
+                    let shift = start;
+                    let mask = HexLiteral((1 << (end - start)) - 1);
+                    if shift == 0 {
+                        *node = parse_quote! { (#lhs & #mask) };
+                    } else {
+                        let shift = Literal::i32_unsuffixed(shift);
+                        *node = parse_quote! { ((#lhs >> #shift) & #mask) };
+                    }
+                }
+                "bit" => {
+                    if call.args.len() != 1 {
+                        return;
+                    }
+                    let bit = get_literal_value(&call.args[0]);
+                    let mask = HexLiteral(1 << bit);
+                    *node = parse_quote! { ((#lhs & #mask) != 0) };
+                }
+                "negate" => {
+                    if call.args.len() != 1 {
+                        return;
+                    }
+                    let rhs = call.args[0].clone();
+                    *node = parse_quote! { {
+                        let value = #lhs;
+                        if #rhs {
+                            -value
+                        } else {
+                            value
+                        }
+                    } };
+                }
+                "arm_shift" => {
+                    if call.args.len() != 1 {
+                        return;
+                    }
+                    let rhs = call.args[0].clone();
+                    *node = parse_quote! { {
+                        let value = #lhs;
+                        match #rhs {
+                            1 | 2 => if value == 0 { 32 } else { value },
+                            _ => value
+                        }
+                    } };
+                }
+                _ => {}
+            }
+        }
+        // println!("{}", node.to_token_stream());
+        visit_mut::visit_expr_mut(self, node);
+    }
+}
+
+fn get_literal_value(expr: &Expr) -> i32 {
+    if let Expr::Lit(ExprLit {
+        attrs: _,
+        lit: Lit::Int(int),
+    }) = expr
+    {
+        int.base10_parse().unwrap_or(i32::MIN)
+    } else {
+        i32::MIN
+    }
+}
+
 fn generate_argument_expr(value: &FieldValue, field: &Field) -> Result<TokenStream, anyhow::Error> {
     let expr = match value {
         FieldValue::Bits(range) => {
             let start = Literal::u8_unsuffixed(range.0.start);
             let end = Literal::u8_unsuffixed(range.0.end);
-            quote! { code.bits(#start..#end) }
+            let mut expr = parse_quote! { code.bits(#start,#end) };
+            FoldFieldExpr.visit_expr_mut(&mut expr);
+            // println!();
+            quote! { #expr }
         }
         FieldValue::Bool(value) => {
             if *value {
@@ -529,7 +620,12 @@ fn generate_argument_expr(value: &FieldValue, field: &Field) -> Result<TokenStre
         FieldValue::Struct(_) => {
             bail!("Nested structs (in field '{}') are not supported", field.name);
         }
-        FieldValue::Expr(expr) => syn::parse_str(expr)?,
+        FieldValue::Expr(expr) => {
+            let mut expr = syn::parse_str(expr)?;
+            FoldFieldExpr.visit_expr_mut(&mut expr);
+            // println!();
+            quote! { #expr }
+        }
     };
     Ok(expr)
 }

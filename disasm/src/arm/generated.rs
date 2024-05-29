@@ -1930,128 +1930,146 @@ impl Opcode {
 impl Ins {
     pub fn field_rn(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(16..20)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 16) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rn_wb(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(16..20)),
-            writeback: (true) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 16) & 0x0000000f)),
+            writeback: true,
         }
     }
     pub fn field_rn_deref(code: u32) -> Reg {
         Reg {
-            deref: (true) != 0,
-            reg: Register::parse(code.bits(16..20)),
-            writeback: (false) != 0,
+            deref: true,
+            reg: Register::parse(((code >> 16) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rn_deref_wb(code: u32) -> Reg {
         Reg {
-            deref: (true) != 0,
-            reg: Register::parse(code.bits(16..20)),
-            writeback: (true) != 0,
+            deref: true,
+            reg: Register::parse(((code >> 16) & 0x0000000f)),
+            writeback: true,
         }
     }
     pub fn field_rm(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(0..4)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse((code & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rd(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(12..16)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 12) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rs(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(8..12)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 8) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rdhi(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(16..20)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 16) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rdlo(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(12..16)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 12) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_registers(code: u32) -> RegList {
         RegList {
-            regs: code.bits(0..16),
-            user_mode: (false) != 0,
+            regs: (code & 0x0000ffff),
+            user_mode: false,
         }
     }
     pub fn field_registers_c(code: u32) -> RegList {
         RegList {
-            regs: code.bits(0..16),
-            user_mode: (true) != 0,
+            regs: (code & 0x0000ffff),
+            user_mode: true,
         }
     }
     pub fn field_crn(code: u32) -> CoReg {
-        CoReg::parse(code.bits(16..20))
+        CoReg::parse(((code >> 16) & 0x0000000f))
     }
     pub fn field_crm(code: u32) -> CoReg {
-        CoReg::parse(code.bits(0..4))
+        CoReg::parse((code & 0x0000000f))
     }
     pub fn field_crd(code: u32) -> CoReg {
-        CoReg::parse(code.bits(12..16))
+        CoReg::parse(((code >> 12) & 0x0000000f))
     }
     pub fn field_rotated_immed_8(code: u32) -> u32 {
-        code.bits(0..8).rotate_right(code.bits(8..12) << 1)
+        (code & 0x000000ff).rotate_right(((code >> 8) & 0x0000000f) << 1)
     }
     pub fn field_immed_24(code: u32) -> u32 {
-        code.bits(0..24)
+        (code & 0x00ffffff)
     }
     pub fn field_offset_8(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (false) != 0,
-            value: (code.bits(0..4) | (code.bits(8..12) << 4)).negate(code.bit(23)),
+            post_indexed: false,
+            value: {
+                let value = ((code & 0x0000000f) | (((code >> 8) & 0x0000000f) << 4));
+                if ((code & 0x00800000) != 0) { -value } else { value }
+            },
         }
     }
     pub fn field_post_offset_8(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (true) != 0,
-            value: (code.bits(0..4) | (code.bits(8..12) << 4)).negate(code.bit(23)),
+            post_indexed: true,
+            value: {
+                let value = ((code & 0x0000000f) | (((code >> 8) & 0x0000000f) << 4));
+                if ((code & 0x00800000) != 0) { -value } else { value }
+            },
         }
     }
     pub fn field_offset_12(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (false) != 0,
-            value: code.bits(0..12).negate(code.bit(23)),
+            post_indexed: false,
+            value: {
+                let value = (code & 0x00000fff);
+                if ((code & 0x00800000) != 0) { -value } else { value }
+            },
         }
     }
     pub fn field_post_offset_12(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (true) != 0,
-            value: code.bits(0..12).negate(code.bit(23)),
+            post_indexed: true,
+            value: {
+                let value = (code & 0x00000fff);
+                if ((code & 0x00800000) != 0) { -value } else { value }
+            },
         }
     }
     pub fn field_shift_imm(code: u32) -> ShiftImm {
         ShiftImm {
-            imm: code.bits(7..12).arm_shift(code.bits(5..7)),
-            op: Shift::parse(code.bits(5..7)),
+            imm: {
+                let value = ((code >> 7) & 0x0000001f);
+                match ((code >> 5) & 0x00000003) {
+                    1 | 2 => if value == 0 { 32 } else { value }
+                    _ => value,
+                }
+            },
+            op: Shift::parse(((code >> 5) & 0x00000003)),
         }
     }
     pub fn field_shift_reg(code: u32) -> ShiftReg {
         ShiftReg {
-            op: Shift::parse(code.bits(5..7)),
-            reg: Register::parse(code.bits(8..12)),
+            op: Shift::parse(((code >> 5) & 0x00000003)),
+            reg: Register::parse(((code >> 8) & 0x0000000f)),
         }
     }
     pub fn field_rrx(code: u32) -> Shift {
@@ -2059,68 +2077,74 @@ impl Ins {
     }
     pub fn field_reg_offset(code: u32) -> OffsetReg {
         OffsetReg {
-            add: (code.bits(23..24)) != 0,
-            post_indexed: (false) != 0,
-            reg: Register::parse(code.bits(0..4)),
+            add: (((code >> 23) & 0x00000001)) != 0,
+            post_indexed: false,
+            reg: Register::parse((code & 0x0000000f)),
         }
     }
     pub fn field_reg_post_offset(code: u32) -> OffsetReg {
         OffsetReg {
-            add: (code.bits(23..24)) != 0,
-            post_indexed: (true) != 0,
-            reg: Register::parse(code.bits(0..4)),
+            add: (((code >> 23) & 0x00000001)) != 0,
+            post_indexed: true,
+            reg: Register::parse((code & 0x0000000f)),
         }
     }
     pub fn field_r(code: u32) -> StatusReg {
-        StatusReg::parse(code.bits(22..23))
+        StatusReg::parse(((code >> 22) & 0x00000001))
     }
     pub fn field_coproc_offset(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (false) != 0,
-            value: (code.bits(0..8) << 2).negate(code.bit(23)),
+            post_indexed: false,
+            value: {
+                let value = ((code & 0x000000ff) << 2);
+                if ((code & 0x00800000) != 0) { -value } else { value }
+            },
         }
     }
     pub fn field_coproc_post_offset(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (true) != 0,
-            value: (code.bits(0..8) << 2).negate(code.bit(23)),
+            post_indexed: true,
+            value: {
+                let value = ((code & 0x000000ff) << 2);
+                if ((code & 0x00800000) != 0) { -value } else { value }
+            },
         }
     }
     pub fn field_option(code: u32) -> u32 {
-        code.bits(0..8)
+        (code & 0x000000ff)
     }
     pub fn field_branch_offset(code: u32) -> i32 {
-        (code.bits(0..24) << 2) + 8
+        ((code & 0x00ffffff) << 2) + 8
     }
     pub fn field_blx_offset(code: u32) -> i32 {
-        (code.bits(0..24) << 2 | code.bits(24..25)) + 8
+        ((code & 0x00ffffff) << 2 | ((code >> 24) & 0x00000001)) + 8
     }
     pub fn field_immed_16(code: u32) -> u32 {
-        code.bits(0..4) | code.bits(8..20) << 4
+        (code & 0x0000000f) | ((code >> 8) & 0x00000fff) << 4
     }
     pub fn field_field_mask(code: u32) -> StatusMask {
         StatusMask {
-            control: (code.bits(16..17)) != 0,
-            extension: (code.bits(17..18)) != 0,
-            flags: (code.bits(19..20)) != 0,
-            reg: StatusReg::parse(code.bits(22..23)),
-            status: (code.bits(18..19)) != 0,
+            control: (((code >> 16) & 0x00000001)) != 0,
+            extension: (((code >> 17) & 0x00000001)) != 0,
+            flags: (((code >> 19) & 0x00000001)) != 0,
+            reg: StatusReg::parse(((code >> 22) & 0x00000001)),
+            status: (((code >> 18) & 0x00000001)) != 0,
         }
     }
     pub fn field_opcode(code: u32) -> u32 {
-        code.bits(4..8)
+        ((code >> 4) & 0x0000000f)
     }
     pub fn field_codat_opcode_1(code: u32) -> u32 {
-        code.bits(20..24)
+        ((code >> 20) & 0x0000000f)
     }
     pub fn field_comov_opcode_1(code: u32) -> u32 {
-        code.bits(21..24)
+        ((code >> 21) & 0x00000007)
     }
     pub fn field_opcode_2(code: u32) -> u32 {
-        code.bits(5..8)
+        ((code >> 5) & 0x00000007)
     }
     pub fn field_coproc(code: u32) -> u32 {
-        code.bits(8..12)
+        ((code >> 8) & 0x0000000f)
     }
     /// S: Update condition status flags
     #[inline(always)]

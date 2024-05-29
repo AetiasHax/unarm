@@ -800,179 +800,185 @@ impl Opcode {
 impl Ins {
     pub fn field_rd_0(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(0..3)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse((code & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rd_8(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(8..11)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 8) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rd_h1(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(0..3) | code.bits(7..8) << 3),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse((code & 0x00000007) | ((code >> 7) & 0x00000001) << 3),
+            writeback: false,
         }
     }
     pub fn field_rn_0(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(0..3)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse((code & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rn_3(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(3..6)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 3) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rn_3_deref(code: u32) -> Reg {
         Reg {
-            deref: (true) != 0,
-            reg: Register::parse(code.bits(3..6)),
-            writeback: (false) != 0,
+            deref: true,
+            reg: Register::parse(((code >> 3) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rn_8(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(8..11)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 8) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rn_8_wb(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(8..11)),
-            writeback: (true) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 8) & 0x00000007)),
+            writeback: true,
         }
     }
     pub fn field_rn_h1(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(0..3) | code.bits(7..8) << 3),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse((code & 0x00000007) | ((code >> 7) & 0x00000001) << 3),
+            writeback: false,
         }
     }
     pub fn field_rm_3(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(3..6)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 3) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rm_6(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(6..9)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 6) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_rm_6_offset(code: u32) -> OffsetReg {
         OffsetReg {
-            add: (true) != 0,
-            post_indexed: (false) != 0,
-            reg: Register::parse(code.bits(6..9)),
+            add: true,
+            post_indexed: false,
+            reg: Register::parse(((code >> 6) & 0x00000007)),
         }
     }
     pub fn field_rm_h2(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(3..7)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 3) & 0x0000000f)),
+            writeback: false,
         }
     }
     pub fn field_rs(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
-            reg: Register::parse(code.bits(3..6)),
-            writeback: (false) != 0,
+            deref: false,
+            reg: Register::parse(((code >> 3) & 0x00000007)),
+            writeback: false,
         }
     }
     pub fn field_pc(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
+            deref: false,
             reg: Register::parse(15),
-            writeback: (false) != 0,
+            writeback: false,
         }
     }
     pub fn field_pc_deref(code: u32) -> Reg {
         Reg {
-            deref: (true) != 0,
+            deref: true,
             reg: Register::parse(15),
-            writeback: (false) != 0,
+            writeback: false,
         }
     }
     pub fn field_sp(code: u32) -> Reg {
         Reg {
-            deref: (false) != 0,
+            deref: false,
             reg: Register::parse(13),
-            writeback: (false) != 0,
+            writeback: false,
         }
     }
     pub fn field_sp_deref(code: u32) -> Reg {
         Reg {
-            deref: (true) != 0,
+            deref: true,
             reg: Register::parse(13),
-            writeback: (false) != 0,
+            writeback: false,
         }
     }
     pub fn field_registers(code: u32) -> RegList {
         RegList {
-            regs: code.bits(0..8),
-            user_mode: (false) != 0,
+            regs: (code & 0x000000ff),
+            user_mode: false,
         }
     }
     pub fn field_registers_pc(code: u32) -> RegList {
         RegList {
-            regs: code.bits(0..8) | code.bits(8..9) << 14,
-            user_mode: (false) != 0,
+            regs: (code & 0x000000ff) | ((code >> 8) & 0x00000001) << 14,
+            user_mode: false,
         }
     }
     pub fn field_immed_3(code: u32) -> u32 {
-        code.bits(6..9)
+        ((code >> 6) & 0x00000007)
     }
     pub fn field_immed_8(code: u32) -> u32 {
-        code.bits(0..8)
+        (code & 0x000000ff)
     }
     pub fn field_rel_immed_7(code: u32) -> u32 {
-        code.bits(0..7) << 2
+        (code & 0x0000007f) << 2
     }
     pub fn field_rel_immed_8(code: u32) -> u32 {
-        code.bits(0..8) << 2
+        (code & 0x000000ff) << 2
     }
     pub fn field_left_shift_imm(code: u32) -> u32 {
-        code.bits(6..11)
+        ((code >> 6) & 0x0000001f)
     }
     pub fn field_right_shift_imm(code: u32) -> u32 {
-        code.bits(6..11).arm_shift(1)
+        {
+            let value = ((code >> 6) & 0x0000001f);
+            match 1 {
+                1 | 2 => if value == 0 { 32 } else { value }
+                _ => value,
+            }
+        }
     }
     pub fn field_branch_offset_8(code: u32) -> i32 {
-        (code.bits(0..8) << 1) + 4
+        ((code & 0x000000ff) << 1) + 4
     }
     pub fn field_branch_offset_11(code: u32) -> i32 {
-        (code.bits(0..11) << 1) + 4
+        ((code & 0x000007ff) << 1) + 4
     }
     pub fn field_high_branch_offset_11(code: u32) -> i32 {
-        (code.bits(0..11) << 12) + 4
+        ((code & 0x000007ff) << 12) + 4
     }
     pub fn field_low_branch_offset_11(code: u32) -> u32 {
-        code.bits(0..11) << 1
+        (code & 0x000007ff) << 1
     }
     pub fn field_low_blx_offset_11(code: u32) -> u32 {
-        code.bits(0..11) << 1 & !3
+        (code & 0x000007ff) << 1 & !3
     }
     pub fn field_offset_5(code: u32) -> OffsetImm {
         OffsetImm {
-            post_indexed: (false) != 0,
-            value: code.bits(6..11) << 2,
+            post_indexed: false,
+            value: ((code >> 6) & 0x0000001f) << 2,
         }
     }
     /// cond: Condition code

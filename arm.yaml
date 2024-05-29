@@ -107,7 +107,7 @@ fields:
   - name: rotated_immed_8
     arg: u_imm
     desc: 8-bit immediate
-    value: !Expr code.bits(0..8).rotate_right(code.bits(8..12) << 1)
+    value: !Expr code.bits(0,8).rotate_right(code.bits(8,12) << 1)
 
   - name: immed_24
     arg: u_imm
@@ -118,28 +118,28 @@ fields:
     arg: offset_imm
     desc: 8-bit immediate offset
     value: !Struct
-      value: !Expr (code.bits(0..4) | (code.bits(8..12) << 4)).negate(code.bit(23))
+      value: !Expr (code.bits(0,4) | (code.bits(8,12) << 4)).negate(code.bit(23))
       post_indexed: !Bool false
 
   - name: post_offset_8
     arg: offset_imm
     desc: 8-bit immediate post-indexed offset
     value: !Struct
-      value: !Expr (code.bits(0..4) | (code.bits(8..12) << 4)).negate(code.bit(23))
+      value: !Expr (code.bits(0,4) | (code.bits(8,12) << 4)).negate(code.bit(23))
       post_indexed: !Bool true
 
   - name: offset_12
     arg: offset_imm
     desc: 12-bit immediate offset
     value: !Struct
-      value: !Expr code.bits(0..12).negate(code.bit(23))
+      value: !Expr code.bits(0,12).negate(code.bit(23))
       post_indexed: !Bool false
 
   - name: post_offset_12
     arg: offset_imm
     desc: 12-bit immediate post-indexed offset
     value: !Struct
-      value: !Expr code.bits(0..12).negate(code.bit(23))
+      value: !Expr code.bits(0,12).negate(code.bit(23))
       post_indexed: !Bool true
 
   - name: shift_imm
@@ -147,7 +147,7 @@ fields:
     desc: Immediate shift offset
     value: !Struct
       op: !Bits 5..7
-      imm: !Expr code.bits(7..12).arm_shift(code.bits(5..7))
+      imm: !Expr code.bits(7,12).arm_shift(code.bits(5,7))
 
   - name: shift_reg
     arg: shift_reg
@@ -187,14 +187,14 @@ fields:
     arg: offset_imm
     desc: 8-bit immediate coprocessor offset
     value: !Struct
-      value: !Expr (code.bits(0..8) << 2).negate(code.bit(23))
+      value: !Expr (code.bits(0,8) << 2).negate(code.bit(23))
       post_indexed: !Bool false
 
   - name: coproc_post_offset
     arg: offset_imm
     desc: 8-bit immediate coprocessor offset
     value: !Struct
-      value: !Expr (code.bits(0..8) << 2).negate(code.bit(23))
+      value: !Expr (code.bits(0,8) << 2).negate(code.bit(23))
       post_indexed: !Bool true
 
   - name: option
@@ -205,17 +205,17 @@ fields:
   - name: branch_offset
     arg: branch_dest
     desc: 24-bit signed B/BL target offset
-    value: !Expr (code.bits(0..24) << 2) + 8
+    value: !Expr (code.bits(0,24) << 2) + 8
 
   - name: blx_offset
     arg: branch_dest
     desc: 24-bit signed BLX target offset
-    value: !Expr (code.bits(0..24) << 2 | code.bits(24..25)) + 8
+    value: !Expr (code.bits(0,24) << 2 | code.bits(24,25)) + 8
 
   - name: immed_16
     arg: u_imm
     desc: 16-bit immediate in bits 0..4 and 8..20
-    value: !Expr code.bits(0..4) | code.bits(8..20) << 4
+    value: !Expr code.bits(0,4) | code.bits(8,20) << 4
 
   - name: field_mask
     arg: status_mask
