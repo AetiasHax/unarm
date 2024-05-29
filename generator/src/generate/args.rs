@@ -5,7 +5,7 @@ use proc_macro2::{Literal, Span, TokenStream};
 use quote::quote;
 use syn::Ident;
 
-use crate::args::{ArgType, EnumValue, IsaArgs, StructMember, TypeKind};
+use crate::args::{is_continuous, ArgType, EnumValue, IsaArgs, StructMember, TypeKind};
 
 pub fn generate_args(isa_args: &IsaArgs) -> Result<TokenStream> {
     let types = generate_types(isa_args)?;
@@ -88,7 +88,10 @@ fn generate_args_enum(isa_args: &IsaArgs) -> Result<TokenStream, anyhow::Error> 
         })
         .collect::<Result<Vec<_>>>()?;
     let args_enum = quote! {
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
         pub enum Argument {
+            #[default]
+            None,
             #(#args_variants),*
         }
     };
@@ -96,7 +99,7 @@ fn generate_args_enum(isa_args: &IsaArgs) -> Result<TokenStream, anyhow::Error> 
 }
 
 fn generate_enum(values: &[EnumValue], ident: Ident) -> TokenStream {
-    let values = values
+    let values_tokens = values
         .iter()
         .map(|value| {
             let doc = if let Some(desc) = &value.desc {
@@ -113,9 +116,51 @@ fn generate_enum(values: &[EnumValue], ident: Ident) -> TokenStream {
             }
         })
         .collect::<Vec<_>>();
+
+    let parse_body = if is_continuous(values) {
+        let min = values.iter().map(|v| v.value).min().unwrap_or(0);
+        let max = values.iter().map(|v| v.value).max().unwrap_or(0);
+
+        let max = Literal::u32_unsuffixed(max);
+        let cond = if min == 0 {
+            quote! { value <= #max }
+        } else {
+            let min = Literal::u32_unsuffixed(min);
+            quote! { #min <= value && value <= #max }
+        };
+
+        quote! {
+            if #cond {
+                unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+            } else {
+                Self::Illegal
+            }
+        }
+    } else {
+        let arms = values.iter().map(|value| {
+            let value_lit = Literal::u32_unsuffixed(value.value);
+            let variant = Ident::new(&value.pascal_case_name(), Span::call_site());
+            quote! { #value_lit => Self::#variant }
+        });
+        quote! {
+            match value {
+                #(#arms),*
+                _ => Self::Illegal,
+            }
+        }
+    };
+
     quote! {
+        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+        #[repr(u8)]
         pub enum #ident {
-            #(#values),*
+            Illegal = u8::MAX,
+            #(#values_tokens),*
+        }
+        impl #ident {
+            pub fn parse(value: u32) -> Self {
+                #parse_body
+            }
         }
     }
 }
@@ -150,6 +195,7 @@ fn generate_struct(
         })
         .collect::<Result<Vec<_>>>()?;
     Ok(quote! {
+        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
         pub struct #ident {
             #(#members),*
         }

@@ -1,11 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    arm::{
-        generated::{parse, Argument, Arguments, FieldMask, Opcode, RegOffset, RegPostOffset, ShiftImm, ShiftReg},
-        CoReg, Reg, Shift, StatusMask, StatusReg,
-    },
-    display::SignedHex,
+    args::{Argument, OffsetImm, OffsetReg, Reg},
+    arm::generated::{parse, Arguments, Opcode},
 };
 
 #[derive(Clone, Copy)]
@@ -48,7 +45,16 @@ impl Display for ParsedIns {
         for arg in self.args_iter() {
             if deref {
                 match arg {
-                    Argument::PostOffset(_) | Argument::RegPostOffset(_) | Argument::CoOption(_) => {
+                    Argument::OffsetImm(OffsetImm {
+                        post_indexed: true,
+                        value: _,
+                    })
+                    | Argument::OffsetReg(OffsetReg {
+                        add: _,
+                        post_indexed: true,
+                        reg: _,
+                    })
+                    | Argument::CoOption(_) => {
                         deref = false;
                         write!(f, "]")?;
                         if writeback {
@@ -62,17 +68,15 @@ impl Display for ParsedIns {
             if comma {
                 write!(f, ", ")?;
             }
-            match arg {
-                Argument::RegDeref(_) => {
-                    deref = true;
-                    write!(f, "[")?
-                }
-                Argument::RegDerefWb(_) => {
-                    deref = true;
-                    writeback = true;
-                    write!(f, "[")?
-                }
-                _ => {}
+            if let Argument::Reg(Reg {
+                deref: true,
+                reg: _,
+                writeback: wb,
+            }) = arg
+            {
+                deref = true;
+                writeback = *wb;
+                write!(f, "[")?
             }
             write!(f, "{}", arg)?;
             comma = true;
@@ -84,181 +88,6 @@ impl Display for ParsedIns {
             }
         }
         Ok(())
-    }
-}
-
-impl Display for Argument {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Argument::None => Ok(()),
-            Argument::Reg(x) => write!(f, "{}", x),
-            Argument::RegWb(x) => write!(f, "{}!", x),
-            Argument::RegList(x) | Argument::RegListC(x) => {
-                write!(f, "{{")?;
-                let mut first = true;
-                for i in 0..16 {
-                    if (x & (1 << i)) != 0 {
-                        if !first {
-                            write!(f, ", ")?;
-                        }
-                        write!(f, "{}", Reg::parse(i))?;
-                        first = false;
-                    }
-                }
-                write!(f, "}}")?;
-                if matches!(self, Argument::RegListC(_)) {
-                    write!(f, "^")?;
-                }
-                Ok(())
-            }
-            Argument::CoReg(x) => write!(f, "{}", x),
-            Argument::StatusReg(x) => write!(f, "{}", x),
-            Argument::UImm(x) => write!(f, "#0x{:x}", x),
-            Argument::SImm((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
-            Argument::Offset((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
-            Argument::CoOption(x) => write!(f, "{{0x{:x}}}", x),
-            Argument::CoOpcode(x) => write!(f, "#{}", x),
-            Argument::CoprocNum(x) => write!(f, "p{}", x),
-            Argument::ShiftImm(x) => write!(f, "{}", x),
-            Argument::ShiftReg(x) => write!(f, "{}", x),
-            Argument::Rrx => write!(f, "rrx"),
-            Argument::RegOffset(x) => write!(f, "{}", x),
-            Argument::FieldMask(x) => write!(f, "{}", x),
-            Argument::RegDeref(x) => write!(f, "{}", x),
-            Argument::RegDerefWb(x) => write!(f, "{}", x),
-            Argument::PostOffset((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
-            Argument::RegPostOffset(x) => write!(f, "{}", x),
-            Argument::BranchDest((x, size)) => write!(f, "{}", SignedHex { value: *x, size: *size }),
-        }
-    }
-}
-
-impl Display for Reg {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Reg::Illegal => write!(f, "<illegal>"),
-            Reg::R0 => write!(f, "r0"),
-            Reg::R1 => write!(f, "r1"),
-            Reg::R2 => write!(f, "r2"),
-            Reg::R3 => write!(f, "r3"),
-            Reg::R4 => write!(f, "r4"),
-            Reg::R5 => write!(f, "r5"),
-            Reg::R6 => write!(f, "r6"),
-            Reg::R7 => write!(f, "r7"),
-            Reg::R8 => write!(f, "r8"),
-            Reg::R9 => write!(f, "r9"),
-            Reg::R10 => write!(f, "r10"),
-            Reg::Fp => write!(f, "fp"),
-            Reg::Ip => write!(f, "ip"),
-            Reg::Sp => write!(f, "sp"),
-            Reg::Lr => write!(f, "lr"),
-            Reg::Pc => write!(f, "pc"),
-        }
-    }
-}
-
-impl Display for CoReg {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            CoReg::Illegal => write!(f, "<illegal>"),
-            CoReg::C0 => write!(f, "c0"),
-            CoReg::C1 => write!(f, "c1"),
-            CoReg::C2 => write!(f, "c2"),
-            CoReg::C3 => write!(f, "c3"),
-            CoReg::C4 => write!(f, "c4"),
-            CoReg::C5 => write!(f, "c5"),
-            CoReg::C6 => write!(f, "c6"),
-            CoReg::C7 => write!(f, "c7"),
-            CoReg::C8 => write!(f, "c8"),
-            CoReg::C9 => write!(f, "c9"),
-            CoReg::C10 => write!(f, "c10"),
-            CoReg::C11 => write!(f, "c11"),
-            CoReg::C12 => write!(f, "c12"),
-            CoReg::C13 => write!(f, "c13"),
-            CoReg::C14 => write!(f, "c14"),
-            CoReg::C15 => write!(f, "c15"),
-        }
-    }
-}
-
-impl Display for StatusReg {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            StatusReg::Illegal => write!(f, "<illegal>"),
-            StatusReg::Cpsr => write!(f, "cpsr"),
-            StatusReg::Spsr => write!(f, "spsr"),
-        }
-    }
-}
-
-impl Display for StatusMask {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            StatusMask::Illegal => write!(f, "<illegal>"),
-            StatusMask::C => write!(f, "c"),
-            StatusMask::X => write!(f, "x"),
-            StatusMask::Xc => write!(f, "xc"),
-            StatusMask::S => write!(f, "s"),
-            StatusMask::Sc => write!(f, "sc"),
-            StatusMask::Sx => write!(f, "sx"),
-            StatusMask::Sxc => write!(f, "sxc"),
-            StatusMask::F => write!(f, "f"),
-            StatusMask::Fc => write!(f, "fc"),
-            StatusMask::Fx => write!(f, "fx"),
-            StatusMask::Fxc => write!(f, "fxc"),
-            StatusMask::Fs => write!(f, "fs"),
-            StatusMask::Fsc => write!(f, "fsc"),
-            StatusMask::Fsx => write!(f, "fsx"),
-            StatusMask::Fsxc => write!(f, "fsxc"),
-        }
-    }
-}
-
-impl Display for Shift {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Shift::Illegal => write!(f, "<illegal>"),
-            Shift::Lsl => write!(f, "lsl"),
-            Shift::Lsr => write!(f, "lsr"),
-            Shift::Asr => write!(f, "asr"),
-            Shift::Ror => write!(f, "ror"),
-        }
-    }
-}
-
-impl Display for ShiftImm {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} #0x{:x}", self.op, self.imm)
-    }
-}
-
-impl Display for ShiftReg {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.op, self.reg)
-    }
-}
-
-impl Display for RegOffset {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if !self.add {
-            write!(f, "-")?;
-        }
-        write!(f, "{}", self.reg)
-    }
-}
-
-impl Display for RegPostOffset {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if !self.add {
-            write!(f, "-")?;
-        }
-        write!(f, "{}", self.reg)
-    }
-}
-
-impl Display for FieldMask {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}_{}", self.reg, self.mask)
     }
 }
 

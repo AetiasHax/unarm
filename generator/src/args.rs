@@ -103,7 +103,7 @@ pub struct StructMember {
     pub r#type: ArgType,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct EnumValue {
     pub name: String,
@@ -115,4 +115,20 @@ impl EnumValue {
     pub fn pascal_case_name(&self) -> String {
         capitalize_with_delimiter(self.name.clone(), '_')
     }
+}
+
+pub fn is_continuous(values: &[EnumValue]) -> bool {
+    let values = {
+        let mut values = Vec::from(values);
+        values.sort_unstable_by_key(|v| v.value);
+        values
+    };
+    let mut prev_value = values[0].value;
+    for value in values.iter().skip(1) {
+        if value.value != prev_value + 1 {
+            return false;
+        }
+        prev_value = value.value;
+    }
+    true
 }

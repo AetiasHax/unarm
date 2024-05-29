@@ -98,16 +98,8 @@ impl Field {
         Ok(())
     }
 
-    pub fn doc(&self) -> String {
-        format!(" {}: {}", self.name, self.desc)
-    }
-
     pub fn accessor_name(&self) -> String {
         format!("field_{}", self.name.to_lowercase())
-    }
-
-    pub fn struct_name(&self) -> String {
-        capitalize_with_delimiter(self.name.clone(), '_')
     }
 }
 
