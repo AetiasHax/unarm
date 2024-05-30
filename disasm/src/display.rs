@@ -2,24 +2,15 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::args::{Argument, CoReg, OffsetReg, Register, Shift, ShiftImm, ShiftReg, StatusMask, StatusReg};
 
-pub struct SignedHex {
-    pub value: i32,
-    pub size: u8,
-}
+pub struct SignedHex(i32);
 
 impl Display for SignedHex {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let hex = format!("{:08x}", self.value.abs());
-        let chars = self.size.div_ceil(4);
-        let mut hex: String = hex.chars().skip((8 - chars).into()).skip_while(|ch| *ch == '0').collect();
-        if hex.is_empty() {
-            hex += "0";
-        }
         write!(f, "#")?;
-        if self.value.is_negative() {
+        if self.0.is_negative() {
             write!(f, "-")?;
         }
-        write!(f, "0x{}", hex)
+        write!(f, "0x{:x}", self.0.abs())
     }
 }
 
@@ -55,22 +46,15 @@ impl Display for Argument {
             Argument::CoReg(x) => write!(f, "{}", x),
             Argument::StatusReg(x) => write!(f, "{}", x),
             Argument::UImm(x) => write!(f, "#0x{:x}", x),
-            Argument::SImm(x) => write!(f, "{}", SignedHex { value: *x, size: 32 }),
-            Argument::OffsetImm(x) => write!(
-                f,
-                "{}",
-                SignedHex {
-                    value: x.value,
-                    size: 32
-                }
-            ),
+            Argument::SImm(x) => write!(f, "{}", SignedHex(*x)),
+            Argument::OffsetImm(x) => write!(f, "{}", SignedHex(x.value)),
             Argument::CoOption(x) => write!(f, "{{0x{:x}}}", x),
             Argument::CoOpcode(x) => write!(f, "#{}", x),
             Argument::CoprocNum(x) => write!(f, "p{}", x),
             Argument::ShiftImm(x) => write!(f, "{}", x),
             Argument::ShiftReg(x) => write!(f, "{}", x),
             Argument::OffsetReg(x) => write!(f, "{}", x),
-            Argument::BranchDest(x) => write!(f, "{}", SignedHex { value: *x, size: 32 }),
+            Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
         }
