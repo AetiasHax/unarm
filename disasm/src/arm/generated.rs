@@ -2025,7 +2025,7 @@ impl Ins {
             value: ({
                 let value = ((self.code & 0x0000000f)
                     | (((self.code >> 8) & 0x0000000f) << 4)) as i32;
-                if ((self.code & 0x00800000) != 0) { -value } else { value }
+                if ((self.code & 0x00800000) != 0) { value } else { -value }
             }) as i32,
         }
     }
@@ -2035,7 +2035,7 @@ impl Ins {
             value: ({
                 let value = ((self.code & 0x0000000f)
                     | (((self.code >> 8) & 0x0000000f) << 4)) as i32;
-                if ((self.code & 0x00800000) != 0) { -value } else { value }
+                if ((self.code & 0x00800000) != 0) { value } else { -value }
             }) as i32,
         }
     }
@@ -2044,7 +2044,7 @@ impl Ins {
             post_indexed: false,
             value: ({
                 let value = (self.code & 0x00000fff) as i32;
-                if ((self.code & 0x00800000) != 0) { -value } else { value }
+                if ((self.code & 0x00800000) != 0) { value } else { -value }
             }) as i32,
         }
     }
@@ -2053,7 +2053,7 @@ impl Ins {
             post_indexed: true,
             value: ({
                 let value = (self.code & 0x00000fff) as i32;
-                if ((self.code & 0x00800000) != 0) { -value } else { value }
+                if ((self.code & 0x00800000) != 0) { value } else { -value }
             }) as i32,
         }
     }
@@ -2100,7 +2100,7 @@ impl Ins {
             post_indexed: false,
             value: ({
                 let value = ((self.code & 0x000000ff) << 2) as i32;
-                if ((self.code & 0x00800000) != 0) { -value } else { value }
+                if ((self.code & 0x00800000) != 0) { value } else { -value }
             }) as i32,
         }
     }
@@ -2109,7 +2109,7 @@ impl Ins {
             post_indexed: true,
             value: ({
                 let value = ((self.code & 0x000000ff) << 2) as i32;
-                if ((self.code & 0x00800000) != 0) { -value } else { value }
+                if ((self.code & 0x00800000) != 0) { value } else { -value }
             }) as i32,
         }
     }

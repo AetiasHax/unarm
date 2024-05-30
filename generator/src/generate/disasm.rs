@@ -561,9 +561,9 @@ impl VisitMut for FoldFieldExpr {
                     *node = parse_quote! { {
                         let value = #lhs as i32;
                         if #rhs {
-                            -value
-                        } else {
                             value
+                        } else {
+                            -value
                         }
                     } };
                 }

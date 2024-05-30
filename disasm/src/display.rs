@@ -9,7 +9,7 @@ pub struct SignedHex {
 
 impl Display for SignedHex {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let hex = format!("{:08x}", self.value.abs() & ((1 << self.size as i32) - 1));
+        let hex = format!("{:08x}", self.value.abs());
         let chars = self.size.div_ceil(4);
         let mut hex: String = hex.chars().skip((8 - chars).into()).skip_while(|ch| *ch == '0').collect();
         if hex.is_empty() {
