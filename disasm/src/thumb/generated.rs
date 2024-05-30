@@ -937,7 +937,7 @@ impl Ins {
     }
     pub fn field_registers_pc(&self) -> RegList {
         RegList {
-            regs: (self.code & 0x000000ff) | ((self.code >> 8) & 0x00000001) << 14,
+            regs: (self.code & 0x000000ff) | ((self.code >> 8) & 0x00000001) << 15,
             user_mode: false,
         }
     }

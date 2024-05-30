@@ -160,7 +160,7 @@ fields:
     arg: reg_list
     desc: List of general-purpose registers, including PC
     value: !Struct
-      regs: !Expr self.code.bits(0,8) | self.code.bits(8,9) << 14
+      regs: !Expr self.code.bits(0,8) | self.code.bits(8,9) << 15
       user_mode: !Bool false
 
   - name: immed_3

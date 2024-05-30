@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    args::{Argument, OffsetImm, OffsetReg},
+    args::{Argument, Reg},
     thumb::generated::{parse, Arguments, Opcode},
 };
 
@@ -43,10 +43,13 @@ impl ParsedIns {
     /// Combines a pair of BL/BL or BL/BLX half-instructions into a full 32-bit instruction
     pub fn combine_bl(&self, second: &Self) -> Self {
         match (self.args[0], second.args[0]) {
-            (Argument::SImm(high), Argument::UImm(low)) => Self {
-                mnemonic: second.mnemonic,
-                args: [Argument::BranchDest(high + (low as i32)), Argument::None, Argument::None],
-            },
+            (Argument::SImm(high), Argument::UImm(low)) => {
+                let dest = (high + (low as i32)) << 9 >> 9;
+                Self {
+                    mnemonic: second.mnemonic,
+                    args: [Argument::BranchDest(dest), Argument::None, Argument::None],
+                }
+            }
             _ => Self {
                 mnemonic: "<illegal>",
                 args: [Argument::None, Argument::None, Argument::None],
@@ -64,22 +67,20 @@ impl Display for ParsedIns {
             if comma {
                 write!(f, ", ")?;
             }
-            match arg {
-                Argument::OffsetImm(OffsetImm {
-                    post_indexed: true,
-                    value: _,
-                })
-                | Argument::OffsetReg(OffsetReg {
-                    add: _,
-                    post_indexed: true,
-                    reg: _,
-                }) => {
-                    deref = false;
-                    write!(f, "]")?;
+            if let Argument::Reg(Reg {
+                deref: true,
+                reg,
+                writeback,
+            }) = arg
+            {
+                deref = true;
+                write!(f, "[{}", reg)?;
+                if *writeback {
+                    write!(f, "!")?;
                 }
-                _ => {}
+            } else {
+                write!(f, "{}", arg)?;
             }
-            write!(f, "{}", arg)?;
             comma = true;
         }
         if deref {
