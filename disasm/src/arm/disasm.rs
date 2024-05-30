@@ -70,15 +70,16 @@ impl Display for ParsedIns {
             }
             if let Argument::Reg(Reg {
                 deref: true,
-                reg: _,
+                reg,
                 writeback: wb,
             }) = arg
             {
                 deref = true;
                 writeback = *wb;
-                write!(f, "[")?
+                write!(f, "[{}", reg)?;
+            } else {
+                write!(f, "{}", arg)?;
             }
-            write!(f, "{}", arg)?;
             comma = true;
         }
         if deref {
