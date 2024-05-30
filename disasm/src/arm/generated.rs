@@ -2117,10 +2117,11 @@ impl Ins {
         (self.code & 0x000000ff)
     }
     pub fn field_branch_offset(&self) -> i32 {
-        (((self.code & 0x00ffffff) << 2) + 8) as i32
+        (((((self.code & 0x00ffffff) << 2) + 8) as i32) << 8 >> 8) as i32
     }
     pub fn field_blx_offset(&self) -> i32 {
-        (((self.code & 0x00ffffff) << 2 | ((self.code >> 24) & 0x00000001)) + 8) as i32
+        (((((self.code & 0x00ffffff) << 2 | ((self.code >> 24) & 0x00000001)) + 8)
+            as i32) << 8 >> 8) as i32
     }
     pub fn field_immed_16(&self) -> u32 {
         (self.code & 0x0000000f) | ((self.code >> 8) & 0x00000fff) << 4

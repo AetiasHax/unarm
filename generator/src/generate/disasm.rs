@@ -567,6 +567,15 @@ impl VisitMut for FoldFieldExpr {
                         }
                     } };
                 }
+                "sign_extend" => {
+                    if call.args.len() != 1 {
+                        return;
+                    }
+                    let rhs = call.args[0].clone();
+                    *node = parse_quote! {
+                        (#lhs as i32) << #rhs >> #rhs
+                    };
+                }
                 "arm_shift" => {
                     if call.args.len() != 1 {
                         return;

@@ -205,12 +205,12 @@ fields:
   - name: branch_offset
     arg: branch_dest
     desc: 24-bit signed B/BL target offset
-    value: !Expr (self.code.bits(0,24) << 2) + 8
+    value: !Expr ((self.code.bits(0,24) << 2) + 8).sign_extend(8)
 
   - name: blx_offset
     arg: branch_dest
     desc: 24-bit signed BLX target offset
-    value: !Expr (self.code.bits(0,24) << 2 | self.code.bits(24,25)) + 8
+    value: !Expr ((self.code.bits(0,24) << 2 | self.code.bits(24,25)) + 8).sign_extend(8)
 
   - name: immed_16
     arg: u_imm
