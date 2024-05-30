@@ -508,8 +508,11 @@ fn generate_field_accessors(isa: &Isa, isa_args: &IsaArgs) -> Result<TokenStream
                 ArgType::Custom(_) => quote! { #arg_ident },
             };
 
+            let doc = field.doc();
             let accessor_ident = Ident::new(&field.accessor_name(), Span::call_site());
             Ok(quote! {
+                #[doc = #doc]
+                #[inline(always)]
                 pub fn #accessor_ident(&self) -> #return_type {
                     #body
                 }

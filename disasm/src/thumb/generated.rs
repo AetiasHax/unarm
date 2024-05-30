@@ -799,6 +799,8 @@ impl Opcode {
     }
 }
 impl Ins {
+    /// Rd_0: Destination register
+    #[inline(always)]
     pub fn field_rd_0(&self) -> Reg {
         Reg {
             deref: false,
@@ -806,6 +808,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rd_8: Destination register
+    #[inline(always)]
     pub fn field_rd_8(&self) -> Reg {
         Reg {
             deref: false,
@@ -813,6 +817,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rd_H1: Destination register
+    #[inline(always)]
     pub fn field_rd_h1(&self) -> Reg {
         Reg {
             deref: false,
@@ -822,6 +828,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_0: First source operand register
+    #[inline(always)]
     pub fn field_rn_0(&self) -> Reg {
         Reg {
             deref: false,
@@ -829,6 +837,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_3: First source operand register
+    #[inline(always)]
     pub fn field_rn_3(&self) -> Reg {
         Reg {
             deref: false,
@@ -836,6 +846,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_3_deref: Base register
+    #[inline(always)]
     pub fn field_rn_3_deref(&self) -> Reg {
         Reg {
             deref: true,
@@ -843,6 +855,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_8: First source operand register
+    #[inline(always)]
     pub fn field_rn_8(&self) -> Reg {
         Reg {
             deref: false,
@@ -850,6 +864,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_8_wb: First source operand register
+    #[inline(always)]
     pub fn field_rn_8_wb(&self) -> Reg {
         Reg {
             deref: false,
@@ -857,6 +873,8 @@ impl Ins {
             writeback: true,
         }
     }
+    /// Rn_H1: First source operand register
+    #[inline(always)]
     pub fn field_rn_h1(&self) -> Reg {
         Reg {
             deref: false,
@@ -866,6 +884,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rm_3: Second source operand register
+    #[inline(always)]
     pub fn field_rm_3(&self) -> Reg {
         Reg {
             deref: false,
@@ -873,6 +893,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rm_6: Second source operand register
+    #[inline(always)]
     pub fn field_rm_6(&self) -> Reg {
         Reg {
             deref: false,
@@ -880,6 +902,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rm_6_offset: Offset register
+    #[inline(always)]
     pub fn field_rm_6_offset(&self) -> OffsetReg {
         OffsetReg {
             add: true,
@@ -887,6 +911,8 @@ impl Ins {
             reg: Register::parse(((self.code >> 6) & 0x00000007)),
         }
     }
+    /// Rm_H2: Second source operand register
+    #[inline(always)]
     pub fn field_rm_h2(&self) -> Reg {
         Reg {
             deref: false,
@@ -894,6 +920,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rs: Register containing shift offset
+    #[inline(always)]
     pub fn field_rs(&self) -> Reg {
         Reg {
             deref: false,
@@ -901,6 +929,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// pc: Program counter
+    #[inline(always)]
     pub fn field_pc(&self) -> Reg {
         Reg {
             deref: false,
@@ -908,6 +938,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// pc_deref: Program counter as base register
+    #[inline(always)]
     pub fn field_pc_deref(&self) -> Reg {
         Reg {
             deref: true,
@@ -915,6 +947,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// sp: Stack pointer
+    #[inline(always)]
     pub fn field_sp(&self) -> Reg {
         Reg {
             deref: false,
@@ -922,6 +956,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// sp_deref: Stack pointer as base register
+    #[inline(always)]
     pub fn field_sp_deref(&self) -> Reg {
         Reg {
             deref: true,
@@ -929,33 +965,49 @@ impl Ins {
             writeback: false,
         }
     }
+    /// registers: List of general-purpose registers
+    #[inline(always)]
     pub fn field_registers(&self) -> RegList {
         RegList {
             regs: (self.code & 0x000000ff),
             user_mode: false,
         }
     }
+    /// registers_pc: List of general-purpose registers, including PC
+    #[inline(always)]
     pub fn field_registers_pc(&self) -> RegList {
         RegList {
             regs: (self.code & 0x000000ff) | ((self.code >> 8) & 0x00000001) << 15,
             user_mode: false,
         }
     }
+    /// immed_3: 3-bit immediate
+    #[inline(always)]
     pub fn field_immed_3(&self) -> u32 {
         ((self.code >> 6) & 0x00000007)
     }
+    /// immed_8: 8-bit immediate
+    #[inline(always)]
     pub fn field_immed_8(&self) -> u32 {
         (self.code & 0x000000ff)
     }
+    /// rel_immed_7: Address-relative 7-bit immediate
+    #[inline(always)]
     pub fn field_rel_immed_7(&self) -> u32 {
         (self.code & 0x0000007f) << 2
     }
+    /// rel_immed_8: Address-relative 8-bit immediate
+    #[inline(always)]
     pub fn field_rel_immed_8(&self) -> u32 {
         (self.code & 0x000000ff) << 2
     }
+    /// left_shift_imm: 5-bit left shift offset
+    #[inline(always)]
     pub fn field_left_shift_imm(&self) -> u32 {
         ((self.code >> 6) & 0x0000001f)
     }
+    /// right_shift_imm: 5-bit right shift offset
+    #[inline(always)]
     pub fn field_right_shift_imm(&self) -> u32 {
         {
             let value = ((self.code >> 6) & 0x0000001f);
@@ -965,21 +1017,33 @@ impl Ins {
             }
         }
     }
+    /// branch_offset_8: 9-bit signed B/BL target offset
+    #[inline(always)]
     pub fn field_branch_offset_8(&self) -> i32 {
         (((self.code & 0x000000ff) << 1) + 4) as i32
     }
+    /// branch_offset_11: 12-bit signed B target offset
+    #[inline(always)]
     pub fn field_branch_offset_11(&self) -> i32 {
         (((self.code & 0x000007ff) << 1) + 4) as i32
     }
+    /// high_branch_offset_11: 23-bit signed BL/BLX target offset (high part)
+    #[inline(always)]
     pub fn field_high_branch_offset_11(&self) -> i32 {
         (((self.code & 0x000007ff) << 12) + 4) as i32
     }
+    /// low_branch_offset_11: 23-bit signed BL target offset (low part)
+    #[inline(always)]
     pub fn field_low_branch_offset_11(&self) -> u32 {
         (self.code & 0x000007ff) << 1
     }
+    /// low_blx_offset_11: 23-bit signed BLX target offset (low part)
+    #[inline(always)]
     pub fn field_low_blx_offset_11(&self) -> u32 {
         (self.code & 0x000007ff) << 1 & !3
     }
+    /// offset_5: 7-bit immediate offset
+    #[inline(always)]
     pub fn field_offset_5(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: false,

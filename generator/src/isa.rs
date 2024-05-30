@@ -101,6 +101,10 @@ impl Field {
     pub fn accessor_name(&self) -> String {
         format!("field_{}", self.name.to_lowercase())
     }
+
+    pub fn doc(&self) -> String {
+        format!(" {}: {}", self.name, self.desc)
+    }
 }
 
 #[derive(Deserialize)]

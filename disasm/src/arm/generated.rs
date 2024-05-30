@@ -1929,6 +1929,8 @@ impl Opcode {
     }
 }
 impl Ins {
+    /// Rn: First source operand register
+    #[inline(always)]
     pub fn field_rn(&self) -> Reg {
         Reg {
             deref: false,
@@ -1936,6 +1938,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_wb: Source operand register with writeback
+    #[inline(always)]
     pub fn field_rn_wb(&self) -> Reg {
         Reg {
             deref: false,
@@ -1943,6 +1947,8 @@ impl Ins {
             writeback: true,
         }
     }
+    /// Rn_deref: Base register
+    #[inline(always)]
     pub fn field_rn_deref(&self) -> Reg {
         Reg {
             deref: true,
@@ -1950,6 +1956,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rn_deref_wb: Base register with writeback
+    #[inline(always)]
     pub fn field_rn_deref_wb(&self) -> Reg {
         Reg {
             deref: true,
@@ -1957,6 +1965,8 @@ impl Ins {
             writeback: true,
         }
     }
+    /// Rm: Second source operand register
+    #[inline(always)]
     pub fn field_rm(&self) -> Reg {
         Reg {
             deref: false,
@@ -1964,6 +1974,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rd: Destination register
+    #[inline(always)]
     pub fn field_rd(&self) -> Reg {
         Reg {
             deref: false,
@@ -1971,6 +1983,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// Rs: Register containing shift offset
+    #[inline(always)]
     pub fn field_rs(&self) -> Reg {
         Reg {
             deref: false,
@@ -1978,6 +1992,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// RdHi: Upper 32-bit long destination register
+    #[inline(always)]
     pub fn field_rdhi(&self) -> Reg {
         Reg {
             deref: false,
@@ -1985,6 +2001,8 @@ impl Ins {
             writeback: false,
         }
     }
+    /// RdLo: Lower 32-bit long destination register
+    #[inline(always)]
     pub fn field_rdlo(&self) -> Reg {
         Reg {
             deref: false,
@@ -1992,33 +2010,49 @@ impl Ins {
             writeback: false,
         }
     }
+    /// registers: List of registers
+    #[inline(always)]
     pub fn field_registers(&self) -> RegList {
         RegList {
             regs: (self.code & 0x0000ffff),
             user_mode: false,
         }
     }
+    /// registers_c: List of registers (with ^ suffix)
+    #[inline(always)]
     pub fn field_registers_c(&self) -> RegList {
         RegList {
             regs: (self.code & 0x0000ffff),
             user_mode: true,
         }
     }
+    /// CRn: First source coprocessor register
+    #[inline(always)]
     pub fn field_crn(&self) -> CoReg {
         CoReg::parse(((self.code >> 16) & 0x0000000f))
     }
+    /// CRm: Second source coprocessor register
+    #[inline(always)]
     pub fn field_crm(&self) -> CoReg {
         CoReg::parse((self.code & 0x0000000f))
     }
+    /// CRd: Destination coprocessor register
+    #[inline(always)]
     pub fn field_crd(&self) -> CoReg {
         CoReg::parse(((self.code >> 12) & 0x0000000f))
     }
+    /// rotated_immed_8: 8-bit immediate
+    #[inline(always)]
     pub fn field_rotated_immed_8(&self) -> u32 {
         (self.code & 0x000000ff).rotate_right(((self.code >> 8) & 0x0000000f) << 1)
     }
+    /// immed_24: 24-bit immediate
+    #[inline(always)]
     pub fn field_immed_24(&self) -> u32 {
         (self.code & 0x00ffffff)
     }
+    /// offset_8: 8-bit immediate offset
+    #[inline(always)]
     pub fn field_offset_8(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: false,
@@ -2029,6 +2063,8 @@ impl Ins {
             }) as i32,
         }
     }
+    /// post_offset_8: 8-bit immediate post-indexed offset
+    #[inline(always)]
     pub fn field_post_offset_8(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: true,
@@ -2039,6 +2075,8 @@ impl Ins {
             }) as i32,
         }
     }
+    /// offset_12: 12-bit immediate offset
+    #[inline(always)]
     pub fn field_offset_12(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: false,
@@ -2048,6 +2086,8 @@ impl Ins {
             }) as i32,
         }
     }
+    /// post_offset_12: 12-bit immediate post-indexed offset
+    #[inline(always)]
     pub fn field_post_offset_12(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: true,
@@ -2057,6 +2097,8 @@ impl Ins {
             }) as i32,
         }
     }
+    /// shift_imm: Immediate shift offset
+    #[inline(always)]
     pub fn field_shift_imm(&self) -> ShiftImm {
         ShiftImm {
             imm: {
@@ -2069,15 +2111,21 @@ impl Ins {
             op: Shift::parse(((self.code >> 5) & 0x00000003)),
         }
     }
+    /// shift_reg: Register shift offset
+    #[inline(always)]
     pub fn field_shift_reg(&self) -> ShiftReg {
         ShiftReg {
             op: Shift::parse(((self.code >> 5) & 0x00000003)),
             reg: Register::parse(((self.code >> 8) & 0x0000000f)),
         }
     }
+    /// rrx: Rotate right with extend
+    #[inline(always)]
     pub fn field_rrx(&self) -> Shift {
         Shift::parse(4)
     }
+    /// reg_offset: Register offset
+    #[inline(always)]
     pub fn field_reg_offset(&self) -> OffsetReg {
         OffsetReg {
             add: (((self.code >> 23) & 0x00000001)) != 0,
@@ -2085,6 +2133,8 @@ impl Ins {
             reg: Register::parse((self.code & 0x0000000f)),
         }
     }
+    /// reg_post_offset: Register post-indexed offset
+    #[inline(always)]
     pub fn field_reg_post_offset(&self) -> OffsetReg {
         OffsetReg {
             add: (((self.code >> 23) & 0x00000001)) != 0,
@@ -2092,9 +2142,13 @@ impl Ins {
             reg: Register::parse((self.code & 0x0000000f)),
         }
     }
+    /// R: Move SPSR (1) or CPSR (0)
+    #[inline(always)]
     pub fn field_r(&self) -> StatusReg {
         StatusReg::parse(((self.code >> 22) & 0x00000001))
     }
+    /// coproc_offset: 8-bit immediate coprocessor offset
+    #[inline(always)]
     pub fn field_coproc_offset(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: false,
@@ -2104,6 +2158,8 @@ impl Ins {
             }) as i32,
         }
     }
+    /// coproc_post_offset: 8-bit immediate coprocessor offset
+    #[inline(always)]
     pub fn field_coproc_post_offset(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: true,
@@ -2113,19 +2169,29 @@ impl Ins {
             }) as i32,
         }
     }
+    /// option: Additional instruction options for coprocessor
+    #[inline(always)]
     pub fn field_option(&self) -> u32 {
         (self.code & 0x000000ff)
     }
+    /// branch_offset: 24-bit signed B/BL target offset
+    #[inline(always)]
     pub fn field_branch_offset(&self) -> i32 {
         (((((self.code & 0x00ffffff) << 2) + 8) as i32) << 8 >> 8) as i32
     }
+    /// blx_offset: 24-bit signed BLX target offset
+    #[inline(always)]
     pub fn field_blx_offset(&self) -> i32 {
         (((((self.code & 0x00ffffff) << 2 | ((self.code >> 24) & 0x00000001)) + 8)
             as i32) << 8 >> 8) as i32
     }
+    /// immed_16: 16-bit immediate in bits 0..4 and 8..20
+    #[inline(always)]
     pub fn field_immed_16(&self) -> u32 {
         (self.code & 0x0000000f) | ((self.code >> 8) & 0x00000fff) << 4
     }
+    /// field_mask: Status fields to set
+    #[inline(always)]
     pub fn field_field_mask(&self) -> StatusMask {
         StatusMask {
             control: (((self.code >> 16) & 0x00000001)) != 0,
@@ -2135,18 +2201,28 @@ impl Ins {
             status: (((self.code >> 18) & 0x00000001)) != 0,
         }
     }
+    /// opcode: Coprocessor operation to perform (user-defined)
+    #[inline(always)]
     pub fn field_opcode(&self) -> u32 {
         ((self.code >> 4) & 0x0000000f)
     }
+    /// codat_opcode_1: Coprocessor operation to perform (user-defined, used by CDP instruction)
+    #[inline(always)]
     pub fn field_codat_opcode_1(&self) -> u32 {
         ((self.code >> 20) & 0x0000000f)
     }
+    /// comov_opcode_1: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
+    #[inline(always)]
     pub fn field_comov_opcode_1(&self) -> u32 {
         ((self.code >> 21) & 0x00000007)
     }
+    /// opcode_2: Coprocessor operation to perform (user-defined)
+    #[inline(always)]
     pub fn field_opcode_2(&self) -> u32 {
         ((self.code >> 5) & 0x00000007)
     }
+    /// coproc: Coprocessor number
+    #[inline(always)]
     pub fn field_coproc(&self) -> u32 {
         ((self.code >> 8) & 0x0000000f)
     }
