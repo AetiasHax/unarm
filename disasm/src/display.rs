@@ -1,6 +1,65 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::args::{Argument, CoReg, OffsetReg, Register, Shift, ShiftImm, ShiftReg, StatusMask, StatusReg};
+use crate::{
+    args::{Argument, CoReg, OffsetImm, OffsetReg, Reg, Register, Shift, ShiftImm, ShiftReg, StatusMask, StatusReg},
+    parse::ParsedIns,
+};
+
+impl Display for ParsedIns {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ", self.mnemonic)?;
+        let mut comma = false;
+        let mut deref = false;
+        let mut writeback = false;
+        for arg in self.args_iter() {
+            if deref {
+                match arg {
+                    Argument::OffsetImm(OffsetImm {
+                        post_indexed: true,
+                        value: _,
+                    })
+                    | Argument::OffsetReg(OffsetReg {
+                        add: _,
+                        post_indexed: true,
+                        reg: _,
+                    })
+                    | Argument::CoOption(_) => {
+                        deref = false;
+                        write!(f, "]")?;
+                        if writeback {
+                            write!(f, "!")?;
+                            writeback = false;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if comma {
+                write!(f, ", ")?;
+            }
+            if let Argument::Reg(Reg {
+                deref: true,
+                reg,
+                writeback: wb,
+            }) = arg
+            {
+                deref = true;
+                writeback = *wb;
+                write!(f, "[{}", reg)?;
+            } else {
+                write!(f, "{}", arg)?;
+            }
+            comma = true;
+        }
+        if deref {
+            write!(f, "]")?;
+            if writeback {
+                write!(f, "!")?;
+            }
+        }
+        Ok(())
+    }
+}
 
 pub struct SignedHex(i32);
 

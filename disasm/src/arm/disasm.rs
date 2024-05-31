@@ -1,9 +1,4 @@
-use std::fmt::{self, Display, Formatter};
-
-use crate::{
-    args::{Argument, Arguments, OffsetImm, OffsetReg, Reg},
-    arm::generated::{parse, Opcode},
-};
+use crate::arm::generated::Opcode;
 
 #[derive(Clone, Copy)]
 pub struct Ins {
@@ -15,80 +10,6 @@ impl Ins {
     pub fn new(code: u32) -> Self {
         let op = Opcode::find(code);
         Self { code, op }
-    }
-}
-
-#[derive(Default)]
-pub struct ParsedIns {
-    pub mnemonic: &'static str,
-    pub args: Arguments,
-}
-
-impl ParsedIns {
-    pub fn parse(ins: Ins) -> Self {
-        let mut out = Self::default();
-        parse(&mut out, ins);
-        out
-    }
-
-    pub fn args_iter(&self) -> impl Iterator<Item = &Argument> {
-        self.args.iter().take_while(|a| **a != Argument::None)
-    }
-}
-
-impl Display for ParsedIns {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ", self.mnemonic)?;
-        let mut comma = false;
-        let mut deref = false;
-        let mut writeback = false;
-        for arg in self.args_iter() {
-            if deref {
-                match arg {
-                    Argument::OffsetImm(OffsetImm {
-                        post_indexed: true,
-                        value: _,
-                    })
-                    | Argument::OffsetReg(OffsetReg {
-                        add: _,
-                        post_indexed: true,
-                        reg: _,
-                    })
-                    | Argument::CoOption(_) => {
-                        deref = false;
-                        write!(f, "]")?;
-                        if writeback {
-                            write!(f, "!")?;
-                            writeback = false;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            if comma {
-                write!(f, ", ")?;
-            }
-            if let Argument::Reg(Reg {
-                deref: true,
-                reg,
-                writeback: wb,
-            }) = arg
-            {
-                deref = true;
-                writeback = *wb;
-                write!(f, "[{}", reg)?;
-            } else {
-                write!(f, "{}", arg)?;
-            }
-            comma = true;
-        }
-        if deref {
-            write!(f, "]")?;
-            if writeback {
-                write!(f, "!")?;
-            }
-        }
-        Ok(())
     }
 }
 

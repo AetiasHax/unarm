@@ -1,6 +1,6 @@
 use std::{hint::black_box, ops::RangeInclusive};
 
-use armv5te::arm;
+use armv5te::{arm, ParsedIns};
 
 pub fn fuzz(num_threads: usize, iterations: usize) {
     let fuzzers: Vec<_> = (0..num_threads)
@@ -31,7 +31,7 @@ impl Fuzzer {
         let range = self.range.clone();
         let iterations = self.iterations;
         std::thread::spawn(move || {
-            let mut parsed = arm::ParsedIns::default();
+            let mut parsed = ParsedIns::default();
             for _ in 0..iterations {
                 for code in range.clone() {
                     #[allow(clippy::unit_arg)]

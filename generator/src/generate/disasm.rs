@@ -52,7 +52,8 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize, module: &
 
         use crate::{
             args::*,
-            #module::disasm::{Ins, ParsedIns}
+            #module::disasm::Ins,
+            parse::ParsedIns
         };
 
         #[doc = " These are the mnemonics of each opcode. Some mnemonics are duplicated due to them having multiple formats."]
