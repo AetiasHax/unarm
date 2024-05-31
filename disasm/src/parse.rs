@@ -5,8 +5,8 @@ use crate::{
 };
 
 pub struct Parsers {
-    arm: Box<dyn Parse>,
-    thumb: Box<dyn Parse>,
+    pub arm: Box<dyn Parse>,
+    pub thumb: Box<dyn Parse>,
 }
 
 impl Parsers {
