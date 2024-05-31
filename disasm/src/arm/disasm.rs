@@ -1,8 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    args::{Argument, OffsetImm, OffsetReg, Reg},
-    arm::generated::{parse, Arguments, Opcode},
+    args::{Argument, Arguments, OffsetImm, OffsetReg, Reg},
+    arm::generated::{parse, Opcode},
 };
 
 #[derive(Clone, Copy)]

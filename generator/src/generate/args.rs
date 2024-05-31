@@ -7,10 +7,10 @@ use syn::Ident;
 
 use crate::args::{is_continuous, ArgType, EnumValue, IsaArgs, StructMember, TypeKind};
 
-pub fn generate_args(isa_args: &IsaArgs) -> Result<TokenStream> {
+pub fn generate_args(isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
     let types = generate_types(isa_args)?;
     let arg_types = generate_arg_types(isa_args)?;
-    let args_enum = generate_args_enum(isa_args)?;
+    let args_enum = generate_args_enum(isa_args, max_args)?;
 
     Ok(quote! {
         #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -60,7 +60,7 @@ fn generate_arg_types(isa_args: &IsaArgs) -> Result<Vec<TokenStream>, anyhow::Er
     Ok(arg_types)
 }
 
-fn generate_args_enum(isa_args: &IsaArgs) -> Result<TokenStream, anyhow::Error> {
+fn generate_args_enum(isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream, anyhow::Error> {
     let args_variants = isa_args
         .args
         .iter()
@@ -87,7 +87,9 @@ fn generate_args_enum(isa_args: &IsaArgs) -> Result<TokenStream, anyhow::Error> 
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    let max_args = Literal::usize_suffixed(max_args);
     let args_enum = quote! {
+        pub type Arguments = [Argument; #max_args];
         #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
         pub enum Argument {
             #[default]

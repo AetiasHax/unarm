@@ -2508,7 +2508,6 @@ pub enum AddrCoproc {
     /// unidx: Unindexed
     Unidx,
 }
-pub type Arguments = [Argument; 6];
 fn parse_adc(out: &mut ParsedIns, ins: Ins) {
     *out = match (ins.modifier_cond(), ins.modifier_s(), ins.modifier_addr_data()) {
         (Cond::Eq, true, AddrData::Imm) => {

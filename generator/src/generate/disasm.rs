@@ -15,7 +15,7 @@ use crate::{
     token::HexLiteral,
 };
 
-pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, module: &str) -> Result<TokenStream> {
+pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize, module: &str) -> Result<TokenStream> {
     // Generate opcode enum and mnemonics array
     let (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes_token) = generate_opcode_tokens(&isa.opcodes);
 
@@ -41,10 +41,8 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, module: &str) -> Result<To
     let modifier_accessors_tokens = generate_modifier_accessors(isa)?;
 
     // Generate parse functions
-    let max_args = isa.get_max_args()?;
     let parse_functions = generate_parse_functions(isa, isa_args, max_args, &isa.opcodes, &num_opcodes_token)?;
 
-    let max_args = Literal::usize_unsuffixed(max_args);
     let module = Ident::new(module, Span::call_site());
     Ok(quote! {
         #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -85,8 +83,6 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, module: &str) -> Result<To
         }
 
         #case_enums_tokens
-
-        pub type Arguments = [Argument; #max_args];
 
         #parse_functions
     })

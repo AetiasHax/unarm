@@ -1108,13 +1108,15 @@ pub enum Cond {
     /// al: Always
     Al,
 }
-pub type Arguments = [Argument; 3];
 fn parse_adc(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "adc",
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1126,6 +1128,9 @@ fn parse_add_3(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3()),
             Argument::UImm(ins.field_immed_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1135,6 +1140,9 @@ fn parse_add_8(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::UImm(ins.field_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1146,6 +1154,9 @@ fn parse_add_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3()),
             Argument::Reg(ins.field_rm_6()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1155,6 +1166,9 @@ fn parse_add_hr(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_h1()),
             Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1166,6 +1180,9 @@ fn parse_add_pc(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_pc()),
             Argument::UImm(ins.field_rel_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1176,6 +1193,9 @@ fn parse_add_sp(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_sp()),
             Argument::UImm(ins.field_rel_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1185,6 +1205,9 @@ fn parse_add_sp7(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_sp()),
             Argument::UImm(ins.field_rel_immed_7()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1196,6 +1219,9 @@ fn parse_and(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1206,6 +1232,9 @@ fn parse_asr_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::UImm(ins.field_right_shift_imm()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1215,6 +1244,9 @@ fn parse_asr_r(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1228,6 +1260,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1236,6 +1271,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "bne",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1248,6 +1286,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1256,6 +1297,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "blo",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1268,6 +1312,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1276,6 +1323,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "bpl",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1288,6 +1338,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1296,6 +1349,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "bvc",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1308,6 +1364,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1316,6 +1375,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "bls",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1328,6 +1390,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1336,6 +1401,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "blt",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1348,6 +1416,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
@@ -1356,6 +1427,9 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ble",
                 args: [
                     Argument::BranchDest(ins.field_branch_offset_8()),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -1368,13 +1442,23 @@ fn parse_b(out: &mut ParsedIns, ins: Ins) {
                     Argument::BranchDest(ins.field_branch_offset_8()),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         }
         _ => {
             ParsedIns {
                 mnemonic: "<illegal>",
-                args: [Argument::None, Argument::None, Argument::None],
+                args: [
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                ],
             }
         }
     };
@@ -1384,6 +1468,9 @@ fn parse_b_long(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "b",
         args: [
             Argument::SImm(ins.field_branch_offset_11()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -1396,13 +1483,23 @@ fn parse_bic(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
 fn parse_bkpt(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "bkpt",
-        args: [Argument::UImm(ins.field_immed_8()), Argument::None, Argument::None],
+        args: [
+            Argument::UImm(ins.field_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
 fn parse_bl_h(out: &mut ParsedIns, ins: Ins) {
@@ -1410,6 +1507,9 @@ fn parse_bl_h(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "bl",
         args: [
             Argument::SImm(ins.field_high_branch_offset_11()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -1422,6 +1522,9 @@ fn parse_bl(out: &mut ParsedIns, ins: Ins) {
             Argument::UImm(ins.field_low_branch_offset_11()),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1432,19 +1535,36 @@ fn parse_blx_i(out: &mut ParsedIns, ins: Ins) {
             Argument::UImm(ins.field_low_blx_offset_11()),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
 fn parse_blx_r(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "blx",
-        args: [Argument::Reg(ins.field_rm_h2()), Argument::None, Argument::None],
+        args: [
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
 fn parse_bx_r(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "bx",
-        args: [Argument::Reg(ins.field_rm_h2()), Argument::None, Argument::None],
+        args: [
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
 fn parse_cmn(out: &mut ParsedIns, ins: Ins) {
@@ -1453,6 +1573,9 @@ fn parse_cmn(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rn_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1464,6 +1587,9 @@ fn parse_cmp_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rn_8()),
             Argument::UImm(ins.field_immed_8()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1473,6 +1599,9 @@ fn parse_cmp_r(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rn_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1484,6 +1613,9 @@ fn parse_cmp_hr(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rn_h1()),
             Argument::Reg(ins.field_rm_h2()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1493,6 +1625,9 @@ fn parse_eor(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1504,6 +1639,9 @@ fn parse_ldmia(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rn_8_wb()),
             Argument::RegList(ins.field_registers()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1514,6 +1652,9 @@ fn parse_ldr_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetImm(ins.field_offset_5()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1524,6 +1665,9 @@ fn parse_ldr_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1534,6 +1678,9 @@ fn parse_ldr_pc(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_pc_deref()),
             Argument::UImm(ins.field_rel_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1544,6 +1691,9 @@ fn parse_ldr_sp(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_sp_deref()),
             Argument::UImm(ins.field_rel_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1554,6 +1704,9 @@ fn parse_ldrb_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetImm(ins.field_offset_5()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1564,6 +1717,9 @@ fn parse_ldrb_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1574,6 +1730,9 @@ fn parse_ldrh_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetImm(ins.field_offset_5()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1584,6 +1743,9 @@ fn parse_ldrh_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1594,6 +1756,9 @@ fn parse_ldrsb(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1604,6 +1769,9 @@ fn parse_ldrsh(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1614,6 +1782,9 @@ fn parse_lsl_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::UImm(ins.field_left_shift_imm()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1623,6 +1794,9 @@ fn parse_lsl_r(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1634,6 +1808,9 @@ fn parse_lsr_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::UImm(ins.field_right_shift_imm()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1643,6 +1820,9 @@ fn parse_lsr_r(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1654,6 +1834,9 @@ fn parse_mov_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_8()),
             Argument::UImm(ins.field_immed_8()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1663,6 +1846,9 @@ fn parse_mov_r(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1674,6 +1860,9 @@ fn parse_mov_hr(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_h1()),
             Argument::Reg(ins.field_rm_h2()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1683,6 +1872,9 @@ fn parse_mul(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1694,6 +1886,9 @@ fn parse_mvn(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1703,6 +1898,9 @@ fn parse_neg(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1714,6 +1912,9 @@ fn parse_orr(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1722,6 +1923,9 @@ fn parse_pop(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "pop",
         args: [
             Argument::RegList(ins.field_registers_pc()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -1734,6 +1938,9 @@ fn parse_push(out: &mut ParsedIns, ins: Ins) {
             Argument::RegList(ins.field_registers_pc()),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1743,6 +1950,9 @@ fn parse_ror(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1754,6 +1964,9 @@ fn parse_sbc(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1763,6 +1976,9 @@ fn parse_stmia(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rn_8_wb()),
             Argument::RegList(ins.field_registers()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1774,6 +1990,9 @@ fn parse_str_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetImm(ins.field_offset_5()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1784,6 +2003,9 @@ fn parse_str_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1794,6 +2016,9 @@ fn parse_str_sp(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_sp_deref()),
             Argument::UImm(ins.field_rel_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1804,6 +2029,9 @@ fn parse_strb_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetImm(ins.field_offset_5()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1814,6 +2042,9 @@ fn parse_strb_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1824,6 +2055,9 @@ fn parse_strh_i(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetImm(ins.field_offset_5()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1834,6 +2068,9 @@ fn parse_strh_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
             Argument::OffsetReg(ins.field_rm_6_offset()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1844,6 +2081,9 @@ fn parse_sub_3(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3()),
             Argument::UImm(ins.field_immed_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1853,6 +2093,9 @@ fn parse_sub_8(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::UImm(ins.field_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1864,6 +2107,9 @@ fn parse_sub_r(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3()),
             Argument::Reg(ins.field_rm_6()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1874,13 +2120,23 @@ fn parse_sub_sp7(out: &mut ParsedIns, ins: Ins) {
             Argument::Reg(ins.field_sp()),
             Argument::UImm(ins.field_rel_immed_7()),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
 fn parse_swi(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "swi",
-        args: [Argument::UImm(ins.field_immed_8()), Argument::None, Argument::None],
+        args: [
+            Argument::UImm(ins.field_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
 fn parse_tst(out: &mut ParsedIns, ins: Ins) {
@@ -1889,6 +2145,9 @@ fn parse_tst(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rn_0()),
             Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
         ],
     };
@@ -1968,7 +2227,14 @@ pub fn parse(out: &mut ParsedIns, ins: Ins) {
     } else {
         *out = ParsedIns {
             mnemonic: "<illegal>",
-            args: [Argument::None, Argument::None, Argument::None],
+            args: [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
         };
     }
 }

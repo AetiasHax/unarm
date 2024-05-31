@@ -1,8 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    args::{Argument, Reg},
-    thumb::generated::{parse, Arguments, Opcode},
+    args::{Argument, Arguments, Reg},
+    thumb::generated::{parse, Opcode},
 };
 
 #[derive(Clone, Copy)]
@@ -45,14 +45,16 @@ impl ParsedIns {
         match (self.args[0], second.args[0]) {
             (Argument::SImm(high), Argument::UImm(low)) => {
                 let dest = (high + (low as i32)) << 9 >> 9;
+                let mut args = Arguments::default();
+                args[0] = Argument::BranchDest(dest);
                 Self {
                     mnemonic: second.mnemonic,
-                    args: [Argument::BranchDest(dest), Argument::None, Argument::None],
+                    args,
                 }
             }
             _ => Self {
                 mnemonic: "<illegal>",
-                args: [Argument::None, Argument::None, Argument::None],
+                args: Arguments::default(),
             },
         }
     }
