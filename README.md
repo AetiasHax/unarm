@@ -18,7 +18,7 @@ It only supports ARMv5TE, but other versions may be implemented in the future.
 
 The [`/disasm/v5te/arm/`](/disasm/src/v5te/arm/) module can disassemble ARM instructions in the ARMv5TE instruction set.
 
-- It is generated from [`arm.yaml`](/arm.yaml) by the [`/generator/`](/generator/) module.
+- It is generated from [`/specs/v5te/arm.yaml`](/specs/v5te/arm.yaml) by the [`/generator/`](/generator/) module.
 - It accepts all 2^32 possible instructions without returning errors.
 - No promises that the output is 100% correct.
   - Some illegal instructions may not be parsed as illegal.
@@ -59,7 +59,7 @@ assert_eq!(parsed.to_string(), "ldr r2, [r0, #0x268]");
 
 The [`/disasm/v5te/thumb/`](/disasm/src/v5te/thumb/) module can disassemble Thumb instructions in the ARMv5TE instruction set.
 
-- It is generated from [`thumb.yaml`](/thumb.yaml) by the [`/generator/`](/generator/) module.
+- It is generated from [`specs/v5te/thumb.yaml`](/specs/v5te/thumb.yaml) by the [`/generator/`](/generator/) module.
 - It accepts all 2^16 possible instructions without returning errors.
 - The output should be more correct than ARM, but still no promises.
 
