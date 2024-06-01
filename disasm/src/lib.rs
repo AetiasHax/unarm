@@ -1,7 +1,6 @@
 pub mod args;
-pub mod arm;
 mod display;
 pub mod parse;
-pub mod thumb;
+pub mod v5te;
 
 pub use parse::ParsedIns;

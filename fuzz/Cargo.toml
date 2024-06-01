@@ -1,13 +1,13 @@
 [package]
-name = "armv5te-fuzz"
+name = "unarm-fuzz"
 version = "0.2.0"
 edition = "2021"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
-description = "Fuzzer for armv5te"
+description = "Fuzzer for unarm"
 repository = "https://github.com/AetiasHax/armv5te"
 publish = false
 
 [dependencies]
 num_cpus = "1.16.0"
-armv5te = { path = "../disasm" }
+unarm = { path = "../disasm" }

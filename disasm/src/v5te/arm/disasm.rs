@@ -1,4 +1,4 @@
-use crate::{arm::generated::Opcode, ParsedIns};
+use crate::{v5te::arm::generated::Opcode, ParsedIns};
 
 use super::parse;
 

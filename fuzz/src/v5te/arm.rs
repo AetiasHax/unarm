@@ -1,12 +1,12 @@
 use std::{hint::black_box, ops::RangeInclusive};
 
-use armv5te::{thumb, ParsedIns};
+use unarm::{v5te::arm, ParsedIns};
 
 pub fn fuzz(num_threads: usize, iterations: usize) {
     let fuzzers: Vec<_> = (0..num_threads)
         .map(|i| {
-            let start = ((0x10000 * i) / num_threads).try_into().unwrap();
-            let end = ((0x10000 * (i + 1)) / num_threads - 1).try_into().unwrap();
+            let start = ((0x100000000 * i) / num_threads).try_into().unwrap();
+            let end = ((0x100000000 * (i + 1)) / num_threads - 1).try_into().unwrap();
             Fuzzer::new(start..=end, iterations)
         })
         .collect();
@@ -35,7 +35,7 @@ impl Fuzzer {
             for _ in 0..iterations {
                 for code in range.clone() {
                     #[allow(clippy::unit_arg)]
-                    black_box(thumb::parse(&mut parsed, thumb::Ins::new(code)));
+                    black_box(arm::parse(&mut parsed, arm::Ins::new(code)));
                 }
             }
         })

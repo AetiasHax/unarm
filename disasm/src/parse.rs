@@ -1,6 +1,6 @@
 use crate::{
     args::{Argument, Arguments},
-    arm, thumb,
+    v5te::{arm, thumb},
 };
 
 #[derive(Clone, Copy, Debug)]

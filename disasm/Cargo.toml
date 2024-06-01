@@ -1,10 +1,10 @@
 [package]
-name = "armv5te"
+name = "unarm"
 version = "0.3.0"
 edition = "2021"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
-description = "Disassembles ARMv5TE instructions"
+description = "Disassembles ARM instructions"
 keywords = ["arm", "armv5te"]
 repository = "https://github.com/AetiasHax/armv5te"
 

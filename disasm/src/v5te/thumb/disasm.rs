@@ -1,4 +1,4 @@
-use crate::{thumb::generated::Opcode, ParsedIns};
+use crate::{v5te::thumb::generated::Opcode, ParsedIns};
 
 use super::parse;
 
