@@ -14,14 +14,14 @@ use generate::{args::generate_args, disasm::generate_disasm};
 use isa::Isa;
 
 fn main() -> Result<()> {
-    let args = IsaArgs::load(Path::new("args.yaml"))?;
+    let args = IsaArgs::load(Path::new("specs/args.yaml"))?;
     args.validate()?;
 
-    let arm = Isa::load(Path::new("arm.yaml"))?;
-    arm.validate(&args).context("While validating arm.yaml")?;
+    let arm = Isa::load(Path::new("specs/v5te/arm.yaml"))?;
+    arm.validate(&args).context("While validating specs/v5te/arm.yaml")?;
 
-    let thumb = Isa::load(Path::new("thumb.yaml"))?;
-    thumb.validate(&args).context("While validating thumb.yaml")?;
+    let thumb = Isa::load(Path::new("specs/v5te/thumb.yaml"))?;
+    thumb.validate(&args).context("While validating specs/v5te/thumb.yaml")?;
 
     let max_args = arm.get_max_args()?.max(thumb.get_max_args()?);
 
