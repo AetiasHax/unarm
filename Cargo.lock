@@ -82,31 +82,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f538837af36e6f6a9be0faa67f9a314f8119e4e4b5867c6ab40ed60360142519"
 
 [[package]]
-name = "armv5te"
-version = "0.3.0"
-
-[[package]]
-name = "armv5te-fuzz"
-version = "0.2.0"
-dependencies = [
- "armv5te",
- "num_cpus",
-]
-
-[[package]]
-name = "armv5te-generator"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "prettyplease",
- "proc-macro2",
- "quote",
- "serde",
- "serde_yml",
- "syn",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -741,6 +716,32 @@ checksum = "5b8a1e28f2deaa14e508979454cb3a223b10b938b45af148bc0986de36f1923b"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
+]
+
+[[package]]
+name = "unarm"
+version = "1.0.0"
+
+[[package]]
+name = "unarm-fuzz"
+version = "0.3.0"
+dependencies = [
+ "num_cpus",
+ "unarm",
+]
+
+[[package]]
+name = "unarm-generator"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "serde",
+ "serde_yml",
  "syn",
 ]
 

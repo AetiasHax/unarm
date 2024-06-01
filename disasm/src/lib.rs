@@ -1,3 +1,6 @@
-pub mod arm;
+pub mod args;
 mod display;
-pub mod thumb;
+pub mod parse;
+pub mod v5te;
+
+pub use parse::ParsedIns;

@@ -1,485 +1,256 @@
 ins_size: 32
 
-args:
-  - name: reg
-    desc: General-purpose register
-    values:
-      - name: r0
-        value: 0
-      - name: r1
-        value: 1
-      - name: r2
-        value: 2
-      - name: r3
-        value: 3
-      - name: r4
-        value: 4
-      - name: r5
-        value: 5
-      - name: r6
-        value: 6
-      - name: r7
-        value: 7
-      - name: r8
-        value: 8
-      - name: r9
-        value: 9
-      - name: r10
-        value: 10
-      - name: fp
-        desc: Frame Pointer
-        value: 11
-      - name: ip
-        desc: Intra Procedure call scratch register
-        value: 12
-      - name: sp
-        desc: Stack Pointer
-        value: 13
-      - name: lr
-        desc: Link Register
-        value: 14
-      - name: pc
-        desc: Program Counter
-        value: 15
-
-  - name: reg_wb
-    desc: General-purpose register with writeback
-    alias: reg
-
-  - name: reg_deref
-    desc: Base register
-    alias: reg
-
-  - name: reg_deref_wb
-    desc: Base register with writeback
-    alias: reg
-
-  - name: reg_list
-    desc: List of general-purpose registers
-
-  - name: reg_list_c
-    desc: List of general-purpose registers (with ^ suffix)
-    alias: reg_list
-
-  - name: co_reg
-    desc: Coprocessor register
-    values:
-      - name: c0
-        value: 0
-      - name: c1
-        value: 1
-      - name: c2
-        value: 2
-      - name: c3
-        value: 3
-      - name: c4
-        value: 4
-      - name: c5
-        value: 5
-      - name: c6
-        value: 6
-      - name: c7
-        value: 7
-      - name: c8
-        value: 8
-      - name: c9
-        value: 9
-      - name: c10
-        value: 10
-      - name: c11
-        value: 11
-      - name: c12
-        value: 12
-      - name: c13
-        value: 13
-      - name: c14
-        value: 14
-      - name: c15
-        value: 15
-
-  - name: status_reg
-    desc: Status register
-    values:
-      - name: cpsr
-        value: 0
-      - name: spsr
-        value: 1
-
-  - name: status_mask
-    desc: Status field mask
-    hidden: true
-    values:
-      - name: c
-        value: 1
-      - name: x
-        value: 2
-      - name: xc
-        value: 3
-      - name: s
-        value: 4
-      - name: sc
-        value: 5
-      - name: sx
-        value: 6
-      - name: sxc
-        value: 7
-      - name: f
-        value: 8
-      - name: fc
-        value: 9
-      - name: fx
-        value: 10
-      - name: fxc
-        value: 11
-      - name: fs
-        value: 12
-      - name: fsc
-        value: 13
-      - name: fsx
-        value: 14
-      - name: fsxc
-        value: 15
-
-  - name: shift_imm
-    desc: Immediate shift offset
-    hidden: true
-
-  - name: shift
-    desc: Type of shift operation
-    values:
-      - name: lsl
-        value: 0
-      - name: lsr
-        value: 1
-      - name: asr
-        value: 2
-      - name: ror
-        value: 3
-    hidden: true
-
-  - name: rrx
-    desc: Rotate right with extend
-    empty: true
-
-  - name: u_imm
-    desc: Unsigned immediate
-
-  - name: s_imm
-    desc: Signed immediate
-    signed: true
-
-  - name: offset
-    desc: Immediate offset
-    signed: true
-
-  - name: post_offset
-    desc: Immediate post-indexed offset
-    signed: true
-
-  - name: branch_dest
-    desc: Branch destination
-    signed: true
-
-  - name: add
-    desc: Add
-    boolean: true
-    hidden: true
-
-  - name: blx_half
-    desc: Add 2 to BLX target address
-    boolean: true
-    hidden: true
-
-  - name: co_option
-    desc: Additional instruction options for coprocessor
-
-  - name: co_opcode
-    desc: Coprocessor operation to perform (user-defined)
-
-  - name: coproc_num
-    desc: Coprocessor number
-
 fields:
   - name: Rn
     arg: reg
     desc: First source operand register
-    bits: 16..20
+    value: !Struct
+      reg: !Bits 16..20
+      deref: !Bool false
+      writeback: !Bool false
 
   - name: Rn_wb
-    arg: reg_wb
+    arg: reg
     desc: Source operand register with writeback
-    bits: 16..20
+    value: !Struct
+      reg: !Bits 16..20
+      deref: !Bool false
+      writeback: !Bool true
 
   - name: Rn_deref
-    arg: reg_deref
+    arg: reg
     desc: Base register
-    bits: 16..20
+    value: !Struct
+      reg: !Bits 16..20
+      deref: !Bool true
+      writeback: !Bool false
 
   - name: Rn_deref_wb
-    arg: reg_deref_wb
+    arg: reg
     desc: Base register with writeback
-    bits: 16..20
+    value: !Struct
+      reg: !Bits 16..20
+      deref: !Bool true
+      writeback: !Bool true
 
   - name: Rm
     arg: reg
     desc: Second source operand register
-    bits: 0..4
+    value: !Struct
+      reg: !Bits 0..4
+      deref: !Bool false
+      writeback: !Bool false
 
   - name: Rd
     arg: reg
     desc: Destination register
-    bits: 12..16
+    value: !Struct
+      reg: !Bits 12..16
+      deref: !Bool false
+      writeback: !Bool false
 
   - name: Rs
     arg: reg
     desc: Register containing shift offset
-    bits: 8..12
+    value: !Struct
+      reg: !Bits 8..12
+      deref: !Bool false
+      writeback: !Bool false
 
   - name: RdHi
     arg: reg
     desc: Upper 32-bit long destination register
-    bits: 16..20
+    value: !Struct
+      reg: !Bits 16..20
+      deref: !Bool false
+      writeback: !Bool false
 
   - name: RdLo
     arg: reg
     desc: Lower 32-bit long destination register
-    bits: 12..16
+    value: !Struct
+      reg: !Bits 12..16
+      deref: !Bool false
+      writeback: !Bool false
 
   - name: registers
     arg: reg_list
     desc: List of registers
-    bits: 0..16
     allow_collide: true
+    value: !Struct
+      regs: !Bits 0..16
+      user_mode: !Bool false
 
   - name: registers_c
-    arg: reg_list_c
+    arg: reg_list
     desc: List of registers (with ^ suffix)
-    bits: 0..16
     allow_collide: true
+    value: !Struct
+      regs: !Bits 0..16
+      user_mode: !Bool true
 
   - name: CRn
     arg: co_reg
     desc: First source coprocessor register
-    bits: 16..20
+    value: !Bits 16..20
 
   - name: CRm
     arg: co_reg
     desc: Second source coprocessor register
-    bits: 0..4
+    value: !Bits 0..4
 
   - name: CRd
     arg: co_reg
     desc: Destination coprocessor register
-    bits: 12..16
+    value: !Bits 12..16
 
   - name: rotated_immed_8
     arg: u_imm
     desc: 8-bit immediate
-    bits: 0..8
-    ops:
-      - type: RotateRight
-        bits: 8..12
-        shift: 1
+    value: !Expr self.code.bits(0,8).rotate_right(self.code.bits(8,12) << 1)
 
   - name: immed_24
     arg: u_imm
     desc: 24-bit immediate
-    bits: 0..24
+    value: !Bits 0..24
 
   - name: offset_8
-    arg: offset
+    arg: offset_imm
     desc: 8-bit immediate offset
-    bits: 0..4
-    extra_bits: 4
-    ops:
-      - type: Or
-        bits: 8..12
-        shift: 4
-      - type: Negate
-        bits: 23..24
+    value: !Struct
+      value: !Expr (self.code.bits(0,4) | (self.code.bits(8,12) << 4)).negate(self.code.bit(23))
+      post_indexed: !Bool false
 
   - name: post_offset_8
-    arg: post_offset
+    arg: offset_imm
     desc: 8-bit immediate post-indexed offset
-    bits: 0..4
-    extra_bits: 4
-    ops:
-      - type: Or
-        bits: 8..12
-        shift: 4
-      - type: Negate
-        bits: 23..24
+    value: !Struct
+      value: !Expr (self.code.bits(0,4) | (self.code.bits(8,12) << 4)).negate(self.code.bit(23))
+      post_indexed: !Bool true
 
   - name: offset_12
-    arg: offset
+    arg: offset_imm
     desc: 12-bit immediate offset
-    bits: 0..12
-    ops:
-      - type: Negate
-        bits: 23..24
+    value: !Struct
+      value: !Expr self.code.bits(0,12).negate(self.code.bit(23))
+      post_indexed: !Bool false
 
   - name: post_offset_12
-    arg: post_offset
+    arg: offset_imm
     desc: 12-bit immediate post-indexed offset
-    bits: 0..12
-    ops:
-      - type: Negate
-        bits: 23..24
+    value: !Struct
+      value: !Expr self.code.bits(0,12).negate(self.code.bit(23))
+      post_indexed: !Bool true
 
   - name: shift_imm
+    arg: shift_imm
     desc: Immediate shift offset
-    args:
-      - name: op
-        arg: shift
-        bits: 5..7
-      - name: imm
-        arg: shift_imm
-        bits: 7..12
-        ops:
-          - type: ArmShiftImm
-            bits: 5..7
+    value: !Struct
+      op: !Bits 5..7
+      imm: !Expr self.code.bits(7,12).arm_shift(self.code.bits(5,7))
 
   - name: shift_reg
+    arg: shift_reg
     desc: Register shift offset
-    args:
-      - name: op
-        arg: shift
-        bits: 5..7
-      - name: reg
-        arg: reg
-        bits: 8..12
+    value: !Struct
+      op: !Bits 5..7
+      reg: !Bits 8..12
 
   - name: rrx
-    arg: rrx
+    arg: shift
     desc: Rotate right with extend
-    bits: 0..0
+    value: !U32 4
+    no_bitmask: true
 
   - name: reg_offset
+    arg: offset_reg
     desc: Register offset
-    args:
-      - name: add
-        arg: add
-        bits: 23..24
-      - name: reg
-        arg: reg
-        bits: 0..4
+    value: !Struct
+      reg: !Bits 0..4
+      post_indexed: !Bool false
+      add: !Bits 23..24
 
   - name: reg_post_offset
+    arg: offset_reg
     desc: Register post-indexed offset
-    args:
-      - name: add
-        arg: add
-        bits: 23..24
-      - name: reg
-        arg: reg
-        bits: 0..4
+    value: !Struct
+      reg: !Bits 0..4
+      post_indexed: !Bool true
+      add: !Bits 23..24
 
   - name: R
     arg: status_reg
     desc: Move SPSR (1) or CPSR (0)
-    bits: 22..23
+    value: !Bits 22..23
 
   - name: coproc_offset
-    arg: offset
+    arg: offset_imm
     desc: 8-bit immediate coprocessor offset
-    bits: 0..8
-    extra_bits: 2
-    ops:
-      - type: LeftShift
-        value: 2
-      - type: Negate
-        bits: 23..24
+    value: !Struct
+      value: !Expr (self.code.bits(0,8) << 2).negate(self.code.bit(23))
+      post_indexed: !Bool false
 
   - name: coproc_post_offset
-    arg: post_offset
+    arg: offset_imm
     desc: 8-bit immediate coprocessor offset
-    bits: 0..8
-    extra_bits: 2
-    ops:
-      - type: LeftShift
-        value: 2
-      - type: Negate
-        bits: 23..24
+    value: !Struct
+      value: !Expr (self.code.bits(0,8) << 2).negate(self.code.bit(23))
+      post_indexed: !Bool true
 
   - name: option
     arg: co_option
     desc: Additional instruction options for coprocessor
-    bits: 0..8
-
-  - name: H
-    arg: blx_half
-    desc: Add 2 to BLX target address
-    bits: 24..25
+    value: !Bits 0..8
 
   - name: branch_offset
     arg: branch_dest
     desc: 24-bit signed B/BL target offset
-    bits: 0..24
-    extra_bits: 2
-    ops:
-      - type: LeftShift
-        value: 2
-      - type: Add
-        value: 8
+    value: !Expr ((self.code.bits(0,24) << 2) + 8).sign_extend(8)
 
   - name: blx_offset
     arg: branch_dest
     desc: 24-bit signed BLX target offset
-    bits: 0..24
-    extra_bits: 2
-    ops:
-      - type: LeftShift
-        value: 2
-      - type: Or
-        bits: 24..25
-        shift: 1
-      - type: Add
-        value: 8
+    value: !Expr ((self.code.bits(0,24) << 2 | self.code.bits(24,25)) + 8).sign_extend(8)
 
   - name: immed_16
     arg: u_imm
     desc: 16-bit immediate in bits 0..4 and 8..20
-    bits: 0..4
-    extra_bits: 12
-    ops:
-      - type: Or
-        bits: 8..20
-        shift: 4
+    value: !Expr self.code.bits(0,4) | self.code.bits(8,20) << 4
 
   - name: field_mask
+    arg: status_mask
     desc: Status fields to set
-    args:
-      - name: reg
-        arg: status_reg
-        bits: 22..23
-      - name: mask
-        arg: status_mask
-        bits: 16..20
+    value: !Struct
+      reg: !Bits 22..23
+      control: !Bits 16..17
+      extension: !Bits 17..18
+      status: !Bits 18..19
+      flags: !Bits 19..20
 
   - name: opcode
     arg: co_opcode
     desc: Coprocessor operation to perform (user-defined)
-    bits: 4..8
+    value: !Bits 4..8
 
   - name: codat_opcode_1
     arg: co_opcode
     desc: Coprocessor operation to perform (user-defined, used by CDP instruction)
-    bits: 20..24
+    value: !Bits 20..24
 
   - name: comov_opcode_1
     arg: co_opcode
     desc: Coprocessor operation to perform (user-defined, used by MCR/MRC instructions)
-    bits: 21..24
+    value: !Bits 21..24
 
   - name: opcode_2
     arg: co_opcode
     desc: Coprocessor operation to perform (user-defined)
-    bits: 5..8
+    value: !Bits 5..8
 
   - name: coproc
     arg: coproc_num
     desc: Coprocessor number
-    bits: 8..12
+    value: !Bits 8..12
 
 modifiers:
   - name: S

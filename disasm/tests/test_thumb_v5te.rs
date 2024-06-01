@@ -1,9 +1,9 @@
-use armv5te::thumb::{Ins, ParsedIns};
+use unarm::v5te::thumb::Ins;
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
         let ins = Ins::new($code);
-        let parsed = ParsedIns::parse(ins);
+        let parsed = ins.parse();
         assert_eq!(parsed.to_string(), $disasm)
     }};
 }
@@ -13,9 +13,9 @@ macro_rules! assert_bl {
         let first = Ins::new($code >> 16);
         assert!(first.is_half_bl());
         let second = Ins::new($code & 0xffff);
-        let first = ParsedIns::parse(first);
-        let second = ParsedIns::parse(second);
-        let ins = first.combine_bl(&second);
+        let first = first.parse();
+        let second = second.parse();
+        let ins = first.combine_thumb_bl(&second);
         assert_eq!(ins.to_string(), $disasm);
     }};
 }

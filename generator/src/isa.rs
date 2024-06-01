@@ -1,16 +1,21 @@
-use std::{fs::File, ops::Range, path::Path};
+use std::{collections::HashMap, fs::File, path::Path};
 
 use anyhow::{bail, Context, Result};
 
+use regex::Regex;
 use serde::Deserialize;
+use syn::Expr;
 
-use crate::iter::cartesian;
+use crate::{
+    args::{Arg, ArgType, IsaArgs},
+    iter::cartesian,
+    util::{capitalize_with_delimiter, BitRange},
+};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Isa {
     pub ins_size: u32,
-    pub args: Box<[Arg]>,
     pub fields: Box<[Field]>,
     pub modifiers: Box<[Modifier]>,
     pub opcodes: Box<[Opcode]>,
@@ -24,12 +29,9 @@ impl Isa {
         Ok(isa)
     }
 
-    pub fn validate(&self) -> Result<()> {
-        for arg in self.args.iter() {
-            arg.validate(self)?;
-        }
+    pub fn validate(&self, args: &IsaArgs) -> Result<()> {
         for field in self.fields.iter() {
-            field.validate(self)?;
+            field.validate(args)?;
         }
         for modifier in self.modifiers.iter() {
             modifier.validate(self)?;
@@ -54,13 +56,6 @@ impl Isa {
             .with_context(|| format!("Failed to find field '{name}'"))
     }
 
-    pub fn get_arg(&self, name: &str) -> Result<&Arg> {
-        self.args
-            .iter()
-            .find(|a| a.name == name)
-            .with_context(|| format!("Failed to find argument '{name}'"))
-    }
-
     pub fn get_max_args(&self) -> Result<usize> {
         let mut max = 0;
         for opcode in self.opcodes.iter() {
@@ -75,228 +70,119 @@ impl Isa {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Arg {
-    pub name: String,
-    pub desc: String,
-    pub alias: Option<String>,
-    pub values: Option<Box<[ArgValue]>>,
-    #[serde(default)]
-    pub signed: bool,
-    #[serde(default)]
-    pub boolean: bool,
-    #[serde(default)]
-    pub hidden: bool,
-    #[serde(default)]
-    pub empty: bool,
-}
-
-impl Arg {
-    pub fn type_name(&self) -> String {
-        match (&self.values, self.signed, self.boolean) {
-            (None, true, false) => "i32".to_string(),
-            (None, false, true) => "bool".to_string(),
-            (None, false, false) => "u32".to_string(),
-            (Some(_), false, false) => capitalize_with_delimiter(self.name.clone(), '_'),
-            _ => panic!(),
-        }
-    }
-
-    pub fn variant_name(&self) -> String {
-        capitalize_with_delimiter(self.name.clone(), '_')
-    }
-
-    pub fn doc(&self) -> String {
-        format!(" {}: {}", self.name, self.desc)
-    }
-
-    pub fn validate(&self, isa: &Isa) -> Result<()> {
-        let has_value = self.values.is_some() || self.signed || self.boolean;
-        if let Some(alias) = &self.alias {
-            if alias == &self.name {
-                bail!("Arg '{}' is an alias for itself", self.name)
-            }
-            let alias = isa.get_arg(alias)?;
-            if alias.alias.is_some() {
-                bail!("Arg '{}' is an alias for '{}' which is also an alias", self.name, alias.name)
-            }
-            if has_value {
-                bail!("Arg '{}' has a value but is an alias for '{}'", self.name, alias.name)
-            }
-        }
-        if self.empty && has_value {
-            bail!("Arg '{}' is empty but has a value", self.name)
-        }
-        match (&self.values, self.signed, self.boolean) {
-            (None, true, true) => bail!("Arg '{}' is both signed and boolean", self.name),
-            (Some(_), true, true) => bail!("Arg '{}' has values and is both signed and boolean", self.name),
-            (Some(_), true, false) => bail!("Arg '{}' has values and is signed", self.name),
-            (Some(_), false, true) => bail!("Arg '{}' has values and is boolean", self.name),
-            _ => {}
-        }
-        if !self.is_continuous() {
-            bail!("Arg '{}' is not continuous", self.name);
-        }
-        Ok(())
-    }
-
-    pub fn is_continuous(&self) -> bool {
-        if let Some(values) = &self.values {
-            let sorted_values = {
-                let mut sorted_values: Vec<_> = values.iter().collect();
-                sorted_values.sort_unstable_by_key(|v| v.value);
-                sorted_values
-            };
-            for values in sorted_values.windows(2) {
-                if values[0].value + 1 != values[1].value {
-                    return false;
-                }
-            }
-        }
-        true
-    }
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ArgValue {
-    pub name: String,
-    pub desc: Option<String>,
-    pub value: u8,
-}
-
-impl ArgValue {
-    pub fn variant_name(&self) -> String {
-        capitalize_with_delimiter(self.name.clone(), '_')
-    }
-
-    pub fn doc(&self) -> String {
-        if let Some(desc) = &self.desc {
-            format!(" {}: {}", self.name, desc)
-        } else {
-            "".to_string()
-        }
-    }
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct Field {
     pub name: String,
-    pub arg: Option<String>,
+    pub arg: String,
     pub desc: String,
-    pub bits: Option<BitRange>,
     #[serde(default)]
-    pub extra_bits: usize,
+    pub allow_collide: bool,
     #[serde(default)]
-    allow_collide: bool,
-    pub args: Option<Box<[FieldArg]>>,
-    pub ops: Option<Box<[FieldOp]>>,
+    pub no_bitmask: bool,
+    pub value: FieldValue,
 }
 
 impl Field {
-    pub fn get_bitmask(&self) -> u32 {
-        let mut bitmask = match (&self.bits, &self.args) {
-            (Some(bits), None) => bits.bitmask(),
-            (None, Some(args)) => args.iter().map(|a| a.bits.bitmask()).reduce(|a, b| a | b).unwrap_or(0),
-            (None, None) => 0,
-            _ => panic!(),
-        };
-        if let Some(ops) = &self.ops {
-            for op in ops.iter() {
-                if let Some(bits) = &op.bits {
-                    bitmask |= bits.bitmask();
-                }
-            }
-        }
-        bitmask
+    pub fn get_bitmask(&self) -> Result<u32> {
+        self.value.get_bitmask()
     }
 
-    fn validate(&self, isa: &Isa) -> Result<()> {
-        let mut empty = false;
-        match (&self.arg, &self.args) {
-            (None, None) => bail!("Field {} has no arg or args", self.name),
-            (Some(_), Some(_)) => bail!("Field {} has both arg and args", self.name),
-            (Some(arg), None) => {
-                let arg = isa.get_arg(arg)?;
-                empty = arg.empty;
-                if self.bits.is_none() {
-                    bail!("Field {} has arg but no bits", self.name)
-                }
-            }
-            (None, Some(_)) => {
-                if self.ops.is_some() {
-                    bail!("Field {} has args and ops", self.name)
-                }
-            }
+    fn validate(&self, isa_args: &IsaArgs) -> Result<()> {
+        if !self.no_bitmask && self.get_bitmask()? == 0 {
+            bail!(
+                "Field {} has no bitmask, please specify `no_bitmask: true` if this is intentional",
+                self.name
+            )
         }
-        if !empty && self.get_bitmask() == 0 {
-            bail!("Field {} has no bitmask", self.name)
-        }
-        if let Some(ops) = &self.ops {
-            for op in ops.iter() {
-                op.validate(self)?;
-            }
-        }
+        let arg = isa_args.get_arg(&self.arg)?;
+        self.value.validate(self, arg)?;
         Ok(())
-    }
-
-    pub fn doc(&self) -> String {
-        format!(" {}: {}", self.name, self.desc)
     }
 
     pub fn accessor_name(&self) -> String {
         format!("field_{}", self.name.to_lowercase())
     }
 
-    pub fn struct_name(&self) -> String {
-        capitalize_with_delimiter(self.name.clone(), '_')
+    pub fn doc(&self) -> String {
+        format!(" {}: {}", self.name, self.desc)
     }
 }
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct FieldArg {
-    pub name: String,
-    pub arg: String,
-    pub bits: BitRange,
-    pub ops: Option<Box<[FieldOp]>>,
+pub enum FieldValue {
+    Bits(BitRange),
+    Bool(bool),
+    U32(u32),
+    Struct(HashMap<String, FieldValue>),
+    Expr(String),
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct FieldOp {
-    pub r#type: FieldOpType,
-    pub bits: Option<BitRange>,
-    pub value: Option<u32>,
-    #[serde(default)]
-    pub shift: u32,
-}
+impl FieldValue {
+    pub fn get_bitmask(&self) -> Result<u32> {
+        match self {
+            FieldValue::Bits(range) => Ok(range.bitmask()),
+            FieldValue::Bool(_) => Ok(0),
+            FieldValue::U32(_) => Ok(0),
+            FieldValue::Struct(members) => {
+                let mut mask = 0;
+                for value in members.values() {
+                    mask |= value.get_bitmask()?;
+                }
+                Ok(mask)
+            }
+            FieldValue::Expr(expr) => {
+                let bits_regex = Regex::new(r"code\.bits\((\d+),(\d+)\)")?;
+                let bit_regex = Regex::new(r"code\.bit\((\d+)\)")?;
 
-impl FieldOp {
-    pub fn validate(&self, field: &Field) -> Result<()> {
-        match (&self.bits, self.value) {
-            (None, None) => bail!("Field op {:?} for field {} has no bits nor value", self.r#type, field.name),
-            (Some(_), Some(_)) => bail!("Field op {:?} for field {} has both bits and value", self.r#type, field.name),
+                let mut mask = 0;
+                for (_, [min, max]) in bits_regex.captures_iter(expr).map(|c| c.extract()) {
+                    let min = min.parse()?;
+                    let max = max.parse()?;
+                    let range = BitRange(min..max);
+                    mask |= range.bitmask();
+                }
+                for (_, [bit]) in bit_regex.captures_iter(expr).map(|c| c.extract()) {
+                    let bit: u32 = bit.parse()?;
+                    mask |= 1 << bit;
+                }
+
+                Ok(mask)
+            }
+        }
+    }
+
+    pub fn validate(&self, field: &Field, arg: &Arg) -> Result<()> {
+        match (self, &arg.r#type) {
+            (FieldValue::Struct(values), ArgType::Struct(members)) => {
+                let not_members: Vec<_> = values.keys().filter(|k| !members.contains_key(k.as_str())).cloned().collect();
+                if !not_members.is_empty() {
+                    bail!(
+                        "The field values [{}] of field '{}' do not exist in the argument '{}'",
+                        not_members.join(", "),
+                        field.name,
+                        arg.name
+                    );
+                }
+                let missing_members: Vec<_> = members.keys().filter(|k| !values.contains_key(k.as_str())).cloned().collect();
+                if !missing_members.is_empty() {
+                    bail!(
+                        "Missing values [{}] of field '{}' for the argument '{}'",
+                        missing_members.join(", "),
+                        field.name,
+                        arg.name
+                    );
+                }
+            }
+
+            (_, ArgType::Struct(_)) => bail!("Expected value to be struct in field '{}'", field.name),
+            (FieldValue::Struct(_), _) => bail!("Expected value to be numeric in field '{}'", field.name),
+
             _ => {}
         }
+        if let Self::Expr(expr) = self {
+            syn::parse_str::<Expr>(expr)?;
+        }
         Ok(())
-    }
-}
-
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
-pub enum FieldOpType {
-    RotateRight,
-    LeftShift,
-    Negate,
-    Or,
-    Add,
-    And,
-    ArmShiftImm,
-}
-
-impl FieldOpType {
-    pub fn signed(self) -> bool {
-        !matches!(self, Self::Negate)
     }
 }
 
@@ -415,7 +301,7 @@ impl ModifierCase {
                 let arg = isa
                     .get_field(arg)
                     .with_context(|| format!("While getting bitmask for modifier case '{}'", self.name))?;
-                arg_bitmask |= arg.get_bitmask();
+                arg_bitmask |= arg.get_bitmask()?;
             }
             Ok(arg_bitmask | case_bitmask)
         } else {
@@ -523,7 +409,7 @@ impl Opcode {
                 let arg = isa
                     .get_field(arg)
                     .with_context(|| format!("While validating opcode '{}'", self.name))?;
-                let bitmask = arg.get_bitmask();
+                let bitmask = arg.get_bitmask()?;
                 if !arg.allow_collide && (bitmask_acc & bitmask) != 0 {
                     bail!(
                         "Argument '{}' (0x{:08x}) collides with other bitmasks in opcode '{}' (0x{:08x})",
@@ -602,49 +488,4 @@ impl Opcode {
             .unwrap_or(0);
         Ok(base_args + max_case_args)
     }
-}
-
-pub struct BitRange(pub Range<u8>);
-
-impl BitRange {
-    pub fn bitmask(&self) -> u32 {
-        ((1 << self.0.len()) - 1) << self.0.start
-    }
-}
-
-impl<'de> Deserialize<'de> for BitRange {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        // Credits to ppc750cl (MIT License):
-        // https://github.com/encounter/ppc750cl/blob/6cbd7d888c7082c2c860f66cbb9848d633f753ed/genisa/src/isa.rs#L229
-
-        let range_str: String = Deserialize::deserialize(deserializer)?;
-        if let Some((start_str, end_str)) = range_str.split_once("..") {
-            let start = start_str.parse::<u8>().map_err(serde::de::Error::custom)?;
-            let end = end_str.parse::<u8>().map_err(serde::de::Error::custom)?;
-            Ok(Self(Range { start, end }))
-        } else {
-            let bit_idx = range_str.parse::<u8>().map_err(serde::de::Error::custom)?;
-            Ok(Self(Range {
-                start: bit_idx,
-                end: bit_idx + 1,
-            }))
-        }
-    }
-}
-
-fn capitalize_with_delimiter(s: String, delim: char) -> String {
-    s.split(delim)
-        .map(|s| {
-            let mut chars = s.chars();
-            let mut name = match chars.next() {
-                None => return "".to_string(),
-                Some(c) => c.to_uppercase().to_string(),
-            };
-            chars.for_each(|c| c.to_lowercase().for_each(|c| name.push(c)));
-            name
-        })
-        .collect()
 }
