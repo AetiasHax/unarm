@@ -1,4 +1,6 @@
-use crate::thumb::generated::Opcode;
+use crate::{thumb::generated::Opcode, ParsedIns};
+
+use super::parse;
 
 #[derive(Clone, Copy)]
 pub struct Ins {
@@ -15,6 +17,12 @@ impl Ins {
     /// Returns whether this is a BL half-instruction and should be combined with the upcoming instruction
     pub fn is_half_bl(&self) -> bool {
         self.op == Opcode::BlH
+    }
+
+    pub fn parse(self) -> ParsedIns {
+        let mut out = ParsedIns::default();
+        parse(&mut out, self);
+        out
     }
 }
 

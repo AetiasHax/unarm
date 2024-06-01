@@ -1,9 +1,9 @@
-use armv5te::{arm::Ins, parse::ParsedIns};
+use armv5te::arm::Ins;
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
         let ins = Ins::new($code);
-        let parsed = ParsedIns::parse_arm_v5te(ins);
+        let parsed = ins.parse();
         assert_eq!(parsed.to_string(), $disasm)
     }};
 }
