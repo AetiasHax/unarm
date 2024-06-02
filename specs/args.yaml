@@ -178,6 +178,10 @@ args:
     desc: Unsigned immediate
     type: !U32
 
+  - name: sat_imm
+    desc: Saturation immediate
+    type: !U32
+
   - name: s_imm
     desc: Signed immediate
     type: !I32
@@ -220,3 +224,39 @@ args:
   - name: coproc_num
     desc: Coprocessor number
     type: !U32
+
+  - name: cpsr_mode
+    desc: CPSR mode
+    type: !Struct
+      mode:
+        desc: Mode bits
+        type: !U32
+      writeback:
+        desc: Writeback to base register
+        type: !Bool
+
+  - name: cpsr_flags
+    desc: CPSR flags
+    type: !Struct
+      a:
+        desc: Imprecise data abort
+        type: !Bool
+      i:
+        desc: IRQ interrupt
+        type: !Bool
+      f:
+        desc: FIQ interrupt
+        type: !Bool
+      enable:
+        desc: If true, enable the A/I/F flags which are true, otherwise disable
+        type: !Bool
+
+  - name: endian
+    desc: Endian specifier
+    type: !Enum
+      - name: le
+        desc: Little-endian
+        value: 0
+      - name: be
+        desc: Big-endian
+        value: 1
