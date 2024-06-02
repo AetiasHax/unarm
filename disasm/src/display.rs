@@ -1,7 +1,10 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    args::{Argument, CoReg, OffsetImm, OffsetReg, Reg, Register, Shift, ShiftImm, ShiftReg, StatusMask, StatusReg},
+    args::{
+        Argument, CoReg, CpsrFlags, CpsrMode, Endian, OffsetImm, OffsetReg, Reg, Register, Shift, ShiftImm, ShiftReg,
+        StatusMask, StatusReg,
+    },
     parse::ParsedIns,
 };
 
@@ -116,6 +119,10 @@ impl Display for Argument {
             Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
+            Argument::SatImm(x) => write!(f, "#{}", x),
+            Argument::CpsrMode(x) => write!(f, "{}", x),
+            Argument::CpsrFlags(x) => write!(f, "{}", x),
+            Argument::Endian(x) => write!(f, "{}", x),
         }
     }
 }
@@ -228,5 +235,43 @@ impl Display for OffsetReg {
             write!(f, "-")?;
         }
         write!(f, "{}", self.reg)
+    }
+}
+
+impl Display for CpsrMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#0x{:x}", self.mode)?;
+        if self.writeback {
+            write!(f, "!")?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for CpsrFlags {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.a {
+            write!(f, "a")?;
+        }
+        if self.f {
+            write!(f, "f")?;
+        }
+        if self.i {
+            write!(f, "i")?;
+        }
+        if !self.a && !self.f && !self.i {
+            write!(f, "none")?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for Endian {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Endian::Illegal => write!(f, "<illegal>"),
+            Endian::Le => write!(f, "le"),
+            Endian::Be => write!(f, "be"),
+        }
     }
 }
