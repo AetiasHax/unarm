@@ -332,6 +332,7 @@ fn generate_modifier_accessors(isa: &Isa) -> Result<TokenStream> {
                     )
                 } else {
                     let mut if_tokens = vec![];
+                    let mut else_case = quote! { { #enum_ident::Illegal } };
                     for case in sorted_cases.iter() {
                         let bitmask = case.bitmask.with_context(|| {
                             format!("Modifier case '{}' in modifier '{}' has no bitmask", case.name, modifier.name)
@@ -340,19 +341,21 @@ fn generate_modifier_accessors(isa: &Isa) -> Result<TokenStream> {
                         let pattern_token = HexLiteral(case.pattern);
                         let variant_name = case.variant_name();
                         let variant_ident = Ident::new(&variant_name, Span::call_site());
-                        if_tokens.push(quote! {
-                            if (self.code & #bitmask_token) == #pattern_token {
-                                #enum_ident::#variant_ident
-                            }
-                        });
+                        if bitmask != 0 {
+                            if_tokens.push(quote! {
+                                if (self.code & #bitmask_token) == #pattern_token {
+                                    #enum_ident::#variant_ident
+                                }
+                            });
+                        } else {
+                            else_case = quote! { { #enum_ident::#variant_ident } };
+                        }
                     }
 
                     (
                         quote! {
                             #(#if_tokens)else*
-                            else {
-                                #enum_ident::Illegal
-                            }
+                            else #else_case
                         },
                         enum_ident,
                     )

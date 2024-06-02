@@ -1477,7 +1477,7 @@ opcodes:
   - name: smmla
     desc: Signed Most significant word Multiply Accumulate
     bitmask: 0x0ff000d0
-    pattern: 0x07000050
+    pattern: 0x07500010
     modifiers: [rounded, cond]
     args: [Rd, Rm, Rs, Rn]
     defs: [Rd]

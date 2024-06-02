@@ -498,14 +498,6 @@ opcodes:
     pattern: 0xb660
     modifiers: [imod]
 
-  - name: cpy
-    desc: Copy
-    bitmask: 0xff00
-    pattern: 0x4600
-    args: [Rd_H1, Rm_H2]
-    defs: [Rd_H1]
-    uses: [Rm_H2]
-
   - name: eor
     desc: Exclusive OR
     bitmask: 0xffc0
