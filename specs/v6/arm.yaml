@@ -835,15 +835,6 @@ opcodes:
     pattern: 0xf1000000
     modifiers: [imod]
 
-  - name: cpy
-    desc: Copy
-    bitmask: 0x0fff0ff0
-    pattern: 0x01a00000
-    modifiers: [cond]
-    args: [Rd, Rm]
-    defs: [Rd]
-    uses: [Rm]
-
   - name: eor
     desc: Bitwise Exclusive OR
     bitmask: 0x0de00000
