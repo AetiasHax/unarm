@@ -33,6 +33,14 @@ fields:
       deref: !Bool true
       writeback: !Bool true
 
+  - name: Rn_12
+    arg: reg
+    desc: First source operand register
+    value: !Struct
+      reg: !Bits 12..16
+      deref: !Bool false
+      writeback: !Bool false
+
   - name: Rm
     arg: reg
     desc: Second source operand register
@@ -266,14 +274,7 @@ fields:
     desc: CPSR mode
     value: !Struct
       mode: !Bits 0..5
-      writeback: !Bool false
-
-  - name: cpsr_mode_wb
-    arg: cpsr_mode
-    desc: CPSR mode with writeback
-    value: !Struct
-      mode: !Bits 0..5
-      writeback: !Bool true
+      writeback: !Bits 21..22
 
   - name: endian
     arg: endian
@@ -284,6 +285,7 @@ fields:
     arg: sat_imm
     desc: Bit position for saturation
     value: !Expr self.code.bits(16,21) + 1
+    allow_collide: true
 
 modifiers:
   - name: S
@@ -330,31 +332,34 @@ modifiers:
       - name: ie
         suffix: ie
         desc: Interrupt Enable
-        bitmask: 0x000f0000
+        bitmask: 0x000e0000
         pattern: 0x00080000
+        ignored: 0x0020001f
         args: [cpsr_flags]
       - name: ie_mode
         suffix: ie
         desc: Interrupt Enable and change mode
-        bitmask: 0x000f0000
-        pattern: 0x00090000
+        bitmask: 0x000e0000
+        pattern: 0x000a0000
         args: [cpsr_flags, cpsr_mode]
       - name: id
         suffix: id
         desc: Interrupt Disable
-        bitmask: 0x000f0000
+        bitmask: 0x000e0000
         pattern: 0x000c0000
+        ignored: 0x0020001f
         args: [cpsr_flags]
       - name: id_mode
         suffix: id
         desc: Interrupt Disable and change mode
-        bitmask: 0x000f0000
-        pattern: 0x000d0000
+        bitmask: 0x000e0000
+        pattern: 0x000e0000
         args: [cpsr_flags, cpsr_mode]
       - name: mode
         desc: Change mode
-        bitmask: 0x000b0000
-        pattern: 0x00010000
+        bitmask: 0x000e0000
+        pattern: 0x00020000
+        ignored: 0x000001c0
         args: [cpsr_mode]
 
   - name: pack_shift
@@ -367,8 +372,9 @@ modifiers:
         args: [shift_imm]
       - name: none
         desc: No shift operand
-        bitmask: 0x00000780
+        bitmask: 0x00000f80
         pattern: 0x00000000
+        ignored: 0x00000060
 
   - name: rfe_rn
     desc: RFE source operand
@@ -389,8 +395,8 @@ modifiers:
     cases:
       - name: none
         desc: No shift
-        bitmask: 0x00000fc0
-        pattern: 0x00000040
+        bitmask: 0x00000fe0
+        pattern: 0x00000000
       - name: shift_imm
         desc: Shift by immediate
         bitmask: 0x00000000
@@ -402,7 +408,7 @@ modifiers:
     cases:
       - name: none
         desc: No shift
-        bitmask: 0x00000c00
+        bitmask: 0x00000fe0
         pattern: 0x00000000
       - name: ror_imm
         desc: Rotate right by immediate
@@ -825,7 +831,7 @@ opcodes:
 
   - name: cps
     desc: Change Processor State
-    bitmask: 0xfff0ff10
+    bitmask: 0xfff1ff20
     pattern: 0xf1000000
     modifiers: [imod]
 
@@ -1242,7 +1248,7 @@ opcodes:
 
   - name: rev
     desc: Byte-Reverse Word
-    bitmaks: 0x0fff0ff0
+    bitmask: 0x0fff0ff0
     pattern: 0x06bf0f30
     modifiers: [cond]
     args: [Rd, Rm]
@@ -1251,7 +1257,7 @@ opcodes:
 
   - name: rev16
     desc: Byte-Reverse Packed Halfword
-    bitmaks: 0x0fff0ff0
+    bitmask: 0x0fff0ff0
     pattern: 0x06bf0fb0
     modifiers: [cond]
     args: [Rd, Rm]
@@ -1260,7 +1266,7 @@ opcodes:
 
   - name: revsh
     desc: Byte-Reverse Signed Halfword
-    bitmaks: 0x0fff0ff0
+    bitmask: 0x0fff0ff0
     pattern: 0x06ff0fb0
     modifiers: [cond]
     args: [Rd, Rm]
@@ -1437,7 +1443,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07400010
     modifiers: [dual, cond]
-    args: [RdLo, RDhi, Rm, Rs]
+    args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
     uses: [RdLo, RdHi, Rm, Rs]
 
@@ -1464,7 +1470,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07400050
     modifiers: [dual, cond]
-    args: [RdLo, RDhi, Rm, Rs]
+    args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
     uses: [RdLo, RdHi, Rm, Rs]
 
@@ -1491,8 +1497,8 @@ opcodes:
     bitmask: 0x0ff0f0d0
     pattern: 0x0750f010
     modifiers: [rounded, cond]
-    args: [Rd, Rm, Rs]
-    defs: [Rd]
+    args: [RdHi, Rm, Rs]
+    defs: [RdHi]
     uses: [Rm, Rs]
 
   - name: smuad
@@ -1500,8 +1506,8 @@ opcodes:
     bitmask: 0x0ff0f0d0
     pattern: 0x0700f010
     modifiers: [dual, cond]
-    args: [Rd, Rm, Rs]
-    defs: [Rd]
+    args: [RdHi, Rm, Rs]
+    defs: [RdHi]
     uses: [Rm, Rs]
 
   - name: smul
@@ -1536,16 +1542,16 @@ opcodes:
     bitmask: 0x0ff0f0d0
     pattern: 0x0700f050
     modifiers: [dual, cond]
-    args: [Rd, Rm, Rs]
-    defs: [Rd]
+    args: [RdHi, Rm, Rs]
+    defs: [RdHi]
     uses: [Rm, Rs]
 
   - name: srs
     desc: Store Return State
     bitmask: 0xfe5fffe0
     pattern: 0xf84d0500
-    modifier: [addr_ldm_stm]
-    args: [cpsr_mode_wb]
+    modifiers: [addr_ldm_stm]
+    args: [cpsr_mode]
 
   - name: ssat
     desc: Signed Saturate
@@ -1885,7 +1891,7 @@ opcodes:
     bitmask: 0x0ff000f0
     pattern: 0x00400090
     modifiers: [cond]
-    args: [RdLo, RDhi, Rm, Rs]
+    args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
     uses: [RdLo, RdHi, Rm, Rs]
 
@@ -1966,8 +1972,8 @@ opcodes:
     bitmask: 0x0ff0f0f0
     pattern: 0x0780f010
     modifiers: [cond]
-    args: [Rd, Rm, Rs]
-    defs: [Rd]
+    args: [RdHi, Rm, Rs]
+    defs: [RdHi]
     uses: [Rm, Rs]
 
   - name: usada8
@@ -1975,9 +1981,9 @@ opcodes:
     bitmask: 0x0ff000f0
     pattern: 0x07800010
     modifiers: [cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: usat
     desc: Unsigned Saturate
