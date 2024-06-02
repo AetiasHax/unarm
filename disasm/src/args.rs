@@ -24,6 +24,8 @@ pub enum Argument {
     ShiftReg(ShiftReg),
     /// Unsigned immediate
     UImm(u32),
+    /// Saturation immediate
+    SatImm(u32),
     /// Signed immediate
     SImm(i32),
     /// Signed immediate offset
@@ -38,6 +40,12 @@ pub enum Argument {
     CoOpcode(u32),
     /// Coprocessor number
     CoprocNum(u32),
+    /// CPSR mode
+    CpsrMode(CpsrMode),
+    /// CPSR flags
+    CpsrFlags(CpsrFlags),
+    /// Endian specifier
+    Endian(Endian),
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
@@ -202,4 +210,40 @@ pub struct OffsetReg {
     pub post_indexed: bool,
     /// Offset value
     pub reg: Register,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct CpsrMode {
+    /// Mode bits
+    pub mode: u32,
+    /// Writeback to base register
+    pub writeback: bool,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct CpsrFlags {
+    /// Imprecise data abort
+    pub a: bool,
+    /// If true, enable the A/I/F flags which are true, otherwise disable
+    pub enable: bool,
+    /// FIQ interrupt
+    pub f: bool,
+    /// IRQ interrupt
+    pub i: bool,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[repr(u8)]
+pub enum Endian {
+    Illegal = u8::MAX,
+    /// Little-endian
+    Le = 0,
+    /// Big-endian
+    Be = 1,
+}
+impl Endian {
+    pub fn parse(value: u32) -> Self {
+        if value <= 1 {
+            unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+        } else {
+            Self::Illegal
+        }
+    }
 }
