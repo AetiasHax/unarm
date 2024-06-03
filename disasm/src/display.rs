@@ -119,7 +119,7 @@ impl Display for Argument {
             Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
-            Argument::SatImm(x) => write!(f, "#{}", x),
+            Argument::SatImm(x) => write!(f, "#0x{:x}", x),
             Argument::CpsrMode(x) => write!(f, "{}", x),
             Argument::CpsrFlags(x) => write!(f, "{}", x),
             Argument::Endian(x) => write!(f, "{}", x),
@@ -253,13 +253,13 @@ impl Display for CpsrFlags {
         if self.a {
             write!(f, "a")?;
         }
-        if self.f {
-            write!(f, "f")?;
-        }
         if self.i {
             write!(f, "i")?;
         }
-        if !self.a && !self.f && !self.i {
+        if self.f {
+            write!(f, "f")?;
+        }
+        if !self.a && !self.i && !self.f {
             write!(f, "none")?;
         }
         Ok(())

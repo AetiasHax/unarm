@@ -2887,7 +2887,7 @@ impl Opcode {
                 } else if (code & 0x0de00000) == 0x01800000 {
                     return Opcode::Orr;
                 }
-            } else if (code & 0x00000100) == 0x00000100 {
+            } else if (code & 0x00000400) == 0x00000400 {
                 if (code & 0x08000000) == 0x08000000 {
                     if (code & 0x04000000) == 0x00000000 {
                         if (code & 0x00200000) == 0x00000000 {
@@ -2970,14 +2970,14 @@ impl Opcode {
                             if (code & 0x0e700000) == 0x08000000 {
                                 return Opcode::Stm;
                             }
-                        } else if (code & 0xfff1ff20) == 0xf1000000 {
+                        } else if (code & 0xfff1fe20) == 0xf1000000 {
                             return Opcode::Cps;
                         } else if (code & 0x0ff00090) == 0x01000080 {
                             return Opcode::Smla;
                         }
                     } else if (code & 0x00010000) == 0x00000000 {
                         if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0xfff1ff20) == 0xf1000000 {
+                            if (code & 0xfff1fe20) == 0xf1000000 {
                                 return Opcode::Cps;
                             }
                         } else if (code & 0x0e700000) == 0x08000000 {
@@ -3009,7 +3009,7 @@ impl Opcode {
                         if (code & 0x0e700000) == 0x08000000 {
                             return Opcode::Stm;
                         }
-                    } else if (code & 0xfff1ff20) == 0xf1000000 {
+                    } else if (code & 0xfff1fe20) == 0xf1000000 {
                         return Opcode::Cps;
                     } else if (code & 0x0ff00ff0) == 0x01000090 {
                         return Opcode::Swp;
@@ -3019,7 +3019,7 @@ impl Opcode {
                         if (code & 0x0e700000) == 0x08000000 {
                             return Opcode::Stm;
                         }
-                    } else if (code & 0xfff1ff20) == 0xf1000000 {
+                    } else if (code & 0xfff1fe20) == 0xf1000000 {
                         return Opcode::Cps;
                     } else if (code & 0x0ff00ff0) == 0x01000050 {
                         return Opcode::Qadd;
@@ -3028,7 +3028,7 @@ impl Opcode {
                     if (code & 0x0e700000) == 0x08000000 {
                         return Opcode::Stm;
                     }
-                } else if (code & 0xfff1ff20) == 0xf1000000 {
+                } else if (code & 0xfff1fe20) == 0xf1000000 {
                     return Opcode::Cps;
                 } else if (code & 0x0e1000f0) == 0x000000d0 {
                     return Opcode::LdrD;
@@ -3850,10 +3850,15 @@ impl Ins {
     pub fn field_endian(&self) -> Endian {
         Endian::parse(((self.code >> 9) & 0x00000001))
     }
-    /// sat_imm: Bit position for saturation
+    /// ssat_imm: Bit position for saturation
     #[inline(always)]
-    pub fn field_sat_imm(&self) -> u32 {
+    pub fn field_ssat_imm(&self) -> u32 {
         ((self.code >> 16) & 0x0000001f) + 1
+    }
+    /// usat_imm: Bit position for saturation
+    #[inline(always)]
+    pub fn field_usat_imm(&self) -> u32 {
+        ((self.code >> 16) & 0x0000001f)
     }
     /// S: Update condition status flags
     #[inline(always)]
@@ -3932,7 +3937,7 @@ impl Ins {
     /// ext_shift: Extend shift
     #[inline(always)]
     pub const fn modifier_ext_shift(&self) -> ExtShift {
-        if (self.code & 0x00000fe0) == 0x00000000 {
+        if (self.code & 0x00000f80) == 0x00000000 {
             ExtShift::None
         } else {
             ExtShift::RorImm
@@ -42895,8 +42900,8 @@ fn parse_pkhbt(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_cond(), ins.modifier_pack_shift()) {
-        (Cond::Eq, PackShift::ShiftImm) => {
+    *out = match ins.modifier_cond() {
+        Cond::Eq => {
             ParsedIns {
                 mnemonic: "pkhtbeq",
                 args: [
@@ -42909,7 +42914,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ne, PackShift::ShiftImm) => {
+        Cond::Ne => {
             ParsedIns {
                 mnemonic: "pkhtbne",
                 args: [
@@ -42922,7 +42927,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hs, PackShift::ShiftImm) => {
+        Cond::Hs => {
             ParsedIns {
                 mnemonic: "pkhtbhs",
                 args: [
@@ -42935,7 +42940,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lo, PackShift::ShiftImm) => {
+        Cond::Lo => {
             ParsedIns {
                 mnemonic: "pkhtblo",
                 args: [
@@ -42948,7 +42953,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Mi, PackShift::ShiftImm) => {
+        Cond::Mi => {
             ParsedIns {
                 mnemonic: "pkhtbmi",
                 args: [
@@ -42961,7 +42966,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Pl, PackShift::ShiftImm) => {
+        Cond::Pl => {
             ParsedIns {
                 mnemonic: "pkhtbpl",
                 args: [
@@ -42974,7 +42979,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vs, PackShift::ShiftImm) => {
+        Cond::Vs => {
             ParsedIns {
                 mnemonic: "pkhtbvs",
                 args: [
@@ -42987,7 +42992,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Vc, PackShift::ShiftImm) => {
+        Cond::Vc => {
             ParsedIns {
                 mnemonic: "pkhtbvc",
                 args: [
@@ -43000,7 +43005,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Hi, PackShift::ShiftImm) => {
+        Cond::Hi => {
             ParsedIns {
                 mnemonic: "pkhtbhi",
                 args: [
@@ -43013,7 +43018,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ls, PackShift::ShiftImm) => {
+        Cond::Ls => {
             ParsedIns {
                 mnemonic: "pkhtbls",
                 args: [
@@ -43026,7 +43031,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Ge, PackShift::ShiftImm) => {
+        Cond::Ge => {
             ParsedIns {
                 mnemonic: "pkhtbge",
                 args: [
@@ -43039,7 +43044,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Lt, PackShift::ShiftImm) => {
+        Cond::Lt => {
             ParsedIns {
                 mnemonic: "pkhtblt",
                 args: [
@@ -43052,7 +43057,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Gt, PackShift::ShiftImm) => {
+        Cond::Gt => {
             ParsedIns {
                 mnemonic: "pkhtbgt",
                 args: [
@@ -43065,7 +43070,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Le, PackShift::ShiftImm) => {
+        Cond::Le => {
             ParsedIns {
                 mnemonic: "pkhtble",
                 args: [
@@ -43078,7 +43083,7 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (Cond::Al, PackShift::ShiftImm) => {
+        Cond::Al => {
             ParsedIns {
                 mnemonic: "pkhtb",
                 args: [
@@ -43086,201 +43091,6 @@ fn parse_pkhtb(out: &mut ParsedIns, ins: Ins) {
                     Argument::Reg(ins.field_rn()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Eq, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbeq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ne, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hs, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lo, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtblo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Mi, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Pl, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vs, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Vc, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Hi, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ls, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Ge, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Lt, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtblt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Gt, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtbgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Le, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtble",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (Cond::Al, PackShift::None) => {
-            ParsedIns {
-                mnemonic: "pkhtb",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rn()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -57613,10 +57423,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxeq",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57626,10 +57436,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdeq",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57639,10 +57449,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxne",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57652,10 +57462,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdne",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57665,10 +57475,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxhs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57678,10 +57488,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdhs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57691,10 +57501,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxlo",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57704,10 +57514,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdlo",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57717,10 +57527,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxmi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57730,10 +57540,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdmi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57743,10 +57553,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxpl",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57756,10 +57566,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdpl",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57769,10 +57579,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxvs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57782,10 +57592,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdvs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57795,10 +57605,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxvc",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57808,10 +57618,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdvc",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57821,10 +57631,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxhi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57834,10 +57644,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdhi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57847,10 +57657,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxls",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57860,10 +57670,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdls",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57873,10 +57683,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxge",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57886,10 +57696,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdge",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57899,10 +57709,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxlt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57912,10 +57722,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdlt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57925,10 +57735,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxgt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57938,10 +57748,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdgt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57951,10 +57761,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdxle",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57964,10 +57774,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdle",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57977,10 +57787,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsdx",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -57990,10 +57800,10 @@ fn parse_smlsd(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smlsd",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58427,10 +58237,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlareq",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58440,10 +58250,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlaeq",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58453,10 +58263,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarne",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58466,10 +58276,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlane",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58479,10 +58289,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarhs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58492,10 +58302,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlahs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58505,10 +58315,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarlo",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58518,10 +58328,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlalo",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58531,10 +58341,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarmi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58544,10 +58354,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlami",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58557,10 +58367,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarpl",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58570,10 +58380,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlapl",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58583,10 +58393,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarvs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58596,10 +58406,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlavs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58609,10 +58419,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarvc",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58622,10 +58432,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlavc",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58635,10 +58445,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarhi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58648,10 +58458,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlahi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58661,10 +58471,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarls",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58674,10 +58484,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlals",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58687,10 +58497,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarge",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58700,10 +58510,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlage",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58713,10 +58523,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarlt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58726,10 +58536,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlalt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58739,10 +58549,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlargt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58752,10 +58562,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlagt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58765,10 +58575,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlarle",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58778,10 +58588,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlale",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58791,10 +58601,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlar",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58804,10 +58614,10 @@ fn parse_smmla(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmla",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58834,10 +58644,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsreq",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58847,10 +58657,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlseq",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58860,10 +58670,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrne",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58873,10 +58683,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsne",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58886,10 +58696,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrhs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58899,10 +58709,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlshs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58912,10 +58722,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrlo",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58925,10 +58735,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlslo",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58938,10 +58748,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrmi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58951,10 +58761,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsmi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58964,10 +58774,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrpl",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58977,10 +58787,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlspl",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -58990,10 +58800,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrvs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59003,10 +58813,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsvs",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59016,10 +58826,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrvc",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59029,10 +58839,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsvc",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59042,10 +58852,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrhi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59055,10 +58865,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlshi",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59068,10 +58878,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrls",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59081,10 +58891,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsls",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59094,10 +58904,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrge",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59107,10 +58917,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsge",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59120,10 +58930,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrlt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59133,10 +58943,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlslt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59146,10 +58956,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrgt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59159,10 +58969,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsgt",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59172,10 +58982,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsrle",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59185,10 +58995,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsle",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59198,10 +59008,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmlsr",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -59211,10 +59021,10 @@ fn parse_smmls(out: &mut ParsedIns, ins: Ins) {
             ParsedIns {
                 mnemonic: "smmls",
                 args: [
-                    Argument::Reg(ins.field_rd()),
+                    Argument::Reg(ins.field_rdhi()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Reg(ins.field_rs()),
-                    Argument::Reg(ins.field_rn()),
+                    Argument::Reg(ins.field_rn_12()),
                     Argument::None,
                     Argument::None,
                 ],
@@ -62143,7 +61953,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssateq",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62156,7 +61966,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatne",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62169,7 +61979,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssaths",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62182,7 +61992,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62195,7 +62005,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62208,7 +62018,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62221,7 +62031,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62234,7 +62044,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62247,7 +62057,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssathi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62260,7 +62070,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatls",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62273,7 +62083,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatge",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62286,7 +62096,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62299,7 +62109,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62312,7 +62122,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatle",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62325,7 +62135,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62338,7 +62148,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssateq",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62351,7 +62161,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatne",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62364,7 +62174,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssaths",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62377,7 +62187,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62390,7 +62200,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62403,7 +62213,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62416,7 +62226,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62429,7 +62239,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62442,7 +62252,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssathi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62455,7 +62265,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatls",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62468,7 +62278,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatge",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62481,7 +62291,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62494,7 +62304,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62507,7 +62317,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssatle",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62520,7 +62330,7 @@ fn parse_ssat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -62550,7 +62360,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16eq",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62563,7 +62373,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16ne",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62576,7 +62386,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16hs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62589,7 +62399,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16lo",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62602,7 +62412,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16mi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62615,7 +62425,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16pl",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62628,7 +62438,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16vs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62641,7 +62451,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16vc",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62654,7 +62464,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16hi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62667,7 +62477,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16ls",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62680,7 +62490,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16ge",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62693,7 +62503,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16lt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62706,7 +62516,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16gt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62719,7 +62529,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16le",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -62732,7 +62542,7 @@ fn parse_ssat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "ssat16",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_ssat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87650,7 +87460,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usateq",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87663,7 +87473,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatne",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87676,7 +87486,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usaths",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87689,7 +87499,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87702,7 +87512,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87715,7 +87525,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87728,7 +87538,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87741,7 +87551,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87754,7 +87564,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usathi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87767,7 +87577,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatls",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87780,7 +87590,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatge",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87793,7 +87603,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87806,7 +87616,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87819,7 +87629,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatle",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87832,7 +87642,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -87845,7 +87655,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usateq",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87858,7 +87668,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatne",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87871,7 +87681,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usaths",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87884,7 +87694,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87897,7 +87707,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87910,7 +87720,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87923,7 +87733,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87936,7 +87746,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87949,7 +87759,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usathi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87962,7 +87772,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatls",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87975,7 +87785,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatge",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -87988,7 +87798,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -88001,7 +87811,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -88014,7 +87824,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usatle",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -88027,7 +87837,7 @@ fn parse_usat(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::ShiftImm(ins.field_shift_imm()),
                     Argument::None,
@@ -88057,7 +87867,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16eq",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88070,7 +87880,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16ne",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88083,7 +87893,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16hs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88096,7 +87906,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16lo",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88109,7 +87919,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16mi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88122,7 +87932,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16pl",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88135,7 +87945,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16vs",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88148,7 +87958,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16vc",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88161,7 +87971,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16hi",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88174,7 +87984,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16ls",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88187,7 +87997,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16ge",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88200,7 +88010,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16lt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88213,7 +88023,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16gt",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88226,7 +88036,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16le",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,
@@ -88239,7 +88049,7 @@ fn parse_usat16(out: &mut ParsedIns, ins: Ins) {
                 mnemonic: "usat16",
                 args: [
                     Argument::Reg(ins.field_rd()),
-                    Argument::SatImm(ins.field_sat_imm()),
+                    Argument::SatImm(ins.field_usat_imm()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
                     Argument::None,

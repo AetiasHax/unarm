@@ -156,6 +156,7 @@ fields:
     value: !Struct
       op: !Bits 5..7
       imm: !Expr self.code.bits(7,12).arm_shift(self.code.bits(5,7))
+    allow_collide: true
 
   - name: shift_reg
     arg: shift_reg
@@ -281,10 +282,16 @@ fields:
     desc: Endian specifier
     value: !Bits 9..10
 
-  - name: sat_imm
+  - name: ssat_imm
     arg: sat_imm
     desc: Bit position for saturation
     value: !Expr self.code.bits(16,21) + 1
+    allow_collide: true
+
+  - name: usat_imm
+    arg: sat_imm
+    desc: Bit position for saturation
+    value: !Expr self.code.bits(16,21)
     allow_collide: true
 
 modifiers:
@@ -408,8 +415,9 @@ modifiers:
     cases:
       - name: none
         desc: No shift
-        bitmask: 0x00000fe0
+        bitmask: 0x00000f80
         pattern: 0x00000000
+        ignored: 0x00000060
       - name: ror_imm
         desc: Rotate right by immediate
         bitmask: 0x00000000
@@ -831,7 +839,7 @@ opcodes:
 
   - name: cps
     desc: Change Processor State
-    bitmask: 0xfff1ff20
+    bitmask: 0xfff1fe20
     pattern: 0xf1000000
     modifiers: [imod]
 
@@ -1136,8 +1144,8 @@ opcodes:
     desc: Pack Halfword Top Bottom
     bitmask: 0x0ff00070
     pattern: 0x06800050
-    modifiers: [cond, pack_shift]
-    args: [Rd, Rn, Rm]
+    modifiers: [cond]
+    args: [Rd, Rn, Rm, shift_imm]
     defs: [Rd]
     uses: [Rn, Rm]
 
@@ -1452,9 +1460,9 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07000050
     modifiers: [dual, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: smlsld
     desc: Signed Multiply Subtract accumulate Long Dual
@@ -1470,18 +1478,18 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07500010
     modifiers: [rounded, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: smmls
     desc: Signed Most signifcant word Multiply Subtract
     bitmask: 0x0ff000d0
     pattern: 0x075000d0
     modifiers: [rounded, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: smmul
     desc: Signed Most signifcant word Multiply
@@ -1549,7 +1557,7 @@ opcodes:
     bitmask: 0x0fe00030
     pattern: 0x06a00010
     modifiers: [cond, sat_shift]
-    args: [Rd, sat_imm, Rm]
+    args: [Rd, ssat_imm, Rm]
     defs: [Rd]
     uses: [Rm]
 
@@ -1558,7 +1566,7 @@ opcodes:
     bitmask: 0x0ff00ff0
     pattern: 0x06a00f30
     modifiers: [cond]
-    args: [Rd, sat_imm, Rm]
+    args: [Rd, ssat_imm, Rm]
     defs: [Rd]
     uses: [Rm]
 
@@ -1981,7 +1989,7 @@ opcodes:
     bitmask: 0x0fe00030
     pattern: 0x06e00010
     modifiers: [cond, sat_shift]
-    args: [Rd, sat_imm, Rm]
+    args: [Rd, usat_imm, Rm]
     defs: [Rd]
     uses: [Rm]
 
@@ -1990,7 +1998,7 @@ opcodes:
     bitmask: 0x0ff00ff0
     pattern: 0x06e00f30
     modifiers: [cond]
-    args: [Rd, sat_imm, Rm]
+    args: [Rd, usat_imm, Rm]
     defs: [Rd]
     uses: [Rm]
 
