@@ -1,4 +1,6 @@
+mod v4t;
 mod v5te;
+mod v6;
 
 use std::time::Instant;
 
@@ -19,7 +21,9 @@ fn main() {
                 "-n" => iterations = args.next().and_then(|a| a.parse().ok()).expect("Expected number after -n"),
                 "arm" => arm = true,
                 "thumb" => thumb = true,
+                "v4t" => version = Some(ArmVersion::V4T),
                 "v5te" => version = Some(ArmVersion::V5Te),
+                "v6" => version = Some(ArmVersion::V6),
                 _ => panic!("Unknown argument '{}'", arg),
             }
         }
@@ -41,12 +45,28 @@ fn main() {
     println!("Starting {} threads running {} iterations", threads, iterations);
     let start = Instant::now();
     match version {
+        ArmVersion::V4T => {
+            if arm {
+                v4t::arm::fuzz(threads, iterations);
+            }
+            if thumb {
+                v4t::thumb::fuzz(threads, iterations);
+            }
+        }
         ArmVersion::V5Te => {
             if arm {
                 v5te::arm::fuzz(threads, iterations);
             }
             if thumb {
                 v5te::thumb::fuzz(threads, iterations);
+            }
+        }
+        ArmVersion::V6 => {
+            if arm {
+                v6::arm::fuzz(threads, iterations);
+            }
+            if thumb {
+                v6::thumb::fuzz(threads, iterations);
             }
         }
     }
