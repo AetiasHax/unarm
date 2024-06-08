@@ -62,13 +62,13 @@ static OPCODE_MNEMONICS: [&str; 158] = [
     "qadd",
     "qadd16",
     "qadd8",
-    "qaddsubx",
+    "qasx",
     "qdadd",
     "qdsub",
     "qsub",
     "qsub16",
     "qsub8",
-    "qsubaddx",
+    "qsax",
     "rev",
     "rev16",
     "revsh",
@@ -77,16 +77,16 @@ static OPCODE_MNEMONICS: [&str; 158] = [
     "rsc",
     "sadd16",
     "sadd8",
-    "saddsubx",
+    "sasx",
     "sbc",
     "sel",
     "setend",
     "shadd16",
     "shadd8",
-    "shaddsubx",
+    "shasx",
     "shsub16",
     "shsub8",
-    "shsubaddx",
+    "shsax",
     "smla",
     "smlad",
     "smlal",
@@ -108,7 +108,7 @@ static OPCODE_MNEMONICS: [&str; 158] = [
     "ssat16",
     "ssub16",
     "ssub8",
-    "ssubaddx",
+    "ssax",
     "stc",
     "stc2",
     "stm",
@@ -135,29 +135,29 @@ static OPCODE_MNEMONICS: [&str; 158] = [
     "tst",
     "uadd16",
     "uadd8",
-    "uaddsubx",
+    "uasx",
     "uhadd16",
     "uhadd8",
-    "uhaddsubx",
+    "uhasx",
     "uhsub16",
     "uhsub8",
-    "uhsubaddx",
+    "uhsax",
     "umaal",
     "umlal",
     "umull",
     "uqadd16",
     "uqadd8",
-    "uqaddsubx",
+    "uqasx",
     "uqsub16",
     "uqsub8",
-    "uqsubaddx",
+    "uqsax",
     "usad8",
     "usada8",
     "usat",
     "usat16",
     "usub16",
     "usub8",
-    "usubaddx",
+    "usax",
     "uxtab",
     "uxtab16",
     "uxtah",
@@ -284,8 +284,8 @@ pub enum Opcode {
     Qadd16 = 54,
     /// QADD8: Saturating Add four 8-bit integers
     Qadd8 = 55,
-    /// QADDSUBX: Saturating Add and Subtract with Exchange
-    Qaddsubx = 56,
+    /// QASX: Saturating Add and Subtract with Exchange
+    Qasx = 56,
     /// QDADD: Saturating Double and Add
     Qdadd = 57,
     /// QDSUB: Saturating Double and Subtract
@@ -296,8 +296,8 @@ pub enum Opcode {
     Qsub16 = 60,
     /// QSUB8: Saturating Subtract four 8-bit integers
     Qsub8 = 61,
-    /// QSUBADDX: Saturating Subtract and Add with Exchange
-    Qsubaddx = 62,
+    /// QSAX: Saturating Subtract and Add with Exchange
+    Qsax = 62,
     /// REV: Byte-Reverse Word
     Rev = 63,
     /// REV16: Byte-Reverse Packed Halfword
@@ -314,8 +314,8 @@ pub enum Opcode {
     Sadd16 = 69,
     /// SADD8: Signed Add four 8-bit integers
     Sadd8 = 70,
-    /// SADDSUBX: Signed Add and Subtract with Exchange
-    Saddsubx = 71,
+    /// SASX: Signed Add and Subtract with Exchange
+    Sasx = 71,
     /// SBC: Subtract with Carry
     Sbc = 72,
     /// SEL: Select
@@ -326,14 +326,14 @@ pub enum Opcode {
     Shadd16 = 75,
     /// SHADD8: Signed Halving Add four 8-bit integers
     Shadd8 = 76,
-    /// SHADDSUBX: Signed Halving Add and Subtract with Exchange
-    Shaddsubx = 77,
+    /// SHASX: Signed Halving Add and Subtract with Exchange
+    Shasx = 77,
     /// SHSUB16: Signed Halving Subtract two 16-bit integers
     Shsub16 = 78,
     /// SHSUB8: Signed Halving Subtract four 8-bit integers
     Shsub8 = 79,
-    /// SHSUBADDX: Signed Halving Subtract and Add with Exchange
-    Shsubaddx = 80,
+    /// SHSAX: Signed Halving Subtract and Add with Exchange
+    Shsax = 80,
     /// SMLA: Signed Multiply Accumulate
     Smla = 81,
     /// SMLAD: Signed Multiply Accumulate Dual
@@ -376,8 +376,8 @@ pub enum Opcode {
     Ssub16 = 100,
     /// SSUB8: Signed Subtract four 8-bit integers
     Ssub8 = 101,
-    /// SSUBADDX: Signed Subtract and Add with Exchange
-    Ssubaddx = 102,
+    /// SSAX: Signed Subtract and Add with Exchange
+    Ssax = 102,
     /// STC: Store Coprocessor
     Stc = 103,
     /// STC2: Store Coprocessor (unconditional, extended)
@@ -430,20 +430,20 @@ pub enum Opcode {
     Uadd16 = 127,
     /// UADD8: Unsigned Add four 8-bit integers
     Uadd8 = 128,
-    /// UADDSUBX: Unsigned Add and Subtract with Exchange
-    Uaddsubx = 129,
+    /// UASX: Unsigned Add and Subtract with Exchange
+    Uasx = 129,
     /// UHADD16: Unsigned Halving Add two 16-bit integers
     Uhadd16 = 130,
     /// UHADD8: Unsigned Halving Add four 8-bit integers
     Uhadd8 = 131,
-    /// UHADDSUBX: Unsigned Halving Add and Subtract with Exchange
-    Uhaddsubx = 132,
+    /// UHASX: Unsigned Halving Add and Subtract with Exchange
+    Uhasx = 132,
     /// UHSUB16: Unsigned Halving Subtract two 16-bit integers
     Uhsub16 = 133,
     /// UHSUB8: Unsigned Halving Subtract four 8-bit integers
     Uhsub8 = 134,
-    /// UHSUBADDX: Unsigned Halving Subtract and Add with Exchange
-    Uhsubaddx = 135,
+    /// UHSAX: Unsigned Halving Subtract and Add with Exchange
+    Uhsax = 135,
     /// UMAAL: Unsigned Multiply Accumulate Accumulate Long
     Umaal = 136,
     /// UMLAL: Unsigned Multiply Accumulate Long
@@ -454,14 +454,14 @@ pub enum Opcode {
     Uqadd16 = 139,
     /// UQADD8: Unsigned Saturating Add four 8-bit integers
     Uqadd8 = 140,
-    /// UQADDSUBX: Unsigned Saturating Add and Subtract with Exchange
-    Uqaddsubx = 141,
+    /// UQASX: Unsigned Saturating Add and Subtract with Exchange
+    Uqasx = 141,
     /// UQSUB16: Unsigned Saturating Subtract two 16-bit integers
     Uqsub16 = 142,
     /// UQSUB8: Unsigned Saturating Subtract four 8-bit integers
     Uqsub8 = 143,
-    /// UQSUBADDX: Unsigned Saturating Subtract and Add with Exchange
-    Uqsubaddx = 144,
+    /// UQSAX: Unsigned Saturating Subtract and Add with Exchange
+    Uqsax = 144,
     /// USAD8: Unsigned Sum of Absolute Differences of four 8-bit integer pairs
     Usad8 = 145,
     /// USADA8: Unsigned Sum of Absolute Differences of four 8-bit integer pairs and Accumulate
@@ -474,8 +474,8 @@ pub enum Opcode {
     Usub16 = 149,
     /// USUB8: Unsigned Subtract four 8-bit integers
     Usub8 = 150,
-    /// USUBADDX: Unsigned Subtract and Add with Exchange
-    Usubaddx = 151,
+    /// USAX: Unsigned Subtract and Add with Exchange
+    Usax = 151,
     /// UXTAB: Zero Extend Byte to 32 bits and Add
     Uxtab = 152,
     /// UXTAB16: Zero Extend two Bytes to 16 bits and Add
@@ -1099,13 +1099,13 @@ impl Opcode {
                                         return Opcode::Ldr;
                                     }
                                 } else if (code & 0x0ff00ff0) == 0x06100f50 {
-                                    return Opcode::Ssubaddx;
+                                    return Opcode::Ssax;
                                 } else if (code & 0x0c500000) == 0x04100000 {
                                     return Opcode::Ldr;
                                 }
                             } else if (code & 0x00000040) == 0x00000000 {
                                 if (code & 0x0ff00ff0) == 0x06100f30 {
-                                    return Opcode::Saddsubx;
+                                    return Opcode::Sasx;
                                 } else if (code & 0x0c500000) == 0x04100000 {
                                     return Opcode::Ldr;
                                 }
@@ -1124,7 +1124,7 @@ impl Opcode {
                                     return Opcode::Ldr;
                                 }
                             } else if (code & 0x0ff00ff0) == 0x06300f50 {
-                                return Opcode::Shsubaddx;
+                                return Opcode::Shsax;
                             } else if (code & 0x0d700000) == 0x04300000 {
                                 return Opcode::LdrT;
                             } else if (code & 0x0c500000) == 0x04100000 {
@@ -1132,7 +1132,7 @@ impl Opcode {
                             }
                         } else if (code & 0x00000040) == 0x00000000 {
                             if (code & 0x0ff00ff0) == 0x06300f30 {
-                                return Opcode::Shaddsubx;
+                                return Opcode::Shasx;
                             } else if (code & 0x0d700000) == 0x04300000 {
                                 return Opcode::LdrT;
                             } else if (code & 0x0c500000) == 0x04100000 {
@@ -1652,7 +1652,7 @@ impl Opcode {
                             }
                         } else if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x0ff00ff0) == 0x06700f50 {
-                                return Opcode::Uhsubaddx;
+                                return Opcode::Uhsax;
                             } else if (code & 0x0d700000) == 0x04700000 {
                                 return Opcode::LdrBt;
                             } else if (code & 0x0c500000) == 0x04500000 {
@@ -1664,7 +1664,7 @@ impl Opcode {
                     } else if (code & 0x00000040) == 0x00000000 {
                         if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x0ff00ff0) == 0x06700f30 {
-                                return Opcode::Uhaddsubx;
+                                return Opcode::Uhasx;
                             } else if (code & 0x0d700000) == 0x04700000 {
                                 return Opcode::LdrBt;
                             } else if (code & 0x0c500000) == 0x04500000 {
@@ -1861,7 +1861,7 @@ impl Opcode {
                         return Opcode::Sub;
                     }
                 } else if (code & 0x0ff00ff0) == 0x06500f50 {
-                    return Opcode::Usubaddx;
+                    return Opcode::Usax;
                 } else if (code & 0x0c500000) == 0x04500000 {
                     return Opcode::LdrB;
                 }
@@ -1871,7 +1871,7 @@ impl Opcode {
                         return Opcode::Sub;
                     }
                 } else if (code & 0x0ff00ff0) == 0x06500f30 {
-                    return Opcode::Uaddsubx;
+                    return Opcode::Uasx;
                 } else if (code & 0x0c500000) == 0x04500000 {
                     return Opcode::LdrB;
                 }
@@ -2454,7 +2454,7 @@ impl Opcode {
                             return Opcode::StrB;
                         }
                     } else if (code & 0x0ff00ff0) == 0x06600f50 {
-                        return Opcode::Uqsubaddx;
+                        return Opcode::Uqsax;
                     } else if (code & 0x0d700000) == 0x04600000 {
                         return Opcode::StrBt;
                     } else if (code & 0x0c500000) == 0x04400000 {
@@ -2479,7 +2479,7 @@ impl Opcode {
                 if (code & 0x00000040) == 0x00000000 {
                     if (code & 0x00800000) == 0x00000000 {
                         if (code & 0x0ff00ff0) == 0x06600f30 {
-                            return Opcode::Uqaddsubx;
+                            return Opcode::Uqasx;
                         } else if (code & 0x0d700000) == 0x04600000 {
                             return Opcode::StrBt;
                         } else if (code & 0x0c500000) == 0x04400000 {
@@ -3275,7 +3275,7 @@ impl Opcode {
                         }
                     } else if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x0ff00ff0) == 0x06200f50 {
-                            return Opcode::Qsubaddx;
+                            return Opcode::Qsax;
                         } else if (code & 0x0d700000) == 0x04200000 {
                             return Opcode::StrT;
                         } else if (code & 0x0c500000) == 0x04000000 {
@@ -3287,7 +3287,7 @@ impl Opcode {
                 } else if (code & 0x00000040) == 0x00000000 {
                     if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x0ff00ff0) == 0x06200f30 {
-                            return Opcode::Qaddsubx;
+                            return Opcode::Qasx;
                         } else if (code & 0x0d700000) == 0x04200000 {
                             return Opcode::StrT;
                         } else if (code & 0x0c500000) == 0x04000000 {
@@ -43920,11 +43920,11 @@ fn parse_qadd8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
+fn parse_qasx(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "qaddsubxeq",
+                mnemonic: "qasxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -43937,7 +43937,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "qaddsubxne",
+                mnemonic: "qasxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -43950,7 +43950,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "qaddsubxhs",
+                mnemonic: "qasxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -43963,7 +43963,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "qaddsubxlo",
+                mnemonic: "qasxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -43976,7 +43976,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "qaddsubxmi",
+                mnemonic: "qasxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -43989,7 +43989,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "qaddsubxpl",
+                mnemonic: "qasxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44002,7 +44002,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "qaddsubxvs",
+                mnemonic: "qasxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44015,7 +44015,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "qaddsubxvc",
+                mnemonic: "qasxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44028,7 +44028,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "qaddsubxhi",
+                mnemonic: "qasxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44041,7 +44041,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "qaddsubxls",
+                mnemonic: "qasxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44054,7 +44054,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "qaddsubxge",
+                mnemonic: "qasxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44067,7 +44067,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "qaddsubxlt",
+                mnemonic: "qasxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44080,7 +44080,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "qaddsubxgt",
+                mnemonic: "qasxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44093,7 +44093,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "qaddsubxle",
+                mnemonic: "qasxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -44106,7 +44106,7 @@ fn parse_qaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "qaddsubx",
+                mnemonic: "qasx",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45192,11 +45192,11 @@ fn parse_qsub8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
+fn parse_qsax(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "qsubaddxeq",
+                mnemonic: "qsaxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45209,7 +45209,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "qsubaddxne",
+                mnemonic: "qsaxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45222,7 +45222,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "qsubaddxhs",
+                mnemonic: "qsaxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45235,7 +45235,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "qsubaddxlo",
+                mnemonic: "qsaxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45248,7 +45248,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "qsubaddxmi",
+                mnemonic: "qsaxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45261,7 +45261,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "qsubaddxpl",
+                mnemonic: "qsaxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45274,7 +45274,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "qsubaddxvs",
+                mnemonic: "qsaxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45287,7 +45287,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "qsubaddxvc",
+                mnemonic: "qsaxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45300,7 +45300,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "qsubaddxhi",
+                mnemonic: "qsaxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45313,7 +45313,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "qsubaddxls",
+                mnemonic: "qsaxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45326,7 +45326,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "qsubaddxge",
+                mnemonic: "qsaxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45339,7 +45339,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "qsubaddxlt",
+                mnemonic: "qsaxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45352,7 +45352,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "qsubaddxgt",
+                mnemonic: "qsaxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45365,7 +45365,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "qsubaddxle",
+                mnemonic: "qsaxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -45378,7 +45378,7 @@ fn parse_qsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "qsubaddx",
+                mnemonic: "qsax",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50519,11 +50519,11 @@ fn parse_sadd8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
+fn parse_sasx(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "saddsubxeq",
+                mnemonic: "sasxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50536,7 +50536,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "saddsubxne",
+                mnemonic: "sasxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50549,7 +50549,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "saddsubxhs",
+                mnemonic: "sasxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50562,7 +50562,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "saddsubxlo",
+                mnemonic: "sasxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50575,7 +50575,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "saddsubxmi",
+                mnemonic: "sasxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50588,7 +50588,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "saddsubxpl",
+                mnemonic: "sasxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50601,7 +50601,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "saddsubxvs",
+                mnemonic: "sasxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50614,7 +50614,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "saddsubxvc",
+                mnemonic: "sasxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50627,7 +50627,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "saddsubxhi",
+                mnemonic: "sasxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50640,7 +50640,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "saddsubxls",
+                mnemonic: "sasxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50653,7 +50653,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "saddsubxge",
+                mnemonic: "sasxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50666,7 +50666,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "saddsubxlt",
+                mnemonic: "sasxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50679,7 +50679,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "saddsubxgt",
+                mnemonic: "sasxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50692,7 +50692,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "saddsubxle",
+                mnemonic: "sasxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -50705,7 +50705,7 @@ fn parse_saddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "saddsubx",
+                mnemonic: "sasx",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53347,11 +53347,11 @@ fn parse_shadd8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
+fn parse_shasx(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "shaddsubxeq",
+                mnemonic: "shasxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53364,7 +53364,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "shaddsubxne",
+                mnemonic: "shasxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53377,7 +53377,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "shaddsubxhs",
+                mnemonic: "shasxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53390,7 +53390,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "shaddsubxlo",
+                mnemonic: "shasxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53403,7 +53403,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "shaddsubxmi",
+                mnemonic: "shasxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53416,7 +53416,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "shaddsubxpl",
+                mnemonic: "shasxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53429,7 +53429,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "shaddsubxvs",
+                mnemonic: "shasxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53442,7 +53442,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "shaddsubxvc",
+                mnemonic: "shasxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53455,7 +53455,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "shaddsubxhi",
+                mnemonic: "shasxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53468,7 +53468,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "shaddsubxls",
+                mnemonic: "shasxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53481,7 +53481,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "shaddsubxge",
+                mnemonic: "shasxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53494,7 +53494,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "shaddsubxlt",
+                mnemonic: "shasxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53507,7 +53507,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "shaddsubxgt",
+                mnemonic: "shasxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53520,7 +53520,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "shaddsubxle",
+                mnemonic: "shasxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53533,7 +53533,7 @@ fn parse_shaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "shaddsubx",
+                mnemonic: "shasx",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -53983,11 +53983,11 @@ fn parse_shsub8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
+fn parse_shsax(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "shsubaddxeq",
+                mnemonic: "shsaxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54000,7 +54000,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "shsubaddxne",
+                mnemonic: "shsaxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54013,7 +54013,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "shsubaddxhs",
+                mnemonic: "shsaxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54026,7 +54026,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "shsubaddxlo",
+                mnemonic: "shsaxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54039,7 +54039,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "shsubaddxmi",
+                mnemonic: "shsaxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54052,7 +54052,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "shsubaddxpl",
+                mnemonic: "shsaxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54065,7 +54065,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "shsubaddxvs",
+                mnemonic: "shsaxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54078,7 +54078,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "shsubaddxvc",
+                mnemonic: "shsaxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54091,7 +54091,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "shsubaddxhi",
+                mnemonic: "shsaxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54104,7 +54104,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "shsubaddxls",
+                mnemonic: "shsaxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54117,7 +54117,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "shsubaddxge",
+                mnemonic: "shsaxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54130,7 +54130,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "shsubaddxlt",
+                mnemonic: "shsaxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54143,7 +54143,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "shsubaddxgt",
+                mnemonic: "shsaxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54156,7 +54156,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "shsubaddxle",
+                mnemonic: "shsaxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -54169,7 +54169,7 @@ fn parse_shsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "shsubaddx",
+                mnemonic: "shsax",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -62989,11 +62989,11 @@ fn parse_ssub8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
+fn parse_ssax(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "ssubaddxeq",
+                mnemonic: "ssaxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63006,7 +63006,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "ssubaddxne",
+                mnemonic: "ssaxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63019,7 +63019,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "ssubaddxhs",
+                mnemonic: "ssaxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63032,7 +63032,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "ssubaddxlo",
+                mnemonic: "ssaxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63045,7 +63045,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "ssubaddxmi",
+                mnemonic: "ssaxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63058,7 +63058,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "ssubaddxpl",
+                mnemonic: "ssaxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63071,7 +63071,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "ssubaddxvs",
+                mnemonic: "ssaxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63084,7 +63084,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "ssubaddxvc",
+                mnemonic: "ssaxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63097,7 +63097,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "ssubaddxhi",
+                mnemonic: "ssaxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63110,7 +63110,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "ssubaddxls",
+                mnemonic: "ssaxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63123,7 +63123,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "ssubaddxge",
+                mnemonic: "ssaxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63136,7 +63136,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "ssubaddxlt",
+                mnemonic: "ssaxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63149,7 +63149,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "ssubaddxgt",
+                mnemonic: "ssaxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63162,7 +63162,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "ssubaddxle",
+                mnemonic: "ssaxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -63175,7 +63175,7 @@ fn parse_ssubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "ssubaddx",
+                mnemonic: "ssax",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83247,11 +83247,11 @@ fn parse_uadd8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
+fn parse_uasx(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "uaddsubxeq",
+                mnemonic: "uasxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83264,7 +83264,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "uaddsubxne",
+                mnemonic: "uasxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83277,7 +83277,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "uaddsubxhs",
+                mnemonic: "uasxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83290,7 +83290,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "uaddsubxlo",
+                mnemonic: "uasxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83303,7 +83303,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "uaddsubxmi",
+                mnemonic: "uasxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83316,7 +83316,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "uaddsubxpl",
+                mnemonic: "uasxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83329,7 +83329,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "uaddsubxvs",
+                mnemonic: "uasxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83342,7 +83342,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "uaddsubxvc",
+                mnemonic: "uasxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83355,7 +83355,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "uaddsubxhi",
+                mnemonic: "uasxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83368,7 +83368,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "uaddsubxls",
+                mnemonic: "uasxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83381,7 +83381,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "uaddsubxge",
+                mnemonic: "uasxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83394,7 +83394,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "uaddsubxlt",
+                mnemonic: "uasxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83407,7 +83407,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "uaddsubxgt",
+                mnemonic: "uasxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83420,7 +83420,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "uaddsubxle",
+                mnemonic: "uasxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83433,7 +83433,7 @@ fn parse_uaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "uaddsubx",
+                mnemonic: "uasx",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83883,11 +83883,11 @@ fn parse_uhadd8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
+fn parse_uhasx(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "uhaddsubxeq",
+                mnemonic: "uhasxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83900,7 +83900,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "uhaddsubxne",
+                mnemonic: "uhasxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83913,7 +83913,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "uhaddsubxhs",
+                mnemonic: "uhasxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83926,7 +83926,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "uhaddsubxlo",
+                mnemonic: "uhasxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83939,7 +83939,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "uhaddsubxmi",
+                mnemonic: "uhasxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83952,7 +83952,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "uhaddsubxpl",
+                mnemonic: "uhasxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83965,7 +83965,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "uhaddsubxvs",
+                mnemonic: "uhasxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83978,7 +83978,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "uhaddsubxvc",
+                mnemonic: "uhasxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -83991,7 +83991,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "uhaddsubxhi",
+                mnemonic: "uhasxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84004,7 +84004,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "uhaddsubxls",
+                mnemonic: "uhasxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84017,7 +84017,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "uhaddsubxge",
+                mnemonic: "uhasxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84030,7 +84030,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "uhaddsubxlt",
+                mnemonic: "uhasxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84043,7 +84043,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "uhaddsubxgt",
+                mnemonic: "uhasxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84056,7 +84056,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "uhaddsubxle",
+                mnemonic: "uhasxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84069,7 +84069,7 @@ fn parse_uhaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "uhaddsubx",
+                mnemonic: "uhasx",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84519,11 +84519,11 @@ fn parse_uhsub8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
+fn parse_uhsax(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "uhsubaddxeq",
+                mnemonic: "uhsaxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84536,7 +84536,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "uhsubaddxne",
+                mnemonic: "uhsaxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84549,7 +84549,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "uhsubaddxhs",
+                mnemonic: "uhsaxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84562,7 +84562,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "uhsubaddxlo",
+                mnemonic: "uhsaxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84575,7 +84575,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "uhsubaddxmi",
+                mnemonic: "uhsaxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84588,7 +84588,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "uhsubaddxpl",
+                mnemonic: "uhsaxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84601,7 +84601,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "uhsubaddxvs",
+                mnemonic: "uhsaxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84614,7 +84614,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "uhsubaddxvc",
+                mnemonic: "uhsaxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84627,7 +84627,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "uhsubaddxhi",
+                mnemonic: "uhsaxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84640,7 +84640,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "uhsubaddxls",
+                mnemonic: "uhsaxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84653,7 +84653,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "uhsubaddxge",
+                mnemonic: "uhsaxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84666,7 +84666,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "uhsubaddxlt",
+                mnemonic: "uhsaxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84679,7 +84679,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "uhsubaddxgt",
+                mnemonic: "uhsaxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84692,7 +84692,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "uhsubaddxle",
+                mnemonic: "uhsaxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -84705,7 +84705,7 @@ fn parse_uhsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "uhsubaddx",
+                mnemonic: "uhsax",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86181,11 +86181,11 @@ fn parse_uqadd8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
+fn parse_uqasx(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "uqaddsubxeq",
+                mnemonic: "uqasxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86198,7 +86198,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "uqaddsubxne",
+                mnemonic: "uqasxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86211,7 +86211,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "uqaddsubxhs",
+                mnemonic: "uqasxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86224,7 +86224,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "uqaddsubxlo",
+                mnemonic: "uqasxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86237,7 +86237,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "uqaddsubxmi",
+                mnemonic: "uqasxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86250,7 +86250,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "uqaddsubxpl",
+                mnemonic: "uqasxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86263,7 +86263,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "uqaddsubxvs",
+                mnemonic: "uqasxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86276,7 +86276,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "uqaddsubxvc",
+                mnemonic: "uqasxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86289,7 +86289,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "uqaddsubxhi",
+                mnemonic: "uqasxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86302,7 +86302,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "uqaddsubxls",
+                mnemonic: "uqasxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86315,7 +86315,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "uqaddsubxge",
+                mnemonic: "uqasxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86328,7 +86328,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "uqaddsubxlt",
+                mnemonic: "uqasxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86341,7 +86341,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "uqaddsubxgt",
+                mnemonic: "uqasxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86354,7 +86354,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "uqaddsubxle",
+                mnemonic: "uqasxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86367,7 +86367,7 @@ fn parse_uqaddsubx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "uqaddsubx",
+                mnemonic: "uqasx",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86817,11 +86817,11 @@ fn parse_uqsub8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
+fn parse_uqsax(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "uqsubaddxeq",
+                mnemonic: "uqsaxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86834,7 +86834,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "uqsubaddxne",
+                mnemonic: "uqsaxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86847,7 +86847,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "uqsubaddxhs",
+                mnemonic: "uqsaxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86860,7 +86860,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "uqsubaddxlo",
+                mnemonic: "uqsaxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86873,7 +86873,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "uqsubaddxmi",
+                mnemonic: "uqsaxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86886,7 +86886,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "uqsubaddxpl",
+                mnemonic: "uqsaxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86899,7 +86899,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "uqsubaddxvs",
+                mnemonic: "uqsaxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86912,7 +86912,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "uqsubaddxvc",
+                mnemonic: "uqsaxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86925,7 +86925,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "uqsubaddxhi",
+                mnemonic: "uqsaxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86938,7 +86938,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "uqsubaddxls",
+                mnemonic: "uqsaxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86951,7 +86951,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "uqsubaddxge",
+                mnemonic: "uqsaxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86964,7 +86964,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "uqsubaddxlt",
+                mnemonic: "uqsaxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86977,7 +86977,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "uqsubaddxgt",
+                mnemonic: "uqsaxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -86990,7 +86990,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "uqsubaddxle",
+                mnemonic: "uqsaxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -87003,7 +87003,7 @@ fn parse_uqsubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "uqsubaddx",
+                mnemonic: "uqsax",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88496,11 +88496,11 @@ fn parse_usub8(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
+fn parse_usax(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "usubaddxeq",
+                mnemonic: "usaxeq",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88513,7 +88513,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "usubaddxne",
+                mnemonic: "usaxne",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88526,7 +88526,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "usubaddxhs",
+                mnemonic: "usaxhs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88539,7 +88539,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "usubaddxlo",
+                mnemonic: "usaxlo",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88552,7 +88552,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "usubaddxmi",
+                mnemonic: "usaxmi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88565,7 +88565,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "usubaddxpl",
+                mnemonic: "usaxpl",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88578,7 +88578,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "usubaddxvs",
+                mnemonic: "usaxvs",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88591,7 +88591,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "usubaddxvc",
+                mnemonic: "usaxvc",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88604,7 +88604,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "usubaddxhi",
+                mnemonic: "usaxhi",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88617,7 +88617,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "usubaddxls",
+                mnemonic: "usaxls",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88630,7 +88630,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "usubaddxge",
+                mnemonic: "usaxge",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88643,7 +88643,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "usubaddxlt",
+                mnemonic: "usaxlt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88656,7 +88656,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "usubaddxgt",
+                mnemonic: "usaxgt",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88669,7 +88669,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "usubaddxle",
+                mnemonic: "usaxle",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -88682,7 +88682,7 @@ fn parse_usubaddx(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "usubaddx",
+                mnemonic: "usax",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rn()),
@@ -91208,13 +91208,13 @@ static MNEMONIC_PARSERS: [MnemonicParser; 158] = [
     parse_qadd,
     parse_qadd16,
     parse_qadd8,
-    parse_qaddsubx,
+    parse_qasx,
     parse_qdadd,
     parse_qdsub,
     parse_qsub,
     parse_qsub16,
     parse_qsub8,
-    parse_qsubaddx,
+    parse_qsax,
     parse_rev,
     parse_rev16,
     parse_revsh,
@@ -91223,16 +91223,16 @@ static MNEMONIC_PARSERS: [MnemonicParser; 158] = [
     parse_rsc,
     parse_sadd16,
     parse_sadd8,
-    parse_saddsubx,
+    parse_sasx,
     parse_sbc,
     parse_sel,
     parse_setend,
     parse_shadd16,
     parse_shadd8,
-    parse_shaddsubx,
+    parse_shasx,
     parse_shsub16,
     parse_shsub8,
-    parse_shsubaddx,
+    parse_shsax,
     parse_smla,
     parse_smlad,
     parse_smlal,
@@ -91254,7 +91254,7 @@ static MNEMONIC_PARSERS: [MnemonicParser; 158] = [
     parse_ssat16,
     parse_ssub16,
     parse_ssub8,
-    parse_ssubaddx,
+    parse_ssax,
     parse_stc,
     parse_stc2,
     parse_stm,
@@ -91281,29 +91281,29 @@ static MNEMONIC_PARSERS: [MnemonicParser; 158] = [
     parse_tst,
     parse_uadd16,
     parse_uadd8,
-    parse_uaddsubx,
+    parse_uasx,
     parse_uhadd16,
     parse_uhadd8,
-    parse_uhaddsubx,
+    parse_uhasx,
     parse_uhsub16,
     parse_uhsub8,
-    parse_uhsubaddx,
+    parse_uhsax,
     parse_umaal,
     parse_umlal,
     parse_umull,
     parse_uqadd16,
     parse_uqadd8,
-    parse_uqaddsubx,
+    parse_uqasx,
     parse_uqsub16,
     parse_uqsub8,
-    parse_uqsubaddx,
+    parse_uqsax,
     parse_usad8,
     parse_usada8,
     parse_usat,
     parse_usat16,
     parse_usub16,
     parse_usub8,
-    parse_usubaddx,
+    parse_usax,
     parse_uxtab,
     parse_uxtab16,
     parse_uxtah,

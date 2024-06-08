@@ -3,6 +3,6 @@ mod display;
 pub mod parse;
 pub mod v4t;
 pub mod v5te;
-pub mod v6;
+pub mod v6k;
 
 pub use parse::ParsedIns;

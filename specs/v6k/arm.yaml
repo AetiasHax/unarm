@@ -1182,7 +1182,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: qaddsubx
+  - name: qasx
     desc: Saturating Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06200f30
@@ -1236,7 +1236,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: qsubaddx
+  - name: qsax
     desc: Saturating Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06200f50
@@ -1314,7 +1314,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: saddsubx
+  - name: sasx
     desc: Signed Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06100f30
@@ -1365,7 +1365,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: shaddsubx
+  - name: shasx
     desc: Signed Halving Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06300f30
@@ -1392,7 +1392,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: shsubaddx
+  - name: shsax
     desc: Signed Halving Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06300f50
@@ -1588,7 +1588,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: ssubaddx
+  - name: ssax
     desc: Signed Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06100f50
@@ -1822,7 +1822,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: uaddsubx
+  - name: uasx
     desc: Unsigned Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06500f30
@@ -1849,7 +1849,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: uhaddsubx
+  - name: uhasx
     desc: Unsigned Halving Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06700f30
@@ -1876,7 +1876,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: uhsubaddx
+  - name: uhsax
     desc: Unsigned Halving Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06700f50
@@ -1930,7 +1930,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: uqaddsubx
+  - name: uqasx
     desc: Unsigned Saturating Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06600f30
@@ -1957,7 +1957,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: uqsubaddx
+  - name: uqsax
     desc: Unsigned Saturating Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06600f50
@@ -2020,7 +2020,7 @@ opcodes:
     defs: [Rd]
     uses: [Rn, Rm]
 
-  - name: usubaddx
+  - name: usax
     desc: Unsigned Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06500f50

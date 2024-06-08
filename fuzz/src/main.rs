@@ -1,6 +1,6 @@
 mod v4t;
 mod v5te;
-mod v6;
+mod v6k;
 
 use std::time::Instant;
 
@@ -23,7 +23,7 @@ fn main() {
                 "thumb" => thumb = true,
                 "v4t" => version = Some(ArmVersion::V4T),
                 "v5te" => version = Some(ArmVersion::V5Te),
-                "v6" => version = Some(ArmVersion::V6),
+                "v6k" => version = Some(ArmVersion::V6K),
                 _ => panic!("Unknown argument '{}'", arg),
             }
         }
@@ -61,12 +61,12 @@ fn main() {
                 v5te::thumb::fuzz(threads, iterations);
             }
         }
-        ArmVersion::V6 => {
+        ArmVersion::V6K => {
             if arm {
-                v6::arm::fuzz(threads, iterations);
+                v6k::arm::fuzz(threads, iterations);
             }
             if thumb {
-                v6::thumb::fuzz(threads, iterations);
+                v6k::thumb::fuzz(threads, iterations);
             }
         }
     }

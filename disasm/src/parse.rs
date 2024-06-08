@@ -1,6 +1,6 @@
 use crate::{
     args::{Argument, Arguments},
-    v4t, v5te, v6,
+    v4t, v5te, v6k,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -73,8 +73,8 @@ impl<'a> Iterator for Parser<'a> {
             (ArmVersion::V4T, ParseMode::Thumb) => parse_thumb!(self, v4t, ThumbV4T, code),
             (ArmVersion::V5Te, ParseMode::Arm) => parse_arm!(v5te, ArmV5Te, code),
             (ArmVersion::V5Te, ParseMode::Thumb) => parse_thumb!(self, v5te, ThumbV5Te, code),
-            (ArmVersion::V6, ParseMode::Arm) => parse_arm!(v6, ArmV6, code),
-            (ArmVersion::V6, ParseMode::Thumb) => parse_thumb!(self, v6, ThumbV6, code),
+            (ArmVersion::V6K, ParseMode::Arm) => parse_arm!(v6k, ArmV6K, code),
+            (ArmVersion::V6K, ParseMode::Thumb) => parse_thumb!(self, v6k, ThumbV6K, code),
             (_, ParseMode::Data) => {
                 let mut args = Arguments::default();
                 args[0] = Argument::UImm(code);
@@ -90,7 +90,7 @@ impl<'a> Iterator for Parser<'a> {
 pub enum ArmVersion {
     V4T,
     V5Te,
-    V6,
+    V6K,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -125,8 +125,8 @@ pub enum Op {
     ThumbV4T(v4t::thumb::Opcode),
     ArmV5Te(v5te::arm::Opcode),
     ThumbV5Te(v5te::thumb::Opcode),
-    ArmV6(v6::arm::Opcode),
-    ThumbV6(v6::thumb::Opcode),
+    ArmV6K(v6k::arm::Opcode),
+    ThumbV6K(v6k::thumb::Opcode),
     Data,
 }
 
@@ -137,8 +137,8 @@ impl Op {
             Self::ThumbV4T(x) => x as u16,
             Self::ArmV5Te(x) => x as u16,
             Self::ThumbV5Te(x) => x as u16,
-            Self::ArmV6(x) => x as u16,
-            Self::ThumbV6(x) => x as u16,
+            Self::ArmV6K(x) => x as u16,
+            Self::ThumbV6K(x) => x as u16,
             Self::Data => u16::MAX,
         }
     }

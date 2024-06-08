@@ -1,4 +1,4 @@
-use unarm::v6::thumb::Ins;
+use unarm::v6k::thumb::Ins;
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{

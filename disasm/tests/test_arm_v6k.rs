@@ -1,4 +1,4 @@
-use unarm::v6::arm::Ins;
+use unarm::v6k::arm::Ins;
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
@@ -410,8 +410,8 @@ fn test_qadd8() {
 }
 
 #[test]
-fn test_qaddsubx() {
-    assert_asm!(0xe6212f33, "qaddsubx r2, r1, r3");
+fn test_qasx() {
+    assert_asm!(0xe6212f33, "qasx r2, r1, r3");
 }
 
 #[test]
@@ -440,8 +440,8 @@ fn test_qsub8() {
 }
 
 #[test]
-fn test_qsubaddx() {
-    assert_asm!(0xe6212f53, "qsubaddx r2, r1, r3");
+fn test_qsax() {
+    assert_asm!(0xe6212f53, "qsax r2, r1, r3");
 }
 
 #[test]
@@ -503,8 +503,8 @@ fn test_sadd8() {
 }
 
 #[test]
-fn test_saddsubx() {
-    assert_asm!(0xe6112f33, "saddsubx r2, r1, r3");
+fn test_sasx() {
+    assert_asm!(0xe6112f33, "sasx r2, r1, r3");
 }
 
 #[test]
@@ -540,8 +540,8 @@ fn test_shadd8() {
 }
 
 #[test]
-fn test_shaddsubx() {
-    assert_asm!(0xe6312f33, "shaddsubx r2, r1, r3");
+fn test_shasx() {
+    assert_asm!(0xe6312f33, "shasx r2, r1, r3");
 }
 
 #[test]
@@ -555,8 +555,8 @@ fn test_shsub8() {
 }
 
 #[test]
-fn test_shsubaddx() {
-    assert_asm!(0xe6312f53, "shsubaddx r2, r1, r3");
+fn test_shsax() {
+    assert_asm!(0xe6312f53, "shsax r2, r1, r3");
 }
 
 #[test]
@@ -682,8 +682,8 @@ fn test_ssub8() {
 }
 
 #[test]
-fn test_ssubaddx() {
-    assert_asm!(0xe6112f53, "ssubaddx r2, r1, r3");
+fn test_ssax() {
+    assert_asm!(0xe6112f53, "ssax r2, r1, r3");
 }
 
 #[test]
@@ -875,8 +875,8 @@ fn test_uadd8() {
 }
 
 #[test]
-fn test_uaddsubx() {
-    assert_asm!(0xe6512f33, "uaddsubx r2, r1, r3");
+fn test_uasx() {
+    assert_asm!(0xe6512f33, "uasx r2, r1, r3");
 }
 
 #[test]
@@ -890,8 +890,8 @@ fn test_uhadd8() {
 }
 
 #[test]
-fn test_uhaddsubx() {
-    assert_asm!(0xe6712f33, "uhaddsubx r2, r1, r3");
+fn test_uhasx() {
+    assert_asm!(0xe6712f33, "uhasx r2, r1, r3");
 }
 
 #[test]
@@ -905,8 +905,8 @@ fn test_uhsub8() {
 }
 
 #[test]
-fn test_uhsubaddx() {
-    assert_asm!(0xe6712f53, "uhsubaddx r2, r1, r3");
+fn test_uhsax() {
+    assert_asm!(0xe6712f53, "uhsax r2, r1, r3");
 }
 
 #[test]
@@ -937,8 +937,8 @@ fn test_uqadd8() {
 }
 
 #[test]
-fn test_uqaddsubx() {
-    assert_asm!(0xe6612f33, "uqaddsubx r2, r1, r3");
+fn test_uqasx() {
+    assert_asm!(0xe6612f33, "uqasx r2, r1, r3");
 }
 
 #[test]
@@ -952,8 +952,8 @@ fn test_uqsub8() {
 }
 
 #[test]
-fn test_uqsubaddx() {
-    assert_asm!(0xe6612f53, "uqsubaddx r2, r1, r3");
+fn test_uqsax() {
+    assert_asm!(0xe6612f53, "uqsax r2, r1, r3");
 }
 
 #[test]
@@ -989,8 +989,8 @@ fn test_usub8() {
 }
 
 #[test]
-fn test_usubaddx() {
-    assert_asm!(0xe6512f53, "usubaddx r2, r1, r3");
+fn test_usax() {
+    assert_asm!(0xe6512f53, "usax r2, r1, r3");
 }
 
 #[test]
