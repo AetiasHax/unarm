@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
 description = "Generates Rust code for unarm"
-repository = "https://github.com/AetiasHax/armv5te"
+repository = "https://github.com/AetiasHax/unarm"
 publish = false
 
 [dependencies]
