@@ -107,8 +107,15 @@ fn generate_search_node(node: Option<Box<SearchTree>>, opcodes: &mut Vec<Opcode>
             let bitmask_token = HexLiteral(op.bitmask);
             let pattern_token = HexLiteral(op.pattern);
             let variant_token = Ident::new(&op.enum_name(), Span::call_site());
+
+            let code_mask = if op.bitmask != 0xffffffff {
+                quote! { (code & #bitmask_token) }
+            } else {
+                quote! { code }
+            };
+
             quote! {
-                if (code & #bitmask_token) == #pattern_token {
+                if #code_mask == #pattern_token {
                     return Opcode::#variant_token;
                 }
             }

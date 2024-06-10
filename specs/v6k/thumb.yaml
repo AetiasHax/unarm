@@ -320,7 +320,7 @@ modifiers:
         pattern: 0x0e00
 
 opcodes:
-  - name: adc
+  - name: adcs
     desc: Add with Carry
     bitmask: 0xffc0
     pattern: 0x4140
@@ -328,7 +328,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: add$3
+  - name: adds$3
     desc: Add 3-bit immediate
     bitmask: 0xfe00
     pattern: 0x1c00
@@ -336,14 +336,14 @@ opcodes:
     defs: [Rd_0]
     uses: [Rn_3]
 
-  - name: add$8
+  - name: adds$8
     desc: Add 8-bit immediate
     bitmask: 0xf800
     pattern: 0x3000
     args: [Rd_8, immed_8]
     defs: [Rd_8]
 
-  - name: add$r
+  - name: adds$r
     desc: Add register
     bitmask: 0xfe00
     pattern: 0x1800
@@ -381,7 +381,15 @@ opcodes:
     args: [sp, rel_immed_7]
     defs: [sp]
 
-  - name: and
+  - name: add$sp$reg
+    desc: Add register to SP
+    bitmask: 0xff87
+    pattern: 0x4485
+    args: [sp, Rm_H2]
+    defs: [sp]
+    uses: [Rm_H2]
+
+  - name: ands
     desc: Bitwise AND
     bitmask: 0xffc0
     pattern: 0x4000
@@ -389,7 +397,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: asr$i
+  - name: asrs$i
     desc: Arithmetic Shift Right by 5-bit immediate
     bitmask: 0xf800
     pattern: 0x1000
@@ -397,7 +405,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: asr$r
+  - name: asrs$r
     desc: Arithmetic Shift Right by register
     bitmask: 0xffc0
     pattern: 0x4100
@@ -418,7 +426,7 @@ opcodes:
     pattern: 0xe000
     args: [branch_offset_11]
 
-  - name: bic
+  - name: bics
     desc: Bit Clear
     bitmask: 0xffc0
     pattern: 0x4380
@@ -498,15 +506,15 @@ opcodes:
     pattern: 0xb660
     modifiers: [imod]
 
-  - name: eor
+  - name: eors
     desc: Exclusive OR
     bitmask: 0xffc0
     pattern: 0x4040
     args: [Rd_0, Rm_3]
     uses: [Rd_0, Rm_3]
 
-  - name: ldmia
-    desc: Load Multiple Increment After
+  - name: ldm
+    desc: Load Multiple
     bitmask: 0xf800
     pattern: 0xc800
     args: [Rn_8_wb, registers]
@@ -593,7 +601,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rn_3_deref, Rm_6_offset]
 
-  - name: lsl$i
+  - name: lsls$i
     desc: Logical Shift Left by 5-bit immediate
     bitmask: 0xf800
     pattern: 0x0000
@@ -601,7 +609,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: lsl$r
+  - name: lsls$r
     desc: Logical Shift Left by register
     bitmask: 0xffc0
     pattern: 0x4080
@@ -609,7 +617,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rs]
 
-  - name: lsr$i
+  - name: lsrs$i
     desc: Logical Shift Right by 5-bit immediate
     bitmask: 0xf800
     pattern: 0x0800
@@ -617,7 +625,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: lsr$r
+  - name: lsrs$r
     desc: Logical Shift Right by register
     bitmask: 0xffc0
     pattern: 0x40c0
@@ -625,17 +633,17 @@ opcodes:
     defs: [Rd_0]
     uses: [Rs]
 
-  - name: mov$i
+  - name: movs$i
     desc: Move immediate
     bitmask: 0xf800
     pattern: 0x2000
     args: [Rd_8, immed_8]
     defs: [Rd_8]
 
-  - name: mov$r
+  - name: movs$reg
     desc: Move register
     bitmask: 0xffc0
-    pattern: 0x1c00
+    pattern: 0x0000
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -648,7 +656,7 @@ opcodes:
     defs: [Rd_H1]
     uses: [Rm_H2]
 
-  - name: mul
+  - name: muls
     desc: Multiply
     bitmask: 0xffc0
     pattern: 0x4340
@@ -656,7 +664,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: mvn
+  - name: mvns
     desc: Move Negative
     bitmask: 0xffc0
     pattern: 0x43c0
@@ -672,7 +680,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: orr
+  - name: orrs
     desc: Bitwise OR
     bitmask: 0xffc0
     pattern: 0x4300
@@ -718,7 +726,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rn_3]
 
-  - name: ror
+  - name: rors
     desc: Rotate Right
     bitmask: 0xffc0
     pattern: 0x41c0
@@ -726,7 +734,7 @@ opcodes:
     defs: [Rd_0]
     uses: [Rs]
 
-  - name: sbc
+  - name: sbcs
     desc: Subtract with Carry
     bitmask: 0xffc0
     pattern: 0x4180
@@ -740,7 +748,7 @@ opcodes:
     pattern: 0xb650
     args: [endian]
 
-  - name: stmia
+  - name: stm
     desc: Store Multiple Increment After
     bitmask: 0xf800
     pattern: 0xc000
@@ -804,7 +812,7 @@ opcodes:
     defs: [Rn_3_deref]
     uses: [Rd_0, Rm_6_offset]
 
-  - name: sub$3
+  - name: subs$3
     desc: Subtract 3-bit immediate
     bitmask: 0xfe00
     pattern: 0x1e00
@@ -812,14 +820,14 @@ opcodes:
     defs: [Rd_0]
     uses: [Rn_3]
 
-  - name: sub$8
+  - name: subs$8
     desc: Subtract 8-bit immediate
     bitmask: 0xf800
     pattern: 0x3800
     args: [Rd_8, immed_8]
     defs: [Rd_8]
 
-  - name: sub$r
+  - name: subs$r
     desc: Subtract register
     bitmask: 0xfe00
     pattern: 0x1a00
@@ -832,6 +840,12 @@ opcodes:
     pattern: 0xb080
     args: [sp, rel_immed_7]
     defs: [sp]
+
+  - name: svc
+    desc: Supervisor Call
+    bitmask: 0xff00
+    pattern: 0xdf00
+    args: [immed_8]
 
   - name: sxtb
     desc: Sign Extend Byte to 32 bits
@@ -848,12 +862,6 @@ opcodes:
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
-
-  - name: swi
-    desc: Software Interrupt
-    bitmask: 0xff00
-    pattern: 0xdf00
-    args: [immed_8]
 
   - name: tst
     desc: Test

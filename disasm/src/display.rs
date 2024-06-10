@@ -10,7 +10,10 @@ use crate::{
 
 impl Display for ParsedIns {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ", self.mnemonic)?;
+        write!(f, "{}", self.mnemonic)?;
+        if self.args[0] != Argument::None {
+            write!(f, " ")?;
+        }
         let mut comma = false;
         let mut deref = false;
         let mut writeback = false;
@@ -187,7 +190,10 @@ impl Display for StatusReg {
 
 impl Display for StatusMask {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}_", self.reg)?;
+        write!(f, "{}", self.reg)?;
+        if self.flags || self.status || self.extension || self.control {
+            write!(f, "_")?;
+        }
         if self.flags {
             write!(f, "f")?;
         }

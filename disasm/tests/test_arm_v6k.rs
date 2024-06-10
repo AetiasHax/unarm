@@ -42,6 +42,11 @@ fn test_and() {
 }
 
 #[test]
+fn test_asr() {
+    assert_asm!(0xe1b02153, "asrs r2, r3, r1");
+}
+
+#[test]
 fn test_b() {
     assert_asm!(0xea000000, "b #0x8");
     assert_asm!(0x0a012345, "beq #0x48d1c");
@@ -112,6 +117,11 @@ fn test_cdp2() {
 }
 
 #[test]
+fn test_clrex() {
+    assert_asm!(0xf57ff01f, "clrex");
+}
+
+#[test]
 fn test_clz() {
     assert_asm!(0xe16f5f1f, "clz r5, pc");
     assert_asm!(0xd16fef15, "clzle lr, r5");
@@ -144,6 +154,18 @@ fn test_cps() {
     assert_asm!(0xf102001a, "cps #0x1a");
     assert_asm!(0xf10a01df, "cpsie aif, #0x1f");
     assert_asm!(0xf10c0000, "cpsid none");
+}
+
+#[test]
+fn test_csdb() {
+    assert_asm!(0xe320f014, "csdb");
+    assert_asm!(0xa320f014, "csdbge");
+}
+
+#[test]
+fn test_dbg() {
+    assert_asm!(0xe320f0f5, "dbg #0x5");
+    assert_asm!(0xa320f0f0, "dbgge #0x0");
 }
 
 #[test]
@@ -273,6 +295,16 @@ fn test_ldrt() {
 }
 
 #[test]
+fn test_lsl() {
+    assert_asm!(0x11a0960a, "lslne r9, r10, #0xc");
+}
+
+#[test]
+fn test_lsr() {
+    assert_asm!(0x41a0f238, "lsrmi pc, r8, r2");
+}
+
+#[test]
 fn test_mcr() {
     assert_asm!(0xee2234b6, "mcr p4, #1, r3, c2, c6, #5");
     assert_asm!(0x3ec54351, "mcrlo p3, #6, r4, c5, c1, #2");
@@ -297,18 +329,13 @@ fn test_mcrr2() {
 #[test]
 fn test_mla() {
     assert_asm!(0xe0212394, "mla r2, r4, r3, r1");
-    assert_asm!(0xa0312394, "mlages r2, r4, r3, r1");
+    assert_asm!(0xa0312394, "mlasge r2, r4, r3, r1");
 }
 
 #[test]
 fn test_mov() {
     assert_asm!(0xe1a02003, "mov r2, r3");
     assert_asm!(0xe3a05e23, "mov r5, #0x230");
-    assert_asm!(0x11a0960a, "movne r9, r10, lsl #0xc");
-    assert_asm!(0x41a0f238, "movmi pc, r8, lsr r2");
-    assert_asm!(0x71a0046e, "movvc r0, lr, ror #0x8");
-    assert_asm!(0xb1a07060, "movlt r7, r0, rrx");
-    assert_asm!(0xe1b02153, "movs r2, r3, asr r1");
 }
 
 #[test]
@@ -350,7 +377,7 @@ fn test_msr() {
 #[test]
 fn test_mul() {
     assert_asm!(0xe0010293, "mul r1, r3, r2");
-    assert_asm!(0x10110293, "mulnes r1, r3, r2");
+    assert_asm!(0x10110293, "mulsne r1, r3, r2");
 }
 
 #[test]
@@ -362,6 +389,12 @@ fn test_mvn() {
     assert_asm!(0x71e0046e, "mvnvc r0, lr, ror #0x8");
     assert_asm!(0xb1e07060, "mvnlt r7, r0, rrx");
     assert_asm!(0xe1f02153, "mvns r2, r3, asr r1");
+}
+
+#[test]
+fn test_nop() {
+    assert_asm!(0xe320f000, "nop");
+    assert_asm!(0x0320f000, "nopeq");
 }
 
 #[test]
@@ -471,6 +504,16 @@ fn test_rfe() {
 }
 
 #[test]
+fn test_ror() {
+    assert_asm!(0x71a0046e, "rorvc r0, lr, #0x8");
+}
+
+#[test]
+fn test_rrx() {
+    assert_asm!(0xb1a07060, "rrxlt r7, r0");
+}
+
+#[test]
 fn test_rsb() {
     assert_asm!(0xe0612003, "rsb r2, r1, r3");
     assert_asm!(0xe2645e23, "rsb r5, r4, #0x230");
@@ -530,6 +573,12 @@ fn test_setend() {
 }
 
 #[test]
+fn test_sev() {
+    assert_asm!(0xe320f004, "sev");
+    assert_asm!(0x3320f004, "sevlo");
+}
+
+#[test]
 fn test_shadd16() {
     assert_asm!(0xe6312f13, "shadd16 r2, r1, r3");
 }
@@ -570,7 +619,7 @@ fn test_smla() {
 #[test]
 fn test_smlal() {
     assert_asm!(0xe0e12394, "smlal r2, r1, r4, r3");
-    assert_asm!(0xa0f12394, "smlalges r2, r1, r4, r3");
+    assert_asm!(0xa0f12394, "smlalsge r2, r1, r4, r3");
     assert_asm!(0xe1412384, "smlalbb r2, r1, r4, r3");
     assert_asm!(0xe14123a4, "smlaltb r2, r1, r4, r3");
     assert_asm!(0xe14123c4, "smlalbt r2, r1, r4, r3");
@@ -636,7 +685,7 @@ fn test_smul() {
 #[test]
 fn test_smull() {
     assert_asm!(0xe0c12394, "smull r2, r1, r4, r3");
-    assert_asm!(0xa0d12394, "smullges r2, r1, r4, r3");
+    assert_asm!(0xa0d12394, "smullsge r2, r1, r4, r3");
 }
 
 #[test]
@@ -791,9 +840,9 @@ fn test_sub() {
 }
 
 #[test]
-fn test_swi() {
-    assert_asm!(0xef123456, "swi #0x123456");
-    assert_asm!(0x0fabcdef, "swieq #0xabcdef");
+fn test_svc() {
+    assert_asm!(0xef123456, "svc #0x123456");
+    assert_asm!(0x0fabcdef, "svceq #0xabcdef");
 }
 
 #[test]
@@ -880,6 +929,12 @@ fn test_uasx() {
 }
 
 #[test]
+fn test_udf() {
+    assert_asm!(0xe7f000f0, "udf #0x0");
+    assert_asm!(0xe7fa45f5, "udf #0xa455");
+}
+
+#[test]
 fn test_uhadd16() {
     assert_asm!(0xe6712f13, "uhadd16 r2, r1, r3");
 }
@@ -917,13 +972,13 @@ fn test_umaal() {
 #[test]
 fn test_umlal() {
     assert_asm!(0xe0a12394, "umlal r2, r1, r4, r3");
-    assert_asm!(0xa0b12394, "umlalges r2, r1, r4, r3");
+    assert_asm!(0xa0b12394, "umlalsge r2, r1, r4, r3");
 }
 
 #[test]
 fn test_umull() {
     assert_asm!(0xe0812394, "umull r2, r1, r4, r3");
-    assert_asm!(0xa0912394, "umullges r2, r1, r4, r3");
+    assert_asm!(0xa0912394, "umullsge r2, r1, r4, r3");
 }
 
 #[test]
@@ -1027,4 +1082,22 @@ fn test_uxtb16() {
 fn test_uxth() {
     assert_asm!(0xe6ff2073, "uxth r2, r3");
     assert_asm!(0x06ff2c73, "uxtheq r2, r3, ror #0x18");
+}
+
+#[test]
+fn test_wfe() {
+    assert_asm!(0xe320f002, "wfe");
+    assert_asm!(0xa320f002, "wfege");
+}
+
+#[test]
+fn test_wfi() {
+    assert_asm!(0xe320f003, "wfi");
+    assert_asm!(0x4320f003, "wfimi");
+}
+
+#[test]
+fn test_yield() {
+    assert_asm!(0xe320f001, "yield");
+    assert_asm!(0xd320f001, "yieldle");
 }
