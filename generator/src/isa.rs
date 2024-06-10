@@ -208,11 +208,13 @@ impl Modifier {
                 .with_context(|| format!("Empty case list for modifier '{}'", self.name))?;
             let cases_bitmask = first_case
                 .get_bitmask(isa, self)
-                .with_context(|| format!("While getting first case bitmask for modifier '{}'", self.name))?;
+                .with_context(|| format!("While getting first case bitmask for modifier '{}'", self.name))?
+                | first_case.get_ignored_bitmask();
             for case in cases.iter() {
                 let bitmask = case
                     .get_bitmask(isa, self)
-                    .with_context(|| format!("While getting bitmask for modifier '{}'", self.name))?;
+                    .with_context(|| format!("While getting bitmask for modifier '{}'", self.name))?
+                    | case.get_ignored_bitmask();
                 if bitmask != cases_bitmask {
                     bail!(
                         "Case '{}' with bitmask 0x{:08x} doesn't match other case bitmasks (0x{:08x}) in modifier '{}'",
@@ -286,6 +288,7 @@ pub struct ModifierCase {
     pub desc: Option<String>,
     pub suffix: Option<String>,
     pub bitmask: Option<u32>,
+    pub ignored: Option<u32>,
     pub pattern: u32,
     pub args: Option<Box<[String]>>,
     pub defs: Option<Box<[String]>>,
@@ -307,6 +310,10 @@ impl ModifierCase {
         } else {
             Ok(case_bitmask)
         }
+    }
+
+    pub fn get_ignored_bitmask(&self) -> u32 {
+        self.ignored.unwrap_or(0)
     }
 
     fn validate(&self, isa: &Isa, parent: &Modifier) -> Result<()> {
@@ -333,6 +340,7 @@ impl ModifierCase {
             desc,
             suffix,
             bitmask: modifier.bitmask,
+            ignored: None,
             pattern,
             args: None,
             defs: None,
@@ -347,6 +355,7 @@ impl ModifierCase {
             suffix: self.suffix.clone().or(parent.suffix.clone()),
             bitmask: self.bitmask.or(parent.bitmask),
             pattern: self.pattern,
+            ignored: self.ignored,
             args: self.args.clone(),
             defs: self.defs.clone(),
             uses: self.uses.clone(),

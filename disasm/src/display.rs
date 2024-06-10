@@ -1,13 +1,19 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    args::{Argument, CoReg, OffsetImm, OffsetReg, Reg, Register, Shift, ShiftImm, ShiftReg, StatusMask, StatusReg},
+    args::{
+        Argument, CoReg, CpsrFlags, CpsrMode, Endian, OffsetImm, OffsetReg, Reg, Register, Shift, ShiftImm, ShiftReg,
+        StatusMask, StatusReg,
+    },
     parse::ParsedIns,
 };
 
 impl Display for ParsedIns {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ", self.mnemonic)?;
+        write!(f, "{}", self.mnemonic)?;
+        if self.args[0] != Argument::None {
+            write!(f, " ")?;
+        }
         let mut comma = false;
         let mut deref = false;
         let mut writeback = false;
@@ -116,6 +122,10 @@ impl Display for Argument {
             Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
+            Argument::SatImm(x) => write!(f, "#0x{:x}", x),
+            Argument::CpsrMode(x) => write!(f, "{}", x),
+            Argument::CpsrFlags(x) => write!(f, "{}", x),
+            Argument::Endian(x) => write!(f, "{}", x),
         }
     }
 }
@@ -180,7 +190,10 @@ impl Display for StatusReg {
 
 impl Display for StatusMask {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}_", self.reg)?;
+        write!(f, "{}", self.reg)?;
+        if self.flags || self.status || self.extension || self.control {
+            write!(f, "_")?;
+        }
         if self.flags {
             write!(f, "f")?;
         }
@@ -228,5 +241,43 @@ impl Display for OffsetReg {
             write!(f, "-")?;
         }
         write!(f, "{}", self.reg)
+    }
+}
+
+impl Display for CpsrMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#0x{:x}", self.mode)?;
+        if self.writeback {
+            write!(f, "!")?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for CpsrFlags {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.a {
+            write!(f, "a")?;
+        }
+        if self.i {
+            write!(f, "i")?;
+        }
+        if self.f {
+            write!(f, "f")?;
+        }
+        if !self.a && !self.i && !self.f {
+            write!(f, "none")?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for Endian {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Endian::Illegal => write!(f, "<illegal>"),
+            Endian::Le => write!(f, "le"),
+            Endian::Be => write!(f, "be"),
+        }
     }
 }

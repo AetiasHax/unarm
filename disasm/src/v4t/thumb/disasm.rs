@@ -1,4 +1,4 @@
-use crate::{v5te::arm::generated::Opcode, ParsedIns};
+use crate::{v4t::thumb::generated::Opcode, ParsedIns};
 
 use super::parse;
 
@@ -12,6 +12,11 @@ impl Ins {
     pub fn new(code: u32) -> Self {
         let op = Opcode::find(code);
         Self { code, op }
+    }
+
+    /// Returns whether this is a BL half-instruction and should be combined with the upcoming instruction
+    pub fn is_half_bl(&self) -> bool {
+        self.op == Opcode::BlH
     }
 
     pub fn parse(self) -> ParsedIns {

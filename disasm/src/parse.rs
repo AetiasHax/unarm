@@ -1,7 +1,10 @@
-use crate::{
-    args::{Argument, Arguments},
-    v5te::{arm, thumb},
-};
+use crate::args::{Argument, Arguments};
+#[cfg(feature = "v4t")]
+use crate::v4t;
+#[cfg(feature = "v5te")]
+use crate::v5te;
+#[cfg(feature = "v6k")]
+use crate::v6k;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Parser<'a> {
@@ -37,6 +40,30 @@ impl<'a> Parser<'a> {
     }
 }
 
+macro_rules! parse_arm {
+    ($module:ident, $op:ident, $code:expr) => {{
+        let ins = $module::arm::Ins::new($code);
+        (Op::$op(ins.op), ins.parse())
+    }};
+}
+
+macro_rules! parse_thumb {
+    ($self:expr, $module:ident, $op:ident, $code:expr) => {{
+        let ins = $module::thumb::Ins::new($code);
+        let op = Op::$op(ins.op);
+        let parsed = ins.parse();
+        if ins.is_half_bl() {
+            let code = $self.read_code()?;
+            let ins = $module::thumb::Ins::new(code);
+            let second = ins.parse();
+            let combined = parsed.combine_thumb_bl(&second);
+            (op, combined)
+        } else {
+            (op, parsed)
+        }
+    }};
+}
+
 impl<'a> Iterator for Parser<'a> {
     type Item = (u32, Op, ParsedIns);
 
@@ -45,24 +72,18 @@ impl<'a> Iterator for Parser<'a> {
         let code = self.read_code()?;
 
         let (op, ins) = match (self.version, self.mode) {
-            (ArmVersion::V5Te, ParseMode::Arm) => {
-                let ins = arm::Ins::new(code);
-                (Op::ArmV5Te(ins.op), ins.parse())
-            }
-            (ArmVersion::V5Te, ParseMode::Thumb) => {
-                let ins = thumb::Ins::new(code);
-                let op = Op::ThumbV5Te(ins.op);
-                let parsed = ins.parse();
-                if ins.is_half_bl() {
-                    let code = self.read_code()?;
-                    let ins = thumb::Ins::new(code);
-                    let second = ins.parse();
-                    let combined = parsed.combine_thumb_bl(&second);
-                    (op, combined)
-                } else {
-                    (op, parsed)
-                }
-            }
+            #[cfg(all(feature = "v4t", feature = "arm"))]
+            (ArmVersion::V4T, ParseMode::Arm) => parse_arm!(v4t, ArmV4T, code),
+            #[cfg(all(feature = "v4t", feature = "thumb"))]
+            (ArmVersion::V4T, ParseMode::Thumb) => parse_thumb!(self, v4t, ThumbV4T, code),
+            #[cfg(all(feature = "v5te", feature = "arm"))]
+            (ArmVersion::V5Te, ParseMode::Arm) => parse_arm!(v5te, ArmV5Te, code),
+            #[cfg(all(feature = "v5te", feature = "thumb"))]
+            (ArmVersion::V5Te, ParseMode::Thumb) => parse_thumb!(self, v5te, ThumbV5Te, code),
+            #[cfg(all(feature = "v6k", feature = "arm"))]
+            (ArmVersion::V6K, ParseMode::Arm) => parse_arm!(v6k, ArmV6K, code),
+            #[cfg(all(feature = "v6k", feature = "thumb"))]
+            (ArmVersion::V6K, ParseMode::Thumb) => parse_thumb!(self, v6k, ThumbV6K, code),
             (_, ParseMode::Data) => {
                 let mut args = Arguments::default();
                 args[0] = Argument::UImm(code);
@@ -76,12 +97,19 @@ impl<'a> Iterator for Parser<'a> {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ArmVersion {
+    #[cfg(feature = "v4t")]
+    V4T,
+    #[cfg(feature = "v5te")]
     V5Te,
+    #[cfg(feature = "v6k")]
+    V6K,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ParseMode {
+    #[cfg(feature = "arm")]
     Arm,
+    #[cfg(feature = "thumb")]
     Thumb,
     Data,
 }
@@ -89,7 +117,9 @@ pub enum ParseMode {
 impl ParseMode {
     pub fn instruction_size(self) -> usize {
         match self {
+            #[cfg(feature = "arm")]
             Self::Arm => 4,
+            #[cfg(feature = "thumb")]
             Self::Thumb => 2,
             Self::Data => 4,
         }
@@ -97,7 +127,9 @@ impl ParseMode {
 
     pub fn from_mapping_symbol(sym: &str) -> Option<Self> {
         match sym {
+            #[cfg(feature = "arm")]
             "$a" => Some(Self::Arm),
+            #[cfg(feature = "thumb")]
             "$t" => Some(Self::Thumb),
             "$d" => Some(Self::Data),
             _ => None,
@@ -107,16 +139,36 @@ impl ParseMode {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Op {
-    ArmV5Te(arm::Opcode),
-    ThumbV5Te(thumb::Opcode),
+    #[cfg(all(feature = "v4t", feature = "arm"))]
+    ArmV4T(v4t::arm::Opcode),
+    #[cfg(all(feature = "v4t", feature = "thumb"))]
+    ThumbV4T(v4t::thumb::Opcode),
+    #[cfg(all(feature = "v5te", feature = "arm"))]
+    ArmV5Te(v5te::arm::Opcode),
+    #[cfg(all(feature = "v5te", feature = "thumb"))]
+    ThumbV5Te(v5te::thumb::Opcode),
+    #[cfg(all(feature = "v6k", feature = "arm"))]
+    ArmV6K(v6k::arm::Opcode),
+    #[cfg(all(feature = "v6k", feature = "thumb"))]
+    ThumbV6K(v6k::thumb::Opcode),
     Data,
 }
 
 impl Op {
     pub fn id(self) -> u16 {
         match self {
+            #[cfg(all(feature = "v4t", feature = "arm"))]
+            Self::ArmV4T(x) => x as u16,
+            #[cfg(all(feature = "v4t", feature = "thumb"))]
+            Self::ThumbV4T(x) => x as u16,
+            #[cfg(all(feature = "v5te", feature = "arm"))]
             Self::ArmV5Te(x) => x as u16,
+            #[cfg(all(feature = "v5te", feature = "thumb"))]
             Self::ThumbV5Te(x) => x as u16,
+            #[cfg(all(feature = "v6k", feature = "arm"))]
+            Self::ArmV6K(x) => x as u16,
+            #[cfg(all(feature = "v6k", feature = "thumb"))]
+            Self::ThumbV6K(x) => x as u16,
             Self::Data => u16::MAX,
         }
     }

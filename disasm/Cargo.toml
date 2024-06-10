@@ -1,6 +1,6 @@
 [package]
 name = "unarm"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
@@ -8,5 +8,13 @@ description = "Disassembles ARM instructions"
 keywords = ["arm", "armv5te"]
 repository = "https://github.com/AetiasHax/armv5te"
 readme = "../README.md"
+
+[features]
+default = ["thumb", "arm", "v4t", "v5te", "v6k"]
+thumb = []
+arm = []
+v4t = []
+v5te = []
+v6k = []
 
 [dependencies]
