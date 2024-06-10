@@ -9,4 +9,12 @@ keywords = ["arm", "armv5te"]
 repository = "https://github.com/AetiasHax/armv5te"
 readme = "../README.md"
 
+[features]
+default = ["thumb", "arm", "v4t", "v5te", "v6k"]
+thumb = []
+arm = []
+v4t = []
+v5te = []
+v6k = []
+
 [dependencies]
