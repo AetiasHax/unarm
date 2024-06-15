@@ -11,15 +11,17 @@ pub struct Parser<'a> {
     pub version: ArmVersion,
     pub mode: ParseMode,
     pub address: u32,
+    pub endian: Endian,
     data: &'a [u8],
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(version: ArmVersion, mode: ParseMode, address: u32, data: &'a [u8]) -> Self {
+    pub fn new(version: ArmVersion, mode: ParseMode, address: u32, endian: Endian, data: &'a [u8]) -> Self {
         Self {
             version,
             mode,
             address,
+            endian,
             data,
         }
     }
@@ -29,9 +31,11 @@ impl<'a> Parser<'a> {
         if self.data.len() < ins_size {
             return None;
         }
-        let code = match ins_size {
-            2 => u16::from_le_bytes([self.data[0], self.data[1]]) as u32,
-            4 => u32::from_le_bytes([self.data[0], self.data[1], self.data[2], self.data[3]]),
+        let code = match (self.endian, ins_size) {
+            (Endian::Little, 2) => u16::from_le_bytes([self.data[0], self.data[1]]) as u32,
+            (Endian::Little, 4) => u32::from_le_bytes([self.data[0], self.data[1], self.data[2], self.data[3]]),
+            (Endian::Big, 2) => u16::from_be_bytes([self.data[0], self.data[1]]) as u32,
+            (Endian::Big, 4) => u32::from_be_bytes([self.data[0], self.data[1], self.data[2], self.data[3]]),
             _ => return None,
         };
         self.data = &self.data[ins_size..];
@@ -135,6 +139,12 @@ impl ParseMode {
             _ => None,
         }
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Endian {
+    Little,
+    Big,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
