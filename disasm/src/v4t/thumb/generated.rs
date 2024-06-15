@@ -935,6 +935,14 @@ impl Ins {
             user_mode: false,
         }
     }
+    /// registers_lr: List of general-purpose registers, including LR
+    #[inline(always)]
+    pub fn field_registers_lr(&self) -> RegList {
+        RegList {
+            regs: (self.code & 0x000000ff) | ((self.code >> 8) & 0x00000001) << 14,
+            user_mode: false,
+        }
+    }
     /// immed_3: 3-bit immediate
     #[inline(always)]
     pub fn field_immed_3(&self) -> u32 {
@@ -1845,7 +1853,7 @@ fn parse_push(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "push",
         args: [
-            Argument::RegList(ins.field_registers_pc()),
+            Argument::RegList(ins.field_registers_lr()),
             Argument::None,
             Argument::None,
             Argument::None,

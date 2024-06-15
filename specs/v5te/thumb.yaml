@@ -163,6 +163,13 @@ fields:
       regs: !Expr self.code.bits(0,8) | self.code.bits(8,9) << 15
       user_mode: !Bool false
 
+  - name: registers_lr
+    arg: reg_list
+    desc: List of general-purpose registers, including LR
+    value: !Struct
+      regs: !Expr self.code.bits(0,8) | self.code.bits(8,9) << 14
+      user_mode: !Bool false
+
   - name: immed_3
     arg: u_imm
     desc: 3-bit immediate
@@ -656,8 +663,8 @@ opcodes:
     desc: Push multiple registers
     bitmask: 0xfe00
     pattern: 0xb400
-    args: [registers_pc]
-    uses: [registers_pc]
+    args: [registers_lr]
+    uses: [registers_lr]
 
   - name: ror
     desc: Rotate Right
