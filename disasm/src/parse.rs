@@ -26,8 +26,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_code(&mut self) -> Option<u32> {
-        let ins_size = self.mode.instruction_size();
+    fn read_code(&mut self) -> Option<(u32, u32)> {
+        let ins_size = self.mode.instruction_size(self.address);
         if self.data.len() < ins_size {
             return None;
         }
@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
         };
         self.data = &self.data[ins_size..];
         self.address += ins_size as u32;
-        Some(code)
+        Some((ins_size as u32, code))
     }
 }
 
@@ -57,7 +57,7 @@ macro_rules! parse_thumb {
         let op = Op::$op(ins.op);
         let parsed = ins.parse();
         if ins.is_half_bl() {
-            let code = $self.read_code()?;
+            let (_, code) = $self.read_code()?;
             let ins = $module::thumb::Ins::new(code);
             let second = ins.parse();
             let combined = parsed.combine_thumb_bl(&second);
@@ -73,7 +73,7 @@ impl<'a> Iterator for Parser<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let address = self.address;
-        let code = self.read_code()?;
+        let (ins_size, code) = self.read_code()?;
 
         let (op, ins) = match (self.version, self.mode) {
             #[cfg(all(feature = "v4t", feature = "arm"))]
@@ -91,7 +91,8 @@ impl<'a> Iterator for Parser<'a> {
             (_, ParseMode::Data) => {
                 let mut args = Arguments::default();
                 args[0] = Argument::UImm(code);
-                (Op::Data, ParsedIns { mnemonic: ".word", args })
+                let mnemonic = if ins_size == 4 { ".word" } else { ".hword" };
+                (Op::Data, ParsedIns { mnemonic, args })
             }
         };
 
@@ -119,13 +120,13 @@ pub enum ParseMode {
 }
 
 impl ParseMode {
-    pub fn instruction_size(self) -> usize {
+    pub fn instruction_size(self, address: u32) -> usize {
         match self {
             #[cfg(feature = "arm")]
             Self::Arm => 4,
             #[cfg(feature = "thumb")]
             Self::Thumb => 2,
-            Self::Data => 4,
+            Self::Data => 4 - (address as usize & 2),
         }
     }
 
