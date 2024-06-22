@@ -10,7 +10,7 @@ static OPCODE_MNEMONICS: [&str; 64] = [
     "adds",
     "adds",
     "adds",
-    "adds",
+    "add",
     "add",
     "add",
     "add",
@@ -86,8 +86,8 @@ pub enum Opcode {
     Adds8 = 2,
     /// ADDS: Add register
     AddsR = 3,
-    /// ADDS: Add high register
-    AddsHr = 4,
+    /// ADD: Add high register
+    AddHr = 4,
     /// ADD: Add SP-relative address
     AddSp = 5,
     /// ADD: Add 7-bit immediate multiple of 4 to SP
@@ -281,7 +281,7 @@ impl Opcode {
                                 } else if (code & 0x0000ff87) == 0x00004485 {
                                     return Opcode::AddSpReg;
                                 } else if (code & 0x0000ff00) == 0x00004400 {
-                                    return Opcode::AddsHr;
+                                    return Opcode::AddHr;
                                 }
                             } else if (code & 0x0000f800) == 0x0000c000 {
                                 return Opcode::Stmia;
@@ -1148,9 +1148,9 @@ fn parse_adds_r(out: &mut ParsedIns, ins: Ins) {
         ],
     };
 }
-fn parse_adds_hr(out: &mut ParsedIns, ins: Ins) {
+fn parse_add_hr(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "adds",
+        mnemonic: "add",
         args: [
             Argument::Reg(ins.field_rd_h1()),
             Argument::Reg(ins.field_rm_h2()),
@@ -2133,7 +2133,7 @@ static MNEMONIC_PARSERS: [MnemonicParser; 64] = [
     parse_adds_3,
     parse_adds_8,
     parse_adds_r,
-    parse_adds_hr,
+    parse_add_hr,
     parse_add_sp,
     parse_add_sp7,
     parse_add_reg_sp,

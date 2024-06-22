@@ -333,7 +333,7 @@ opcodes:
     args: [Rd_0, Rn_3, Rm_6]
     defs: [Rd_0]
 
-  - name: adds$hr
+  - name: add$hr
     desc: Add high register
     bitmask: 0xff00
     pattern: 0x4400
