@@ -670,7 +670,7 @@ opcodes:
     desc: Move register
     bitmask: 0xffc0
     pattern: 0x0000
-    args: [Rd_0, Rn_3, zero]
+    args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
 

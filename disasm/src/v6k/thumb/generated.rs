@@ -2119,7 +2119,7 @@ fn parse_movs_r(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3()),
-            Argument::UImm(ins.field_zero()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
