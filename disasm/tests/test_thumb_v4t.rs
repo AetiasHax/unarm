@@ -22,30 +22,35 @@ macro_rules! assert_bl {
 
 #[test]
 fn test_adc() {
-    assert_asm!(0x4157, "adc r7, r2");
+    assert_asm!(0x4157, "adcs r7, r7, r2");
 }
 
 #[test]
 fn test_add() {
-    assert_asm!(0x1cca, "add r2, r1, #0x3");
-    assert_asm!(0x3642, "add r6, #0x42");
-    assert_asm!(0x1853, "add r3, r2, r1");
-    assert_asm!(0x44de, "add lr, fp");
-    assert_asm!(0xa413, "add r4, pc, #0x4c");
+    assert_asm!(0x1cca, "adds r2, r1, #0x3");
+    assert_asm!(0x3642, "adds r6, r6, #0x42");
+    assert_asm!(0x1853, "adds r3, r2, r1");
+    assert_asm!(0x44de, "add lr, lr, fp");
     assert_asm!(0xacff, "add r4, sp, #0x3fc");
-    assert_asm!(0xb03a, "add sp, #0xe8");
+    assert_asm!(0xb03a, "add sp, sp, #0xe8");
+    assert_asm!(0x1c17, "adds r7, r2, #0x0");
+}
+
+#[test]
+fn test_adr() {
+    assert_asm!(0xa413, "adr r4, #0x4c");
 }
 
 #[test]
 fn test_and() {
-    assert_asm!(0x4017, "and r7, r2");
+    assert_asm!(0x4017, "ands r7, r7, r2");
 }
 
 #[test]
 fn test_asr() {
-    assert_asm!(0x1023, "asr r3, r4, #0x20");
-    assert_asm!(0x1163, "asr r3, r4, #0x5");
-    assert_asm!(0x4117, "asr r7, r2");
+    assert_asm!(0x1023, "asrs r3, r4, #0x20");
+    assert_asm!(0x1163, "asrs r3, r4, #0x5");
+    assert_asm!(0x4117, "asrs r7, r7, r2");
 }
 
 #[test]
@@ -57,7 +62,7 @@ fn test_b() {
 
 #[test]
 fn test_bic() {
-    assert_asm!(0x4397, "bic r7, r2");
+    assert_asm!(0x4397, "bics r7, r7, r2");
 }
 
 #[test]
@@ -85,12 +90,12 @@ fn test_cmp() {
 
 #[test]
 fn test_eor() {
-    assert_asm!(0x4057, "eor r7, r2");
+    assert_asm!(0x4057, "eors r7, r7, r2");
 }
 
 #[test]
 fn test_ldmia() {
-    assert_asm!(0xc955, "ldmia r1!, {r0, r2, r4, r6}");
+    assert_asm!(0xc955, "ldm r1!, {r0, r2, r4, r6}");
 }
 
 #[test]
@@ -125,41 +130,36 @@ fn test_ldrsh() {
 
 #[test]
 fn test_lsl() {
-    assert_asm!(0x0163, "lsl r3, r4, #0x5");
-    assert_asm!(0x4097, "lsl r7, r2");
+    assert_asm!(0x0163, "lsls r3, r4, #0x5");
+    assert_asm!(0x4097, "lsls r7, r7, r2");
 }
 
 #[test]
 fn test_lsr() {
-    assert_asm!(0x0823, "lsr r3, r4, #0x20");
-    assert_asm!(0x0963, "lsr r3, r4, #0x5");
-    assert_asm!(0x40d7, "lsr r7, r2");
+    assert_asm!(0x0823, "lsrs r3, r4, #0x20");
+    assert_asm!(0x0963, "lsrs r3, r4, #0x5");
+    assert_asm!(0x40d7, "lsrs r7, r7, r2");
 }
 
 #[test]
 fn test_mov() {
-    assert_asm!(0x2163, "mov r1, #0x63");
-    assert_asm!(0x1c17, "mov r7, r2");
+    assert_asm!(0x2163, "movs r1, #0x63");
+    assert_asm!(0x0017, "movs r7, r2");
 }
 
 #[test]
 fn test_mul() {
-    assert_asm!(0x4357, "mul r7, r2");
+    assert_asm!(0x4357, "muls r7, r7, r2");
 }
 
 #[test]
 fn test_mvn() {
-    assert_asm!(0x43d7, "mvn r7, r2");
-}
-
-#[test]
-fn test_neg() {
-    assert_asm!(0x4257, "neg r7, r2");
+    assert_asm!(0x43d7, "mvns r7, r7, r2");
 }
 
 #[test]
 fn test_orr() {
-    assert_asm!(0x4317, "orr r7, r2");
+    assert_asm!(0x4317, "orrs r7, r7, r2");
 }
 
 #[test]
@@ -174,12 +174,17 @@ fn test_push() {
 
 #[test]
 fn test_ror() {
-    assert_asm!(0x41d7, "ror r7, r2");
+    assert_asm!(0x41d7, "rors r7, r7, r2");
+}
+
+#[test]
+fn test_rsb() {
+    assert_asm!(0x4257, "rsbs r7, r2, #0x0");
 }
 
 #[test]
 fn test_sbc() {
-    assert_asm!(0x4197, "sbc r7, r2");
+    assert_asm!(0x4197, "sbcs r7, r7, r2");
 }
 
 #[test]
@@ -208,10 +213,10 @@ fn test_strh() {
 
 #[test]
 fn test_sub() {
-    assert_asm!(0x1eca, "sub r2, r1, #0x3");
-    assert_asm!(0x3e42, "sub r6, #0x42");
-    assert_asm!(0x1a53, "sub r3, r2, r1");
-    assert_asm!(0xb0ff, "sub sp, #0x1fc");
+    assert_asm!(0x1eca, "subs r2, r1, #0x3");
+    assert_asm!(0x3e42, "subs r6, r6, #0x42");
+    assert_asm!(0x1a53, "subs r3, r2, r1");
+    assert_asm!(0xb0ff, "sub sp, sp, #0x1fc");
 }
 
 #[test]
