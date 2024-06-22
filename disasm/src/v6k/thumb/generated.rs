@@ -1369,8 +1369,8 @@ fn parse_add_hr(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "add",
         args: [
             Argument::Reg(ins.field_rd_h1()),
+            Argument::Reg(ins.field_rd_h1()),
             Argument::Reg(ins.field_rm_h2()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -1421,8 +1421,8 @@ fn parse_add_sp_reg(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "add",
         args: [
             Argument::Reg(ins.field_sp()),
+            Argument::Reg(ins.field_sp()),
             Argument::Reg(ins.field_rm_h2()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -1447,8 +1447,8 @@ fn parse_ands(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "ands",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -1473,8 +1473,8 @@ fn parse_asrs_r(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "asrs",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -1711,8 +1711,8 @@ fn parse_bics(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "bics",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -1897,8 +1897,8 @@ fn parse_eors(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "eors",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2066,8 +2066,8 @@ fn parse_lsls_r(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "lsls",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2092,8 +2092,8 @@ fn parse_lsrs_r(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "lsrs",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2144,8 +2144,8 @@ fn parse_muls(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "muls",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2183,8 +2183,8 @@ fn parse_orrs(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "orrs",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2261,8 +2261,8 @@ fn parse_rors(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "rors",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rs()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2274,8 +2274,8 @@ fn parse_sbcs(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "sbcs",
         args: [
             Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rm_3()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2417,8 +2417,8 @@ fn parse_subs_8(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "subs",
         args: [
             Argument::Reg(ins.field_rd_8()),
+            Argument::Reg(ins.field_rd_8()),
             Argument::UImm(ins.field_immed_8()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2443,8 +2443,8 @@ fn parse_sub_sp7(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "sub",
         args: [
             Argument::Reg(ins.field_sp()),
+            Argument::Reg(ins.field_sp()),
             Argument::UImm(ins.field_rel_immed_7()),
-            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,

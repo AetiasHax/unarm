@@ -342,9 +342,9 @@ opcodes:
     desc: Add high register
     bitmask: 0xff00
     pattern: 0x4400
-    args: [Rd_H1, Rm_H2]
+    args: [Rd_H1, Rd_H1, Rm_H2]
     defs: [Rd_H1]
-    uses: [Rm_H2]
+    uses: [Rd_H1, Rm_H2]
 
   - name: add$sp
     desc: Add SP-relative address
@@ -374,9 +374,9 @@ opcodes:
     desc: Add register to SP
     bitmask: 0xff87
     pattern: 0x4485
-    args: [sp, Rm_H2]
+    args: [sp, sp, Rm_H2]
     defs: [sp]
-    uses: [Rm_H2]
+    uses: [sp, Rm_H2]
 
   - name: adr
     desc: Add PC-relative address
@@ -389,9 +389,9 @@ opcodes:
     desc: Bitwise AND
     bitmask: 0xffc0
     pattern: 0x4000
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: asrs$i
     desc: Arithmetic Shift Right by 5-bit immediate
@@ -405,9 +405,9 @@ opcodes:
     desc: Arithmetic Shift Right by register
     bitmask: 0xffc0
     pattern: 0x4100
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: b
     desc: Branch
@@ -426,9 +426,9 @@ opcodes:
     desc: Bit Clear
     bitmask: 0xffc0
     pattern: 0x4380
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: bkpt
     desc: Breakpoint
@@ -500,7 +500,8 @@ opcodes:
     desc: Exclusive OR
     bitmask: 0xffc0
     pattern: 0x4040
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
+    defs: [Rd_0]
     uses: [Rd_0, Rm_3]
 
   - name: ldm
@@ -603,9 +604,9 @@ opcodes:
     desc: Logical Shift Left by register
     bitmask: 0xffc0
     pattern: 0x4080
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: lsrs$i
     desc: Logical Shift Right by 5-bit immediate
@@ -619,9 +620,9 @@ opcodes:
     desc: Logical Shift Right by register
     bitmask: 0xffc0
     pattern: 0x40c0
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: movs$i
     desc: Move immediate
@@ -650,9 +651,9 @@ opcodes:
     desc: Multiply
     bitmask: 0xffc0
     pattern: 0x4340
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: mvns
     desc: Move Negative
@@ -674,9 +675,9 @@ opcodes:
     desc: Bitwise OR
     bitmask: 0xffc0
     pattern: 0x4300
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: pop
     desc: Pop multiple registers
@@ -696,17 +697,17 @@ opcodes:
     desc: Rotate Right
     bitmask: 0xffc0
     pattern: 0x41c0
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: sbcs
     desc: Subtract with Carry
     bitmask: 0xffc0
     pattern: 0x4180
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: stmia
     desc: Store Multiple Increment After
@@ -784,8 +785,9 @@ opcodes:
     desc: Subtract 8-bit immediate
     bitmask: 0xf800
     pattern: 0x3800
-    args: [Rd_8, immed_8]
+    args: [Rd_8, Rd_8, immed_8]
     defs: [Rd_8]
+    uses: [Rd_8]
 
   - name: subs$r
     desc: Subtract register
@@ -798,8 +800,9 @@ opcodes:
     desc: Subtract 7-bit immediate multiple of 4 from SP
     bitmask: 0xff80
     pattern: 0xb080
-    args: [sp, rel_immed_7]
+    args: [sp, sp, rel_immed_7]
     defs: [sp]
+    uses: [sp]
 
   - name: swi
     desc: Software Interrupt
