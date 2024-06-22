@@ -411,9 +411,8 @@ opcodes:
     desc: Add PC-relative address
     bitmask: 0xf800
     pattern: 0xa000
-    args: [Rd_8, pc, rel_immed_8]
+    args: [Rd_8, rel_immed_8]
     defs: [Rd_8]
-    uses: [pc]
 
   - name: ands
     desc: Bitwise AND

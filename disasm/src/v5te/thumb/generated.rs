@@ -1262,8 +1262,8 @@ fn parse_adr(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "adr",
         args: [
             Argument::Reg(ins.field_rd_8()),
-            Argument::Reg(ins.field_pc()),
             Argument::UImm(ins.field_rel_immed_8()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
