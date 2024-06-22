@@ -8,6 +8,7 @@ fields:
       reg: !Bits 0..3
       deref: !Bool false
       writeback: !Bool false
+    allow_collide: true
 
   - name: Rd_8
     arg: reg
@@ -16,6 +17,7 @@ fields:
       reg: !Bits 8..11
       deref: !Bool false
       writeback: !Bool false
+    allow_collide: true
 
   - name: Rd_H1
     arg: reg
@@ -24,6 +26,7 @@ fields:
       reg: !Expr self.code.bits(0,3) | self.code.bits(7,8) << 3
       deref: !Bool false
       writeback: !Bool false
+    allow_collide: true
 
   - name: Rn_0
     arg: reg
@@ -169,6 +172,12 @@ fields:
     value: !Struct
       regs: !Expr self.code.bits(0,8) | self.code.bits(8,9) << 14
       user_mode: !Bool false
+
+  - name: zero
+    arg: u_imm
+    desc: Zero
+    value: !U32 0
+    no_bitmask: true
 
   - name: immed_3
     arg: u_imm
@@ -331,9 +340,9 @@ opcodes:
     desc: Add with Carry
     bitmask: 0xffc0
     pattern: 0x4140
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: adds$3
     desc: Add 3-bit immediate
@@ -347,8 +356,9 @@ opcodes:
     desc: Add 8-bit immediate
     bitmask: 0xf800
     pattern: 0x3000
-    args: [Rd_8, immed_8]
+    args: [Rd_8, Rd_8, immed_8]
     defs: [Rd_8]
+    uses: [Rd_8]
 
   - name: adds$r
     desc: Add register
@@ -365,14 +375,6 @@ opcodes:
     defs: [Rd_H1]
     uses: [Rm_H2]
 
-  - name: add$pc
-    desc: Add PC-relative address
-    bitmask: 0xf800
-    pattern: 0xa000
-    args: [Rd_8, pc, rel_immed_8]
-    defs: [Rd_8]
-    uses: [pc]
-
   - name: add$sp
     desc: Add SP-relative address
     bitmask: 0xf800
@@ -385,8 +387,17 @@ opcodes:
     desc: Add 7-bit immediate multiple of 4 to SP
     bitmask: 0xff80
     pattern: 0xb000
-    args: [sp, rel_immed_7]
+    args: [sp, sp, rel_immed_7]
     defs: [sp]
+    uses: [sp]
+
+  - name: add$reg$sp
+    desc: Add SP to register
+    bitmask: 0xff78
+    pattern: 0x4468
+    args: [Rd_H1, sp, Rd_H1]
+    defs: [Rd_H1]
+    uses: [sp, Rd_H1]
 
   - name: add$sp$reg
     desc: Add register to SP
@@ -395,6 +406,14 @@ opcodes:
     args: [sp, Rm_H2]
     defs: [sp]
     uses: [Rm_H2]
+
+  - name: adr
+    desc: Add PC-relative address
+    bitmask: 0xf800
+    pattern: 0xa000
+    args: [Rd_8, pc, rel_immed_8]
+    defs: [Rd_8]
+    uses: [pc]
 
   - name: ands
     desc: Bitwise AND
@@ -647,11 +666,11 @@ opcodes:
     args: [Rd_8, immed_8]
     defs: [Rd_8]
 
-  - name: movs$reg
+  - name: movs$r
     desc: Move register
     bitmask: 0xffc0
     pattern: 0x0000
-    args: [Rd_0, Rn_3]
+    args: [Rd_0, Rn_3, zero]
     defs: [Rd_0]
     uses: [Rn_3]
 
@@ -679,11 +698,11 @@ opcodes:
     defs: [Rd_0]
     uses: [Rm_3]
 
-  - name: neg
+  - name: rsbs
     desc: Negate
     bitmask: 0xffc0
     pattern: 0x4240
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rm_3, zero]
     defs: [Rd_0]
     uses: [Rm_3]
 

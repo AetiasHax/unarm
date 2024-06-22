@@ -65,6 +65,31 @@ fields:
       deref: !Bool false
       writeback: !Bool false
 
+  - name: Rt
+    arg: reg
+    desc: Transferred register
+    value: !Struct
+      reg: !Bits 12..16
+      deref: !Bool false
+      writeback: !Bool false
+
+  - name: Rt1
+    arg: reg
+    desc: First transferred register
+    value: !Struct
+      reg: !Expr self.code.bits(13,16) << 1
+      deref: !Bool false
+      writeback: !Bool false
+
+  - name: Rt2
+    arg: reg
+    desc: Second transferred register
+    value: !Struct
+      reg: !Expr (self.code.bits(13,16) << 1) | 1
+      deref: !Bool false
+      writeback: !Bool false
+    allow_collide: true
+
   - name: RdHi
     arg: reg
     desc: Upper 32-bit long destination register
@@ -97,6 +122,14 @@ fields:
       regs: !Bits 0..16
       user_mode: !Bool true
 
+  - name: Rt_list
+    arg: reg_list
+    desc: List of one register
+    allow_collide: true
+    value: !Struct
+      regs: !Expr 1 << self.code.bits(12,16)
+      user_mode: !Bool false
+
   - name: CRn
     arg: co_reg
     desc: First source coprocessor register
@@ -121,6 +154,11 @@ fields:
     arg: u_imm
     desc: 8-bit immediate
     value: !Expr self.code.bits(0,8).rotate_right(self.code.bits(8,12) << 1)
+
+  - name: rotated_immed_8_neg
+    arg: s_imm
+    desc: 8-bit signed immediate
+    value: !Expr -(self.code.bits(0,8).rotate_right(self.code.bits(8,12) << 1) as i32)
 
   - name: immed_24
     arg: u_imm
@@ -688,7 +726,6 @@ modifiers:
     bitmask: 0x01800000
     cases:
       - name: ia
-        suffix: ia
         desc: Increment After
         pattern: 0x00800000
       - name: ib
@@ -750,6 +787,22 @@ opcodes:
     args: [Rd, Rn]
     defs: [Rd]
     uses: [Rn]
+
+  - name: adr$a
+    desc: Add PC-relative address
+    bitmask: 0x0fff0000
+    pattern: 0x028f0000
+    modifiers: [cond]
+    args: [Rd, rotated_immed_8]
+    defs: [Rd]
+
+  - name: adr$s
+    desc: Subtract PC-relative address
+    bitmask: 0x0fff0000
+    pattern: 0x024f0000
+    modifiers: [cond]
+    args: [Rd, rotated_immed_8_neg]
+    defs: [Rd]
 
   - name: and
     desc: Bitwise AND
@@ -990,11 +1043,11 @@ opcodes:
 
   - name: ldrd
     desc: Load Registers Doubleword
-    bitmask: 0x0e1000f0
+    bitmask: 0x0e1010f0
     pattern: 0x000000d0
     modifiers: [cond, addr_misc_ldr_str]
-    args: [Rd]
-    defs: [Rd]
+    args: [Rt1, Rt2]
+    defs: [Rt1, Rt2]
 
   - name: ldrex
     desc: Load Register Exclusive
@@ -1258,6 +1311,38 @@ opcodes:
     bitmask: 0xfd70f000
     pattern: 0xf550f000
     modifiers: [addr_ldr_str]
+
+  - name: pop$m
+    desc: Pop multiple registers
+    bitmask: 0x0fff0000
+    pattern: 0x08bd0000
+    modifiers: [cond]
+    args: [registers]
+    uses: [registers]
+
+  - name: pop$r
+    desc: Pop register
+    bitmask: 0x0fff0fff
+    pattern: 0x049d0004
+    modifiers: [cond]
+    args: [Rt_list]
+    uses: [Rt_list]
+
+  - name: push$m
+    desc: Push multiple registers
+    bitmask: 0x0fff0000
+    pattern: 0x092d0000
+    modifiers: [cond]
+    args: [registers]
+    uses: [registers]
+
+  - name: push$r
+    desc: Push register
+    bitmask: 0x0fff0fff
+    pattern: 0x052d0004
+    modifiers: [cond]
+    args: [Rt_list]
+    uses: [Rt_list]
 
   - name: qadd
     desc: Saturating Add
