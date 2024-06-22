@@ -794,7 +794,7 @@ opcodes:
     desc: Load Multiple (writeback)
     bitmask: 0x0e700000
     pattern: 0x08300000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn_wb, registers]
     defs: [Rn_wb, registers]
     uses: [Rn_wb]
@@ -803,7 +803,7 @@ opcodes:
     desc: Load Multiple
     bitmask: 0x0e700000
     pattern: 0x08100000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn, registers]
     defs: [registers]
     uses: [Rn]
@@ -812,7 +812,7 @@ opcodes:
     desc: Load Multiple (privileged)
     bitmask: 0x0e708000
     pattern: 0x08500000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn, registers_c]
     defs: [registers_c]
     uses: [Rn]
@@ -821,7 +821,7 @@ opcodes:
     desc: Load Multiple (including PC, writeback)
     bitmask: 0x0e708000
     pattern: 0x08708000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn_wb, registers_c]
     defs: [Rn_wb, registers_c]
     uses: [Rn_wb]
@@ -830,7 +830,7 @@ opcodes:
     desc: Load Multiple (including PC)
     bitmask: 0x0e708000
     pattern: 0x08508000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn, registers_c]
     defs: [registers_c]
     uses: [Rn]
@@ -1250,7 +1250,7 @@ opcodes:
     desc: Store Multiple
     bitmask: 0x0e700000
     pattern: 0x08000000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn, registers]
     uses: [Rn, registers]
 
@@ -1258,7 +1258,7 @@ opcodes:
     desc: Store Multiple (writeback)
     bitmask: 0x0e700000
     pattern: 0x08200000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn_wb, registers]
     defs: [Rn_wb]
     uses: [Rn_wb, registers]
@@ -1267,7 +1267,7 @@ opcodes:
     desc: Store Multiple (privileged)
     bitmask: 0x0e700000
     pattern: 0x08400000
-    modifiers: [cond, addr_ldm_stm]
+    modifiers: [addr_ldm_stm, cond]
     args: [Rn, registers_c]
     uses: [Rn, registers_c]
 
