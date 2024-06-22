@@ -5,11 +5,9 @@
 use crate::{args::*, parse::ParsedIns};
 use super::Ins;
 /// These are the mnemonics of each opcode. Some mnemonics are duplicated due to them having multiple formats.
-static OPCODE_MNEMONICS: [&str; 68] = [
+static OPCODE_MNEMONICS: [&str; 66] = [
     "adc",
     "add",
-    "adr",
-    "adr",
     "and",
     "asr",
     "b",
@@ -86,208 +84,230 @@ pub enum Opcode {
     Adc = 0,
     /// ADD: Add
     Add = 1,
-    /// ADR: Add PC-relative address
-    AdrA = 2,
-    /// ADR: Subtract PC-relative address
-    AdrS = 3,
     /// AND: Bitwise AND
-    And = 4,
+    And = 2,
     /// ASR: Arithmetic Right Shift
-    Asr = 5,
+    Asr = 3,
     /// B: Branch
-    B = 6,
+    B = 4,
     /// BL: Branch and Link
-    Bl = 7,
+    Bl = 5,
     /// BIC: Bit Clear
-    Bic = 8,
+    Bic = 6,
     /// BX: Branch and Exchange
-    Bx = 9,
+    Bx = 7,
     /// CDP: Coprocessor Data Processing
-    Cdp = 10,
+    Cdp = 8,
     /// CMN: Compare Negative
-    Cmn = 11,
+    Cmn = 9,
     /// CMP: Compare
-    Cmp = 12,
+    Cmp = 10,
     /// EOR: Bitwise Exclusive OR
-    Eor = 13,
+    Eor = 11,
     /// LDC: Load Coprocessor
-    Ldc = 14,
+    Ldc = 12,
     /// LDM: Load Multiple (writeback)
-    LdmW = 15,
+    LdmW = 13,
     /// LDM: Load Multiple
-    Ldm = 16,
+    Ldm = 14,
     /// LDM: Load Multiple (privileged)
-    LdmP = 17,
+    LdmP = 15,
     /// LDM: Load Multiple (including PC, writeback)
-    LdmPcW = 18,
+    LdmPcW = 16,
     /// LDM: Load Multiple (including PC)
-    LdmPc = 19,
+    LdmPc = 17,
     /// LDR: Load Register
-    Ldr = 20,
+    Ldr = 18,
     /// LDRB: Load Register Byte
-    Ldrb = 21,
+    Ldrb = 19,
     /// LDRBT: Load Register Byte with Translation
-    Ldrbt = 22,
+    Ldrbt = 20,
     /// LDRH: Load Register Halfword
-    Ldrh = 23,
+    Ldrh = 21,
     /// LDRSB: Load Register Signed Byte
-    Ldrsb = 24,
+    Ldrsb = 22,
     /// LDRSH: Load Register Signed Halfword
-    Ldrsh = 25,
+    Ldrsh = 23,
     /// LDRT: Load Register with Translation
-    Ldrt = 26,
+    Ldrt = 24,
     /// LSL: Logical Shift Left
-    Lsl = 27,
+    Lsl = 25,
     /// LSR: Logical Shift Right
-    Lsr = 28,
+    Lsr = 26,
     /// MCR: Move to Coprocessor from ARM Register
-    Mcr = 29,
+    Mcr = 27,
     /// MLA: Multiply Accumulate
-    Mla = 30,
+    Mla = 28,
     /// MOV: Move immediate
-    MovImm = 31,
+    MovImm = 29,
     /// MOV: Move register
-    MovReg = 32,
+    MovReg = 30,
     /// MRC: Move to ARM Register from Coprocessor
-    Mrc = 33,
+    Mrc = 31,
     /// MRS: Move to ARM Register from Status Register
-    Mrs = 34,
+    Mrs = 32,
     /// MSR: Move to Status Register from ARM Register
-    MsrI = 35,
+    MsrI = 33,
     /// MSR: Move to Status Register from ARM Register
-    Msr = 36,
+    Msr = 34,
     /// MUL: Multiply
-    Mul = 37,
+    Mul = 35,
     /// MVN: Move Not
-    Mvn = 38,
+    Mvn = 36,
     /// ORR: Logical OR
-    Orr = 39,
+    Orr = 37,
     /// POP: Pop multiple registers
-    PopM = 40,
+    PopM = 38,
     /// POP: Pop register
-    PopR = 41,
+    PopR = 39,
     /// PUSH: Push multiple registers
-    PushM = 42,
+    PushM = 40,
     /// PUSH: Push register
-    PushR = 43,
+    PushR = 41,
     /// ROR: Rotate Right
-    Ror = 44,
+    Ror = 42,
     /// RRX: Rotate Right with Extend
-    Rrx = 45,
+    Rrx = 43,
     /// RSB: Reverse Subtract
-    Rsb = 46,
+    Rsb = 44,
     /// RSC: Reverse Subtract with Carry
-    Rsc = 47,
+    Rsc = 45,
     /// SBC: Subtract with Carry
-    Sbc = 48,
+    Sbc = 46,
     /// SMLAL: Signed Multiply Accumulate Long
-    Smlal = 49,
+    Smlal = 47,
     /// SMULL: Signed Multiply Long
-    Smull = 50,
+    Smull = 48,
     /// STC: Store Coprocessor
-    Stc = 51,
+    Stc = 49,
     /// STM: Store Multiple
-    Stm = 52,
+    Stm = 50,
     /// STM: Store Multiple (writeback)
-    StmW = 53,
+    StmW = 51,
     /// STM: Store Multiple (privileged)
-    StmP = 54,
+    StmP = 52,
     /// STR: Store Register
-    Str = 55,
+    Str = 53,
     /// STRB: Store Register Byte
-    Strb = 56,
+    Strb = 54,
     /// STRBT: Store Register Byte with Translation
-    Strbt = 57,
+    Strbt = 55,
     /// STRH: Store Register Halfword
-    Strh = 58,
+    Strh = 56,
     /// STRT: Store Register with Translation
-    Strt = 59,
+    Strt = 57,
     /// SUB: Subtract
-    Sub = 60,
+    Sub = 58,
     /// SWI: Software Interrupt
-    Swi = 61,
+    Swi = 59,
     /// SWP: Swap
-    Swp = 62,
+    Swp = 60,
     /// SWPB: Swap Byte
-    Swpb = 63,
+    Swpb = 61,
     /// TEQ: Test Equivalence
-    Teq = 64,
+    Teq = 62,
     /// TST: Test
-    Tst = 65,
+    Tst = 63,
     /// UMLAL: Unsigned Multiply Accumulate Long
-    Umlal = 66,
+    Umlal = 64,
     /// UMULL: Unsigned Multiply Long
-    Umull = 67,
+    Umull = 65,
 }
 impl Opcode {
     #[inline]
     pub fn find(code: u32) -> Self {
         if (code & 0x00400000) == 0x00400000 {
             if (code & 0x02000000) == 0x02000000 {
-                if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00800000) == 0x00800000 {
-                        if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0f000000) == 0x0a000000 {
-                                    return Opcode::B;
+                if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x00200000) == 0x00000000 {
+                            if (code & 0x04000000) == 0x00000000 {
+                                if (code & 0x08000000) == 0x00000000 {
+                                    if (code & 0x0de00000) == 0x01c00000 {
+                                        return Opcode::Bic;
+                                    }
+                                } else if (code & 0x0f000000) == 0x0b000000 {
+                                    return Opcode::Bl;
                                 }
-                            } else if (code & 0x00200000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00c00000 {
-                                    return Opcode::Sbc;
+                            } else if (code & 0x08000000) == 0x00000000 {
+                                if (code & 0x0c500000) == 0x04400000 {
+                                    return Opcode::Strb;
                                 }
-                            } else if (code & 0x0de00000) == 0x00e00000 {
-                                return Opcode::Rsc;
+                            } else if (code & 0x0f000000) == 0x0f000000 {
+                                return Opcode::Swi;
+                            }
+                        } else if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x08000000) == 0x00000000 {
+                                if (code & 0x0c500000) == 0x04400000 {
+                                    return Opcode::Strb;
+                                }
+                            } else if (code & 0x0f000000) == 0x0f000000 {
+                                return Opcode::Swi;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
                             if (code & 0x0f000000) == 0x0b000000 {
                                 return Opcode::Bl;
                             }
-                        } else if (code & 0x00200000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x01c00000 {
-                                return Opcode::Bic;
+                        } else if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x0fb0f000) == 0x0320f000 {
+                                return Opcode::MsrI;
                             }
                         } else if (code & 0x0def0000) == 0x01e00000 {
                             return Opcode::Mvn;
                         }
-                    } else if (code & 0x01000000) == 0x00000000 {
-                        if (code & 0x00200000) == 0x00200000 {
+                    } else if (code & 0x00200000) == 0x00000000 {
+                        if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x08000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00600000 {
-                                    return Opcode::Rsb;
+                                if (code & 0x0c500000) == 0x04500000 {
+                                    return Opcode::Ldrb;
                                 }
-                            } else if (code & 0x0f000000) == 0x0a000000 {
-                                return Opcode::B;
+                            } else if (code & 0x0f000000) == 0x0f000000 {
+                                return Opcode::Swi;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0f000000) == 0x0a000000 {
-                                return Opcode::B;
+                            if (code & 0x0f000000) == 0x0b000000 {
+                                return Opcode::Bl;
                             }
-                        } else if (code & 0x0fff0000) == 0x024f0000 {
-                            return Opcode::AdrS;
-                        } else if (code & 0x0de00000) == 0x00400000 {
-                            return Opcode::Sub;
+                        } else if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x0df0f000) == 0x01500000 {
+                                return Opcode::Cmp;
+                            }
+                        } else if (code & 0x0de00000) == 0x01c00000 {
+                            return Opcode::Bic;
                         }
-                    } else if (code & 0x00001000) == 0x00001000 {
+                    } else if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0fb0f000) == 0x0320f000 {
-                                return Opcode::MsrI;
+                            if (code & 0x0c500000) == 0x04500000 {
+                                return Opcode::Ldrb;
                             }
-                        } else if (code & 0x0f000000) == 0x0b000000 {
-                            return Opcode::Bl;
+                        } else if (code & 0x0f000000) == 0x0f000000 {
+                            return Opcode::Swi;
                         }
                     } else if (code & 0x08000000) == 0x08000000 {
                         if (code & 0x0f000000) == 0x0b000000 {
                             return Opcode::Bl;
                         }
-                    } else if (code & 0x00200000) == 0x00000000 {
-                        if (code & 0x0df0f000) == 0x01500000 {
-                            return Opcode::Cmp;
+                    } else if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x0df0f000) == 0x01700000 {
+                            return Opcode::Cmn;
                         }
-                    } else if (code & 0x0df0f000) == 0x01700000 {
-                        return Opcode::Cmn;
+                    } else if (code & 0x0def0000) == 0x01e00000 {
+                        return Opcode::Mvn;
                     }
-                } else if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0x00100000) == 0x00000000 {
+                } else if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x00000010) == 0x00000000 {
+                            if (code & 0x0f000010) == 0x0e000000 {
+                                return Opcode::Cdp;
+                            }
+                        } else if (code & 0x00100000) == 0x00000000 {
+                            if (code & 0x0f100010) == 0x0e000010 {
+                                return Opcode::Mcr;
+                            }
+                        } else if (code & 0x0f100010) == 0x0e100010 {
+                            return Opcode::Mrc;
+                        }
+                    } else if (code & 0x00100000) == 0x00000000 {
                         if (code & 0x0d700000) == 0x04600000 {
                             return Opcode::Strbt;
                         } else if (code & 0x0c500000) == 0x04400000 {
@@ -298,24 +318,28 @@ impl Opcode {
                     } else if (code & 0x0c500000) == 0x04500000 {
                         return Opcode::Ldrb;
                     }
-                } else if (code & 0x00000010) == 0x00000000 {
-                    if (code & 0x01000000) == 0x00000000 {
-                        if (code & 0x0f000010) == 0x0e000000 {
-                            return Opcode::Cdp;
+                } else if (code & 0x00200000) == 0x00000000 {
+                    if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0f000000) == 0x0a000000 {
+                            return Opcode::B;
                         }
-                    } else if (code & 0x0f000000) == 0x0f000000 {
-                        return Opcode::Swi;
+                    } else if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x0de00000) == 0x00400000 {
+                            return Opcode::Sub;
+                        }
+                    } else if (code & 0x0de00000) == 0x00c00000 {
+                        return Opcode::Sbc;
                     }
-                } else if (code & 0x01000000) == 0x01000000 {
-                    if (code & 0x0f000000) == 0x0f000000 {
-                        return Opcode::Swi;
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0f000000) == 0x0a000000 {
+                        return Opcode::B;
                     }
-                } else if (code & 0x00100000) == 0x00000000 {
-                    if (code & 0x0f100010) == 0x0e000010 {
-                        return Opcode::Mcr;
+                } else if (code & 0x00800000) == 0x00000000 {
+                    if (code & 0x0de00000) == 0x00600000 {
+                        return Opcode::Rsb;
                     }
-                } else if (code & 0x0f100010) == 0x0e100010 {
-                    return Opcode::Mrc;
+                } else if (code & 0x0de00000) == 0x00e00000 {
+                    return Opcode::Rsc;
                 }
             } else if (code & 0x00100000) == 0x00000000 {
                 if (code & 0x00200000) == 0x00200000 {
@@ -824,26 +848,16 @@ impl Opcode {
                     } else if (code & 0x0c500000) == 0x04100000 {
                         return Opcode::Ldr;
                     }
-                } else if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x08000000) == 0x00000000 {
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00800000) == 0x00000000 {
                             if (code & 0x0de00000) == 0x00000000 {
                                 return Opcode::And;
                             }
-                        } else if (code & 0x0f000000) == 0x0a000000 {
-                            return Opcode::B;
+                        } else if (code & 0x0de00000) == 0x00800000 {
+                            return Opcode::Add;
                         }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0f000000) == 0x0a000000 {
-                            return Opcode::B;
-                        }
-                    } else if (code & 0x0fff0000) == 0x028f0000 {
-                        return Opcode::AdrA;
-                    } else if (code & 0x0de00000) == 0x00800000 {
-                        return Opcode::Add;
-                    }
-                } else if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0x00100000) == 0x00000000 {
+                    } else if (code & 0x00100000) == 0x00000000 {
                         if (code & 0x0c500000) == 0x04000000 {
                             return Opcode::Str;
                         }
@@ -851,8 +865,16 @@ impl Opcode {
                         return Opcode::Ldr;
                     }
                 } else if (code & 0x00000010) == 0x00000000 {
-                    if (code & 0x0f000010) == 0x0e000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x0f000000) == 0x0a000000 {
+                            return Opcode::B;
+                        }
+                    } else if (code & 0x0f000010) == 0x0e000000 {
                         return Opcode::Cdp;
+                    }
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0f000000) == 0x0a000000 {
+                        return Opcode::B;
                     }
                 } else if (code & 0x00100000) == 0x00000000 {
                     if (code & 0x0f100010) == 0x0e000010 {
@@ -1905,7 +1927,7 @@ impl Opcode {
         OPCODE_MNEMONICS[self as usize]
     }
     pub fn count() -> usize {
-        68
+        66
     }
 }
 impl Ins {
@@ -2047,12 +2069,6 @@ impl Ins {
     #[inline(always)]
     pub fn field_rotated_immed_8(&self) -> u32 {
         (self.code & 0x000000ff).rotate_right(((self.code >> 8) & 0x0000000f) << 1)
-    }
-    /// rotated_immed_8_neg: 8-bit signed immediate
-    #[inline(always)]
-    pub fn field_rotated_immed_8_neg(&self) -> i32 {
-        (-((self.code & 0x000000ff).rotate_right(((self.code >> 8) & 0x0000000f) << 1)
-            as i32)) as i32
     }
     /// immed_24: 24-bit immediate
     #[inline(always)]
@@ -6424,430 +6440,6 @@ fn parse_add(out: &mut ParsedIns, ins: Ins) {
                     Argument::Reg(ins.field_rn()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        _ => {
-            ParsedIns {
-                mnemonic: "<illegal>",
-                args: [
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-    };
-}
-fn parse_adr_a(out: &mut ParsedIns, ins: Ins) {
-    *out = match ins.modifier_cond() {
-        Cond::Eq => {
-            ParsedIns {
-                mnemonic: "adreq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ne => {
-            ParsedIns {
-                mnemonic: "adrne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hs => {
-            ParsedIns {
-                mnemonic: "adrhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lo => {
-            ParsedIns {
-                mnemonic: "adrlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Mi => {
-            ParsedIns {
-                mnemonic: "adrmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Pl => {
-            ParsedIns {
-                mnemonic: "adrpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vs => {
-            ParsedIns {
-                mnemonic: "adrvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vc => {
-            ParsedIns {
-                mnemonic: "adrvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hi => {
-            ParsedIns {
-                mnemonic: "adrhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ls => {
-            ParsedIns {
-                mnemonic: "adrls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ge => {
-            ParsedIns {
-                mnemonic: "adrge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lt => {
-            ParsedIns {
-                mnemonic: "adrlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Gt => {
-            ParsedIns {
-                mnemonic: "adrgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Le => {
-            ParsedIns {
-                mnemonic: "adrle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Al => {
-            ParsedIns {
-                mnemonic: "adr",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        _ => {
-            ParsedIns {
-                mnemonic: "<illegal>",
-                args: [
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-    };
-}
-fn parse_adr_s(out: &mut ParsedIns, ins: Ins) {
-    *out = match ins.modifier_cond() {
-        Cond::Eq => {
-            ParsedIns {
-                mnemonic: "adreq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ne => {
-            ParsedIns {
-                mnemonic: "adrne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hs => {
-            ParsedIns {
-                mnemonic: "adrhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lo => {
-            ParsedIns {
-                mnemonic: "adrlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Mi => {
-            ParsedIns {
-                mnemonic: "adrmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Pl => {
-            ParsedIns {
-                mnemonic: "adrpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vs => {
-            ParsedIns {
-                mnemonic: "adrvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vc => {
-            ParsedIns {
-                mnemonic: "adrvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hi => {
-            ParsedIns {
-                mnemonic: "adrhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ls => {
-            ParsedIns {
-                mnemonic: "adrls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ge => {
-            ParsedIns {
-                mnemonic: "adrge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lt => {
-            ParsedIns {
-                mnemonic: "adrlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Gt => {
-            ParsedIns {
-                mnemonic: "adrgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Le => {
-            ParsedIns {
-                mnemonic: "adrle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Al => {
-            ParsedIns {
-                mnemonic: "adr",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -64897,11 +64489,9 @@ fn parse_umull(out: &mut ParsedIns, ins: Ins) {
     };
 }
 type MnemonicParser = fn(&mut ParsedIns, Ins);
-static MNEMONIC_PARSERS: [MnemonicParser; 68] = [
+static MNEMONIC_PARSERS: [MnemonicParser; 66] = [
     parse_adc,
     parse_add,
-    parse_adr_a,
-    parse_adr_s,
     parse_and,
     parse_asr,
     parse_b,

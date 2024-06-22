@@ -147,11 +147,6 @@ fields:
     desc: 8-bit immediate
     value: !Expr self.code.bits(0,8).rotate_right(self.code.bits(8,12) << 1)
 
-  - name: rotated_immed_8_neg
-    arg: s_imm
-    desc: 8-bit signed immediate
-    value: !Expr -(self.code.bits(0,8).rotate_right(self.code.bits(8,12) << 1) as i32)
-
   - name: immed_24
     arg: u_imm
     desc: 24-bit immediate
@@ -637,22 +632,6 @@ opcodes:
     args: [Rd, Rn]
     defs: [Rd]
     uses: [Rn]
-
-  - name: adr$a
-    desc: Add PC-relative address
-    bitmask: 0x0fff0000
-    pattern: 0x028f0000
-    modifiers: [cond]
-    args: [Rd, rotated_immed_8]
-    defs: [Rd]
-
-  - name: adr$s
-    desc: Subtract PC-relative address
-    bitmask: 0x0fff0000
-    pattern: 0x024f0000
-    modifiers: [cond]
-    args: [Rd, rotated_immed_8_neg]
-    defs: [Rd]
 
   - name: and
     desc: Bitwise AND

@@ -5,11 +5,9 @@
 use crate::{args::*, parse::ParsedIns};
 use super::Ins;
 /// These are the mnemonics of each opcode. Some mnemonics are duplicated due to them having multiple formats.
-static OPCODE_MNEMONICS: [&str; 91] = [
+static OPCODE_MNEMONICS: [&str; 89] = [
     "adc",
     "add",
-    "adr",
-    "adr",
     "and",
     "asr",
     "b",
@@ -109,232 +107,504 @@ pub enum Opcode {
     Adc = 0,
     /// ADD: Add
     Add = 1,
-    /// ADR: Add PC-relative address
-    AdrA = 2,
-    /// ADR: Subtract PC-relative address
-    AdrS = 3,
     /// AND: Bitwise AND
-    And = 4,
+    And = 2,
     /// ASR: Arithmetic Right Shift
-    Asr = 5,
+    Asr = 3,
     /// B: Branch
-    B = 6,
+    B = 4,
     /// BL: Branch and Link
-    Bl = 7,
+    Bl = 5,
     /// BIC: Bit Clear
-    Bic = 8,
+    Bic = 6,
     /// BKPT: Breakpoint
-    Bkpt = 9,
+    Bkpt = 7,
     /// BLX: Branch and Link and Exchange to Thumb (immediate target)
-    BlxI = 10,
+    BlxI = 8,
     /// BLX: Branch and Link and Exchange to Thumb (register target)
-    BlxR = 11,
+    BlxR = 9,
     /// BX: Branch and Exchange
-    Bx = 12,
+    Bx = 10,
     /// CDP: Coprocessor Data Processing
-    Cdp = 13,
+    Cdp = 11,
     /// CDP2: Coprocessor Data Processing (unconditional, extended)
-    Cdp2 = 14,
+    Cdp2 = 12,
     /// CLZ: Count Leading Zeros
-    Clz = 15,
+    Clz = 13,
     /// CMN: Compare Negative
-    Cmn = 16,
+    Cmn = 14,
     /// CMP: Compare
-    Cmp = 17,
+    Cmp = 15,
     /// EOR: Bitwise Exclusive OR
-    Eor = 18,
+    Eor = 16,
     /// LDC: Load Coprocessor
-    Ldc = 19,
+    Ldc = 17,
     /// LDC2: Load Coprocessor (unconditional, extended)
-    Ldc2 = 20,
+    Ldc2 = 18,
     /// LDM: Load Multiple (writeback)
-    LdmW = 21,
+    LdmW = 19,
     /// LDM: Load Multiple
-    Ldm = 22,
+    Ldm = 20,
     /// LDM: Load Multiple (privileged)
-    LdmP = 23,
+    LdmP = 21,
     /// LDM: Load Multiple (including PC, writeback)
-    LdmPcW = 24,
+    LdmPcW = 22,
     /// LDM: Load Multiple (including PC)
-    LdmPc = 25,
+    LdmPc = 23,
     /// LDR: Load Register
-    Ldr = 26,
+    Ldr = 24,
     /// LDRB: Load Register Byte
-    Ldrb = 27,
+    Ldrb = 25,
     /// LDRBT: Load Register Byte with Translation
-    Ldrbt = 28,
+    Ldrbt = 26,
     /// LDRD: Load Registers Doubleword
-    Ldrd = 29,
+    Ldrd = 27,
     /// LDRH: Load Register Halfword
-    Ldrh = 30,
+    Ldrh = 28,
     /// LDRSB: Load Register Signed Byte
-    Ldrsb = 31,
+    Ldrsb = 29,
     /// LDRSH: Load Register Signed Halfword
-    Ldrsh = 32,
+    Ldrsh = 30,
     /// LDRT: Load Register with Translation
-    Ldrt = 33,
+    Ldrt = 31,
     /// LSL: Logical Shift Left
-    Lsl = 34,
+    Lsl = 32,
     /// LSR: Logical Shift Right
-    Lsr = 35,
+    Lsr = 33,
     /// MCR: Move to Coprocessor from ARM Register
-    Mcr = 36,
+    Mcr = 34,
     /// MCR2: Move to Coprocessor from ARM Register (unconditional, extended)
-    Mcr2 = 37,
+    Mcr2 = 35,
     /// MCRR: Move to Coprocessor from two ARM Registers
-    Mcrr = 38,
+    Mcrr = 36,
     /// MLA: Multiply Accumulate
-    Mla = 39,
+    Mla = 37,
     /// MOV: Move immediate
-    MovImm = 40,
+    MovImm = 38,
     /// MOV: Move register
-    MovReg = 41,
+    MovReg = 39,
     /// MRC: Move to ARM Register from Coprocessor
-    Mrc = 42,
+    Mrc = 40,
     /// MRC2: Move to ARM Register from Coprocessor (unconditional, extended)
-    Mrc2 = 43,
+    Mrc2 = 41,
     /// MRRC: Move to two ARM Registers from Coprocessor
-    Mrrc = 44,
+    Mrrc = 42,
     /// MRS: Move to ARM Register from Status Register
-    Mrs = 45,
+    Mrs = 43,
     /// MSR: Move to Status Register from ARM Register
-    MsrI = 46,
+    MsrI = 44,
     /// MSR: Move to Status Register from ARM Register
-    Msr = 47,
+    Msr = 45,
     /// MUL: Multiply
-    Mul = 48,
+    Mul = 46,
     /// MVN: Move Not
-    Mvn = 49,
+    Mvn = 47,
     /// ORR: Logical OR
-    Orr = 50,
+    Orr = 48,
     /// PLD: Preload Data
-    Pld = 51,
+    Pld = 49,
     /// POP: Pop multiple registers
-    PopM = 52,
+    PopM = 50,
     /// POP: Pop register
-    PopR = 53,
+    PopR = 51,
     /// PUSH: Push multiple registers
-    PushM = 54,
+    PushM = 52,
     /// PUSH: Push register
-    PushR = 55,
+    PushR = 53,
     /// QADD: Saturating Add
-    Qadd = 56,
+    Qadd = 54,
     /// QDADD: Saturating Double and Add
-    Qdadd = 57,
+    Qdadd = 55,
     /// QDSUB: Saturating Double and Subtract
-    Qdsub = 58,
+    Qdsub = 56,
     /// QSUB: Saturating Subtract
-    Qsub = 59,
+    Qsub = 57,
     /// ROR: Rotate Right
-    Ror = 60,
+    Ror = 58,
     /// RRX: Rotate Right with Extend
-    Rrx = 61,
+    Rrx = 59,
     /// RSB: Reverse Subtract
-    Rsb = 62,
+    Rsb = 60,
     /// RSC: Reverse Subtract with Carry
-    Rsc = 63,
+    Rsc = 61,
     /// SBC: Subtract with Carry
-    Sbc = 64,
+    Sbc = 62,
     /// SMLA: Signed Multiply Accumulate
-    Smla = 65,
+    Smla = 63,
     /// SMLAL: Signed Multiply Accumulate Long
-    Smlal = 66,
+    Smlal = 64,
     /// SMLAL: Signed Multiply Accumulate Long
-    SmlalXy = 67,
+    SmlalXy = 65,
     /// SMLAW: Signed Multiply Accumulate Word
-    Smlaw = 68,
+    Smlaw = 66,
     /// SMUL: Signed Multiply
-    Smul = 69,
+    Smul = 67,
     /// SMULL: Signed Multiply Long
-    Smull = 70,
+    Smull = 68,
     /// SMULW: Signed Multiply Word
-    Smulw = 71,
+    Smulw = 69,
     /// STC: Store Coprocessor
-    Stc = 72,
+    Stc = 70,
     /// STC2: Store Coprocessor (unconditional, extended)
-    Stc2 = 73,
+    Stc2 = 71,
     /// STM: Store Multiple
-    Stm = 74,
+    Stm = 72,
     /// STM: Store Multiple (writeback)
-    StmW = 75,
+    StmW = 73,
     /// STM: Store Multiple (privileged)
-    StmP = 76,
+    StmP = 74,
     /// STR: Store Register
-    Str = 77,
+    Str = 75,
     /// STRB: Store Register Byte
-    Strb = 78,
+    Strb = 76,
     /// STRBT: Store Register Byte with Translation
-    Strbt = 79,
+    Strbt = 77,
     /// STRD: Store Registers Doubleword
-    Strd = 80,
+    Strd = 78,
     /// STRH: Store Register Halfword
-    Strh = 81,
+    Strh = 79,
     /// STRT: Store Register with Translation
-    Strt = 82,
+    Strt = 80,
     /// SUB: Subtract
-    Sub = 83,
+    Sub = 81,
     /// SWI: Software Interrupt
-    Swi = 84,
+    Swi = 82,
     /// SWP: Swap
-    Swp = 85,
+    Swp = 83,
     /// SWPB: Swap Byte
-    Swpb = 86,
+    Swpb = 84,
     /// TEQ: Test Equivalence
-    Teq = 87,
+    Teq = 85,
     /// TST: Test
-    Tst = 88,
+    Tst = 86,
     /// UMLAL: Unsigned Multiply Accumulate Long
-    Umlal = 89,
+    Umlal = 87,
     /// UMULL: Unsigned Multiply Long
-    Umull = 90,
+    Umull = 88,
 }
 impl Opcode {
     #[inline]
     pub fn find(code: u32) -> Self {
         if (code & 0x00400000) == 0x00400000 {
-            if (code & 0x02000000) == 0x02000000 {
-                if (code & 0x04000000) == 0x04000000 {
-                    if (code & 0x00100000) == 0x00000000 {
-                        if (code & 0x00000010) == 0x00000000 {
-                            if (code & 0x01000000) == 0x01000000 {
-                                if (code & 0x08000000) == 0x00000000 {
-                                    if (code & 0x0c500000) == 0x04400000 {
-                                        return Opcode::Strb;
+            if (code & 0x00100000) == 0x00100000 {
+                if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x01000000) == 0x01000000 {
+                        if (code & 0x00200000) == 0x00200000 {
+                            if (code & 0x00000020) == 0x00000000 {
+                                if (code & 0x00800000) == 0x00000000 {
+                                    if (code & 0x04000000) == 0x04000000 {
+                                        if (code & 0x0c500000) == 0x04500000 {
+                                            return Opcode::Ldrb;
+                                        }
+                                    } else if (code & 0x0df0f000) == 0x01700000 {
+                                        return Opcode::Cmn;
+                                    } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                        return Opcode::Ldrsb;
                                     }
-                                } else if (code & 0x0f000000) == 0x0f000000 {
-                                    return Opcode::Swi;
+                                } else if (code & 0x04000000) == 0x04000000 {
+                                    if (code & 0x0c500000) == 0x04500000 {
+                                        return Opcode::Ldrb;
+                                    }
+                                } else if (code & 0x0def0000) == 0x01e00000 {
+                                    return Opcode::Mvn;
+                                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                    return Opcode::Ldrsb;
                                 }
-                            } else if (code & 0x08000000) == 0x00000000 {
-                                if (code & 0x0d700000) == 0x04600000 {
-                                    return Opcode::Strbt;
-                                } else if (code & 0x0c500000) == 0x04400000 {
-                                    return Opcode::Strb;
+                            } else if (code & 0x00000040) == 0x00000000 {
+                                if (code & 0x00800000) == 0x00000000 {
+                                    if (code & 0x04000000) == 0x04000000 {
+                                        if (code & 0x0c500000) == 0x04500000 {
+                                            return Opcode::Ldrb;
+                                        }
+                                    } else if (code & 0x0df0f000) == 0x01700000 {
+                                        return Opcode::Cmn;
+                                    } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                        return Opcode::Ldrh;
+                                    }
+                                } else if (code & 0x04000000) == 0x04000000 {
+                                    if (code & 0x0c500000) == 0x04500000 {
+                                        return Opcode::Ldrb;
+                                    }
+                                } else if (code & 0x0def0000) == 0x01e00000 {
+                                    return Opcode::Mvn;
+                                } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                    return Opcode::Ldrh;
                                 }
-                            } else if (code & 0xff000010) == 0xfe000000 {
-                                return Opcode::Cdp2;
-                            } else if (code & 0x0f000010) == 0x0e000000 {
-                                return Opcode::Cdp;
-                            }
-                        } else if (code & 0x01000000) == 0x01000000 {
-                            if (code & 0x08000000) == 0x00000000 {
-                                if (code & 0x0c500000) == 0x04400000 {
-                                    return Opcode::Strb;
+                            } else if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x04000000) == 0x04000000 {
+                                    if (code & 0x0c500000) == 0x04500000 {
+                                        return Opcode::Ldrb;
+                                    }
+                                } else if (code & 0x0df0f000) == 0x01700000 {
+                                    return Opcode::Cmn;
+                                } else if (code & 0x0e1000f0) == 0x001000f0 {
+                                    return Opcode::Ldrsh;
                                 }
-                            } else if (code & 0x0f000000) == 0x0f000000 {
-                                return Opcode::Swi;
+                            } else if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0x0c500000) == 0x04500000 {
+                                    return Opcode::Ldrb;
+                                }
+                            } else if (code & 0x0def0000) == 0x01e00000 {
+                                return Opcode::Mvn;
+                            } else if (code & 0x0e1000f0) == 0x001000f0 {
+                                return Opcode::Ldrsh;
                             }
-                        } else if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0d700000) == 0x04600000 {
-                                return Opcode::Strbt;
-                            } else if (code & 0x0c500000) == 0x04400000 {
-                                return Opcode::Strb;
+                        } else if (code & 0x00000020) == 0x00000000 {
+                            if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0xfd70f000) == 0xf550f000 {
+                                    return Opcode::Pld;
+                                } else if (code & 0x0c500000) == 0x04500000 {
+                                    return Opcode::Ldrb;
+                                }
+                            } else if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0df0f000) == 0x01500000 {
+                                    return Opcode::Cmp;
+                                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                    return Opcode::Ldrsb;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                return Opcode::Ldrsb;
+                            } else if (code & 0x0de00000) == 0x01c00000 {
+                                return Opcode::Bic;
                             }
-                        } else if (code & 0xff100010) == 0xfe000010 {
-                            return Opcode::Mcr2;
-                        } else if (code & 0x0f100010) == 0x0e000010 {
-                            return Opcode::Mcr;
+                        } else if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x00000040) == 0x00000000 {
+                                if (code & 0x00800000) == 0x00000000 {
+                                    if (code & 0x0df0f000) == 0x01500000 {
+                                        return Opcode::Cmp;
+                                    } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                        return Opcode::Ldrh;
+                                    }
+                                } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                    return Opcode::Ldrh;
+                                } else if (code & 0x0de00000) == 0x01c00000 {
+                                    return Opcode::Bic;
+                                }
+                            } else if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0df0f000) == 0x01500000 {
+                                    return Opcode::Cmp;
+                                } else if (code & 0x0e1000f0) == 0x001000f0 {
+                                    return Opcode::Ldrsh;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000f0 {
+                                return Opcode::Ldrsh;
+                            } else if (code & 0x0de00000) == 0x01c00000 {
+                                return Opcode::Bic;
+                            }
+                        } else if (code & 0xfd70f000) == 0xf550f000 {
+                            return Opcode::Pld;
+                        } else if (code & 0x0c500000) == 0x04500000 {
+                            return Opcode::Ldrb;
                         }
-                    } else if (code & 0x08000000) == 0x08000000 {
+                    } else if (code & 0x00200000) == 0x00000000 {
+                        if (code & 0x00000020) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x04000000) == 0x04000000 {
+                                    if (code & 0x0c500000) == 0x04500000 {
+                                        return Opcode::Ldrb;
+                                    }
+                                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                    return Opcode::Ldrsb;
+                                } else if (code & 0x0de00000) == 0x00400000 {
+                                    return Opcode::Sub;
+                                }
+                            } else if (code & 0x00000040) == 0x00000000 {
+                                if (code & 0x04000000) == 0x04000000 {
+                                    if (code & 0x0c500000) == 0x04500000 {
+                                        return Opcode::Ldrb;
+                                    }
+                                } else if (code & 0x0fe000f0) == 0x00c00090 {
+                                    return Opcode::Smull;
+                                } else if (code & 0x0de00000) == 0x00c00000 {
+                                    return Opcode::Sbc;
+                                }
+                            } else if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0x0c500000) == 0x04500000 {
+                                    return Opcode::Ldrb;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                return Opcode::Ldrsb;
+                            } else if (code & 0x0de00000) == 0x00c00000 {
+                                return Opcode::Sbc;
+                            }
+                        } else if (code & 0x00000040) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x04000000) == 0x04000000 {
+                                    if (code & 0x0c500000) == 0x04500000 {
+                                        return Opcode::Ldrb;
+                                    }
+                                } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                    return Opcode::Ldrh;
+                                } else if (code & 0x0de00000) == 0x00400000 {
+                                    return Opcode::Sub;
+                                }
+                            } else if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0x0c500000) == 0x04500000 {
+                                    return Opcode::Ldrb;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                return Opcode::Ldrh;
+                            } else if (code & 0x0de00000) == 0x00c00000 {
+                                return Opcode::Sbc;
+                            }
+                        } else if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0x0c500000) == 0x04500000 {
+                                    return Opcode::Ldrb;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000f0 {
+                                return Opcode::Ldrsh;
+                            } else if (code & 0x0de00000) == 0x00400000 {
+                                return Opcode::Sub;
+                            }
+                        } else if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x0c500000) == 0x04500000 {
+                                return Opcode::Ldrb;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x001000f0 {
+                            return Opcode::Ldrsh;
+                        } else if (code & 0x0de00000) == 0x00c00000 {
+                            return Opcode::Sbc;
+                        }
+                    } else if (code & 0x00000020) == 0x00000000 {
+                        if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x04000000) == 0x00000000 {
+                                if (code & 0x0e1000f0) == 0x001000d0 {
+                                    return Opcode::Ldrsb;
+                                } else if (code & 0x0de00000) == 0x00600000 {
+                                    return Opcode::Rsb;
+                                }
+                            } else if (code & 0x0d700000) == 0x04700000 {
+                                return Opcode::Ldrbt;
+                            } else if (code & 0x0c500000) == 0x04500000 {
+                                return Opcode::Ldrb;
+                            }
+                        } else if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x0d700000) == 0x04700000 {
+                                return Opcode::Ldrbt;
+                            } else if (code & 0x0c500000) == 0x04500000 {
+                                return Opcode::Ldrb;
+                            }
+                        } else if (code & 0x00000040) == 0x00000000 {
+                            if (code & 0x0fe000f0) == 0x00e00090 {
+                                return Opcode::Smlal;
+                            } else if (code & 0x0de00000) == 0x00e00000 {
+                                return Opcode::Rsc;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x001000d0 {
+                            return Opcode::Ldrsb;
+                        } else if (code & 0x0de00000) == 0x00e00000 {
+                            return Opcode::Rsc;
+                        }
+                    } else if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00000040) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0e1000f0) == 0x001000b0 {
+                                    return Opcode::Ldrh;
+                                } else if (code & 0x0de00000) == 0x00600000 {
+                                    return Opcode::Rsb;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                return Opcode::Ldrh;
+                            } else if (code & 0x0de00000) == 0x00e00000 {
+                                return Opcode::Rsc;
+                            }
+                        } else if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x0e1000f0) == 0x001000f0 {
+                                return Opcode::Ldrsh;
+                            } else if (code & 0x0de00000) == 0x00600000 {
+                                return Opcode::Rsb;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x001000f0 {
+                            return Opcode::Ldrsh;
+                        } else if (code & 0x0de00000) == 0x00e00000 {
+                            return Opcode::Rsc;
+                        }
+                    } else if (code & 0x0d700000) == 0x04700000 {
+                        return Opcode::Ldrbt;
+                    } else if (code & 0x0c500000) == 0x04500000 {
+                        return Opcode::Ldrb;
+                    }
+                } else if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x02000000) == 0x00000000 {
+                        if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0xfe100000) == 0xfc100000 {
+                                return Opcode::Ldc2;
+                            } else if (code & 0x0e100000) == 0x0c100000 {
+                                return Opcode::Ldc;
+                            }
+                        } else if (code & 0x00008000) == 0x00000000 {
+                            if (code & 0x0e708000) == 0x08500000 {
+                                return Opcode::LdmP;
+                            }
+                        } else if (code & 0x00200000) == 0x00000000 {
+                            if (code & 0x0e708000) == 0x08508000 {
+                                return Opcode::LdmPc;
+                            }
+                        } else if (code & 0x0e708000) == 0x08708000 {
+                            return Opcode::LdmPcW;
+                        }
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0f000000) == 0x0f000000 {
+                            return Opcode::Swi;
+                        }
+                    } else if (code & 0xfe000000) == 0xfa000000 {
+                        return Opcode::BlxI;
+                    } else if (code & 0x0f000000) == 0x0b000000 {
+                        return Opcode::Bl;
+                    }
+                } else if (code & 0x02000000) == 0x00000000 {
+                    if (code & 0x00200000) == 0x00200000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x0e708000) == 0x08708000 {
+                                return Opcode::LdmPcW;
+                            }
+                        } else if (code & 0xfe100000) == 0xfc100000 {
+                            return Opcode::Ldc2;
+                        } else if (code & 0x0e100000) == 0x0c100000 {
+                            return Opcode::Ldc;
+                        }
+                    } else if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00008000) == 0x00000000 {
+                            if (code & 0x0e708000) == 0x08500000 {
+                                return Opcode::LdmP;
+                            }
+                        } else if (code & 0x0e708000) == 0x08508000 {
+                            return Opcode::LdmPc;
+                        }
+                    } else if (code & 0xfe100000) == 0xfc100000 {
+                        return Opcode::Ldc2;
+                    } else if (code & 0x0ff00000) == 0x0c500000 {
+                        return Opcode::Mrrc;
+                    } else if (code & 0x0e100000) == 0x0c100000 {
+                        return Opcode::Ldc;
+                    }
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0xfe000000) == 0xfa000000 {
+                            return Opcode::BlxI;
+                        } else if (code & 0x0f000000) == 0x0a000000 {
+                            return Opcode::B;
+                        }
+                    } else if (code & 0xff000010) == 0xfe000000 {
+                        return Opcode::Cdp2;
+                    } else if (code & 0x0f000010) == 0x0e000000 {
+                        return Opcode::Cdp;
+                    }
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0xfe000000) == 0xfa000000 {
+                        return Opcode::BlxI;
+                    } else if (code & 0x0f000000) == 0x0a000000 {
+                        return Opcode::B;
+                    }
+                } else if (code & 0xff100010) == 0xfe100010 {
+                    return Opcode::Mrc2;
+                } else if (code & 0x0f100010) == 0x0e100010 {
+                    return Opcode::Mrc;
+                }
+            } else if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x00000010) == 0x00000000 {
                             if (code & 0x01000000) == 0x01000000 {
                                 if (code & 0x0f000000) == 0x0f000000 {
@@ -349,400 +619,66 @@ impl Opcode {
                             if (code & 0x0f000000) == 0x0f000000 {
                                 return Opcode::Swi;
                             }
-                        } else if (code & 0xff100010) == 0xfe100010 {
-                            return Opcode::Mrc2;
-                        } else if (code & 0x0f100010) == 0x0e100010 {
-                            return Opcode::Mrc;
-                        }
-                    } else if (code & 0x00200000) == 0x00000000 {
-                        if (code & 0xfd70f000) == 0xf550f000 {
-                            return Opcode::Pld;
-                        } else if (code & 0x0c500000) == 0x04500000 {
-                            return Opcode::Ldrb;
-                        }
-                    } else if (code & 0x0d700000) == 0x04700000 {
-                        return Opcode::Ldrbt;
-                    } else if (code & 0x0c500000) == 0x04500000 {
-                        return Opcode::Ldrb;
-                    }
-                } else if (code & 0x00800000) == 0x00800000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0xfe000000) == 0xfa000000 {
-                                return Opcode::BlxI;
-                            } else if (code & 0x0f000000) == 0x0a000000 {
-                                return Opcode::B;
-                            }
-                        } else if (code & 0xfe000000) == 0xfa000000 {
-                            return Opcode::BlxI;
-                        } else if (code & 0x0f000000) == 0x0b000000 {
-                            return Opcode::Bl;
-                        }
-                    } else if (code & 0x00200000) == 0x00000000 {
-                        if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00c00000 {
-                                return Opcode::Sbc;
-                            }
-                        } else if (code & 0x0de00000) == 0x01c00000 {
-                            return Opcode::Bic;
+                        } else if (code & 0xff100010) == 0xfe000010 {
+                            return Opcode::Mcr2;
+                        } else if (code & 0x0f100010) == 0x0e000010 {
+                            return Opcode::Mcr;
                         }
                     } else if (code & 0x01000000) == 0x00000000 {
-                        if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
-                        }
-                    } else if (code & 0x0def0000) == 0x01e00000 {
-                        return Opcode::Mvn;
-                    }
-                } else if (code & 0x01000000) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
                         if (code & 0xfe000000) == 0xfa000000 {
                             return Opcode::BlxI;
                         } else if (code & 0x0f000000) == 0x0a000000 {
                             return Opcode::B;
                         }
-                    } else if (code & 0x00200000) == 0x00200000 {
-                        if (code & 0x0de00000) == 0x00600000 {
-                            return Opcode::Rsb;
-                        }
-                    } else if (code & 0x0fff0000) == 0x024f0000 {
-                        return Opcode::AdrS;
-                    } else if (code & 0x0de00000) == 0x00400000 {
-                        return Opcode::Sub;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0xfe000000) == 0xfa000000 {
+                    } else if (code & 0xfe000000) == 0xfa000000 {
                         return Opcode::BlxI;
                     } else if (code & 0x0f000000) == 0x0b000000 {
                         return Opcode::Bl;
                     }
-                } else if (code & 0x00001000) == 0x00001000 {
-                    if (code & 0x0fb0f000) == 0x0320f000 {
-                        return Opcode::MsrI;
-                    }
                 } else if (code & 0x00200000) == 0x00000000 {
-                    if (code & 0x0df0f000) == 0x01500000 {
-                        return Opcode::Cmp;
-                    }
-                } else if (code & 0x0df0f000) == 0x01700000 {
-                    return Opcode::Cmn;
-                }
-            } else if (code & 0x00100000) == 0x00100000 {
-                if (code & 0x00200000) == 0x00200000 {
-                    if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x00800000) == 0x00000000 {
                         if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x00000020) == 0x00000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x00800000) == 0x00000000 {
-                                        if (code & 0x0df0f000) == 0x01700000 {
-                                            return Opcode::Cmn;
-                                        } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                            return Opcode::Ldrsb;
-                                        }
-                                    } else if (code & 0x0def0000) == 0x01e00000 {
-                                        return Opcode::Mvn;
-                                    } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                        return Opcode::Ldrsb;
-                                    }
-                                } else if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08708000 {
-                                        return Opcode::LdmPcW;
-                                    }
-                                } else if (code & 0x0def0000) == 0x01e00000 {
-                                    return Opcode::Mvn;
-                                } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                    return Opcode::Ldrsb;
-                                }
-                            } else if (code & 0x00000040) == 0x00000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x00800000) == 0x00000000 {
-                                        if (code & 0x0df0f000) == 0x01700000 {
-                                            return Opcode::Cmn;
-                                        } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                            return Opcode::Ldrh;
-                                        }
-                                    } else if (code & 0x0def0000) == 0x01e00000 {
-                                        return Opcode::Mvn;
-                                    } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                        return Opcode::Ldrh;
-                                    }
-                                } else if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08708000 {
-                                        return Opcode::LdmPcW;
-                                    }
-                                } else if (code & 0x0def0000) == 0x01e00000 {
-                                    return Opcode::Mvn;
-                                } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
-                                }
-                            } else if (code & 0x00008000) == 0x00000000 {
-                                if (code & 0x00800000) == 0x00000000 {
-                                    if (code & 0x0df0f000) == 0x01700000 {
-                                        return Opcode::Cmn;
-                                    } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                        return Opcode::Ldrsh;
-                                    }
-                                } else if (code & 0x0def0000) == 0x01e00000 {
-                                    return Opcode::Mvn;
-                                } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                    return Opcode::Ldrsh;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08708000 {
-                                    return Opcode::LdmPcW;
-                                }
-                            } else if (code & 0x0def0000) == 0x01e00000 {
-                                return Opcode::Mvn;
-                            } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
+                            if (code & 0x0de00000) == 0x00400000 {
+                                return Opcode::Sub;
                             }
-                        } else if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04500000 {
-                                return Opcode::Ldrb;
-                            }
-                        } else if (code & 0xfe100000) == 0xfc100000 {
-                            return Opcode::Ldc2;
-                        } else if (code & 0x0e100000) == 0x0c100000 {
-                            return Opcode::Ldc;
+                        } else if (code & 0x0c500000) == 0x04400000 {
+                            return Opcode::Strb;
                         }
-                    } else if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x00000020) == 0x00000000 {
-                            if (code & 0x00800000) == 0x00000000 {
-                                if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08708000 {
-                                        return Opcode::LdmPcW;
-                                    }
-                                } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                    return Opcode::Ldrsb;
-                                } else if (code & 0x0de00000) == 0x00600000 {
-                                    return Opcode::Rsb;
-                                }
-                            } else if (code & 0x00000040) == 0x00000000 {
-                                if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08708000 {
-                                        return Opcode::LdmPcW;
-                                    }
-                                } else if (code & 0x0fe000f0) == 0x00e00090 {
-                                    return Opcode::Smlal;
-                                } else if (code & 0x0de00000) == 0x00e00000 {
-                                    return Opcode::Rsc;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08708000 {
-                                    return Opcode::LdmPcW;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                return Opcode::Ldrsb;
-                            } else if (code & 0x0de00000) == 0x00e00000 {
-                                return Opcode::Rsc;
-                            }
-                        } else if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x00800000) == 0x00000000 {
-                                if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08708000 {
-                                        return Opcode::LdmPcW;
-                                    }
-                                } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
-                                } else if (code & 0x0de00000) == 0x00600000 {
-                                    return Opcode::Rsb;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08708000 {
-                                    return Opcode::LdmPcW;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                return Opcode::Ldrh;
-                            } else if (code & 0x0de00000) == 0x00e00000 {
-                                return Opcode::Rsc;
-                            }
-                        } else if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08708000 {
-                                    return Opcode::LdmPcW;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
-                            } else if (code & 0x0de00000) == 0x00600000 {
-                                return Opcode::Rsb;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x001000f0 {
-                            return Opcode::Ldrsh;
-                        } else if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04400000 {
+                            return Opcode::Strb;
                         }
-                    } else if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0d700000) == 0x04700000 {
-                            return Opcode::Ldrbt;
-                        } else if (code & 0x0c500000) == 0x04500000 {
-                            return Opcode::Ldrb;
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x0de00000) == 0x00c00000 {
+                            return Opcode::Sbc;
                         }
-                    } else if (code & 0xfe100000) == 0xfc100000 {
-                        return Opcode::Ldc2;
-                    } else if (code & 0x0e100000) == 0x0c100000 {
-                        return Opcode::Ldc;
+                    } else if (code & 0x0de00000) == 0x01c00000 {
+                        return Opcode::Bic;
+                    }
+                } else if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04400000 {
+                            return Opcode::Strb;
+                        }
+                    } else if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x0fb0f000) == 0x0320f000 {
+                            return Opcode::MsrI;
+                        }
+                    } else if (code & 0x0def0000) == 0x01e00000 {
+                        return Opcode::Mvn;
                     }
                 } else if (code & 0x04000000) == 0x00000000 {
                     if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x00000020) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0e708000) == 0x08500000 {
-                                        return Opcode::LdmP;
-                                    }
-                                } else if (code & 0x0e708000) == 0x08508000 {
-                                    return Opcode::LdmPc;
-                                }
-                            } else if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0e1000f0) == 0x001000d0 {
-                                    return Opcode::Ldrsb;
-                                } else if (code & 0x0de00000) == 0x00400000 {
-                                    return Opcode::Sub;
-                                }
-                            } else if (code & 0x0df0f000) == 0x01500000 {
-                                return Opcode::Cmp;
-                            } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                return Opcode::Ldrsb;
-                            }
-                        } else if (code & 0x00008000) == 0x00008000 {
-                            if (code & 0x00000040) == 0x00000000 {
-                                if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08508000 {
-                                        return Opcode::LdmPc;
-                                    }
-                                } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
-                                } else if (code & 0x0de00000) == 0x00400000 {
-                                    return Opcode::Sub;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08508000 {
-                                    return Opcode::LdmPc;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
-                            } else if (code & 0x0de00000) == 0x00400000 {
-                                return Opcode::Sub;
-                            }
-                        } else if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e708000) == 0x08500000 {
-                                        return Opcode::LdmP;
-                                    }
-                                } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
-                                } else if (code & 0x0de00000) == 0x00400000 {
-                                    return Opcode::Sub;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08500000 {
-                                    return Opcode::LdmP;
-                                }
-                            } else if (code & 0x0df0f000) == 0x01500000 {
-                                return Opcode::Cmp;
-                            } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                return Opcode::Ldrh;
-                            }
-                        } else if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08500000 {
-                                    return Opcode::LdmP;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
-                            } else if (code & 0x0de00000) == 0x00400000 {
-                                return Opcode::Sub;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08500000 {
-                                return Opcode::LdmP;
-                            }
-                        } else if (code & 0x0df0f000) == 0x01500000 {
-                            return Opcode::Cmp;
-                        } else if (code & 0x0e1000f0) == 0x001000f0 {
-                            return Opcode::Ldrsh;
+                        if (code & 0x0de00000) == 0x00600000 {
+                            return Opcode::Rsb;
                         }
-                    } else if (code & 0x00000020) == 0x00000000 {
-                        if (code & 0x01000000) == 0x01000000 {
-                            if (code & 0x08000000) == 0x00000000 {
-                                if (code & 0x0e1000f0) == 0x001000d0 {
-                                    return Opcode::Ldrsb;
-                                } else if (code & 0x0de00000) == 0x01c00000 {
-                                    return Opcode::Bic;
-                                }
-                            } else if (code & 0x00008000) == 0x00000000 {
-                                if (code & 0x0e708000) == 0x08500000 {
-                                    return Opcode::LdmP;
-                                }
-                            } else if (code & 0x0e708000) == 0x08508000 {
-                                return Opcode::LdmPc;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x00008000) == 0x00000000 {
-                                if (code & 0x0e708000) == 0x08500000 {
-                                    return Opcode::LdmP;
-                                }
-                            } else if (code & 0x0e708000) == 0x08508000 {
-                                return Opcode::LdmPc;
-                            }
-                        } else if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x0fe000f0) == 0x00c00090 {
-                                return Opcode::Smull;
-                            } else if (code & 0x0de00000) == 0x00c00000 {
-                                return Opcode::Sbc;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x001000d0 {
-                            return Opcode::Ldrsb;
-                        } else if (code & 0x0de00000) == 0x00c00000 {
-                            return Opcode::Sbc;
-                        }
-                    } else if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
-                                } else if (code & 0x0de00000) == 0x00c00000 {
-                                    return Opcode::Sbc;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                return Opcode::Ldrh;
-                            } else if (code & 0x0de00000) == 0x01c00000 {
-                                return Opcode::Bic;
-                            }
-                        } else if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
-                            } else if (code & 0x0de00000) == 0x00c00000 {
-                                return Opcode::Sbc;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x001000f0 {
-                            return Opcode::Ldrsh;
-                        } else if (code & 0x0de00000) == 0x01c00000 {
-                            return Opcode::Bic;
-                        }
-                    } else if (code & 0x00008000) == 0x00000000 {
-                        if (code & 0x0e708000) == 0x08500000 {
-                            return Opcode::LdmP;
-                        }
-                    } else if (code & 0x0e708000) == 0x08508000 {
-                        return Opcode::LdmPc;
+                    } else if (code & 0x0de00000) == 0x00e00000 {
+                        return Opcode::Rsc;
                     }
-                } else if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0xfd70f000) == 0xf550f000 {
-                        return Opcode::Pld;
-                    } else if (code & 0x0c500000) == 0x04500000 {
-                        return Opcode::Ldrb;
-                    }
-                } else if (code & 0xfe100000) == 0xfc100000 {
-                    return Opcode::Ldc2;
-                } else if (code & 0x0ff00000) == 0x0c500000 {
-                    return Opcode::Mrrc;
-                } else if (code & 0x0e100000) == 0x0c100000 {
-                    return Opcode::Ldc;
+                } else if (code & 0x0d700000) == 0x04600000 {
+                    return Opcode::Strbt;
+                } else if (code & 0x0c500000) == 0x04400000 {
+                    return Opcode::Strb;
                 }
             } else if (code & 0x00800000) == 0x00800000 {
                 if (code & 0x01000000) == 0x01000000 {
@@ -1056,114 +992,40 @@ impl Opcode {
         } else if (code & 0x00200000) == 0x00000000 {
             if (code & 0x08000000) == 0x00000000 {
                 if (code & 0x00000010) == 0x00000000 {
-                    if (code & 0x00100000) == 0x00100000 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04100000 {
-                                    return Opcode::Ldr;
+                    if (code & 0x00800000) == 0x00800000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x01000000) == 0x00000000 {
+                                if (code & 0x0de00000) == 0x00800000 {
+                                    return Opcode::Add;
                                 }
-                            } else if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00000000 {
-                                    return Opcode::And;
-                                }
-                            } else if (code & 0x0df0f000) == 0x01100000 {
-                                return Opcode::Tst;
+                            } else if (code & 0x0de00000) == 0x01800000 {
+                                return Opcode::Orr;
                             }
-                        } else if (code & 0x01000000) == 0x01000000 {
-                            if (code & 0x04000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x01800000 {
-                                    return Opcode::Orr;
-                                }
-                            } else if (code & 0x0c500000) == 0x04100000 {
-                                return Opcode::Ldr;
-                            }
-                        } else if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00800000 {
-                                return Opcode::Add;
+                        } else if (code & 0x00100000) == 0x00000000 {
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
                             }
                         } else if (code & 0x0fff0fff) == 0x049d0004 {
                             return Opcode::PopR;
                         } else if (code & 0x0c500000) == 0x04100000 {
                             return Opcode::Ldr;
                         }
-                    } else if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x04000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00000000 {
-                                    return Opcode::And;
-                                }
-                            } else if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x00000080) == 0x00000000 {
-                            if (code & 0x0fbf0fff) == 0x010f0000 {
-                                return Opcode::Mrs;
-                            }
-                        } else if (code & 0x0ff00090) == 0x01000080 {
-                            return Opcode::Smla;
-                        }
-                    } else if (code & 0x01000000) == 0x01000000 {
-                        if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x01800000 {
-                                return Opcode::Orr;
-                            }
-                        } else if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0fff0000) == 0x028f0000 {
-                        return Opcode::AdrA;
-                    } else if (code & 0x0de00000) == 0x00800000 {
-                        return Opcode::Add;
-                    }
-                } else if (code & 0x00000080) == 0x00000000 {
-                    if (code & 0x00100000) == 0x00100000 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04100000 {
-                                    return Opcode::Ldr;
-                                }
-                            } else if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00000000 {
-                                    return Opcode::And;
-                                }
-                            } else if (code & 0x0df0f000) == 0x01100000 {
-                                return Opcode::Tst;
-                            }
-                        } else if (code & 0x04000000) == 0x04000000 {
+                    } else if (code & 0x00100000) == 0x00100000 {
+                        if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x0c500000) == 0x04100000 {
                                 return Opcode::Ldr;
-                            }
-                        } else if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00800000 {
-                                return Opcode::Add;
-                            }
-                        } else if (code & 0x0de00000) == 0x01800000 {
-                            return Opcode::Orr;
-                        }
-                    } else if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
                             }
                         } else if (code & 0x01000000) == 0x00000000 {
                             if (code & 0x0de00000) == 0x00000000 {
                                 return Opcode::And;
                             }
-                        } else if (code & 0x0ff00ff0) == 0x01000050 {
-                            return Opcode::Qadd;
+                        } else if (code & 0x0df0f000) == 0x01100000 {
+                            return Opcode::Tst;
                         }
-                    } else if (code & 0x01000000) == 0x01000000 {
+                    } else if (code & 0x01000000) == 0x00000000 {
                         if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x01800000 {
-                                return Opcode::Orr;
+                            if (code & 0x0de00000) == 0x00000000 {
+                                return Opcode::And;
                             }
                         } else if (code & 0x0c500000) == 0x04000000 {
                             return Opcode::Str;
@@ -1172,75 +1034,77 @@ impl Opcode {
                         if (code & 0x0c500000) == 0x04000000 {
                             return Opcode::Str;
                         }
-                    } else if (code & 0x0fff0000) == 0x028f0000 {
-                        return Opcode::AdrA;
-                    } else if (code & 0x0de00000) == 0x00800000 {
-                        return Opcode::Add;
+                    } else if (code & 0x00000080) == 0x00000000 {
+                        if (code & 0x0fbf0fff) == 0x010f0000 {
+                            return Opcode::Mrs;
+                        }
+                    } else if (code & 0x0ff00090) == 0x01000080 {
+                        return Opcode::Smla;
                     }
-                } else if (code & 0x00100000) == 0x00100000 {
-                    if (code & 0x01000000) == 0x01000000 {
-                        if (code & 0x00000020) == 0x00000000 {
-                            if (code & 0x00800000) == 0x00000000 {
+                } else if (code & 0x00000020) == 0x00000020 {
+                    if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x00000040) == 0x00000000 {
                                 if (code & 0x04000000) == 0x04000000 {
-                                    if (code & 0x0c500000) == 0x04100000 {
-                                        return Opcode::Ldr;
+                                    if (code & 0x0c500000) == 0x04000000 {
+                                        return Opcode::Str;
                                     }
-                                } else if (code & 0x0df0f000) == 0x01100000 {
-                                    return Opcode::Tst;
-                                } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                    return Opcode::Ldrsb;
+                                } else if (code & 0x0e1000f0) == 0x000000b0 {
+                                    return Opcode::Strh;
+                                } else if (code & 0x0de00000) == 0x00000000 {
+                                    return Opcode::And;
                                 }
                             } else if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04100000 {
-                                    return Opcode::Ldr;
+                                if (code & 0x0c500000) == 0x04000000 {
+                                    return Opcode::Str;
                                 }
-                            } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                return Opcode::Ldrsb;
-                            } else if (code & 0x0de00000) == 0x01800000 {
-                                return Opcode::Orr;
+                            } else if (code & 0x0e1000f0) == 0x000000f0 {
+                                return Opcode::Strd;
+                            } else if (code & 0x0de00000) == 0x00000000 {
+                                return Opcode::And;
                             }
                         } else if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x01000000) == 0x00000000 {
                                 if (code & 0x04000000) == 0x04000000 {
-                                    if (code & 0x0c500000) == 0x04100000 {
-                                        return Opcode::Ldr;
+                                    if (code & 0x0c500000) == 0x04000000 {
+                                        return Opcode::Str;
                                     }
-                                } else if (code & 0x0df0f000) == 0x01100000 {
-                                    return Opcode::Tst;
-                                } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
+                                } else if (code & 0x0e1000f0) == 0x000000b0 {
+                                    return Opcode::Strh;
+                                } else if (code & 0x0de00000) == 0x00800000 {
+                                    return Opcode::Add;
                                 }
                             } else if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04100000 {
-                                    return Opcode::Ldr;
+                                if (code & 0x0c500000) == 0x04000000 {
+                                    return Opcode::Str;
                                 }
-                            } else if (code & 0x0e1000f0) == 0x001000b0 {
-                                return Opcode::Ldrh;
+                            } else if (code & 0x0e1000f0) == 0x000000b0 {
+                                return Opcode::Strh;
                             } else if (code & 0x0de00000) == 0x01800000 {
                                 return Opcode::Orr;
                             }
-                        } else if (code & 0x00800000) == 0x00000000 {
+                        } else if (code & 0x01000000) == 0x00000000 {
                             if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04100000 {
-                                    return Opcode::Ldr;
+                                if (code & 0x0c500000) == 0x04000000 {
+                                    return Opcode::Str;
                                 }
-                            } else if (code & 0x0df0f000) == 0x01100000 {
-                                return Opcode::Tst;
-                            } else if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
+                            } else if (code & 0x0e1000f0) == 0x000000f0 {
+                                return Opcode::Strd;
+                            } else if (code & 0x0de00000) == 0x00800000 {
+                                return Opcode::Add;
                             }
                         } else if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04100000 {
-                                return Opcode::Ldr;
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
                             }
-                        } else if (code & 0x0e1000f0) == 0x001000f0 {
-                            return Opcode::Ldrsh;
+                        } else if (code & 0x0e1000f0) == 0x000000f0 {
+                            return Opcode::Strd;
                         } else if (code & 0x0de00000) == 0x01800000 {
                             return Opcode::Orr;
                         }
-                    } else if (code & 0x00000020) == 0x00000020 {
+                    } else if (code & 0x00800000) == 0x00000000 {
                         if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x01000000) == 0x00000000 {
                                 if (code & 0x04000000) == 0x04000000 {
                                     if (code & 0x0c500000) == 0x04100000 {
                                         return Opcode::Ldr;
@@ -1254,12 +1118,12 @@ impl Opcode {
                                 if (code & 0x0c500000) == 0x04100000 {
                                     return Opcode::Ldr;
                                 }
+                            } else if (code & 0x0df0f000) == 0x01100000 {
+                                return Opcode::Tst;
                             } else if (code & 0x0e1000f0) == 0x001000b0 {
                                 return Opcode::Ldrh;
-                            } else if (code & 0x0de00000) == 0x00800000 {
-                                return Opcode::Add;
                             }
-                        } else if (code & 0x00800000) == 0x00000000 {
+                        } else if (code & 0x01000000) == 0x00000000 {
                             if (code & 0x04000000) == 0x04000000 {
                                 if (code & 0x0c500000) == 0x04100000 {
                                     return Opcode::Ldr;
@@ -1273,23 +1137,127 @@ impl Opcode {
                             if (code & 0x0c500000) == 0x04100000 {
                                 return Opcode::Ldr;
                             }
+                        } else if (code & 0x0df0f000) == 0x01100000 {
+                            return Opcode::Tst;
+                        } else if (code & 0x0e1000f0) == 0x001000f0 {
+                            return Opcode::Ldrsh;
+                        }
+                    } else if (code & 0x00000040) == 0x00000000 {
+                        if (code & 0x01000000) == 0x00000000 {
+                            if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0x0c500000) == 0x04100000 {
+                                    return Opcode::Ldr;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                return Opcode::Ldrh;
+                            } else if (code & 0x0de00000) == 0x00800000 {
+                                return Opcode::Add;
+                            }
+                        } else if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x0c500000) == 0x04100000 {
+                                return Opcode::Ldr;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x001000b0 {
+                            return Opcode::Ldrh;
+                        } else if (code & 0x0de00000) == 0x01800000 {
+                            return Opcode::Orr;
+                        }
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x0c500000) == 0x04100000 {
+                                return Opcode::Ldr;
+                            }
                         } else if (code & 0x0e1000f0) == 0x001000f0 {
                             return Opcode::Ldrsh;
                         } else if (code & 0x0de00000) == 0x00800000 {
                             return Opcode::Add;
                         }
-                    } else if (code & 0x00000040) == 0x00000040 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04100000 {
-                                    return Opcode::Ldr;
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0e1000f0) == 0x001000f0 {
+                        return Opcode::Ldrsh;
+                    } else if (code & 0x0de00000) == 0x01800000 {
+                        return Opcode::Orr;
+                    }
+                } else if (code & 0x00000080) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00800000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x01000000) == 0x00000000 {
+                                if (code & 0x0de00000) == 0x00800000 {
+                                    return Opcode::Add;
                                 }
-                            } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                return Opcode::Ldrsb;
-                            } else if (code & 0x0de00000) == 0x00000000 {
-                                return Opcode::And;
+                            } else if (code & 0x0de00000) == 0x01800000 {
+                                return Opcode::Orr;
+                            }
+                        } else if (code & 0x00100000) == 0x00000000 {
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
+                            }
+                        } else if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x00100000) == 0x00000000 {
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
+                            }
+                        } else if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x0de00000) == 0x00000000 {
+                            return Opcode::And;
+                        }
+                    } else if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x0ff00ff0) == 0x01000050 {
+                            return Opcode::Qadd;
+                        }
+                    } else if (code & 0x0df0f000) == 0x01100000 {
+                        return Opcode::Tst;
+                    }
+                } else if (code & 0x00800000) == 0x00800000 {
+                    if (code & 0x00000040) == 0x00000000 {
+                        if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x00100000) == 0x00000000 {
+                                if (code & 0x0c500000) == 0x04000000 {
+                                    return Opcode::Str;
+                                }
+                            } else if (code & 0x0c500000) == 0x04100000 {
+                                return Opcode::Ldr;
+                            }
+                        } else if (code & 0x01000000) == 0x01000000 {
+                            if (code & 0x0de00000) == 0x01800000 {
+                                return Opcode::Orr;
+                            }
+                        } else if (code & 0x0fe000f0) == 0x00800090 {
+                            return Opcode::Umull;
+                        } else if (code & 0x0de00000) == 0x00800000 {
+                            return Opcode::Add;
+                        }
+                    } else if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x01000000) == 0x00000000 {
+                            if (code & 0x04000000) == 0x04000000 {
+                                if (code & 0x0c500000) == 0x04000000 {
+                                    return Opcode::Str;
+                                }
+                            } else if (code & 0x0e1010f0) == 0x000000d0 {
+                                return Opcode::Ldrd;
+                            } else if (code & 0x0de00000) == 0x00800000 {
+                                return Opcode::Add;
                             }
                         } else if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
+                            }
+                        } else if (code & 0x0e1010f0) == 0x000000d0 {
+                            return Opcode::Ldrd;
+                        } else if (code & 0x0de00000) == 0x01800000 {
+                            return Opcode::Orr;
+                        }
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x0c500000) == 0x04100000 {
                                 return Opcode::Ldr;
                             }
@@ -1298,135 +1266,17 @@ impl Opcode {
                         } else if (code & 0x0de00000) == 0x00800000 {
                             return Opcode::Add;
                         }
-                    } else if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04100000 {
-                                return Opcode::Ldr;
-                            }
-                        } else if (code & 0x0fe0f0f0) == 0x00000090 {
-                            return Opcode::Mul;
-                        } else if (code & 0x0de00000) == 0x00000000 {
-                            return Opcode::And;
-                        }
                     } else if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x0c500000) == 0x04100000 {
                             return Opcode::Ldr;
                         }
-                    } else if (code & 0x0fe000f0) == 0x00800090 {
-                        return Opcode::Umull;
-                    } else if (code & 0x0de00000) == 0x00800000 {
-                        return Opcode::Add;
-                    }
-                } else if (code & 0x02000000) == 0x02000000 {
-                    if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00000000 {
-                                return Opcode::And;
-                            }
-                        } else if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x01000000) == 0x01000000 {
-                        if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x01800000 {
-                                return Opcode::Orr;
-                            }
-                        } else if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0fff0000) == 0x028f0000 {
-                        return Opcode::AdrA;
-                    } else if (code & 0x0de00000) == 0x00800000 {
-                        return Opcode::Add;
-                    }
-                } else if (code & 0x00000020) == 0x00000020 {
-                    if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04000000 {
-                                    return Opcode::Str;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x000000b0 {
-                                return Opcode::Strh;
-                            } else if (code & 0x0de00000) == 0x00000000 {
-                                return Opcode::And;
-                            }
-                        } else if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x000000f0 {
-                            return Opcode::Strd;
-                        } else if (code & 0x0de00000) == 0x00000000 {
-                            return Opcode::And;
-                        }
-                    } else if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x0c500000) == 0x04000000 {
-                                    return Opcode::Str;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x000000b0 {
-                                return Opcode::Strh;
-                            } else if (code & 0x0de00000) == 0x00800000 {
-                                return Opcode::Add;
-                            }
-                        } else if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x000000b0 {
-                            return Opcode::Strh;
-                        } else if (code & 0x0de00000) == 0x01800000 {
-                            return Opcode::Orr;
-                        }
-                    } else if (code & 0x01000000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x000000f0 {
-                            return Opcode::Strd;
-                        } else if (code & 0x0de00000) == 0x00800000 {
-                            return Opcode::Add;
-                        }
-                    } else if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0e1000f0) == 0x000000f0 {
-                        return Opcode::Strd;
+                    } else if (code & 0x0e1000f0) == 0x001000d0 {
+                        return Opcode::Ldrsb;
                     } else if (code & 0x0de00000) == 0x01800000 {
                         return Opcode::Orr;
                     }
-                } else if (code & 0x01000000) == 0x01000000 {
-                    if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x0ff00ff0) == 0x01000090 {
-                                return Opcode::Swp;
-                            }
-                        } else if (code & 0x0de00000) == 0x01800000 {
-                            return Opcode::Orr;
-                        }
-                    } else if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0e1010f0) == 0x000000d0 {
-                        return Opcode::Ldrd;
-                    } else if (code & 0x0de00000) == 0x01800000 {
-                        return Opcode::Orr;
-                    }
-                } else if (code & 0x00000040) == 0x00000040 {
-                    if (code & 0x00800000) == 0x00000000 {
+                } else if (code & 0x00100000) == 0x00000000 {
+                    if (code & 0x00000040) == 0x00000040 {
                         if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x0c500000) == 0x04000000 {
                                 return Opcode::Str;
@@ -1436,17 +1286,15 @@ impl Opcode {
                         } else if (code & 0x0de00000) == 0x00000000 {
                             return Opcode::And;
                         }
-                    } else if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
+                    } else if (code & 0x01000000) == 0x01000000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x0ff00ff0) == 0x01000090 {
+                                return Opcode::Swp;
+                            }
+                        } else if (code & 0x0c500000) == 0x04000000 {
                             return Opcode::Str;
                         }
-                    } else if (code & 0x0e1010f0) == 0x000000d0 {
-                        return Opcode::Ldrd;
-                    } else if (code & 0x0de00000) == 0x00800000 {
-                        return Opcode::Add;
-                    }
-                } else if (code & 0x00800000) == 0x00000000 {
-                    if (code & 0x04000000) == 0x04000000 {
+                    } else if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x0c500000) == 0x04000000 {
                             return Opcode::Str;
                         }
@@ -1455,14 +1303,34 @@ impl Opcode {
                     } else if (code & 0x0de00000) == 0x00000000 {
                         return Opcode::And;
                     }
-                } else if (code & 0x04000000) == 0x04000000 {
-                    if (code & 0x0c500000) == 0x04000000 {
-                        return Opcode::Str;
+                } else if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0df0f000) == 0x01100000 {
+                        return Opcode::Tst;
+                    } else if (code & 0x0e1000f0) == 0x001000d0 {
+                        return Opcode::Ldrsb;
                     }
-                } else if (code & 0x0fe000f0) == 0x00800090 {
-                    return Opcode::Umull;
-                } else if (code & 0x0de00000) == 0x00800000 {
-                    return Opcode::Add;
+                } else if (code & 0x00000040) == 0x00000000 {
+                    if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0fe0f0f0) == 0x00000090 {
+                        return Opcode::Mul;
+                    } else if (code & 0x0de00000) == 0x00000000 {
+                        return Opcode::And;
+                    }
+                } else if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                    return Opcode::Ldrsb;
+                } else if (code & 0x0de00000) == 0x00000000 {
+                    return Opcode::And;
                 }
             } else if (code & 0x01000000) == 0x01000000 {
                 if (code & 0x04000000) == 0x00000000 {
@@ -2246,7 +2114,7 @@ impl Opcode {
         OPCODE_MNEMONICS[self as usize]
     }
     pub fn count() -> usize {
-        91
+        89
     }
 }
 impl Ins {
@@ -2406,12 +2274,6 @@ impl Ins {
     #[inline(always)]
     pub fn field_rotated_immed_8(&self) -> u32 {
         (self.code & 0x000000ff).rotate_right(((self.code >> 8) & 0x0000000f) << 1)
-    }
-    /// rotated_immed_8_neg: 8-bit signed immediate
-    #[inline(always)]
-    pub fn field_rotated_immed_8_neg(&self) -> i32 {
-        (-((self.code & 0x000000ff).rotate_right(((self.code >> 8) & 0x0000000f) << 1)
-            as i32)) as i32
     }
     /// immed_24: 24-bit immediate
     #[inline(always)]
@@ -6809,430 +6671,6 @@ fn parse_add(out: &mut ParsedIns, ins: Ins) {
                     Argument::Reg(ins.field_rn()),
                     Argument::Reg(ins.field_rm()),
                     Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        _ => {
-            ParsedIns {
-                mnemonic: "<illegal>",
-                args: [
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-    };
-}
-fn parse_adr_a(out: &mut ParsedIns, ins: Ins) {
-    *out = match ins.modifier_cond() {
-        Cond::Eq => {
-            ParsedIns {
-                mnemonic: "adreq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ne => {
-            ParsedIns {
-                mnemonic: "adrne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hs => {
-            ParsedIns {
-                mnemonic: "adrhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lo => {
-            ParsedIns {
-                mnemonic: "adrlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Mi => {
-            ParsedIns {
-                mnemonic: "adrmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Pl => {
-            ParsedIns {
-                mnemonic: "adrpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vs => {
-            ParsedIns {
-                mnemonic: "adrvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vc => {
-            ParsedIns {
-                mnemonic: "adrvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hi => {
-            ParsedIns {
-                mnemonic: "adrhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ls => {
-            ParsedIns {
-                mnemonic: "adrls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ge => {
-            ParsedIns {
-                mnemonic: "adrge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lt => {
-            ParsedIns {
-                mnemonic: "adrlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Gt => {
-            ParsedIns {
-                mnemonic: "adrgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Le => {
-            ParsedIns {
-                mnemonic: "adrle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Al => {
-            ParsedIns {
-                mnemonic: "adr",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::UImm(ins.field_rotated_immed_8()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        _ => {
-            ParsedIns {
-                mnemonic: "<illegal>",
-                args: [
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-    };
-}
-fn parse_adr_s(out: &mut ParsedIns, ins: Ins) {
-    *out = match ins.modifier_cond() {
-        Cond::Eq => {
-            ParsedIns {
-                mnemonic: "adreq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ne => {
-            ParsedIns {
-                mnemonic: "adrne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hs => {
-            ParsedIns {
-                mnemonic: "adrhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lo => {
-            ParsedIns {
-                mnemonic: "adrlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Mi => {
-            ParsedIns {
-                mnemonic: "adrmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Pl => {
-            ParsedIns {
-                mnemonic: "adrpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vs => {
-            ParsedIns {
-                mnemonic: "adrvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Vc => {
-            ParsedIns {
-                mnemonic: "adrvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Hi => {
-            ParsedIns {
-                mnemonic: "adrhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ls => {
-            ParsedIns {
-                mnemonic: "adrls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Ge => {
-            ParsedIns {
-                mnemonic: "adrge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Lt => {
-            ParsedIns {
-                mnemonic: "adrlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Gt => {
-            ParsedIns {
-                mnemonic: "adrgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Le => {
-            ParsedIns {
-                mnemonic: "adrle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        Cond::Al => {
-            ParsedIns {
-                mnemonic: "adr",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::SImm(ins.field_rotated_immed_8_neg()),
-                    Argument::None,
-                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -73037,11 +72475,9 @@ fn parse_umull(out: &mut ParsedIns, ins: Ins) {
     };
 }
 type MnemonicParser = fn(&mut ParsedIns, Ins);
-static MNEMONIC_PARSERS: [MnemonicParser; 91] = [
+static MNEMONIC_PARSERS: [MnemonicParser; 89] = [
     parse_adc,
     parse_add,
-    parse_adr_a,
-    parse_adr_s,
     parse_and,
     parse_asr,
     parse_b,
