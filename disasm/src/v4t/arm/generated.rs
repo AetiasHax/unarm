@@ -5,7 +5,7 @@
 use crate::{args::*, parse::ParsedIns};
 use super::Ins;
 /// These are the mnemonics of each opcode. Some mnemonics are duplicated due to them having multiple formats.
-static OPCODE_MNEMONICS: [&str; 67] = [
+static OPCODE_MNEMONICS: [&str; 68] = [
     "adc",
     "add",
     "adr",
@@ -37,6 +37,7 @@ static OPCODE_MNEMONICS: [&str; 67] = [
     "lsr",
     "mcr",
     "mla",
+    "mov",
     "mov",
     "mrc",
     "mrs",
@@ -143,138 +144,116 @@ pub enum Opcode {
     Mcr = 29,
     /// MLA: Multiply Accumulate
     Mla = 30,
-    /// MOV: Move
-    Mov = 31,
+    /// MOV: Move immediate
+    MovImm = 31,
+    /// MOV: Move register
+    MovReg = 32,
     /// MRC: Move to ARM Register from Coprocessor
-    Mrc = 32,
+    Mrc = 33,
     /// MRS: Move to ARM Register from Status Register
-    Mrs = 33,
+    Mrs = 34,
     /// MSR: Move to Status Register from ARM Register
-    MsrI = 34,
+    MsrI = 35,
     /// MSR: Move to Status Register from ARM Register
-    Msr = 35,
+    Msr = 36,
     /// MUL: Multiply
-    Mul = 36,
+    Mul = 37,
     /// MVN: Move Not
-    Mvn = 37,
+    Mvn = 38,
     /// ORR: Logical OR
-    Orr = 38,
+    Orr = 39,
     /// POP: Pop multiple registers
-    PopM = 39,
+    PopM = 40,
     /// POP: Pop register
-    PopR = 40,
+    PopR = 41,
     /// PUSH: Push multiple registers
-    PushM = 41,
+    PushM = 42,
     /// PUSH: Push register
-    PushR = 42,
+    PushR = 43,
     /// ROR: Rotate Right
-    Ror = 43,
+    Ror = 44,
     /// RRX: Rotate Right with Extend
-    Rrx = 44,
+    Rrx = 45,
     /// RSB: Reverse Subtract
-    Rsb = 45,
+    Rsb = 46,
     /// RSC: Reverse Subtract with Carry
-    Rsc = 46,
+    Rsc = 47,
     /// SBC: Subtract with Carry
-    Sbc = 47,
+    Sbc = 48,
     /// SMLAL: Signed Multiply Accumulate Long
-    Smlal = 48,
+    Smlal = 49,
     /// SMULL: Signed Multiply Long
-    Smull = 49,
+    Smull = 50,
     /// STC: Store Coprocessor
-    Stc = 50,
+    Stc = 51,
     /// STM: Store Multiple
-    Stm = 51,
+    Stm = 52,
     /// STM: Store Multiple (writeback)
-    StmW = 52,
+    StmW = 53,
     /// STM: Store Multiple (privileged)
-    StmP = 53,
+    StmP = 54,
     /// STR: Store Register
-    Str = 54,
+    Str = 55,
     /// STRB: Store Register Byte
-    Strb = 55,
+    Strb = 56,
     /// STRBT: Store Register Byte with Translation
-    Strbt = 56,
+    Strbt = 57,
     /// STRH: Store Register Halfword
-    Strh = 57,
+    Strh = 58,
     /// STRT: Store Register with Translation
-    Strt = 58,
+    Strt = 59,
     /// SUB: Subtract
-    Sub = 59,
+    Sub = 60,
     /// SWI: Software Interrupt
-    Swi = 60,
+    Swi = 61,
     /// SWP: Swap
-    Swp = 61,
+    Swp = 62,
     /// SWPB: Swap Byte
-    Swpb = 62,
+    Swpb = 63,
     /// TEQ: Test Equivalence
-    Teq = 63,
+    Teq = 64,
     /// TST: Test
-    Tst = 64,
+    Tst = 65,
     /// UMLAL: Unsigned Multiply Accumulate Long
-    Umlal = 65,
+    Umlal = 66,
     /// UMULL: Unsigned Multiply Long
-    Umull = 66,
+    Umull = 67,
 }
 impl Opcode {
     #[inline]
     pub fn find(code: u32) -> Self {
-        if (code & 0x02000000) == 0x02000000 {
-            if (code & 0x00200000) == 0x00000000 {
-                if (code & 0x01000000) == 0x01000000 {
-                    if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x00400000) == 0x00000000 {
+        if (code & 0x00400000) == 0x00400000 {
+            if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00800000 {
+                        if (code & 0x01000000) == 0x00000000 {
                             if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0f000000) == 0x0b000000 {
-                                    return Opcode::Bl;
+                                if (code & 0x0f000000) == 0x0a000000 {
+                                    return Opcode::B;
                                 }
-                            } else if (code & 0x00800000) == 0x00000000 {
-                                if (code & 0x0df0f000) == 0x01100000 {
-                                    return Opcode::Tst;
+                            } else if (code & 0x00200000) == 0x00000000 {
+                                if (code & 0x0de00000) == 0x00c00000 {
+                                    return Opcode::Sbc;
                                 }
-                            } else if (code & 0x0de00000) == 0x01800000 {
-                                return Opcode::Orr;
+                            } else if (code & 0x0de00000) == 0x00e00000 {
+                                return Opcode::Rsc;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
                             if (code & 0x0f000000) == 0x0b000000 {
                                 return Opcode::Bl;
                             }
-                        } else if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x0df0f000) == 0x01500000 {
-                                return Opcode::Cmp;
+                        } else if (code & 0x00200000) == 0x00000000 {
+                            if (code & 0x0de00000) == 0x01c00000 {
+                                return Opcode::Bic;
                             }
-                        } else if (code & 0x0de00000) == 0x01c00000 {
-                            return Opcode::Bic;
+                        } else if (code & 0x0def0000) == 0x01e00000 {
+                            return Opcode::Mvn;
                         }
-                    } else if (code & 0x00100000) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0f000000) == 0x0f000000 {
-                                return Opcode::Swi;
-                            }
-                        } else if (code & 0x00400000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x0c500000) == 0x04400000 {
-                            return Opcode::Strb;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0f000000) == 0x0f000000 {
-                            return Opcode::Swi;
-                        }
-                    } else if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04100000 {
-                            return Opcode::Ldr;
-                        }
-                    } else if (code & 0x0c500000) == 0x04500000 {
-                        return Opcode::Ldrb;
-                    }
-                } else if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x00800000) == 0x00000000 {
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x00200000) == 0x00200000 {
                             if (code & 0x08000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00000000 {
-                                    return Opcode::And;
+                                if (code & 0x0de00000) == 0x00600000 {
+                                    return Opcode::Rsb;
                                 }
                             } else if (code & 0x0f000000) == 0x0a000000 {
                                 return Opcode::B;
@@ -283,151 +262,53 @@ impl Opcode {
                             if (code & 0x0f000000) == 0x0a000000 {
                                 return Opcode::B;
                             }
-                        } else if (code & 0x0fff0000) == 0x028f0000 {
-                            return Opcode::AdrA;
-                        } else if (code & 0x0de00000) == 0x00800000 {
-                            return Opcode::Add;
+                        } else if (code & 0x0fff0000) == 0x024f0000 {
+                            return Opcode::AdrS;
+                        } else if (code & 0x0de00000) == 0x00400000 {
+                            return Opcode::Sub;
                         }
-                    } else if (code & 0x00800000) == 0x00800000 {
+                    } else if (code & 0x00001000) == 0x00001000 {
                         if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00c00000 {
-                                return Opcode::Sbc;
+                            if (code & 0x0fb0f000) == 0x0320f000 {
+                                return Opcode::MsrI;
                             }
-                        } else if (code & 0x0f000000) == 0x0a000000 {
-                            return Opcode::B;
+                        } else if (code & 0x0f000000) == 0x0b000000 {
+                            return Opcode::Bl;
                         }
                     } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0f000000) == 0x0a000000 {
-                            return Opcode::B;
-                        }
-                    } else if (code & 0x0fff0000) == 0x024f0000 {
-                        return Opcode::AdrS;
-                    } else if (code & 0x0de00000) == 0x00400000 {
-                        return Opcode::Sub;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x00000010) == 0x00000000 {
-                        if (code & 0x0f000010) == 0x0e000000 {
-                            return Opcode::Cdp;
-                        }
-                    } else if (code & 0x00100000) == 0x00000000 {
-                        if (code & 0x0f100010) == 0x0e000010 {
-                            return Opcode::Mcr;
-                        }
-                    } else if (code & 0x0f100010) == 0x0e100010 {
-                        return Opcode::Mrc;
-                    }
-                } else if (code & 0x00100000) == 0x00000000 {
-                    if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0c500000) == 0x04400000 {
-                        return Opcode::Strb;
-                    }
-                } else if (code & 0x00400000) == 0x00000000 {
-                    if (code & 0x0c500000) == 0x04100000 {
-                        return Opcode::Ldr;
-                    }
-                } else if (code & 0x0c500000) == 0x04500000 {
-                    return Opcode::Ldrb;
-                }
-            } else if (code & 0x01000000) == 0x01000000 {
-                if (code & 0x04000000) == 0x04000000 {
-                    if (code & 0x00100000) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0f000000) == 0x0f000000 {
-                                return Opcode::Swi;
-                            }
-                        } else if (code & 0x00400000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x0c500000) == 0x04400000 {
-                            return Opcode::Strb;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0f000000) == 0x0f000000 {
-                            return Opcode::Swi;
-                        }
-                    } else if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04100000 {
-                            return Opcode::Ldr;
-                        }
-                    } else if (code & 0x0c500000) == 0x04500000 {
-                        return Opcode::Ldrb;
-                    }
-                } else if (code & 0x00800000) == 0x00800000 {
-                    if (code & 0x08000000) == 0x08000000 {
                         if (code & 0x0f000000) == 0x0b000000 {
                             return Opcode::Bl;
                         }
-                    } else if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x0def0000) == 0x01a00000 {
-                            return Opcode::Mov;
+                    } else if (code & 0x00200000) == 0x00000000 {
+                        if (code & 0x0df0f000) == 0x01500000 {
+                            return Opcode::Cmp;
                         }
-                    } else if (code & 0x0def0000) == 0x01e00000 {
-                        return Opcode::Mvn;
+                    } else if (code & 0x0df0f000) == 0x01700000 {
+                        return Opcode::Cmn;
                     }
-                } else if (code & 0x00001000) == 0x00001000 {
-                    if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0fb0f000) == 0x0320f000 {
-                            return Opcode::MsrI;
-                        }
-                    } else if (code & 0x0f000000) == 0x0b000000 {
-                        return Opcode::Bl;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0f000000) == 0x0b000000 {
-                        return Opcode::Bl;
-                    }
-                } else if (code & 0x00400000) == 0x00000000 {
-                    if (code & 0x0df0f000) == 0x01300000 {
-                        return Opcode::Teq;
-                    }
-                } else if (code & 0x0df0f000) == 0x01700000 {
-                    return Opcode::Cmn;
-                }
-            } else if (code & 0x00400000) == 0x00000000 {
-                if (code & 0x08000000) == 0x00000000 {
+                } else if (code & 0x08000000) == 0x00000000 {
                     if (code & 0x00100000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x00800000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00200000 {
-                                    return Opcode::Eor;
-                                }
-                            } else if (code & 0x0de00000) == 0x00a00000 {
-                                return Opcode::Adc;
-                            }
-                        } else if (code & 0x0d700000) == 0x04200000 {
-                            return Opcode::Strt;
-                        } else if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
+                        if (code & 0x0d700000) == 0x04600000 {
+                            return Opcode::Strbt;
+                        } else if (code & 0x0c500000) == 0x04400000 {
+                            return Opcode::Strb;
                         }
-                    } else if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00200000 {
-                                return Opcode::Eor;
-                            }
-                        } else if (code & 0x0de00000) == 0x00a00000 {
-                            return Opcode::Adc;
-                        }
-                    } else if (code & 0x0d700000) == 0x04300000 {
-                        return Opcode::Ldrt;
-                    } else if (code & 0x0c500000) == 0x04100000 {
-                        return Opcode::Ldr;
+                    } else if (code & 0x0d700000) == 0x04700000 {
+                        return Opcode::Ldrbt;
+                    } else if (code & 0x0c500000) == 0x04500000 {
+                        return Opcode::Ldrb;
                     }
                 } else if (code & 0x00000010) == 0x00000000 {
-                    if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x0f000000) == 0x0a000000 {
-                            return Opcode::B;
+                    if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x0f000010) == 0x0e000000 {
+                            return Opcode::Cdp;
                         }
-                    } else if (code & 0x0f000010) == 0x0e000000 {
-                        return Opcode::Cdp;
+                    } else if (code & 0x0f000000) == 0x0f000000 {
+                        return Opcode::Swi;
                     }
-                } else if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x0f000000) == 0x0a000000 {
-                        return Opcode::B;
+                } else if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x0f000000) == 0x0f000000 {
+                        return Opcode::Swi;
                     }
                 } else if (code & 0x00100000) == 0x00000000 {
                     if (code & 0x0f100010) == 0x0e000010 {
@@ -436,78 +317,10 @@ impl Opcode {
                 } else if (code & 0x0f100010) == 0x0e100010 {
                     return Opcode::Mrc;
                 }
-            } else if (code & 0x08000000) == 0x00000000 {
-                if (code & 0x00100000) == 0x00000000 {
-                    if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00600000 {
-                                return Opcode::Rsb;
-                            }
-                        } else if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
-                        }
-                    } else if (code & 0x0d700000) == 0x04600000 {
-                        return Opcode::Strbt;
-                    } else if (code & 0x0c500000) == 0x04400000 {
-                        return Opcode::Strb;
-                    }
-                } else if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x0de00000) == 0x00600000 {
-                            return Opcode::Rsb;
-                        }
-                    } else if (code & 0x0de00000) == 0x00e00000 {
-                        return Opcode::Rsc;
-                    }
-                } else if (code & 0x0d700000) == 0x04700000 {
-                    return Opcode::Ldrbt;
-                } else if (code & 0x0c500000) == 0x04500000 {
-                    return Opcode::Ldrb;
-                }
-            } else if (code & 0x00000010) == 0x00000000 {
-                if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x0f000000) == 0x0a000000 {
-                        return Opcode::B;
-                    }
-                } else if (code & 0x0f000010) == 0x0e000000 {
-                    return Opcode::Cdp;
-                }
-            } else if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x0f000000) == 0x0a000000 {
-                    return Opcode::B;
-                }
             } else if (code & 0x00100000) == 0x00000000 {
-                if (code & 0x0f100010) == 0x0e000010 {
-                    return Opcode::Mcr;
-                }
-            } else if (code & 0x0f100010) == 0x0e100010 {
-                return Opcode::Mrc;
-            }
-        } else if (code & 0x00200000) == 0x00000000 {
-            if (code & 0x00100000) == 0x00000000 {
-                if (code & 0x00400000) == 0x00400000 {
-                    if (code & 0x00000010) == 0x00000000 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x04000000) == 0x04000000 {
-                                if (code & 0x08000000) == 0x00000000 {
-                                    if (code & 0x0c500000) == 0x04400000 {
-                                        return Opcode::Strb;
-                                    }
-                                } else if (code & 0x0e100000) == 0x0c000000 {
-                                    return Opcode::Stc;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e700000) == 0x08400000 {
-                                    return Opcode::StmP;
-                                }
-                            } else if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00400000 {
-                                    return Opcode::Sub;
-                                }
-                            } else if (code & 0x0fbf0fff) == 0x010f0000 {
-                                return Opcode::Mrs;
-                            }
-                        } else if (code & 0x04000000) == 0x04000000 {
+                if (code & 0x00200000) == 0x00200000 {
+                    if (code & 0x01000000) == 0x01000000 {
+                        if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x08000000) == 0x00000000 {
                                 if (code & 0x0c500000) == 0x04400000 {
                                     return Opcode::Strb;
@@ -515,48 +328,48 @@ impl Opcode {
                             } else if (code & 0x0e100000) == 0x0c000000 {
                                 return Opcode::Stc;
                             }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08400000 {
-                                return Opcode::StmP;
+                        } else if (code & 0x00000010) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0fb0fff0) == 0x0120f000 {
+                                    return Opcode::Msr;
+                                }
+                            } else if (code & 0x0def0000) == 0x01e00000 {
+                                return Opcode::Mvn;
                             }
-                        } else if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00c00000 {
-                                return Opcode::Sbc;
+                        } else if (code & 0x0def0000) == 0x01e00000 {
+                            return Opcode::Mvn;
+                        } else if (code & 0x0e1000f0) == 0x000000b0 {
+                            return Opcode::Strh;
+                        }
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e100000) == 0x0c000000 {
+                                return Opcode::Stc;
                             }
-                        } else if (code & 0x0de00000) == 0x01c00000 {
-                            return Opcode::Bic;
+                        } else if (code & 0x0d700000) == 0x04600000 {
+                            return Opcode::Strbt;
+                        } else if (code & 0x0c500000) == 0x04400000 {
+                            return Opcode::Strb;
                         }
                     } else if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x00000000 {
-                            if (code & 0x00000020) == 0x00000000 {
-                                if (code & 0x08000000) == 0x08000000 {
-                                    if (code & 0x0e700000) == 0x08400000 {
-                                        return Opcode::StmP;
-                                    }
-                                } else if (code & 0x01000000) == 0x00000000 {
-                                    if (code & 0x0de00000) == 0x00400000 {
-                                        return Opcode::Sub;
-                                    }
-                                } else if (code & 0x0ff00ff0) == 0x01400090 {
-                                    return Opcode::Swpb;
-                                }
-                            } else if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e700000) == 0x08400000 {
-                                    return Opcode::StmP;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x000000b0 {
-                                return Opcode::Strh;
-                            } else if (code & 0x0de00000) == 0x00400000 {
-                                return Opcode::Sub;
-                            }
-                        } else if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04400000 {
-                                return Opcode::Strb;
-                            }
-                        } else if (code & 0x0e100000) == 0x0c000000 {
-                            return Opcode::Stc;
+                        if (code & 0x0e1000f0) == 0x000000b0 {
+                            return Opcode::Strh;
+                        } else if (code & 0x0de00000) == 0x00600000 {
+                            return Opcode::Rsb;
                         }
-                    } else if (code & 0x01000000) == 0x01000000 {
+                    } else if (code & 0x00000020) == 0x00000000 {
+                        if (code & 0x0fe000f0) == 0x00e00090 {
+                            return Opcode::Smlal;
+                        } else if (code & 0x0de00000) == 0x00e00000 {
+                            return Opcode::Rsc;
+                        }
+                    } else if (code & 0x0e1000f0) == 0x000000b0 {
+                        return Opcode::Strh;
+                    } else if (code & 0x0de00000) == 0x00e00000 {
+                        return Opcode::Rsc;
+                    }
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00000000 {
                         if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x08000000) == 0x00000000 {
                                 if (code & 0x0c500000) == 0x04400000 {
@@ -569,21 +382,45 @@ impl Opcode {
                             if (code & 0x0e700000) == 0x08400000 {
                                 return Opcode::StmP;
                             }
-                        } else if (code & 0x0e1000f0) == 0x000000b0 {
-                            return Opcode::Strh;
-                        } else if (code & 0x0de00000) == 0x01c00000 {
-                            return Opcode::Bic;
+                        } else if (code & 0x01000000) == 0x00000000 {
+                            if (code & 0x0de00000) == 0x00400000 {
+                                return Opcode::Sub;
+                            }
+                        } else if (code & 0x0fbf0fff) == 0x010f0000 {
+                            return Opcode::Mrs;
                         }
-                    } else if (code & 0x04000000) == 0x00000000 {
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0c500000) == 0x04400000 {
+                                return Opcode::Strb;
+                            }
+                        } else if (code & 0x0e100000) == 0x0c000000 {
+                            return Opcode::Stc;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e700000) == 0x08400000 {
+                            return Opcode::StmP;
+                        }
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x0de00000) == 0x00c00000 {
+                            return Opcode::Sbc;
+                        }
+                    } else if (code & 0x0de00000) == 0x01c00000 {
+                        return Opcode::Bic;
+                    }
+                } else if (code & 0x00800000) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
                         if (code & 0x00000020) == 0x00000000 {
                             if (code & 0x08000000) == 0x08000000 {
                                 if (code & 0x0e700000) == 0x08400000 {
                                     return Opcode::StmP;
                                 }
-                            } else if (code & 0x0fe000f0) == 0x00c00090 {
-                                return Opcode::Smull;
-                            } else if (code & 0x0de00000) == 0x00c00000 {
-                                return Opcode::Sbc;
+                            } else if (code & 0x01000000) == 0x00000000 {
+                                if (code & 0x0de00000) == 0x00400000 {
+                                    return Opcode::Sub;
+                                }
+                            } else if (code & 0x0ff00ff0) == 0x01400090 {
+                                return Opcode::Swpb;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
                             if (code & 0x0e700000) == 0x08400000 {
@@ -591,8 +428,8 @@ impl Opcode {
                             }
                         } else if (code & 0x0e1000f0) == 0x000000b0 {
                             return Opcode::Strh;
-                        } else if (code & 0x0de00000) == 0x00c00000 {
-                            return Opcode::Sbc;
+                        } else if (code & 0x0de00000) == 0x00400000 {
+                            return Opcode::Sub;
                         }
                     } else if (code & 0x08000000) == 0x00000000 {
                         if (code & 0x0c500000) == 0x04400000 {
@@ -601,140 +438,52 @@ impl Opcode {
                     } else if (code & 0x0e100000) == 0x0c000000 {
                         return Opcode::Stc;
                     }
-                } else if (code & 0x00000010) == 0x00000000 {
-                    if (code & 0x00800000) == 0x00000000 {
-                        if (code & 0x04000000) == 0x04000000 {
-                            if (code & 0x08000000) == 0x00000000 {
-                                if (code & 0x0c500000) == 0x04000000 {
-                                    return Opcode::Str;
-                                }
-                            } else if (code & 0x0e100000) == 0x0c000000 {
-                                return Opcode::Stc;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08000000 {
-                                return Opcode::Stm;
-                            }
-                        } else if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x0de00000) == 0x00000000 {
-                                return Opcode::And;
-                            }
-                        } else if (code & 0x0fbf0fff) == 0x010f0000 {
-                            return Opcode::Mrs;
-                        }
-                    } else if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
-                            }
-                        } else if (code & 0x0e100000) == 0x0c000000 {
-                            return Opcode::Stc;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e700000) == 0x08000000 {
-                            return Opcode::Stm;
-                        }
-                    } else if (code & 0x01000000) == 0x00000000 {
-                        if (code & 0x0de00000) == 0x00800000 {
-                            return Opcode::Add;
-                        }
-                    } else if (code & 0x0de00000) == 0x01800000 {
-                        return Opcode::Orr;
-                    }
                 } else if (code & 0x01000000) == 0x01000000 {
-                    if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x00000020) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e700000) == 0x08000000 {
-                                    return Opcode::Stm;
-                                }
-                            } else if (code & 0x00800000) == 0x00000000 {
-                                if (code & 0x0ff00ff0) == 0x01000090 {
-                                    return Opcode::Swp;
-                                }
-                            } else if (code & 0x0de00000) == 0x01800000 {
-                                return Opcode::Orr;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08000000 {
-                                return Opcode::Stm;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x000000b0 {
-                            return Opcode::Strh;
-                        } else if (code & 0x0de00000) == 0x01800000 {
-                            return Opcode::Orr;
-                        }
-                    } else if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0e100000) == 0x0c000000 {
-                        return Opcode::Stc;
-                    }
-                } else if (code & 0x00000020) == 0x00000020 {
-                    if (code & 0x04000000) == 0x00000000 {
-                        if (code & 0x00800000) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e700000) == 0x08000000 {
-                                    return Opcode::Stm;
-                                }
-                            } else if (code & 0x0e1000f0) == 0x000000b0 {
-                                return Opcode::Strh;
-                            } else if (code & 0x0de00000) == 0x00000000 {
-                                return Opcode::And;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08000000 {
-                                return Opcode::Stm;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x000000b0 {
-                            return Opcode::Strh;
-                        } else if (code & 0x0de00000) == 0x00800000 {
-                            return Opcode::Add;
-                        }
-                    } else if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x0e100000) == 0x0c000000 {
-                        return Opcode::Stc;
-                    }
-                } else if (code & 0x00800000) == 0x00000000 {
                     if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04000000 {
-                                return Opcode::Str;
+                            if (code & 0x0c500000) == 0x04400000 {
+                                return Opcode::Strb;
                             }
                         } else if (code & 0x0e100000) == 0x0c000000 {
                             return Opcode::Stc;
                         }
                     } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e700000) == 0x08000000 {
-                            return Opcode::Stm;
+                        if (code & 0x0e700000) == 0x08400000 {
+                            return Opcode::StmP;
                         }
-                    } else if (code & 0x0fe0f0f0) == 0x00000090 {
-                        return Opcode::Mul;
-                    } else if (code & 0x0de00000) == 0x00000000 {
-                        return Opcode::And;
+                    } else if (code & 0x0e1000f0) == 0x000000b0 {
+                        return Opcode::Strh;
+                    } else if (code & 0x0de00000) == 0x01c00000 {
+                        return Opcode::Bic;
                     }
-                } else if (code & 0x04000000) == 0x04000000 {
-                    if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x00000020) == 0x00000000 {
+                        if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e700000) == 0x08400000 {
+                                return Opcode::StmP;
+                            }
+                        } else if (code & 0x0fe000f0) == 0x00c00090 {
+                            return Opcode::Smull;
+                        } else if (code & 0x0de00000) == 0x00c00000 {
+                            return Opcode::Sbc;
                         }
-                    } else if (code & 0x0e100000) == 0x0c000000 {
-                        return Opcode::Stc;
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e700000) == 0x08400000 {
+                            return Opcode::StmP;
+                        }
+                    } else if (code & 0x0e1000f0) == 0x000000b0 {
+                        return Opcode::Strh;
+                    } else if (code & 0x0de00000) == 0x00c00000 {
+                        return Opcode::Sbc;
                     }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e700000) == 0x08000000 {
-                        return Opcode::Stm;
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04400000 {
+                        return Opcode::Strb;
                     }
-                } else if (code & 0x0fe000f0) == 0x00800090 {
-                    return Opcode::Umull;
-                } else if (code & 0x0de00000) == 0x00800000 {
-                    return Opcode::Add;
+                } else if (code & 0x0e100000) == 0x0c000000 {
+                    return Opcode::Stc;
                 }
-            } else if (code & 0x00400000) == 0x00400000 {
+            } else if (code & 0x00200000) == 0x00000000 {
                 if (code & 0x00800000) == 0x00000000 {
                     if (code & 0x08000000) == 0x00000000 {
                         if (code & 0x00000020) == 0x00000000 {
@@ -887,6 +636,364 @@ impl Opcode {
                     }
                 } else if (code & 0x0e708000) == 0x08508000 {
                     return Opcode::LdmPc;
+                }
+            } else if (code & 0x01000000) == 0x01000000 {
+                if (code & 0x00000020) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00008000) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0df0f000) == 0x01700000 {
+                                    return Opcode::Cmn;
+                                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                    return Opcode::Ldrsb;
+                                }
+                            } else if (code & 0x0def0000) == 0x01e00000 {
+                                return Opcode::Mvn;
+                            } else if (code & 0x0e1000f0) == 0x001000d0 {
+                                return Opcode::Ldrsb;
+                            }
+                        } else if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e708000) == 0x08708000 {
+                                return Opcode::LdmPcW;
+                            }
+                        } else if (code & 0x0def0000) == 0x01e00000 {
+                            return Opcode::Mvn;
+                        } else if (code & 0x0e1000f0) == 0x001000d0 {
+                            return Opcode::Ldrsb;
+                        }
+                    } else if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04500000 {
+                            return Opcode::Ldrb;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c100000 {
+                        return Opcode::Ldc;
+                    }
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x00000040) == 0x00000000 {
+                        if (code & 0x00008000) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0df0f000) == 0x01700000 {
+                                    return Opcode::Cmn;
+                                } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                    return Opcode::Ldrh;
+                                }
+                            } else if (code & 0x0def0000) == 0x01e00000 {
+                                return Opcode::Mvn;
+                            } else if (code & 0x0e1000f0) == 0x001000b0 {
+                                return Opcode::Ldrh;
+                            }
+                        } else if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e708000) == 0x08708000 {
+                                return Opcode::LdmPcW;
+                            }
+                        } else if (code & 0x0def0000) == 0x01e00000 {
+                            return Opcode::Mvn;
+                        } else if (code & 0x0e1000f0) == 0x001000b0 {
+                            return Opcode::Ldrh;
+                        }
+                    } else if (code & 0x00008000) == 0x00000000 {
+                        if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x0df0f000) == 0x01700000 {
+                                return Opcode::Cmn;
+                            } else if (code & 0x0e1000f0) == 0x001000f0 {
+                                return Opcode::Ldrsh;
+                            }
+                        } else if (code & 0x0def0000) == 0x01e00000 {
+                            return Opcode::Mvn;
+                        } else if (code & 0x0e1000f0) == 0x001000f0 {
+                            return Opcode::Ldrsh;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e708000) == 0x08708000 {
+                            return Opcode::LdmPcW;
+                        }
+                    } else if (code & 0x0def0000) == 0x01e00000 {
+                        return Opcode::Mvn;
+                    } else if (code & 0x0e1000f0) == 0x001000f0 {
+                        return Opcode::Ldrsh;
+                    }
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04500000 {
+                        return Opcode::Ldrb;
+                    }
+                } else if (code & 0x0e100000) == 0x0c100000 {
+                    return Opcode::Ldc;
+                }
+            } else if (code & 0x04000000) == 0x00000000 {
+                if (code & 0x00000020) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e708000) == 0x08708000 {
+                                return Opcode::LdmPcW;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x001000d0 {
+                            return Opcode::Ldrsb;
+                        } else if (code & 0x0de00000) == 0x00600000 {
+                            return Opcode::Rsb;
+                        }
+                    } else if (code & 0x00000040) == 0x00000000 {
+                        if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e708000) == 0x08708000 {
+                                return Opcode::LdmPcW;
+                            }
+                        } else if (code & 0x0fe000f0) == 0x00e00090 {
+                            return Opcode::Smlal;
+                        } else if (code & 0x0de00000) == 0x00e00000 {
+                            return Opcode::Rsc;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e708000) == 0x08708000 {
+                            return Opcode::LdmPcW;
+                        }
+                    } else if (code & 0x0e1000f0) == 0x001000d0 {
+                        return Opcode::Ldrsb;
+                    } else if (code & 0x0de00000) == 0x00e00000 {
+                        return Opcode::Rsc;
+                    }
+                } else if (code & 0x00000040) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e708000) == 0x08708000 {
+                                return Opcode::LdmPcW;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x001000b0 {
+                            return Opcode::Ldrh;
+                        } else if (code & 0x0de00000) == 0x00600000 {
+                            return Opcode::Rsb;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e708000) == 0x08708000 {
+                            return Opcode::LdmPcW;
+                        }
+                    } else if (code & 0x0e1000f0) == 0x001000b0 {
+                        return Opcode::Ldrh;
+                    } else if (code & 0x0de00000) == 0x00e00000 {
+                        return Opcode::Rsc;
+                    }
+                } else if (code & 0x00800000) == 0x00000000 {
+                    if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e708000) == 0x08708000 {
+                            return Opcode::LdmPcW;
+                        }
+                    } else if (code & 0x0e1000f0) == 0x001000f0 {
+                        return Opcode::Ldrsh;
+                    } else if (code & 0x0de00000) == 0x00600000 {
+                        return Opcode::Rsb;
+                    }
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0e708000) == 0x08708000 {
+                        return Opcode::LdmPcW;
+                    }
+                } else if (code & 0x0e1000f0) == 0x001000f0 {
+                    return Opcode::Ldrsh;
+                } else if (code & 0x0de00000) == 0x00e00000 {
+                    return Opcode::Rsc;
+                }
+            } else if (code & 0x08000000) == 0x08000000 {
+                if (code & 0x0e100000) == 0x0c100000 {
+                    return Opcode::Ldc;
+                }
+            } else if (code & 0x0d700000) == 0x04700000 {
+                return Opcode::Ldrbt;
+            } else if (code & 0x0c500000) == 0x04500000 {
+                return Opcode::Ldrb;
+            }
+        } else if (code & 0x00200000) == 0x00000000 {
+            if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0f000000) == 0x0b000000 {
+                                return Opcode::Bl;
+                            }
+                        } else if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x0df0f000) == 0x01100000 {
+                                return Opcode::Tst;
+                            }
+                        } else if (code & 0x0de00000) == 0x01800000 {
+                            return Opcode::Orr;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0f000000) == 0x0f000000 {
+                            return Opcode::Swi;
+                        }
+                    } else if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0de00000) == 0x00000000 {
+                                return Opcode::And;
+                            }
+                        } else if (code & 0x0f000000) == 0x0a000000 {
+                            return Opcode::B;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0f000000) == 0x0a000000 {
+                            return Opcode::B;
+                        }
+                    } else if (code & 0x0fff0000) == 0x028f0000 {
+                        return Opcode::AdrA;
+                    } else if (code & 0x0de00000) == 0x00800000 {
+                        return Opcode::Add;
+                    }
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x0f000010) == 0x0e000000 {
+                        return Opcode::Cdp;
+                    }
+                } else if (code & 0x00100000) == 0x00000000 {
+                    if (code & 0x0f100010) == 0x0e000010 {
+                        return Opcode::Mcr;
+                    }
+                } else if (code & 0x0f100010) == 0x0e100010 {
+                    return Opcode::Mrc;
+                }
+            } else if (code & 0x00100000) == 0x00000000 {
+                if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x08000000) == 0x00000000 {
+                                if (code & 0x0c500000) == 0x04000000 {
+                                    return Opcode::Str;
+                                }
+                            } else if (code & 0x0e100000) == 0x0c000000 {
+                                return Opcode::Stc;
+                            }
+                        } else if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e700000) == 0x08000000 {
+                                return Opcode::Stm;
+                            }
+                        } else if (code & 0x01000000) == 0x00000000 {
+                            if (code & 0x0de00000) == 0x00000000 {
+                                return Opcode::And;
+                            }
+                        } else if (code & 0x0fbf0fff) == 0x010f0000 {
+                            return Opcode::Mrs;
+                        }
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
+                            }
+                        } else if (code & 0x0e100000) == 0x0c000000 {
+                            return Opcode::Stc;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e700000) == 0x08000000 {
+                            return Opcode::Stm;
+                        }
+                    } else if (code & 0x01000000) == 0x00000000 {
+                        if (code & 0x0de00000) == 0x00800000 {
+                            return Opcode::Add;
+                        }
+                    } else if (code & 0x0de00000) == 0x01800000 {
+                        return Opcode::Orr;
+                    }
+                } else if (code & 0x01000000) == 0x01000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00000020) == 0x00000000 {
+                            if (code & 0x08000000) == 0x08000000 {
+                                if (code & 0x0e700000) == 0x08000000 {
+                                    return Opcode::Stm;
+                                }
+                            } else if (code & 0x00800000) == 0x00000000 {
+                                if (code & 0x0ff00ff0) == 0x01000090 {
+                                    return Opcode::Swp;
+                                }
+                            } else if (code & 0x0de00000) == 0x01800000 {
+                                return Opcode::Orr;
+                            }
+                        } else if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e700000) == 0x08000000 {
+                                return Opcode::Stm;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x000000b0 {
+                            return Opcode::Strh;
+                        } else if (code & 0x0de00000) == 0x01800000 {
+                            return Opcode::Orr;
+                        }
+                    } else if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c000000 {
+                        return Opcode::Stc;
+                    }
+                } else if (code & 0x00000020) == 0x00000020 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x08000000) == 0x08000000 {
+                                if (code & 0x0e700000) == 0x08000000 {
+                                    return Opcode::Stm;
+                                }
+                            } else if (code & 0x0e1000f0) == 0x000000b0 {
+                                return Opcode::Strh;
+                            } else if (code & 0x0de00000) == 0x00000000 {
+                                return Opcode::And;
+                            }
+                        } else if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e700000) == 0x08000000 {
+                                return Opcode::Stm;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x000000b0 {
+                            return Opcode::Strh;
+                        } else if (code & 0x0de00000) == 0x00800000 {
+                            return Opcode::Add;
+                        }
+                    } else if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c000000 {
+                        return Opcode::Stc;
+                    }
+                } else if (code & 0x00800000) == 0x00000000 {
+                    if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0c500000) == 0x04000000 {
+                                return Opcode::Str;
+                            }
+                        } else if (code & 0x0e100000) == 0x0c000000 {
+                            return Opcode::Stc;
+                        }
+                    } else if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e700000) == 0x08000000 {
+                            return Opcode::Stm;
+                        }
+                    } else if (code & 0x0fe0f0f0) == 0x00000090 {
+                        return Opcode::Mul;
+                    } else if (code & 0x0de00000) == 0x00000000 {
+                        return Opcode::And;
+                    }
+                } else if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c000000 {
+                        return Opcode::Stc;
+                    }
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0e700000) == 0x08000000 {
+                        return Opcode::Stm;
+                    }
+                } else if (code & 0x0fe000f0) == 0x00800090 {
+                    return Opcode::Umull;
+                } else if (code & 0x0de00000) == 0x00800000 {
+                    return Opcode::Add;
                 }
             } else if (code & 0x00000010) == 0x00000000 {
                 if (code & 0x00800000) == 0x00000000 {
@@ -1117,56 +1224,78 @@ impl Opcode {
             } else if (code & 0x0de00000) == 0x00800000 {
                 return Opcode::Add;
             }
-        } else if (code & 0x00100000) == 0x00000000 {
-            if (code & 0x00800000) == 0x00000000 {
-                if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00000010) == 0x00000000 {
-                        if (code & 0x00400000) == 0x00400000 {
-                            if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0de00000) == 0x00600000 {
-                                    return Opcode::Rsb;
-                                }
-                            } else if (code & 0x0fb0fff0) == 0x0120f000 {
-                                return Opcode::Msr;
-                            }
-                        } else if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x08000000) == 0x00000000 {
+        } else if (code & 0x01000000) == 0x00000000 {
+            if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x00100000) == 0x00000000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x00800000) == 0x00000000 {
                                 if (code & 0x0de00000) == 0x00200000 {
                                     return Opcode::Eor;
                                 }
-                            } else if (code & 0x0e700000) == 0x08200000 {
-                                return Opcode::StmW;
+                            } else if (code & 0x0de00000) == 0x00a00000 {
+                                return Opcode::Adc;
                             }
-                        } else if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0fb0fff0) == 0x0120f000 {
-                                return Opcode::Msr;
-                            }
-                        } else if (code & 0x0fff0000) == 0x092d0000 {
-                            return Opcode::PushM;
-                        } else if (code & 0x0e700000) == 0x08200000 {
-                            return Opcode::StmW;
+                        } else if (code & 0x0d700000) == 0x04200000 {
+                            return Opcode::Strt;
+                        } else if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
                         }
-                    } else if (code & 0x01000000) == 0x01000000 {
-                        if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x00000020) == 0x00000000 {
-                                if (code & 0x0ffffff0) == 0x012fff10 {
-                                    return Opcode::Bx;
+                    } else if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x0de00000) == 0x00200000 {
+                                return Opcode::Eor;
+                            }
+                        } else if (code & 0x0de00000) == 0x00a00000 {
+                            return Opcode::Adc;
+                        }
+                    } else if (code & 0x0d700000) == 0x04300000 {
+                        return Opcode::Ldrt;
+                    } else if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x0f000000) == 0x0a000000 {
+                            return Opcode::B;
+                        }
+                    } else if (code & 0x0f000010) == 0x0e000000 {
+                        return Opcode::Cdp;
+                    }
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0f000000) == 0x0a000000 {
+                        return Opcode::B;
+                    }
+                } else if (code & 0x00100000) == 0x00000000 {
+                    if (code & 0x0f100010) == 0x0e000010 {
+                        return Opcode::Mcr;
+                    }
+                } else if (code & 0x0f100010) == 0x0e100010 {
+                    return Opcode::Mrc;
+                }
+            } else if (code & 0x00100000) == 0x00000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x00000020) == 0x00000020 {
+                        if (code & 0x00800000) == 0x00000000 {
+                            if (code & 0x08000000) == 0x08000000 {
+                                if (code & 0x0e700000) == 0x08200000 {
+                                    return Opcode::StmW;
                                 }
                             } else if (code & 0x0e1000f0) == 0x000000b0 {
                                 return Opcode::Strh;
+                            } else if (code & 0x0de00000) == 0x00200000 {
+                                return Opcode::Eor;
                             }
-                        } else if (code & 0x0fff0000) == 0x092d0000 {
-                            return Opcode::PushM;
-                        } else if (code & 0x0e700000) == 0x08200000 {
-                            return Opcode::StmW;
-                        }
-                    } else if (code & 0x00400000) == 0x00400000 {
-                        if (code & 0x0e1000f0) == 0x000000b0 {
+                        } else if (code & 0x08000000) == 0x08000000 {
+                            if (code & 0x0e700000) == 0x08200000 {
+                                return Opcode::StmW;
+                            }
+                        } else if (code & 0x0e1000f0) == 0x000000b0 {
                             return Opcode::Strh;
-                        } else if (code & 0x0de00000) == 0x00600000 {
-                            return Opcode::Rsb;
+                        } else if (code & 0x0de00000) == 0x00a00000 {
+                            return Opcode::Adc;
                         }
-                    } else if (code & 0x00000020) == 0x00000000 {
+                    } else if (code & 0x00800000) == 0x00000000 {
                         if (code & 0x08000000) == 0x08000000 {
                             if (code & 0x0e700000) == 0x08200000 {
                                 return Opcode::StmW;
@@ -1180,256 +1309,258 @@ impl Opcode {
                         if (code & 0x0e700000) == 0x08200000 {
                             return Opcode::StmW;
                         }
-                    } else if (code & 0x0e1000f0) == 0x000000b0 {
-                        return Opcode::Strh;
-                    } else if (code & 0x0de00000) == 0x00200000 {
-                        return Opcode::Eor;
-                    }
-                } else if (code & 0x00400000) == 0x00400000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e100000) == 0x0c000000 {
-                            return Opcode::Stc;
-                        }
-                    } else if (code & 0x0d700000) == 0x04600000 {
-                        return Opcode::Strbt;
-                    } else if (code & 0x0c500000) == 0x04400000 {
-                        return Opcode::Strb;
-                    }
-                } else if (code & 0x01000000) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e100000) == 0x0c000000 {
-                            return Opcode::Stc;
-                        }
-                    } else if (code & 0x0d700000) == 0x04200000 {
-                        return Opcode::Strt;
-                    } else if (code & 0x0c500000) == 0x04000000 {
-                        return Opcode::Str;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e100000) == 0x0c000000 {
-                        return Opcode::Stc;
-                    }
-                } else if (code & 0x0fff0fff) == 0x052d0004 {
-                    return Opcode::PushR;
-                } else if (code & 0x0c500000) == 0x04000000 {
-                    return Opcode::Str;
-                }
-            } else if (code & 0x01000000) == 0x00000000 {
-                if (code & 0x04000000) == 0x04000000 {
-                    if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e100000) == 0x0c000000 {
-                                return Opcode::Stc;
-                            }
-                        } else if (code & 0x0d700000) == 0x04200000 {
-                            return Opcode::Strt;
-                        } else if (code & 0x0c500000) == 0x04000000 {
-                            return Opcode::Str;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e100000) == 0x0c000000 {
-                            return Opcode::Stc;
-                        }
-                    } else if (code & 0x0d700000) == 0x04600000 {
-                        return Opcode::Strbt;
-                    } else if (code & 0x0c500000) == 0x04400000 {
-                        return Opcode::Strb;
-                    }
-                } else if (code & 0x00400000) == 0x00400000 {
-                    if (code & 0x00000020) == 0x00000000 {
-                        if (code & 0x0fe000f0) == 0x00e00090 {
-                            return Opcode::Smlal;
-                        } else if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
-                        }
-                    } else if (code & 0x0e1000f0) == 0x000000b0 {
-                        return Opcode::Strh;
-                    } else if (code & 0x0de00000) == 0x00e00000 {
-                        return Opcode::Rsc;
-                    }
-                } else if (code & 0x00000020) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e700000) == 0x08200000 {
-                            return Opcode::StmW;
-                        }
                     } else if (code & 0x0fe000f0) == 0x00a00090 {
                         return Opcode::Umlal;
                     } else if (code & 0x0de00000) == 0x00a00000 {
                         return Opcode::Adc;
                     }
                 } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e700000) == 0x08200000 {
-                        return Opcode::StmW;
-                    }
-                } else if (code & 0x0e1000f0) == 0x000000b0 {
-                    return Opcode::Strh;
-                } else if (code & 0x0de00000) == 0x00a00000 {
-                    return Opcode::Adc;
-                }
-            } else if (code & 0x00000020) == 0x00000000 {
-                if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x00400000) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e700000) == 0x08200000 {
-                                    return Opcode::StmW;
-                                }
-                            } else if (code & 0x0fef0060) == 0x01a00000 {
-                                return Opcode::Lsl;
-                            } else if (code & 0x0def0000) == 0x01a00000 {
-                                return Opcode::Mov;
-                            }
-                        } else if (code & 0x0def0000) == 0x01e00000 {
-                            return Opcode::Mvn;
-                        }
-                    } else if (code & 0x00400000) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08200000 {
-                                return Opcode::StmW;
-                            }
-                        } else if (code & 0x0fef0060) == 0x01a00040 {
-                            return Opcode::Asr;
-                        } else if (code & 0x0def0000) == 0x01a00000 {
-                            return Opcode::Mov;
-                        }
-                    } else if (code & 0x0def0000) == 0x01e00000 {
-                        return Opcode::Mvn;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
                     if (code & 0x0e100000) == 0x0c000000 {
                         return Opcode::Stc;
                     }
-                } else if (code & 0x00400000) == 0x00000000 {
-                    if (code & 0x0c500000) == 0x04000000 {
-                        return Opcode::Str;
-                    }
-                } else if (code & 0x0c500000) == 0x04400000 {
-                    return Opcode::Strb;
-                }
-            } else if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x00000040) == 0x00000000 {
-                    if (code & 0x00400000) == 0x00400000 {
-                        if (code & 0x0def0000) == 0x01e00000 {
-                            return Opcode::Mvn;
-                        } else if (code & 0x0e1000f0) == 0x000000b0 {
-                            return Opcode::Strh;
-                        }
-                    } else if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0fef0060) == 0x01a00020 {
-                            return Opcode::Lsr;
-                        } else if (code & 0x0def0000) == 0x01a00000 {
-                            return Opcode::Mov;
-                        } else if (code & 0x0e1000f0) == 0x000000b0 {
-                            return Opcode::Strh;
-                        }
-                    } else if (code & 0x0e700000) == 0x08200000 {
-                        return Opcode::StmW;
-                    }
-                } else if (code & 0x00400000) == 0x00000000 {
-                    if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0fef0ff0) == 0x01a00060 {
-                            return Opcode::Rrx;
-                        } else if (code & 0x0fef0060) == 0x01a00060 {
-                            return Opcode::Ror;
-                        } else if (code & 0x0def0000) == 0x01a00000 {
-                            return Opcode::Mov;
-                        }
-                    } else if (code & 0x0e700000) == 0x08200000 {
-                        return Opcode::StmW;
-                    }
-                } else if (code & 0x0def0000) == 0x01e00000 {
-                    return Opcode::Mvn;
-                }
-            } else if (code & 0x08000000) == 0x08000000 {
-                if (code & 0x0e100000) == 0x0c000000 {
-                    return Opcode::Stc;
-                }
-            } else if (code & 0x00400000) == 0x00000000 {
-                if (code & 0x0c500000) == 0x04000000 {
+                } else if (code & 0x0d700000) == 0x04200000 {
+                    return Opcode::Strt;
+                } else if (code & 0x0c500000) == 0x04000000 {
                     return Opcode::Str;
                 }
-            } else if (code & 0x0c500000) == 0x04400000 {
-                return Opcode::Strb;
-            }
-        } else if (code & 0x00800000) == 0x00000000 {
-            if (code & 0x00400000) == 0x00400000 {
+            } else if (code & 0x00000020) == 0x00000020 {
                 if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00000020) == 0x00000000 {
-                        if (code & 0x00008000) == 0x00000000 {
-                            if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0e1000f0) == 0x001000d0 {
-                                    return Opcode::Ldrsb;
-                                } else if (code & 0x0de00000) == 0x00600000 {
-                                    return Opcode::Rsb;
+                    if (code & 0x00800000) == 0x00000000 {
+                        if (code & 0x00000040) == 0x00000000 {
+                            if (code & 0x08000000) == 0x08000000 {
+                                if (code & 0x0e700000) == 0x08300000 {
+                                    return Opcode::LdmW;
                                 }
-                            } else if (code & 0x0df0f000) == 0x01700000 {
-                                return Opcode::Cmn;
-                            } else if (code & 0x0e1000f0) == 0x001000d0 {
-                                return Opcode::Ldrsb;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x001000d0 {
-                            return Opcode::Ldrsb;
-                        } else if (code & 0x0de00000) == 0x00600000 {
-                            return Opcode::Rsb;
-                        }
-                    } else if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x00008000) == 0x00000000 {
-                            if (code & 0x01000000) == 0x00000000 {
-                                if (code & 0x0e1000f0) == 0x001000b0 {
-                                    return Opcode::Ldrh;
-                                } else if (code & 0x0de00000) == 0x00600000 {
-                                    return Opcode::Rsb;
-                                }
-                            } else if (code & 0x0df0f000) == 0x01700000 {
-                                return Opcode::Cmn;
                             } else if (code & 0x0e1000f0) == 0x001000b0 {
                                 return Opcode::Ldrh;
+                            } else if (code & 0x0de00000) == 0x00200000 {
+                                return Opcode::Eor;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
+                            if (code & 0x0e700000) == 0x08300000 {
+                                return Opcode::LdmW;
                             }
-                        } else if (code & 0x0e1000f0) == 0x001000b0 {
-                            return Opcode::Ldrh;
-                        } else if (code & 0x0de00000) == 0x00600000 {
-                            return Opcode::Rsb;
-                        }
-                    } else if (code & 0x00008000) == 0x00000000 {
-                        if (code & 0x01000000) == 0x00000000 {
-                            if (code & 0x0e1000f0) == 0x001000f0 {
-                                return Opcode::Ldrsh;
-                            } else if (code & 0x0de00000) == 0x00600000 {
-                                return Opcode::Rsb;
-                            }
-                        } else if (code & 0x0df0f000) == 0x01700000 {
-                            return Opcode::Cmn;
                         } else if (code & 0x0e1000f0) == 0x001000f0 {
                             return Opcode::Ldrsh;
+                        } else if (code & 0x0de00000) == 0x00200000 {
+                            return Opcode::Eor;
                         }
                     } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e708000) == 0x08708000 {
-                            return Opcode::LdmPcW;
+                        if (code & 0x0fff0000) == 0x08bd0000 {
+                            return Opcode::PopM;
+                        } else if (code & 0x0e700000) == 0x08300000 {
+                            return Opcode::LdmW;
+                        }
+                    } else if (code & 0x00000040) == 0x00000000 {
+                        if (code & 0x0e1000f0) == 0x001000b0 {
+                            return Opcode::Ldrh;
+                        } else if (code & 0x0de00000) == 0x00a00000 {
+                            return Opcode::Adc;
                         }
                     } else if (code & 0x0e1000f0) == 0x001000f0 {
                         return Opcode::Ldrsh;
-                    } else if (code & 0x0de00000) == 0x00600000 {
-                        return Opcode::Rsb;
+                    } else if (code & 0x0de00000) == 0x00a00000 {
+                        return Opcode::Adc;
                     }
                 } else if (code & 0x08000000) == 0x08000000 {
                     if (code & 0x0e100000) == 0x0c100000 {
                         return Opcode::Ldc;
                     }
-                } else if (code & 0x0d700000) == 0x04700000 {
-                    return Opcode::Ldrbt;
-                } else if (code & 0x0c500000) == 0x04500000 {
-                    return Opcode::Ldrb;
+                } else if (code & 0x0d700000) == 0x04300000 {
+                    return Opcode::Ldrt;
+                } else if (code & 0x0c500000) == 0x04100000 {
+                    return Opcode::Ldr;
                 }
-            } else if (code & 0x01000000) == 0x01000000 {
-                if (code & 0x00000020) == 0x00000000 {
+            } else if (code & 0x00800000) == 0x00000000 {
+                if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e100000) == 0x0c100000 {
+                            return Opcode::Ldc;
+                        }
+                    } else if (code & 0x0d700000) == 0x04300000 {
+                        return Opcode::Ldrt;
+                    } else if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x00000040) == 0x00000000 {
+                    if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e700000) == 0x08300000 {
+                            return Opcode::LdmW;
+                        }
+                    } else if (code & 0x0fe000f0) == 0x00200090 {
+                        return Opcode::Mla;
+                    } else if (code & 0x0de00000) == 0x00200000 {
+                        return Opcode::Eor;
+                    }
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0e700000) == 0x08300000 {
+                        return Opcode::LdmW;
+                    }
+                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                    return Opcode::Ldrsb;
+                } else if (code & 0x0de00000) == 0x00200000 {
+                    return Opcode::Eor;
+                }
+            } else if (code & 0x04000000) == 0x00000000 {
+                if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0fff0000) == 0x08bd0000 {
+                        return Opcode::PopM;
+                    } else if (code & 0x0e700000) == 0x08300000 {
+                        return Opcode::LdmW;
+                    }
+                } else if (code & 0x00000040) == 0x00000000 {
+                    if (code & 0x0fe000f0) == 0x00a00090 {
+                        return Opcode::Umlal;
+                    } else if (code & 0x0de00000) == 0x00a00000 {
+                        return Opcode::Adc;
+                    }
+                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                    return Opcode::Ldrsb;
+                } else if (code & 0x0de00000) == 0x00a00000 {
+                    return Opcode::Adc;
+                }
+            } else if (code & 0x08000000) == 0x08000000 {
+                if (code & 0x0e100000) == 0x0c100000 {
+                    return Opcode::Ldc;
+                }
+            } else if (code & 0x0d700000) == 0x04300000 {
+                return Opcode::Ldrt;
+            } else if (code & 0x0c500000) == 0x04100000 {
+                return Opcode::Ldr;
+            }
+        } else if (code & 0x00020000) == 0x00020000 {
+            if (code & 0x00100000) == 0x00000000 {
+                if (code & 0x02000000) == 0x02000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0fb0f000) == 0x0320f000 {
+                                return Opcode::MsrI;
+                            }
+                        } else if (code & 0x0f000000) == 0x0b000000 {
+                            return Opcode::Bl;
+                        }
+                    } else if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0f000000) == 0x0f000000 {
+                        return Opcode::Swi;
+                    }
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0fb0fff0) == 0x0120f000 {
+                                return Opcode::Msr;
+                            }
+                        } else if (code & 0x0e700000) == 0x08200000 {
+                            return Opcode::StmW;
+                        }
+                    } else if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c000000 {
+                        return Opcode::Stc;
+                    }
+                } else if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04000000 {
+                            return Opcode::Str;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c000000 {
+                        return Opcode::Stc;
+                    }
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0e700000) == 0x08200000 {
+                        return Opcode::StmW;
+                    }
+                } else if (code & 0x00000020) == 0x00000000 {
+                    if (code & 0x0ffffff0) == 0x012fff10 {
+                        return Opcode::Bx;
+                    }
+                } else if (code & 0x0e1000f0) == 0x000000b0 {
+                    return Opcode::Strh;
+                }
+            } else if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0df0f000) == 0x01300000 {
+                            return Opcode::Teq;
+                        }
+                    } else if (code & 0x0f000000) == 0x0b000000 {
+                        return Opcode::Bl;
+                    }
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x0f000000) == 0x0f000000 {
+                    return Opcode::Swi;
+                }
+            } else if (code & 0x00000020) == 0x00000000 {
+                if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0e100000) == 0x0c100000 {
+                        return Opcode::Ldc;
+                    }
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0e700000) == 0x08300000 {
+                        return Opcode::LdmW;
+                    }
+                } else if (code & 0x0df0f000) == 0x01300000 {
+                    return Opcode::Teq;
+                } else if (code & 0x0e1000f0) == 0x001000d0 {
+                    return Opcode::Ldrsb;
+                }
+            } else if (code & 0x04000000) == 0x00000000 {
+                if (code & 0x00000040) == 0x00000000 {
+                    if (code & 0x08000000) == 0x08000000 {
+                        if (code & 0x0e700000) == 0x08300000 {
+                            return Opcode::LdmW;
+                        }
+                    } else if (code & 0x0df0f000) == 0x01300000 {
+                        return Opcode::Teq;
+                    } else if (code & 0x0e1000f0) == 0x001000b0 {
+                        return Opcode::Ldrh;
+                    }
+                } else if (code & 0x08000000) == 0x08000000 {
+                    if (code & 0x0e700000) == 0x08300000 {
+                        return Opcode::LdmW;
+                    }
+                } else if (code & 0x0df0f000) == 0x01300000 {
+                    return Opcode::Teq;
+                } else if (code & 0x0e1000f0) == 0x001000f0 {
+                    return Opcode::Ldrsh;
+                }
+            } else if (code & 0x08000000) == 0x00000000 {
+                if (code & 0x0c500000) == 0x04100000 {
+                    return Opcode::Ldr;
+                }
+            } else if (code & 0x0e100000) == 0x0c100000 {
+                return Opcode::Ldc;
+            }
+        } else if (code & 0x00100000) == 0x00100000 {
+            if (code & 0x00800000) == 0x00000000 {
+                if (code & 0x02000000) == 0x02000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x08000000) == 0x00000000 {
+                            if (code & 0x0df0f000) == 0x01300000 {
+                                return Opcode::Teq;
+                            }
+                        } else if (code & 0x0f000000) == 0x0b000000 {
+                            return Opcode::Bl;
+                        }
+                    } else if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0f000000) == 0x0f000000 {
+                        return Opcode::Swi;
+                    }
+                } else if (code & 0x00000020) == 0x00000000 {
                     if (code & 0x04000000) == 0x04000000 {
                         if (code & 0x08000000) == 0x00000000 {
                             if (code & 0x0c500000) == 0x04100000 {
@@ -1474,385 +1605,299 @@ impl Opcode {
                 } else if (code & 0x0e100000) == 0x0c100000 {
                     return Opcode::Ldc;
                 }
-            } else if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x00000020) == 0x00000000 {
+            } else if (code & 0x00000020) == 0x00000000 {
+                if (code & 0x08000000) == 0x00000000 {
                     if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08300000 {
-                                return Opcode::LdmW;
+                        if (code & 0x02000000) == 0x02000000 {
+                            if (code & 0x04000000) == 0x00000000 {
+                                if (code & 0x0fef0000) == 0x03a00000 {
+                                    return Opcode::MovImm;
+                                }
+                            } else if (code & 0x0c500000) == 0x04100000 {
+                                return Opcode::Ldr;
                             }
-                        } else if (code & 0x0fe000f0) == 0x00200090 {
-                            return Opcode::Mla;
-                        } else if (code & 0x0de00000) == 0x00200000 {
-                            return Opcode::Eor;
+                        } else if (code & 0x04000000) == 0x04000000 {
+                            if (code & 0x0c500000) == 0x04100000 {
+                                return Opcode::Ldr;
+                            }
+                        } else if (code & 0x0fef0ff0) == 0x01a00000 {
+                            return Opcode::MovReg;
+                        } else if (code & 0x0fef0060) == 0x01a00000 {
+                            return Opcode::Lsl;
                         }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e700000) == 0x08300000 {
-                            return Opcode::LdmW;
+                    } else if (code & 0x02000000) == 0x02000000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x0fef0000) == 0x03a00000 {
+                                return Opcode::MovImm;
+                            }
+                        } else if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
                         }
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0fef0060) == 0x01a00040 {
+                        return Opcode::Asr;
                     } else if (code & 0x0e1000f0) == 0x001000d0 {
                         return Opcode::Ldrsb;
-                    } else if (code & 0x0de00000) == 0x00200000 {
-                        return Opcode::Eor;
                     }
-                } else if (code & 0x00000040) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
+                } else if (code & 0x02000000) == 0x00000000 {
+                    if (code & 0x04000000) == 0x00000000 {
                         if (code & 0x0e700000) == 0x08300000 {
                             return Opcode::LdmW;
                         }
-                    } else if (code & 0x0e1000f0) == 0x001000b0 {
-                        return Opcode::Ldrh;
-                    } else if (code & 0x0de00000) == 0x00200000 {
-                        return Opcode::Eor;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e700000) == 0x08300000 {
-                        return Opcode::LdmW;
-                    }
-                } else if (code & 0x0e1000f0) == 0x001000f0 {
-                    return Opcode::Ldrsh;
-                } else if (code & 0x0de00000) == 0x00200000 {
-                    return Opcode::Eor;
-                }
-            } else if (code & 0x08000000) == 0x08000000 {
-                if (code & 0x0e100000) == 0x0c100000 {
-                    return Opcode::Ldc;
-                }
-            } else if (code & 0x0d700000) == 0x04300000 {
-                return Opcode::Ldrt;
-            } else if (code & 0x0c500000) == 0x04100000 {
-                return Opcode::Ldr;
-            }
-        } else if (code & 0x00010000) == 0x00010000 {
-            if (code & 0x00400000) == 0x00400000 {
-                if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00000020) == 0x00000000 {
-                        if (code & 0x00000040) == 0x00000000 {
-                            if (code & 0x08000000) == 0x08000000 {
-                                if (code & 0x0e708000) == 0x08708000 {
-                                    return Opcode::LdmPcW;
-                                }
-                            } else if (code & 0x0fe000f0) == 0x00e00090 {
-                                return Opcode::Smlal;
-                            } else if (code & 0x0de00000) == 0x00e00000 {
-                                return Opcode::Rsc;
-                            }
-                        } else if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x001000d0 {
-                            return Opcode::Ldrsb;
-                        } else if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
-                        }
-                    } else if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
-                            }
-                        } else if (code & 0x0e1000f0) == 0x001000b0 {
-                            return Opcode::Ldrh;
-                        } else if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e708000) == 0x08708000 {
-                            return Opcode::LdmPcW;
-                        }
-                    } else if (code & 0x0e1000f0) == 0x001000f0 {
-                        return Opcode::Ldrsh;
-                    } else if (code & 0x0de00000) == 0x00e00000 {
-                        return Opcode::Rsc;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e100000) == 0x0c100000 {
+                    } else if (code & 0x0e100000) == 0x0c100000 {
                         return Opcode::Ldc;
                     }
-                } else if (code & 0x0d700000) == 0x04700000 {
-                    return Opcode::Ldrbt;
-                } else if (code & 0x0c500000) == 0x04500000 {
-                    return Opcode::Ldrb;
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0f000000) == 0x0b000000 {
+                        return Opcode::Bl;
+                    }
+                } else if (code & 0x0f000000) == 0x0f000000 {
+                    return Opcode::Swi;
                 }
-            } else if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x00000020) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0fff0000) == 0x08bd0000 {
-                            return Opcode::PopM;
-                        } else if (code & 0x0e700000) == 0x08300000 {
-                            return Opcode::LdmW;
+            } else if (code & 0x08000000) == 0x00000000 {
+                if (code & 0x00000040) == 0x00000000 {
+                    if (code & 0x02000000) == 0x02000000 {
+                        if (code & 0x04000000) == 0x00000000 {
+                            if (code & 0x0fef0000) == 0x03a00000 {
+                                return Opcode::MovImm;
+                            }
+                        } else if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
                         }
-                    } else if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x0fe000f0) == 0x00a00090 {
-                            return Opcode::Umlal;
-                        } else if (code & 0x0de00000) == 0x00a00000 {
-                            return Opcode::Adc;
+                    } else if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
                         }
-                    } else if (code & 0x0e1000f0) == 0x001000d0 {
-                        return Opcode::Ldrsb;
-                    } else if (code & 0x0de00000) == 0x00a00000 {
-                        return Opcode::Adc;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0fff0000) == 0x08bd0000 {
-                        return Opcode::PopM;
-                    } else if (code & 0x0e700000) == 0x08300000 {
-                        return Opcode::LdmW;
-                    }
-                } else if (code & 0x00000040) == 0x00000000 {
-                    if (code & 0x0e1000f0) == 0x001000b0 {
+                    } else if (code & 0x0fef0060) == 0x01a00020 {
+                        return Opcode::Lsr;
+                    } else if (code & 0x0e1000f0) == 0x001000b0 {
                         return Opcode::Ldrh;
-                    } else if (code & 0x0de00000) == 0x00a00000 {
-                        return Opcode::Adc;
                     }
+                } else if (code & 0x02000000) == 0x02000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x0fef0000) == 0x03a00000 {
+                            return Opcode::MovImm;
+                        }
+                    } else if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x00000010) == 0x00000000 {
+                    if (code & 0x04000000) == 0x04000000 {
+                        if (code & 0x0c500000) == 0x04100000 {
+                            return Opcode::Ldr;
+                        }
+                    } else if (code & 0x0fef0ff0) == 0x01a00060 {
+                        return Opcode::Rrx;
+                    } else if (code & 0x0fef0060) == 0x01a00060 {
+                        return Opcode::Ror;
+                    }
+                } else if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x0c500000) == 0x04100000 {
+                        return Opcode::Ldr;
+                    }
+                } else if (code & 0x0fef0060) == 0x01a00060 {
+                    return Opcode::Ror;
                 } else if (code & 0x0e1000f0) == 0x001000f0 {
                     return Opcode::Ldrsh;
-                } else if (code & 0x0de00000) == 0x00a00000 {
-                    return Opcode::Adc;
                 }
-            } else if (code & 0x08000000) == 0x08000000 {
-                if (code & 0x0e100000) == 0x0c100000 {
-                    return Opcode::Ldc;
-                }
-            } else if (code & 0x0d700000) == 0x04300000 {
-                return Opcode::Ldrt;
-            } else if (code & 0x0c500000) == 0x04100000 {
-                return Opcode::Ldr;
-            }
-        } else if (code & 0x00400000) == 0x00400000 {
-            if (code & 0x01000000) == 0x01000000 {
-                if (code & 0x00000020) == 0x00000000 {
-                    if (code & 0x04000000) == 0x04000000 {
-                        if (code & 0x08000000) == 0x00000000 {
-                            if (code & 0x0c500000) == 0x04500000 {
-                                return Opcode::Ldrb;
-                            }
-                        } else if (code & 0x0e100000) == 0x0c100000 {
-                            return Opcode::Ldc;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e708000) == 0x08708000 {
-                            return Opcode::LdmPcW;
-                        }
-                    } else if (code & 0x0def0000) == 0x01e00000 {
-                        return Opcode::Mvn;
-                    } else if (code & 0x0e1000f0) == 0x001000d0 {
-                        return Opcode::Ldrsb;
-                    }
-                } else if (code & 0x04000000) == 0x00000000 {
-                    if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
-                            }
-                        } else if (code & 0x0def0000) == 0x01e00000 {
-                            return Opcode::Mvn;
-                        } else if (code & 0x0e1000f0) == 0x001000b0 {
-                            return Opcode::Ldrh;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e708000) == 0x08708000 {
-                            return Opcode::LdmPcW;
-                        }
-                    } else if (code & 0x0def0000) == 0x01e00000 {
-                        return Opcode::Mvn;
-                    } else if (code & 0x0e1000f0) == 0x001000f0 {
-                        return Opcode::Ldrsh;
-                    }
-                } else if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0x0c500000) == 0x04500000 {
-                        return Opcode::Ldrb;
+            } else if (code & 0x02000000) == 0x00000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0e700000) == 0x08300000 {
+                        return Opcode::LdmW;
                     }
                 } else if (code & 0x0e100000) == 0x0c100000 {
                     return Opcode::Ldc;
                 }
             } else if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x00000020) == 0x00000000 {
-                    if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e708000) == 0x08708000 {
-                                return Opcode::LdmPcW;
-                            }
-                        } else if (code & 0x0fe000f0) == 0x00e00090 {
-                            return Opcode::Smlal;
-                        } else if (code & 0x0de00000) == 0x00e00000 {
-                            return Opcode::Rsc;
-                        }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e708000) == 0x08708000 {
-                            return Opcode::LdmPcW;
-                        }
-                    } else if (code & 0x0e1000f0) == 0x001000d0 {
-                        return Opcode::Ldrsb;
-                    } else if (code & 0x0de00000) == 0x00e00000 {
-                        return Opcode::Rsc;
-                    }
-                } else if (code & 0x00000040) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e708000) == 0x08708000 {
-                            return Opcode::LdmPcW;
-                        }
-                    } else if (code & 0x0e1000f0) == 0x001000b0 {
-                        return Opcode::Ldrh;
-                    } else if (code & 0x0de00000) == 0x00e00000 {
-                        return Opcode::Rsc;
-                    }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e708000) == 0x08708000 {
-                        return Opcode::LdmPcW;
-                    }
-                } else if (code & 0x0e1000f0) == 0x001000f0 {
-                    return Opcode::Ldrsh;
-                } else if (code & 0x0de00000) == 0x00e00000 {
-                    return Opcode::Rsc;
+                if (code & 0x0f000000) == 0x0b000000 {
+                    return Opcode::Bl;
                 }
-            } else if (code & 0x08000000) == 0x08000000 {
-                if (code & 0x0e100000) == 0x0c100000 {
-                    return Opcode::Ldc;
-                }
-            } else if (code & 0x0d700000) == 0x04700000 {
-                return Opcode::Ldrbt;
-            } else if (code & 0x0c500000) == 0x04500000 {
-                return Opcode::Ldrb;
+            } else if (code & 0x0f000000) == 0x0f000000 {
+                return Opcode::Swi;
             }
-        } else if (code & 0x01000000) == 0x00000000 {
-            if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x00000020) == 0x00000000 {
-                    if (code & 0x00000040) == 0x00000000 {
-                        if (code & 0x08000000) == 0x08000000 {
-                            if (code & 0x0e700000) == 0x08300000 {
-                                return Opcode::LdmW;
-                            }
-                        } else if (code & 0x0fe000f0) == 0x00a00090 {
-                            return Opcode::Umlal;
-                        } else if (code & 0x0de00000) == 0x00a00000 {
-                            return Opcode::Adc;
+        } else if (code & 0x00010000) == 0x00010000 {
+            if (code & 0x08000000) == 0x00000000 {
+                if (code & 0x02000000) == 0x02000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x0fb0f000) == 0x0320f000 {
+                            return Opcode::MsrI;
                         }
-                    } else if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e700000) == 0x08300000 {
-                            return Opcode::LdmW;
+                    } else if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
+                    }
+                } else if (code & 0x00000010) == 0x00000010 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x0e1000f0) == 0x000000b0 {
+                            return Opcode::Strh;
                         }
-                    } else if (code & 0x0e1000f0) == 0x001000d0 {
-                        return Opcode::Ldrsb;
-                    } else if (code & 0x0de00000) == 0x00a00000 {
-                        return Opcode::Adc;
+                    } else if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
                     }
-                } else if (code & 0x00000040) == 0x00000000 {
-                    if (code & 0x08000000) == 0x08000000 {
-                        if (code & 0x0e700000) == 0x08300000 {
-                            return Opcode::LdmW;
+                } else if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0fb0fff0) == 0x0120f000 {
+                        return Opcode::Msr;
+                    }
+                } else if (code & 0x0fff0fff) == 0x052d0004 {
+                    return Opcode::PushR;
+                } else if (code & 0x0c500000) == 0x04000000 {
+                    return Opcode::Str;
+                }
+            } else if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0f000000) == 0x0b000000 {
+                        return Opcode::Bl;
+                    }
+                } else if (code & 0x0f000000) == 0x0f000000 {
+                    return Opcode::Swi;
+                }
+            } else if (code & 0x04000000) == 0x04000000 {
+                if (code & 0x0e100000) == 0x0c000000 {
+                    return Opcode::Stc;
+                }
+            } else if (code & 0x0fff0000) == 0x092d0000 {
+                return Opcode::PushM;
+            } else if (code & 0x0e700000) == 0x08200000 {
+                return Opcode::StmW;
+            }
+        } else if (code & 0x00800000) == 0x00000000 {
+            if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0fb0f000) == 0x0320f000 {
+                            return Opcode::MsrI;
                         }
-                    } else if (code & 0x0e1000f0) == 0x001000b0 {
-                        return Opcode::Ldrh;
-                    } else if (code & 0x0de00000) == 0x00a00000 {
-                        return Opcode::Adc;
+                    } else if (code & 0x0f000000) == 0x0b000000 {
+                        return Opcode::Bl;
                     }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e700000) == 0x08300000 {
-                        return Opcode::LdmW;
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
                     }
-                } else if (code & 0x0e1000f0) == 0x001000f0 {
-                    return Opcode::Ldrsh;
-                } else if (code & 0x0de00000) == 0x00a00000 {
-                    return Opcode::Adc;
+                } else if (code & 0x0f000000) == 0x0f000000 {
+                    return Opcode::Swi;
+                }
+            } else if (code & 0x04000000) == 0x04000000 {
+                if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
+                    }
+                } else if (code & 0x0e100000) == 0x0c000000 {
+                    return Opcode::Stc;
                 }
             } else if (code & 0x08000000) == 0x08000000 {
-                if (code & 0x0e100000) == 0x0c100000 {
-                    return Opcode::Ldc;
+                if (code & 0x0e700000) == 0x08200000 {
+                    return Opcode::StmW;
                 }
-            } else if (code & 0x0d700000) == 0x04300000 {
-                return Opcode::Ldrt;
-            } else if (code & 0x0c500000) == 0x04100000 {
-                return Opcode::Ldr;
+            } else if (code & 0x00000010) == 0x00000000 {
+                if (code & 0x0fb0fff0) == 0x0120f000 {
+                    return Opcode::Msr;
+                }
+            } else if (code & 0x0e1000f0) == 0x000000b0 {
+                return Opcode::Strh;
             }
         } else if (code & 0x00000020) == 0x00000000 {
-            if (code & 0x00000040) == 0x00000000 {
-                if (code & 0x04000000) == 0x04000000 {
+            if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x04000000) == 0x00000000 {
                     if (code & 0x08000000) == 0x00000000 {
-                        if (code & 0x0c500000) == 0x04100000 {
-                            return Opcode::Ldr;
+                        if (code & 0x0fef0000) == 0x03a00000 {
+                            return Opcode::MovImm;
                         }
-                    } else if (code & 0x0e100000) == 0x0c100000 {
-                        return Opcode::Ldc;
+                    } else if (code & 0x0f000000) == 0x0b000000 {
+                        return Opcode::Bl;
                     }
-                } else if (code & 0x08000000) == 0x08000000 {
-                    if (code & 0x0e700000) == 0x08300000 {
-                        return Opcode::LdmW;
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
                     }
-                } else if (code & 0x0fef0060) == 0x01a00000 {
-                    return Opcode::Lsl;
-                } else if (code & 0x0def0000) == 0x01a00000 {
-                    return Opcode::Mov;
+                } else if (code & 0x0f000000) == 0x0f000000 {
+                    return Opcode::Swi;
                 }
-            } else if (code & 0x04000000) == 0x00000000 {
+            } else if (code & 0x00000040) == 0x00000040 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x08000000) == 0x00000000 {
+                        if (code & 0x0fef0060) == 0x01a00040 {
+                            return Opcode::Asr;
+                        }
+                    } else if (code & 0x0e700000) == 0x08200000 {
+                        return Opcode::StmW;
+                    }
+                } else if (code & 0x08000000) == 0x00000000 {
+                    if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
+                    }
+                } else if (code & 0x0e100000) == 0x0c000000 {
+                    return Opcode::Stc;
+                }
+            } else if (code & 0x04000000) == 0x04000000 {
                 if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0x0fef0060) == 0x01a00040 {
-                        return Opcode::Asr;
-                    } else if (code & 0x0def0000) == 0x01a00000 {
-                        return Opcode::Mov;
-                    } else if (code & 0x0e1000f0) == 0x001000d0 {
-                        return Opcode::Ldrsb;
+                    if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
                     }
-                } else if (code & 0x0e700000) == 0x08300000 {
-                    return Opcode::LdmW;
+                } else if (code & 0x0e100000) == 0x0c000000 {
+                    return Opcode::Stc;
                 }
-            } else if (code & 0x08000000) == 0x00000000 {
-                if (code & 0x0c500000) == 0x04100000 {
-                    return Opcode::Ldr;
+            } else if (code & 0x08000000) == 0x08000000 {
+                if (code & 0x0e700000) == 0x08200000 {
+                    return Opcode::StmW;
                 }
-            } else if (code & 0x0e100000) == 0x0c100000 {
-                return Opcode::Ldc;
-            }
-        } else if (code & 0x00000040) == 0x00000000 {
-            if (code & 0x04000000) == 0x00000000 {
-                if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0x0fef0060) == 0x01a00020 {
-                        return Opcode::Lsr;
-                    } else if (code & 0x0def0000) == 0x01a00000 {
-                        return Opcode::Mov;
-                    } else if (code & 0x0e1000f0) == 0x001000b0 {
-                        return Opcode::Ldrh;
-                    }
-                } else if (code & 0x0e700000) == 0x08300000 {
-                    return Opcode::LdmW;
-                }
-            } else if (code & 0x08000000) == 0x00000000 {
-                if (code & 0x0c500000) == 0x04100000 {
-                    return Opcode::Ldr;
-                }
-            } else if (code & 0x0e100000) == 0x0c100000 {
-                return Opcode::Ldc;
-            }
-        } else if (code & 0x04000000) == 0x00000000 {
-            if (code & 0x00000010) == 0x00000000 {
-                if (code & 0x08000000) == 0x00000000 {
-                    if (code & 0x0fef0ff0) == 0x01a00060 {
-                        return Opcode::Rrx;
-                    } else if (code & 0x0fef0060) == 0x01a00060 {
-                        return Opcode::Ror;
-                    } else if (code & 0x0def0000) == 0x01a00000 {
-                        return Opcode::Mov;
-                    }
-                } else if (code & 0x0e700000) == 0x08300000 {
-                    return Opcode::LdmW;
-                }
-            } else if (code & 0x08000000) == 0x00000000 {
-                if (code & 0x0fef0060) == 0x01a00060 {
-                    return Opcode::Ror;
-                } else if (code & 0x0def0000) == 0x01a00000 {
-                    return Opcode::Mov;
-                } else if (code & 0x0e1000f0) == 0x001000f0 {
-                    return Opcode::Ldrsh;
-                }
-            } else if (code & 0x0e700000) == 0x08300000 {
-                return Opcode::LdmW;
+            } else if (code & 0x0fef0ff0) == 0x01a00000 {
+                return Opcode::MovReg;
+            } else if (code & 0x0fef0060) == 0x01a00000 {
+                return Opcode::Lsl;
             }
         } else if (code & 0x08000000) == 0x00000000 {
-            if (code & 0x0c500000) == 0x04100000 {
-                return Opcode::Ldr;
+            if (code & 0x00000040) == 0x00000000 {
+                if (code & 0x02000000) == 0x02000000 {
+                    if (code & 0x04000000) == 0x00000000 {
+                        if (code & 0x0fef0000) == 0x03a00000 {
+                            return Opcode::MovImm;
+                        }
+                    } else if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
+                    }
+                } else if (code & 0x04000000) == 0x04000000 {
+                    if (code & 0x0c500000) == 0x04000000 {
+                        return Opcode::Str;
+                    }
+                } else if (code & 0x0fef0060) == 0x01a00020 {
+                    return Opcode::Lsr;
+                } else if (code & 0x0e1000f0) == 0x000000b0 {
+                    return Opcode::Strh;
+                }
+            } else if (code & 0x02000000) == 0x02000000 {
+                if (code & 0x04000000) == 0x00000000 {
+                    if (code & 0x0fef0000) == 0x03a00000 {
+                        return Opcode::MovImm;
+                    }
+                } else if (code & 0x0c500000) == 0x04000000 {
+                    return Opcode::Str;
+                }
+            } else if (code & 0x04000000) == 0x04000000 {
+                if (code & 0x0c500000) == 0x04000000 {
+                    return Opcode::Str;
+                }
+            } else if (code & 0x0fef0ff0) == 0x01a00060 {
+                return Opcode::Rrx;
+            } else if (code & 0x0fef0060) == 0x01a00060 {
+                return Opcode::Ror;
             }
-        } else if (code & 0x0e100000) == 0x0c100000 {
-            return Opcode::Ldc;
+        } else if (code & 0x02000000) == 0x00000000 {
+            if (code & 0x04000000) == 0x00000000 {
+                if (code & 0x0e700000) == 0x08200000 {
+                    return Opcode::StmW;
+                }
+            } else if (code & 0x0e100000) == 0x0c000000 {
+                return Opcode::Stc;
+            }
+        } else if (code & 0x04000000) == 0x00000000 {
+            if (code & 0x0f000000) == 0x0b000000 {
+                return Opcode::Bl;
+            }
+        } else if (code & 0x0f000000) == 0x0f000000 {
+            return Opcode::Swi;
         }
         Opcode::Illegal
     }
@@ -1860,7 +1905,7 @@ impl Opcode {
         OPCODE_MNEMONICS[self as usize]
     }
     pub fn count() -> usize {
-        67
+        68
     }
 }
 impl Ins {
@@ -33607,9 +33652,9 @@ fn parse_mla(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_mov(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_s(), ins.modifier_cond(), ins.modifier_addr_data()) {
-        (true, Cond::Eq, AddrData::Imm) => {
+fn parse_mov_imm(out: &mut ParsedIns, ins: Ins) {
+    *out = match (ins.modifier_s(), ins.modifier_cond()) {
+        (true, Cond::Eq) => {
             ParsedIns {
                 mnemonic: "movseq",
                 args: [
@@ -33622,7 +33667,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Eq, AddrData::Imm) => {
+        (false, Cond::Eq) => {
             ParsedIns {
                 mnemonic: "moveq",
                 args: [
@@ -33635,7 +33680,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Ne, AddrData::Imm) => {
+        (true, Cond::Ne) => {
             ParsedIns {
                 mnemonic: "movsne",
                 args: [
@@ -33648,7 +33693,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Ne, AddrData::Imm) => {
+        (false, Cond::Ne) => {
             ParsedIns {
                 mnemonic: "movne",
                 args: [
@@ -33661,7 +33706,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Hs, AddrData::Imm) => {
+        (true, Cond::Hs) => {
             ParsedIns {
                 mnemonic: "movshs",
                 args: [
@@ -33674,7 +33719,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Hs, AddrData::Imm) => {
+        (false, Cond::Hs) => {
             ParsedIns {
                 mnemonic: "movhs",
                 args: [
@@ -33687,7 +33732,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Lo, AddrData::Imm) => {
+        (true, Cond::Lo) => {
             ParsedIns {
                 mnemonic: "movslo",
                 args: [
@@ -33700,7 +33745,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Lo, AddrData::Imm) => {
+        (false, Cond::Lo) => {
             ParsedIns {
                 mnemonic: "movlo",
                 args: [
@@ -33713,7 +33758,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Mi, AddrData::Imm) => {
+        (true, Cond::Mi) => {
             ParsedIns {
                 mnemonic: "movsmi",
                 args: [
@@ -33726,7 +33771,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Mi, AddrData::Imm) => {
+        (false, Cond::Mi) => {
             ParsedIns {
                 mnemonic: "movmi",
                 args: [
@@ -33739,7 +33784,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Pl, AddrData::Imm) => {
+        (true, Cond::Pl) => {
             ParsedIns {
                 mnemonic: "movspl",
                 args: [
@@ -33752,7 +33797,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Pl, AddrData::Imm) => {
+        (false, Cond::Pl) => {
             ParsedIns {
                 mnemonic: "movpl",
                 args: [
@@ -33765,7 +33810,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Vs, AddrData::Imm) => {
+        (true, Cond::Vs) => {
             ParsedIns {
                 mnemonic: "movsvs",
                 args: [
@@ -33778,7 +33823,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Vs, AddrData::Imm) => {
+        (false, Cond::Vs) => {
             ParsedIns {
                 mnemonic: "movvs",
                 args: [
@@ -33791,7 +33836,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Vc, AddrData::Imm) => {
+        (true, Cond::Vc) => {
             ParsedIns {
                 mnemonic: "movsvc",
                 args: [
@@ -33804,7 +33849,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Vc, AddrData::Imm) => {
+        (false, Cond::Vc) => {
             ParsedIns {
                 mnemonic: "movvc",
                 args: [
@@ -33817,7 +33862,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Hi, AddrData::Imm) => {
+        (true, Cond::Hi) => {
             ParsedIns {
                 mnemonic: "movshi",
                 args: [
@@ -33830,7 +33875,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Hi, AddrData::Imm) => {
+        (false, Cond::Hi) => {
             ParsedIns {
                 mnemonic: "movhi",
                 args: [
@@ -33843,7 +33888,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Ls, AddrData::Imm) => {
+        (true, Cond::Ls) => {
             ParsedIns {
                 mnemonic: "movsls",
                 args: [
@@ -33856,7 +33901,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Ls, AddrData::Imm) => {
+        (false, Cond::Ls) => {
             ParsedIns {
                 mnemonic: "movls",
                 args: [
@@ -33869,7 +33914,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Ge, AddrData::Imm) => {
+        (true, Cond::Ge) => {
             ParsedIns {
                 mnemonic: "movsge",
                 args: [
@@ -33882,7 +33927,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Ge, AddrData::Imm) => {
+        (false, Cond::Ge) => {
             ParsedIns {
                 mnemonic: "movge",
                 args: [
@@ -33895,7 +33940,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Lt, AddrData::Imm) => {
+        (true, Cond::Lt) => {
             ParsedIns {
                 mnemonic: "movslt",
                 args: [
@@ -33908,7 +33953,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Lt, AddrData::Imm) => {
+        (false, Cond::Lt) => {
             ParsedIns {
                 mnemonic: "movlt",
                 args: [
@@ -33921,7 +33966,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Gt, AddrData::Imm) => {
+        (true, Cond::Gt) => {
             ParsedIns {
                 mnemonic: "movsgt",
                 args: [
@@ -33934,7 +33979,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Gt, AddrData::Imm) => {
+        (false, Cond::Gt) => {
             ParsedIns {
                 mnemonic: "movgt",
                 args: [
@@ -33947,7 +33992,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Le, AddrData::Imm) => {
+        (true, Cond::Le) => {
             ParsedIns {
                 mnemonic: "movsle",
                 args: [
@@ -33960,7 +34005,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Le, AddrData::Imm) => {
+        (false, Cond::Le) => {
             ParsedIns {
                 mnemonic: "movle",
                 args: [
@@ -33973,7 +34018,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Al, AddrData::Imm) => {
+        (true, Cond::Al) => {
             ParsedIns {
                 mnemonic: "movs",
                 args: [
@@ -33986,7 +34031,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Al, AddrData::Imm) => {
+        (false, Cond::Al) => {
             ParsedIns {
                 mnemonic: "mov",
                 args: [
@@ -33999,7 +34044,24 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Eq, AddrData::Reg) => {
+        _ => {
+            ParsedIns {
+                mnemonic: "<illegal>",
+                args: [
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                ],
+            }
+        }
+    };
+}
+fn parse_mov_reg(out: &mut ParsedIns, ins: Ins) {
+    *out = match (ins.modifier_s(), ins.modifier_cond()) {
+        (true, Cond::Eq) => {
             ParsedIns {
                 mnemonic: "movseq",
                 args: [
@@ -34012,7 +34074,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Eq, AddrData::Reg) => {
+        (false, Cond::Eq) => {
             ParsedIns {
                 mnemonic: "moveq",
                 args: [
@@ -34025,7 +34087,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Ne, AddrData::Reg) => {
+        (true, Cond::Ne) => {
             ParsedIns {
                 mnemonic: "movsne",
                 args: [
@@ -34038,7 +34100,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Ne, AddrData::Reg) => {
+        (false, Cond::Ne) => {
             ParsedIns {
                 mnemonic: "movne",
                 args: [
@@ -34051,7 +34113,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Hs, AddrData::Reg) => {
+        (true, Cond::Hs) => {
             ParsedIns {
                 mnemonic: "movshs",
                 args: [
@@ -34064,7 +34126,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Hs, AddrData::Reg) => {
+        (false, Cond::Hs) => {
             ParsedIns {
                 mnemonic: "movhs",
                 args: [
@@ -34077,7 +34139,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Lo, AddrData::Reg) => {
+        (true, Cond::Lo) => {
             ParsedIns {
                 mnemonic: "movslo",
                 args: [
@@ -34090,7 +34152,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Lo, AddrData::Reg) => {
+        (false, Cond::Lo) => {
             ParsedIns {
                 mnemonic: "movlo",
                 args: [
@@ -34103,7 +34165,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Mi, AddrData::Reg) => {
+        (true, Cond::Mi) => {
             ParsedIns {
                 mnemonic: "movsmi",
                 args: [
@@ -34116,7 +34178,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Mi, AddrData::Reg) => {
+        (false, Cond::Mi) => {
             ParsedIns {
                 mnemonic: "movmi",
                 args: [
@@ -34129,7 +34191,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Pl, AddrData::Reg) => {
+        (true, Cond::Pl) => {
             ParsedIns {
                 mnemonic: "movspl",
                 args: [
@@ -34142,7 +34204,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Pl, AddrData::Reg) => {
+        (false, Cond::Pl) => {
             ParsedIns {
                 mnemonic: "movpl",
                 args: [
@@ -34155,7 +34217,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Vs, AddrData::Reg) => {
+        (true, Cond::Vs) => {
             ParsedIns {
                 mnemonic: "movsvs",
                 args: [
@@ -34168,7 +34230,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Vs, AddrData::Reg) => {
+        (false, Cond::Vs) => {
             ParsedIns {
                 mnemonic: "movvs",
                 args: [
@@ -34181,7 +34243,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Vc, AddrData::Reg) => {
+        (true, Cond::Vc) => {
             ParsedIns {
                 mnemonic: "movsvc",
                 args: [
@@ -34194,7 +34256,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Vc, AddrData::Reg) => {
+        (false, Cond::Vc) => {
             ParsedIns {
                 mnemonic: "movvc",
                 args: [
@@ -34207,7 +34269,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Hi, AddrData::Reg) => {
+        (true, Cond::Hi) => {
             ParsedIns {
                 mnemonic: "movshi",
                 args: [
@@ -34220,7 +34282,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Hi, AddrData::Reg) => {
+        (false, Cond::Hi) => {
             ParsedIns {
                 mnemonic: "movhi",
                 args: [
@@ -34233,7 +34295,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Ls, AddrData::Reg) => {
+        (true, Cond::Ls) => {
             ParsedIns {
                 mnemonic: "movsls",
                 args: [
@@ -34246,7 +34308,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Ls, AddrData::Reg) => {
+        (false, Cond::Ls) => {
             ParsedIns {
                 mnemonic: "movls",
                 args: [
@@ -34259,7 +34321,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Ge, AddrData::Reg) => {
+        (true, Cond::Ge) => {
             ParsedIns {
                 mnemonic: "movsge",
                 args: [
@@ -34272,7 +34334,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Ge, AddrData::Reg) => {
+        (false, Cond::Ge) => {
             ParsedIns {
                 mnemonic: "movge",
                 args: [
@@ -34285,7 +34347,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Lt, AddrData::Reg) => {
+        (true, Cond::Lt) => {
             ParsedIns {
                 mnemonic: "movslt",
                 args: [
@@ -34298,7 +34360,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Lt, AddrData::Reg) => {
+        (false, Cond::Lt) => {
             ParsedIns {
                 mnemonic: "movlt",
                 args: [
@@ -34311,7 +34373,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Gt, AddrData::Reg) => {
+        (true, Cond::Gt) => {
             ParsedIns {
                 mnemonic: "movsgt",
                 args: [
@@ -34324,7 +34386,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Gt, AddrData::Reg) => {
+        (false, Cond::Gt) => {
             ParsedIns {
                 mnemonic: "movgt",
                 args: [
@@ -34337,7 +34399,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Le, AddrData::Reg) => {
+        (true, Cond::Le) => {
             ParsedIns {
                 mnemonic: "movsle",
                 args: [
@@ -34350,7 +34412,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Le, AddrData::Reg) => {
+        (false, Cond::Le) => {
             ParsedIns {
                 mnemonic: "movle",
                 args: [
@@ -34363,7 +34425,7 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (true, Cond::Al, AddrData::Reg) => {
+        (true, Cond::Al) => {
             ParsedIns {
                 mnemonic: "movs",
                 args: [
@@ -34376,1183 +34438,13 @@ fn parse_mov(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (false, Cond::Al, AddrData::Reg) => {
+        (false, Cond::Al) => {
             ParsedIns {
                 mnemonic: "mov",
                 args: [
                     Argument::Reg(ins.field_rd()),
                     Argument::Reg(ins.field_rm()),
                     Argument::None,
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Eq, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movseq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Eq, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "moveq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ne, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ne, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Hs, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movshs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Hs, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Lo, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movslo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Lo, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Mi, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Mi, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Pl, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movspl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Pl, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Vs, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Vs, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Vc, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Vc, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Hi, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movshi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Hi, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ls, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ls, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ge, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ge, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Lt, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movslt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Lt, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Gt, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Gt, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Le, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movsle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Le, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Al, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "movs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Al, AddrData::ShiftImm) => {
-            ParsedIns {
-                mnemonic: "mov",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftImm(ins.field_shift_imm()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Eq, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movseq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Eq, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "moveq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ne, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ne, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Hs, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movshs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Hs, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Lo, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movslo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Lo, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Mi, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Mi, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Pl, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movspl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Pl, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Vs, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Vs, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Vc, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Vc, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Hi, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movshi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Hi, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ls, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ls, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ge, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ge, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Lt, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movslt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Lt, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Gt, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Gt, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Le, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movsle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Le, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Al, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "movs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Al, AddrData::ShiftReg) => {
-            ParsedIns {
-                mnemonic: "mov",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::ShiftReg(ins.field_shift_reg()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Eq, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movseq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Eq, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "moveq",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ne, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ne, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movne",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Hs, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movshs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Hs, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movhs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Lo, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movslo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Lo, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movlo",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Mi, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Mi, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movmi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Pl, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movspl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Pl, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movpl",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Vs, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Vs, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movvs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Vc, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Vc, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movvc",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Hi, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movshi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Hi, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movhi",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ls, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ls, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movls",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Ge, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Ge, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movge",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Lt, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movslt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Lt, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movlt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Gt, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Gt, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movgt",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Le, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movsle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Le, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movle",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (true, Cond::Al, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "movs",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
-                    Argument::None,
-                    Argument::None,
-                    Argument::None,
-                ],
-            }
-        }
-        (false, Cond::Al, AddrData::Rrx) => {
-            ParsedIns {
-                mnemonic: "mov",
-                args: [
-                    Argument::Reg(ins.field_rd()),
-                    Argument::Reg(ins.field_rm()),
-                    Argument::Shift(ins.field_rrx()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -66005,7 +64897,7 @@ fn parse_umull(out: &mut ParsedIns, ins: Ins) {
     };
 }
 type MnemonicParser = fn(&mut ParsedIns, Ins);
-static MNEMONIC_PARSERS: [MnemonicParser; 67] = [
+static MNEMONIC_PARSERS: [MnemonicParser; 68] = [
     parse_adc,
     parse_add,
     parse_adr_a,
@@ -66037,7 +64929,8 @@ static MNEMONIC_PARSERS: [MnemonicParser; 67] = [
     parse_lsr,
     parse_mcr,
     parse_mla,
-    parse_mov,
+    parse_mov_imm,
+    parse_mov_reg,
     parse_mrc,
     parse_mrs,
     parse_msr_i,

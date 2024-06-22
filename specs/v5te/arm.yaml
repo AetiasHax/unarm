@@ -952,13 +952,22 @@ opcodes:
     defs: [Rd]
     uses: [Rm, Rs, Rn]
 
-  - name: mov
-    desc: Move
-    bitmask: 0x0def0000
-    pattern: 0x01a00000
-    modifiers: [S, cond, addr_data]
-    args: [Rd]
+  - name: mov$imm
+    desc: Move immediate
+    bitmask: 0x0fef0000
+    pattern: 0x03a00000
+    modifiers: [S, cond]
+    args: [Rd, rotated_immed_8]
     defs: [Rd]
+
+  - name: mov$reg
+    desc: Move register
+    bitmask: 0x0fef0ff0
+    pattern: 0x01a00000
+    modifiers: [S, cond]
+    args: [Rd, Rm]
+    defs: [Rd]
+    uses: [Rm]
 
   - name: mrc
     desc: Move to ARM Register from Coprocessor
