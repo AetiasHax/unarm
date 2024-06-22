@@ -780,8 +780,8 @@ opcodes:
     defs: [sp]
     uses: [sp]
 
-  - name: swi
-    desc: Software Interrupt
+  - name: svc
+    desc: Supervisor Call
     bitmask: 0xff00
     pattern: 0xdf00
     args: [immed_8]

@@ -1070,8 +1070,8 @@ opcodes:
     defs: [Rd]
     uses: [Rn]
 
-  - name: swi
-    desc: Software Interrupt
+  - name: svc
+    desc: Supervisor Call
     bitmask: 0x0f000000
     pattern: 0x0f000000
     modifiers: [cond]

@@ -68,7 +68,7 @@ static OPCODE_MNEMONICS: [&str; 64] = [
     "subs",
     "subs",
     "sub",
-    "swi",
+    "svc",
     "tst",
 ];
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -202,8 +202,8 @@ pub enum Opcode {
     SubsR = 60,
     /// SUB: Subtract 7-bit immediate multiple of 4 from SP
     SubSp7 = 61,
-    /// SWI: Software Interrupt
-    Swi = 62,
+    /// SVC: Supervisor Call
+    Svc = 62,
     /// TST: Test
     Tst = 63,
 }
@@ -765,7 +765,7 @@ impl Opcode {
                 return Opcode::Bl;
             }
         } else if (code & 0x0000ff00) == 0x0000df00 {
-            return Opcode::Swi;
+            return Opcode::Svc;
         } else if (code & 0x0000f000) == 0x0000d000 {
             return Opcode::B;
         }
@@ -2101,9 +2101,9 @@ fn parse_sub_sp7(out: &mut ParsedIns, ins: Ins) {
         ],
     };
 }
-fn parse_swi(out: &mut ParsedIns, ins: Ins) {
+fn parse_svc(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "swi",
+        mnemonic: "svc",
         args: [
             Argument::UImm(ins.field_immed_8()),
             Argument::None,
@@ -2191,7 +2191,7 @@ static MNEMONIC_PARSERS: [MnemonicParser; 64] = [
     parse_subs_8,
     parse_subs_r,
     parse_sub_sp7,
-    parse_swi,
+    parse_svc,
     parse_tst,
 ];
 #[inline]

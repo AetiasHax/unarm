@@ -232,8 +232,8 @@ fn test_sub() {
 }
 
 #[test]
-fn test_swi() {
-    assert_asm!(0xdf42, "swi #0x42");
+fn test_svc() {
+    assert_asm!(0xdf42, "svc #0x42");
 }
 
 #[test]

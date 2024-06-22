@@ -65,7 +65,7 @@ static OPCODE_MNEMONICS: [&str; 66] = [
     "strh",
     "strt",
     "sub",
-    "swi",
+    "svc",
     "swp",
     "swpb",
     "teq",
@@ -198,8 +198,8 @@ pub enum Opcode {
     Strt = 57,
     /// SUB: Subtract
     Sub = 58,
-    /// SWI: Software Interrupt
-    Swi = 59,
+    /// SVC: Supervisor Call
+    Svc = 59,
     /// SWP: Swap
     Swp = 60,
     /// SWPB: Swap Byte
@@ -234,7 +234,7 @@ impl Opcode {
                                     return Opcode::Strb;
                                 }
                             } else if (code & 0x0f000000) == 0x0f000000 {
-                                return Opcode::Swi;
+                                return Opcode::Svc;
                             }
                         } else if (code & 0x04000000) == 0x04000000 {
                             if (code & 0x08000000) == 0x00000000 {
@@ -242,7 +242,7 @@ impl Opcode {
                                     return Opcode::Strb;
                                 }
                             } else if (code & 0x0f000000) == 0x0f000000 {
-                                return Opcode::Swi;
+                                return Opcode::Svc;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
                             if (code & 0x0f000000) == 0x0b000000 {
@@ -262,7 +262,7 @@ impl Opcode {
                                     return Opcode::Ldrb;
                                 }
                             } else if (code & 0x0f000000) == 0x0f000000 {
-                                return Opcode::Swi;
+                                return Opcode::Svc;
                             }
                         } else if (code & 0x08000000) == 0x08000000 {
                             if (code & 0x0f000000) == 0x0b000000 {
@@ -281,7 +281,7 @@ impl Opcode {
                                 return Opcode::Ldrb;
                             }
                         } else if (code & 0x0f000000) == 0x0f000000 {
-                            return Opcode::Swi;
+                            return Opcode::Svc;
                         }
                     } else if (code & 0x08000000) == 0x08000000 {
                         if (code & 0x0f000000) == 0x0b000000 {
@@ -839,7 +839,7 @@ impl Opcode {
                         }
                     } else if (code & 0x08000000) == 0x08000000 {
                         if (code & 0x0f000000) == 0x0f000000 {
-                            return Opcode::Swi;
+                            return Opcode::Svc;
                         }
                     } else if (code & 0x00100000) == 0x00000000 {
                         if (code & 0x0c500000) == 0x04000000 {
@@ -1466,7 +1466,7 @@ impl Opcode {
                             return Opcode::Str;
                         }
                     } else if (code & 0x0f000000) == 0x0f000000 {
-                        return Opcode::Swi;
+                        return Opcode::Svc;
                     }
                 } else if (code & 0x00000010) == 0x00000000 {
                     if (code & 0x04000000) == 0x00000000 {
@@ -1517,7 +1517,7 @@ impl Opcode {
                         return Opcode::Ldr;
                     }
                 } else if (code & 0x0f000000) == 0x0f000000 {
-                    return Opcode::Swi;
+                    return Opcode::Svc;
                 }
             } else if (code & 0x00000020) == 0x00000000 {
                 if (code & 0x04000000) == 0x04000000 {
@@ -1580,7 +1580,7 @@ impl Opcode {
                             return Opcode::Ldr;
                         }
                     } else if (code & 0x0f000000) == 0x0f000000 {
-                        return Opcode::Swi;
+                        return Opcode::Svc;
                     }
                 } else if (code & 0x00000020) == 0x00000000 {
                     if (code & 0x04000000) == 0x04000000 {
@@ -1677,7 +1677,7 @@ impl Opcode {
                         return Opcode::Bl;
                     }
                 } else if (code & 0x0f000000) == 0x0f000000 {
-                    return Opcode::Swi;
+                    return Opcode::Svc;
                 }
             } else if (code & 0x08000000) == 0x00000000 {
                 if (code & 0x00000040) == 0x00000000 {
@@ -1738,7 +1738,7 @@ impl Opcode {
                     return Opcode::Bl;
                 }
             } else if (code & 0x0f000000) == 0x0f000000 {
-                return Opcode::Swi;
+                return Opcode::Svc;
             }
         } else if (code & 0x00010000) == 0x00010000 {
             if (code & 0x08000000) == 0x00000000 {
@@ -1773,7 +1773,7 @@ impl Opcode {
                         return Opcode::Bl;
                     }
                 } else if (code & 0x0f000000) == 0x0f000000 {
-                    return Opcode::Swi;
+                    return Opcode::Svc;
                 }
             } else if (code & 0x04000000) == 0x04000000 {
                 if (code & 0x0e100000) == 0x0c000000 {
@@ -1799,7 +1799,7 @@ impl Opcode {
                         return Opcode::Str;
                     }
                 } else if (code & 0x0f000000) == 0x0f000000 {
-                    return Opcode::Swi;
+                    return Opcode::Svc;
                 }
             } else if (code & 0x04000000) == 0x04000000 {
                 if (code & 0x08000000) == 0x00000000 {
@@ -1835,7 +1835,7 @@ impl Opcode {
                         return Opcode::Str;
                     }
                 } else if (code & 0x0f000000) == 0x0f000000 {
-                    return Opcode::Swi;
+                    return Opcode::Svc;
                 }
             } else if (code & 0x00000040) == 0x00000040 {
                 if (code & 0x04000000) == 0x00000000 {
@@ -1919,7 +1919,7 @@ impl Opcode {
                 return Opcode::Bl;
             }
         } else if (code & 0x0f000000) == 0x0f000000 {
-            return Opcode::Swi;
+            return Opcode::Svc;
         }
         Opcode::Illegal
     }
@@ -61054,11 +61054,11 @@ fn parse_sub(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
-fn parse_swi(out: &mut ParsedIns, ins: Ins) {
+fn parse_svc(out: &mut ParsedIns, ins: Ins) {
     *out = match ins.modifier_cond() {
         Cond::Eq => {
             ParsedIns {
-                mnemonic: "swieq",
+                mnemonic: "svceq",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61071,7 +61071,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ne => {
             ParsedIns {
-                mnemonic: "swine",
+                mnemonic: "svcne",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61084,7 +61084,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hs => {
             ParsedIns {
-                mnemonic: "swihs",
+                mnemonic: "svchs",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61097,7 +61097,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lo => {
             ParsedIns {
-                mnemonic: "swilo",
+                mnemonic: "svclo",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61110,7 +61110,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Mi => {
             ParsedIns {
-                mnemonic: "swimi",
+                mnemonic: "svcmi",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61123,7 +61123,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Pl => {
             ParsedIns {
-                mnemonic: "swipl",
+                mnemonic: "svcpl",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61136,7 +61136,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vs => {
             ParsedIns {
-                mnemonic: "swivs",
+                mnemonic: "svcvs",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61149,7 +61149,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Vc => {
             ParsedIns {
-                mnemonic: "swivc",
+                mnemonic: "svcvc",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61162,7 +61162,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Hi => {
             ParsedIns {
-                mnemonic: "swihi",
+                mnemonic: "svchi",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61175,7 +61175,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ls => {
             ParsedIns {
-                mnemonic: "swils",
+                mnemonic: "svcls",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61188,7 +61188,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Ge => {
             ParsedIns {
-                mnemonic: "swige",
+                mnemonic: "svcge",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61201,7 +61201,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Lt => {
             ParsedIns {
-                mnemonic: "swilt",
+                mnemonic: "svclt",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61214,7 +61214,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Gt => {
             ParsedIns {
-                mnemonic: "swigt",
+                mnemonic: "svcgt",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61227,7 +61227,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Le => {
             ParsedIns {
-                mnemonic: "swile",
+                mnemonic: "svcle",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -61240,7 +61240,7 @@ fn parse_swi(out: &mut ParsedIns, ins: Ins) {
         }
         Cond::Al => {
             ParsedIns {
-                mnemonic: "swi",
+                mnemonic: "svc",
                 args: [
                     Argument::UImm(ins.field_immed_24()),
                     Argument::None,
@@ -64549,7 +64549,7 @@ static MNEMONIC_PARSERS: [MnemonicParser; 66] = [
     parse_strh,
     parse_strt,
     parse_sub,
-    parse_swi,
+    parse_svc,
     parse_swp,
     parse_swpb,
     parse_teq,

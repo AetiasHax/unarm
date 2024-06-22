@@ -419,9 +419,9 @@ fn test_sub() {
 }
 
 #[test]
-fn test_swi() {
-    assert_asm!(0xef123456, "swi #0x123456");
-    assert_asm!(0x0fabcdef, "swieq #0xabcdef");
+fn test_svc() {
+    assert_asm!(0xef123456, "svc #0x123456");
+    assert_asm!(0x0fabcdef, "svceq #0xabcdef");
 }
 
 #[test]
