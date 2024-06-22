@@ -709,8 +709,8 @@ opcodes:
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
 
-  - name: stmia
-    desc: Store Multiple Increment After
+  - name: stm
+    desc: Store Multiple
     bitmask: 0xf800
     pattern: 0xc000
     args: [Rn_8_wb, registers]

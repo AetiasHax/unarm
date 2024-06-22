@@ -59,7 +59,7 @@ static OPCODE_MNEMONICS: [&str; 67] = [
     "push",
     "rors",
     "sbcs",
-    "stmia",
+    "stm",
     "str",
     "str",
     "str",
@@ -187,8 +187,8 @@ pub enum Opcode {
     Rors = 51,
     /// SBCS: Subtract with Carry
     Sbcs = 52,
-    /// STMIA: Store Multiple Increment After
-    Stmia = 53,
+    /// STM: Store Multiple
+    Stm = 53,
     /// STR: Store Register with immediate offset
     StrI = 54,
     /// STR: Store Register with register offset
@@ -238,7 +238,7 @@ impl Opcode {
                                         return Opcode::CmpHr;
                                     }
                                 } else if (code & 0x0000f800) == 0x0000c000 {
-                                    return Opcode::Stmia;
+                                    return Opcode::Stm;
                                 }
                             } else if (code & 0x00004000) == 0x00000000 {
                                 if (code & 0x00008000) == 0x00000000 {
@@ -250,7 +250,7 @@ impl Opcode {
                                 }
                             } else if (code & 0x00008000) == 0x00008000 {
                                 if (code & 0x0000f800) == 0x0000c000 {
-                                    return Opcode::Stmia;
+                                    return Opcode::Stm;
                                 }
                             } else if (code & 0x00000080) == 0x00000000 {
                                 if (code & 0x0000ff87) == 0x00004700 {
@@ -289,7 +289,7 @@ impl Opcode {
                                     return Opcode::MovHr;
                                 }
                             } else if (code & 0x0000f800) == 0x0000c000 {
-                                return Opcode::Stmia;
+                                return Opcode::Stm;
                             }
                         } else if (code & 0x00004000) == 0x00004000 {
                             if (code & 0x00008000) == 0x00000000 {
@@ -301,7 +301,7 @@ impl Opcode {
                                     return Opcode::AddHr;
                                 }
                             } else if (code & 0x0000f800) == 0x0000c000 {
-                                return Opcode::Stmia;
+                                return Opcode::Stm;
                             }
                         } else if (code & 0x00008000) == 0x00000000 {
                             if (code & 0x0000f800) == 0x00000000 {
@@ -371,7 +371,7 @@ impl Opcode {
                                     }
                                 } else if (code & 0x00008000) == 0x00008000 {
                                     if (code & 0x0000f800) == 0x0000c000 {
-                                        return Opcode::Stmia;
+                                        return Opcode::Stm;
                                     }
                                 } else if (code & 0x00000200) == 0x00000000 {
                                     if (code & 0x0000ffc0) == 0x00004040 {
@@ -390,7 +390,7 @@ impl Opcode {
                                 }
                             } else if (code & 0x00008000) == 0x00008000 {
                                 if (code & 0x0000f800) == 0x0000c000 {
-                                    return Opcode::Stmia;
+                                    return Opcode::Stm;
                                 }
                             } else if (code & 0x00000200) == 0x00000000 {
                                 if (code & 0x0000ffc0) == 0x00004140 {
@@ -426,7 +426,7 @@ impl Opcode {
                                 }
                             } else if (code & 0x00008000) == 0x00008000 {
                                 if (code & 0x0000f800) == 0x0000c000 {
-                                    return Opcode::Stmia;
+                                    return Opcode::Stm;
                                 }
                             } else if (code & 0x00000200) == 0x00000000 {
                                 if (code & 0x0000ffc0) == 0x000040c0 {
@@ -445,7 +445,7 @@ impl Opcode {
                             }
                         } else if (code & 0x00008000) == 0x00008000 {
                             if (code & 0x0000f800) == 0x0000c000 {
-                                return Opcode::Stmia;
+                                return Opcode::Stm;
                             }
                         } else if (code & 0x00000200) == 0x00000000 {
                             if (code & 0x0000ffc0) == 0x000041c0 {
@@ -514,7 +514,7 @@ impl Opcode {
                                 }
                             } else if (code & 0x00008000) == 0x00008000 {
                                 if (code & 0x0000f800) == 0x0000c000 {
-                                    return Opcode::Stmia;
+                                    return Opcode::Stm;
                                 }
                             } else if (code & 0x00000200) == 0x00000000 {
                                 if (code & 0x0000ffc0) == 0x00004000 {
@@ -533,7 +533,7 @@ impl Opcode {
                             }
                         } else if (code & 0x00008000) == 0x00008000 {
                             if (code & 0x0000f800) == 0x0000c000 {
-                                return Opcode::Stmia;
+                                return Opcode::Stm;
                             }
                         } else if (code & 0x00000200) == 0x00000000 {
                             if (code & 0x0000ffc0) == 0x00004100 {
@@ -569,7 +569,7 @@ impl Opcode {
                             }
                         } else if (code & 0x00008000) == 0x00008000 {
                             if (code & 0x0000f800) == 0x0000c000 {
-                                return Opcode::Stmia;
+                                return Opcode::Stm;
                             }
                         } else if (code & 0x00000200) == 0x00000000 {
                             if (code & 0x0000ffc0) == 0x00004080 {
@@ -588,7 +588,7 @@ impl Opcode {
                         }
                     } else if (code & 0x00008000) == 0x00008000 {
                         if (code & 0x0000f800) == 0x0000c000 {
-                            return Opcode::Stmia;
+                            return Opcode::Stm;
                         }
                     } else if (code & 0x00000200) == 0x00000000 {
                         if (code & 0x0000ffc0) == 0x00004180 {
@@ -2028,9 +2028,9 @@ fn parse_sbcs(out: &mut ParsedIns, ins: Ins) {
         ],
     };
 }
-fn parse_stmia(out: &mut ParsedIns, ins: Ins) {
+fn parse_stm(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "stmia",
+        mnemonic: "stm",
         args: [
             Argument::Reg(ins.field_rn_8_wb()),
             Argument::RegList(ins.field_registers()),
@@ -2265,7 +2265,7 @@ static MNEMONIC_PARSERS: [MnemonicParser; 67] = [
     parse_push,
     parse_rors,
     parse_sbcs,
-    parse_stmia,
+    parse_stm,
     parse_str_i,
     parse_str_r,
     parse_str_sp,

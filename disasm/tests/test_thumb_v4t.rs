@@ -94,7 +94,7 @@ fn test_eor() {
 }
 
 #[test]
-fn test_ldmia() {
+fn test_ldm() {
     assert_asm!(0xc955, "ldm r1!, {r0, r2, r4, r6}");
 }
 
@@ -188,8 +188,8 @@ fn test_sbc() {
 }
 
 #[test]
-fn test_stmia() {
-    assert_asm!(0xc155, "stmia r1!, {r0, r2, r4, r6}");
+fn test_stm() {
+    assert_asm!(0xc155, "stm r1!, {r0, r2, r4, r6}");
 }
 
 #[test]
