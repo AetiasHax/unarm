@@ -4225,6 +4225,15 @@ impl Ins {
             writeback: false,
         }
     }
+    /// sp_wb: SP optionally with writeback
+    #[inline(always)]
+    pub fn field_sp_wb(&self) -> Reg {
+        Reg {
+            deref: false,
+            reg: Register::parse(13),
+            writeback: (((self.code >> 21) & 0x00000001)) != 0,
+        }
+    }
     /// registers: List of registers
     #[inline(always)]
     pub fn field_registers(&self) -> RegList {
@@ -4483,6 +4492,11 @@ impl Ins {
             writeback: (((self.code >> 21) & 0x00000001)) != 0,
         }
     }
+    /// spsr_mode: SPSR mode
+    #[inline(always)]
+    pub fn field_spsr_mode(&self) -> u32 {
+        (self.code & 0x0000001f)
+    }
     /// endian: Endian specifier
     #[inline(always)]
     pub fn field_endian(&self) -> Endian {
@@ -4705,6 +4719,17 @@ impl Ins {
             _ => AddrLdmStm::Illegal,
         }
     }
+    /// addr_system: Addressing mode for system instructions
+    #[inline(always)]
+    pub const fn modifier_addr_system(&self) -> AddrSystem {
+        match self.code & 0x01800000 {
+            0x00800000 => AddrSystem::Ia,
+            0x01800000 => AddrSystem::Ib,
+            0x00000000 => AddrSystem::Da,
+            0x01000000 => AddrSystem::Db,
+            _ => AddrSystem::Illegal,
+        }
+    }
     /// addr_coproc: Load and Store Coprocessor
     #[inline(always)]
     pub const fn modifier_addr_coproc(&self) -> AddrCoproc {
@@ -4891,6 +4916,19 @@ pub enum AddrMiscLdrStr {
 /// addr_ldm_stm: Load and Store Multiple
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrLdmStm {
+    Illegal,
+    /// ia: Increment After
+    Ia,
+    /// ib: Increment Before
+    Ib,
+    /// da: Decrement After
+    Da,
+    /// db: Decrement Before
+    Db,
+}
+/// addr_system: Addressing mode for system instructions
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AddrSystem {
     Illegal,
     /// ia: Increment After
     Ia,
@@ -50494,10 +50532,10 @@ fn parse_revsh(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
-    *out = match (ins.modifier_addr_ldm_stm(), ins.modifier_rfe_rn()) {
-        (AddrLdmStm::Ia, RfeRn::Writeback) => {
+    *out = match (ins.modifier_addr_system(), ins.modifier_rfe_rn()) {
+        (AddrSystem::Ia, RfeRn::Writeback) => {
             ParsedIns {
-                mnemonic: "rfe",
+                mnemonic: "rfeia",
                 args: [
                     Argument::Reg(ins.field_rn_wb()),
                     Argument::None,
@@ -50508,7 +50546,7 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Ib, RfeRn::Writeback) => {
+        (AddrSystem::Ib, RfeRn::Writeback) => {
             ParsedIns {
                 mnemonic: "rfeib",
                 args: [
@@ -50521,7 +50559,7 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Da, RfeRn::Writeback) => {
+        (AddrSystem::Da, RfeRn::Writeback) => {
             ParsedIns {
                 mnemonic: "rfeda",
                 args: [
@@ -50534,7 +50572,7 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Db, RfeRn::Writeback) => {
+        (AddrSystem::Db, RfeRn::Writeback) => {
             ParsedIns {
                 mnemonic: "rfedb",
                 args: [
@@ -50547,9 +50585,9 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Ia, RfeRn::NoWriteback) => {
+        (AddrSystem::Ia, RfeRn::NoWriteback) => {
             ParsedIns {
-                mnemonic: "rfe",
+                mnemonic: "rfeia",
                 args: [
                     Argument::Reg(ins.field_rn()),
                     Argument::None,
@@ -50560,7 +50598,7 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Ib, RfeRn::NoWriteback) => {
+        (AddrSystem::Ib, RfeRn::NoWriteback) => {
             ParsedIns {
                 mnemonic: "rfeib",
                 args: [
@@ -50573,7 +50611,7 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Da, RfeRn::NoWriteback) => {
+        (AddrSystem::Da, RfeRn::NoWriteback) => {
             ParsedIns {
                 mnemonic: "rfeda",
                 args: [
@@ -50586,7 +50624,7 @@ fn parse_rfe(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        (AddrLdmStm::Db, RfeRn::NoWriteback) => {
+        (AddrSystem::Db, RfeRn::NoWriteback) => {
             ParsedIns {
                 mnemonic: "rfedb",
                 args: [
@@ -67747,13 +67785,13 @@ fn parse_smusd(out: &mut ParsedIns, ins: Ins) {
     };
 }
 fn parse_srs(out: &mut ParsedIns, ins: Ins) {
-    *out = match ins.modifier_addr_ldm_stm() {
-        AddrLdmStm::Ia => {
+    *out = match ins.modifier_addr_system() {
+        AddrSystem::Ia => {
             ParsedIns {
-                mnemonic: "srs",
+                mnemonic: "srsia",
                 args: [
-                    Argument::CpsrMode(ins.field_cpsr_mode()),
-                    Argument::None,
+                    Argument::Reg(ins.field_sp_wb()),
+                    Argument::UImm(ins.field_spsr_mode()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -67761,12 +67799,12 @@ fn parse_srs(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        AddrLdmStm::Ib => {
+        AddrSystem::Ib => {
             ParsedIns {
                 mnemonic: "srsib",
                 args: [
-                    Argument::CpsrMode(ins.field_cpsr_mode()),
-                    Argument::None,
+                    Argument::Reg(ins.field_sp_wb()),
+                    Argument::UImm(ins.field_spsr_mode()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -67774,12 +67812,12 @@ fn parse_srs(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        AddrLdmStm::Da => {
+        AddrSystem::Da => {
             ParsedIns {
                 mnemonic: "srsda",
                 args: [
-                    Argument::CpsrMode(ins.field_cpsr_mode()),
-                    Argument::None,
+                    Argument::Reg(ins.field_sp_wb()),
+                    Argument::UImm(ins.field_spsr_mode()),
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -67787,12 +67825,12 @@ fn parse_srs(out: &mut ParsedIns, ins: Ins) {
                 ],
             }
         }
-        AddrLdmStm::Db => {
+        AddrSystem::Db => {
             ParsedIns {
                 mnemonic: "srsdb",
                 args: [
-                    Argument::CpsrMode(ins.field_cpsr_mode()),
-                    Argument::None,
+                    Argument::Reg(ins.field_sp_wb()),
+                    Argument::UImm(ins.field_spsr_mode()),
                     Argument::None,
                     Argument::None,
                     Argument::None,

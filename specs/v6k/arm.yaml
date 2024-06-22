@@ -106,6 +106,14 @@ fields:
       deref: !Bool false
       writeback: !Bool false
 
+  - name: sp_wb
+    arg: reg
+    desc: SP optionally with writeback
+    value: !Struct
+      reg: !U32 13
+      deref: !Bool false
+      writeback: !Bits 21..22
+
   - name: registers
     arg: reg_list
     desc: List of registers
@@ -324,6 +332,11 @@ fields:
     value: !Struct
       mode: !Bits 0..5
       writeback: !Bits 21..22
+
+  - name: spsr_mode
+    arg: u_imm
+    desc: SPSR mode
+    value: !Bits 0..5
 
   - name: endian
     arg: endian
@@ -726,6 +739,27 @@ modifiers:
     bitmask: 0x01800000
     cases:
       - name: ia
+        desc: Increment After
+        pattern: 0x00800000
+      - name: ib
+        suffix: ib
+        desc: Increment Before
+        pattern: 0x01800000
+      - name: da
+        suffix: da
+        desc: Decrement After
+        pattern: 0x00000000
+      - name: db
+        suffix: db
+        desc: Decrement Before
+        pattern: 0x01000000
+
+  - name: addr_system
+    desc: Addressing mode for system instructions
+    bitmask: 0x01800000
+    cases:
+      - name: ia
+        suffix: ia
         desc: Increment After
         pattern: 0x00800000
       - name: ib
@@ -1465,7 +1499,7 @@ opcodes:
     desc: Return From Exception
     bitmask: 0xfe50ffff
     pattern: 0xf8100a00
-    modifiers: [addr_ldm_stm, rfe_rn]
+    modifiers: [addr_system, rfe_rn]
 
   - name: ror
     desc: Rotate Right
@@ -1762,8 +1796,8 @@ opcodes:
     desc: Store Return State
     bitmask: 0xfe5fffe0
     pattern: 0xf84d0500
-    modifiers: [addr_ldm_stm]
-    args: [cpsr_mode]
+    modifiers: [addr_system]
+    args: [sp_wb, spsr_mode]
 
   - name: ssat
     desc: Signed Saturate
