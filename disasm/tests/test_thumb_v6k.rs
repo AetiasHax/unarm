@@ -4,7 +4,7 @@ macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
         let ins = Ins::new($code);
         let parsed = ins.parse();
-        assert_eq!(parsed.to_string(), $disasm)
+        assert_eq!(parsed.display(Default::default()).to_string(), $disasm)
     }};
 }
 
@@ -16,7 +16,7 @@ macro_rules! assert_bl {
         let first = first.parse();
         let second = second.parse();
         let ins = first.combine_thumb_bl(&second);
-        assert_eq!(ins.to_string(), $disasm);
+        assert_eq!(ins.display(Default::default()).to_string(), $disasm);
     }};
 }
 
@@ -30,7 +30,7 @@ fn test_add() {
     assert_asm!(0x1cca, "adds r2, r1, #0x3");
     assert_asm!(0x3642, "adds r6, r6, #0x42");
     assert_asm!(0x1853, "adds r3, r2, r1");
-    assert_asm!(0x44de, "add lr, lr, fp");
+    assert_asm!(0x44de, "add lr, lr, r11");
     assert_asm!(0xacff, "add r4, sp, #0x3fc");
     assert_asm!(0xb03a, "add sp, sp, #0xe8");
 }
@@ -96,7 +96,7 @@ fn test_cmn() {
 fn test_cmp() {
     assert_asm!(0x2942, "cmp r1, #0x42");
     assert_asm!(0x4297, "cmp r7, r2");
-    assert_asm!(0x45de, "cmp lr, fp");
+    assert_asm!(0x45de, "cmp lr, r11");
 }
 
 #[test]

@@ -8,4 +8,5 @@ pub mod v5te;
 #[cfg(feature = "v6k")]
 pub mod v6k;
 
+pub use display::{DisplayOptions, R9Use, RegNames};
 pub use parse::*;
