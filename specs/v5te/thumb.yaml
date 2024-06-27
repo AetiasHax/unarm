@@ -327,7 +327,7 @@ opcodes:
     desc: Add 8-bit immediate
     bitmask: 0xf800
     pattern: 0x3000
-    args: [Rd_8, Rd_8, immed_8]
+    args: [Rd_8, immed_8]
     defs: [Rd_8]
     uses: [Rd_8]
 
@@ -785,7 +785,7 @@ opcodes:
     desc: Subtract 8-bit immediate
     bitmask: 0xf800
     pattern: 0x3800
-    args: [Rd_8, Rd_8, immed_8]
+    args: [Rd_8, immed_8]
     defs: [Rd_8]
     uses: [Rd_8]
 

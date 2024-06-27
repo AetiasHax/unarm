@@ -28,7 +28,7 @@ fn test_adc() {
 #[test]
 fn test_add() {
     assert_asm!(0x1cca, "adds r2, r1, #0x3");
-    assert_asm!(0x3642, "adds r6, r6, #0x42");
+    assert_asm!(0x3642, "adds r6, #0x42");
     assert_asm!(0x1853, "adds r3, r2, r1");
     assert_asm!(0x44de, "add lr, lr, r11");
     assert_asm!(0xacff, "add r4, sp, #0x3fc");
@@ -252,7 +252,7 @@ fn test_strh() {
 #[test]
 fn test_sub() {
     assert_asm!(0x1eca, "subs r2, r1, #0x3");
-    assert_asm!(0x3e42, "subs r6, r6, #0x42");
+    assert_asm!(0x3e42, "subs r6, #0x42");
     assert_asm!(0x1a53, "subs r3, r2, r1");
     assert_asm!(0xb0ff, "sub sp, sp, #0x1fc");
 }

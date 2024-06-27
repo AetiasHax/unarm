@@ -1171,8 +1171,8 @@ fn parse_adds_8(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "adds",
         args: [
             Argument::Reg(ins.field_rd_8()),
-            Argument::Reg(ins.field_rd_8()),
             Argument::UImm(ins.field_immed_8()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2150,8 +2150,8 @@ fn parse_subs_8(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "subs",
         args: [
             Argument::Reg(ins.field_rd_8()),
-            Argument::Reg(ins.field_rd_8()),
             Argument::UImm(ins.field_immed_8()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
