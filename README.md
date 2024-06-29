@@ -46,10 +46,10 @@ Below is an example of using `unarm` to parse an ARMv5TE instruction.
 ```rust
 use unarm::{args::*, v5te::arm::{Ins, Opcode}};
 
-let ins = Ins::new(0xe5902268);
+let ins = Ins::new(0xe5902268, &Default::default());
 assert_eq!(ins.op, Opcode::Ldr);
 
-let parsed = ins.parse();
+let parsed = ins.parse(&Default::default());
 assert_eq!(
     parsed.args[0],
     Argument::Reg(Reg { reg: Register::R2, deref: false, writeback: false })
@@ -62,7 +62,7 @@ assert!(matches!(
     parsed.args[2],
     Argument::OffsetImm(OffsetImm { value: 0x268, post_indexed: false })
 ));
-assert_eq!(parsed.to_string(), "ldr r2, [r0, #0x268]");
+assert_eq!(parsed.display(Default::default()).to_string(), "ldr r2, [r0, #0x268]");
 ```
 
 ### 32-bit Thumb instructions
