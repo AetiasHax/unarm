@@ -3,32 +3,43 @@ types:
     desc: General-purpose register
     type: !Enum
       - name: r0
+        desc: R0 or A1
         value: 0
       - name: r1
+        desc: R1 or A2
         value: 1
       - name: r2
+        desc: R2 or A3
         value: 2
       - name: r3
+        desc: R3 or A4
         value: 3
       - name: r4
+        desc: R4 or V1
         value: 4
       - name: r5
+        desc: R5 or V2
         value: 5
       - name: r6
+        desc: R6 or V3
         value: 6
       - name: r7
+        desc: R7 or V4
         value: 7
       - name: r8
+        desc: R8 or V5
         value: 8
       - name: r9
+        desc: R9 or V6 or SB (Static Base) or TR (TLS Register)
         value: 9
       - name: r10
+        desc: R10 or V7 or SL (Stack Limit)
         value: 10
-      - name: fp
-        desc: Frame Pointer
+      - name: r11
+        desc: R11 or V8 or FP (frame pointer)
         value: 11
-      - name: ip
-        desc: Intra Procedure call scratch register
+      - name: r12
+        desc: R12 or IP (Intra Procedure call scratch register)
         value: 12
       - name: sp
         desc: Stack Pointer

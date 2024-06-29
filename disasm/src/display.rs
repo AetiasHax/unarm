@@ -8,16 +8,32 @@ use crate::{
     parse::ParsedIns,
 };
 
-impl Display for ParsedIns {
+impl ParsedIns {
+    pub fn display(&self, options: DisplayOptions) -> ParsedInsDisplay<'_> {
+        ParsedInsDisplay { ins: self, options }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct DisplayOptions {
+    pub reg_names: RegNames,
+}
+
+pub struct ParsedInsDisplay<'a> {
+    ins: &'a ParsedIns,
+    options: DisplayOptions,
+}
+
+impl<'a> Display for ParsedInsDisplay<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.mnemonic)?;
-        if self.args[0] != Argument::None {
+        write!(f, "{}", self.ins.mnemonic)?;
+        if self.ins.args[0] != Argument::None {
             write!(f, " ")?;
         }
         let mut comma = false;
         let mut deref = false;
         let mut writeback = false;
-        for arg in self.args_iter() {
+        for arg in self.ins.args_iter() {
             if deref {
                 match arg {
                     Argument::OffsetImm(OffsetImm {
@@ -51,9 +67,9 @@ impl Display for ParsedIns {
             {
                 deref = true;
                 writeback = *wb;
-                write!(f, "[{}", reg)?;
+                write!(f, "[{}", reg.display(self.options.reg_names))?;
             } else {
-                write!(f, "{}", arg)?;
+                write!(f, "{}", arg.display(self.options))?;
             }
             comma = true;
         }
@@ -79,12 +95,23 @@ impl Display for SignedHex {
     }
 }
 
-impl Display for Argument {
+impl Argument {
+    pub fn display(&self, options: DisplayOptions) -> DisplayArgument<'_> {
+        DisplayArgument { arg: self, options }
+    }
+}
+
+pub struct DisplayArgument<'a> {
+    arg: &'a Argument,
+    options: DisplayOptions,
+}
+
+impl<'a> Display for DisplayArgument<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
+        match self.arg {
             Argument::None => Ok(()),
             Argument::Reg(reg) => {
-                write!(f, "{}", reg.reg)?;
+                write!(f, "{}", reg.reg.display(self.options.reg_names))?;
                 if reg.writeback {
                     write!(f, "!")?;
                 }
@@ -98,7 +125,7 @@ impl Display for Argument {
                         if !first {
                             write!(f, ", ")?;
                         }
-                        write!(f, "{}", Register::parse(i))?;
+                        write!(f, "{}", Register::parse(i).display(self.options.reg_names))?;
                         first = false;
                     }
                 }
@@ -117,8 +144,8 @@ impl Display for Argument {
             Argument::CoOpcode(x) => write!(f, "#{}", x),
             Argument::CoprocNum(x) => write!(f, "p{}", x),
             Argument::ShiftImm(x) => write!(f, "{}", x),
-            Argument::ShiftReg(x) => write!(f, "{}", x),
-            Argument::OffsetReg(x) => write!(f, "{}", x),
+            Argument::ShiftReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
+            Argument::OffsetReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
             Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
@@ -130,27 +157,68 @@ impl Display for Argument {
     }
 }
 
-impl Display for Register {
+/// How R9 should be displayed
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum R9Use {
+    /// R9 or V6.
+    #[default]
+    GeneralPurpose,
+    /// Position-independent data (PID). If true, R9 will display as SB (static base).
+    Pid,
+    /// Thread-local storage (TLS). If true, R9 will display as TR (TLS register).
+    Tls,
+}
+
+/// Customizes the display of register names.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct RegNames {
+    /// If true, R0-R3 and R4-R11 will display as A1-A4 and V1-V8.
+    pub av_registers: bool,
+    /// How R9 should be displayed.
+    pub r9_use: R9Use,
+    /// If true, R10 will display as SL (stack limit).
+    pub explicit_stack_limit: bool,
+    /// If true, R11 will display as FP (frame pointer).
+    pub frame_pointer: bool,
+    /// If true, R12 will display as IP (intra procedure call scratch register). Used for interworking and long branches.
+    pub ip: bool,
+}
+
+impl Register {
+    pub fn display(self, names: RegNames) -> RegDisplay {
+        RegDisplay(self, names)
+    }
+}
+
+pub struct RegDisplay(Register, RegNames);
+
+impl Display for RegDisplay {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Register::Illegal => write!(f, "<illegal>"),
-            Register::R0 => write!(f, "r0"),
-            Register::R1 => write!(f, "r1"),
-            Register::R2 => write!(f, "r2"),
-            Register::R3 => write!(f, "r3"),
-            Register::R4 => write!(f, "r4"),
-            Register::R5 => write!(f, "r5"),
-            Register::R6 => write!(f, "r6"),
-            Register::R7 => write!(f, "r7"),
-            Register::R8 => write!(f, "r8"),
-            Register::R9 => write!(f, "r9"),
-            Register::R10 => write!(f, "r10"),
-            Register::Fp => write!(f, "fp"),
-            Register::Ip => write!(f, "ip"),
-            Register::Sp => write!(f, "sp"),
-            Register::Lr => write!(f, "lr"),
-            Register::Pc => write!(f, "pc"),
-        }
+        #[rustfmt::skip]
+        let s = match self.0 {
+            Register::Illegal => todo!(),
+            Register::R0 => if self.1.av_registers { "a1" } else { "r0" },
+            Register::R1 => if self.1.av_registers { "a2" } else { "r1" },
+            Register::R2 => if self.1.av_registers { "a3" } else { "r2" },
+            Register::R3 => if self.1.av_registers { "a4" } else { "r3" },
+            Register::R4 => if self.1.av_registers { "v1" } else { "r4" },
+            Register::R5 => if self.1.av_registers { "v2" } else { "r5" },
+            Register::R6 => if self.1.av_registers { "v3" } else { "r6" },
+            Register::R7 => if self.1.av_registers { "v4" } else { "r7" },
+            Register::R8 => if self.1.av_registers { "v5" } else { "r8" },
+            Register::R9 => match self.1.r9_use {
+                R9Use::GeneralPurpose => if self.1.av_registers { "v6" } else { "r9" },
+                R9Use::Pid => "sb",
+                R9Use::Tls => "tr",
+            },
+            Register::R10 => if self.1.explicit_stack_limit { "sl" } else if self.1.av_registers { "v7" } else { "r10" },
+            Register::R11 => if self.1.frame_pointer { "fp" } else if self.1.av_registers { "v8" } else { "r11" },
+            Register::R12 => if self.1.ip { "ip" } else { "r12" },
+            Register::Sp => "sp",
+            Register::Lr => "lr",
+            Register::Pc => "pc",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -229,18 +297,34 @@ impl Display for ShiftImm {
     }
 }
 
-impl Display for ShiftReg {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.op, self.reg)
+impl ShiftReg {
+    pub fn display(self, names: RegNames) -> DisplayShiftReg {
+        DisplayShiftReg(self, names)
     }
 }
 
-impl Display for OffsetReg {
+pub struct DisplayShiftReg(ShiftReg, RegNames);
+
+impl Display for DisplayShiftReg {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if !self.add {
+        write!(f, "{} {}", self.0.op, self.0.reg.display(self.1))
+    }
+}
+
+impl OffsetReg {
+    pub fn display(self, names: RegNames) -> DisplayOffsetReg {
+        DisplayOffsetReg(self, names)
+    }
+}
+
+pub struct DisplayOffsetReg(OffsetReg, RegNames);
+
+impl Display for DisplayOffsetReg {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if !self.0.add {
             write!(f, "-")?;
         }
-        write!(f, "{}", self.reg)
+        write!(f, "{}", self.0.reg.display(self.1))
     }
 }
 

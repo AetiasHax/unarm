@@ -9,6 +9,16 @@ fields:
       deref: !Bool false
       writeback: !Bool false
 
+  - name: Rd_0_ual
+    arg: reg
+    desc: Destination register
+    value: !Struct
+      reg: !Bits 0..3
+      deref: !Bool false
+      writeback: !Bool false
+    allow_collide: true
+    flags: [!Ual true]
+
   - name: Rd_8
     arg: reg
     desc: Destination register
@@ -16,6 +26,7 @@ fields:
       reg: !Bits 8..11
       deref: !Bool false
       writeback: !Bool false
+    allow_collide: true
 
   - name: Rd_H1
     arg: reg
@@ -24,6 +35,17 @@ fields:
       reg: !Expr self.code.bits(0,3) | self.code.bits(7,8) << 3
       deref: !Bool false
       writeback: !Bool false
+    allow_collide: true
+
+  - name: Rd_H1_ual
+    arg: reg
+    desc: Destination register
+    value: !Struct
+      reg: !Expr self.code.bits(0,3) | self.code.bits(7,8) << 3
+      deref: !Bool false
+      writeback: !Bool false
+    allow_collide: true
+    flags: [!Ual true]
 
   - name: Rn_0
     arg: reg
@@ -64,6 +86,14 @@ fields:
       reg: !Bits 8..11
       deref: !Bool false
       writeback: !Bool true
+
+  - name: Rn_8_ldm
+    arg: reg
+    desc: First source operand register
+    value: !Struct
+      reg: !Bits 8..11
+      deref: !Bool false
+      writeback: !Expr "!self.code.bits(0,8) & (1 << self.code.bits(8,11))"
 
   - name: Rn_H1
     arg: reg
@@ -140,6 +170,16 @@ fields:
       deref: !Bool false
       writeback: !Bool false
 
+  - name: sp_ual
+    arg: reg
+    desc: Stack pointer
+    no_bitmask: true
+    value: !Struct
+      reg: !U32 13
+      deref: !Bool false
+      writeback: !Bool false
+    flags: [!Ual true]
+
   - name: sp_deref
     arg: reg
     desc: Stack pointer as base register
@@ -155,6 +195,7 @@ fields:
     value: !Struct
       regs: !Bits 0..8
       user_mode: !Bool false
+    allow_collide: true
 
   - name: registers_pc
     arg: reg_list
@@ -169,6 +210,12 @@ fields:
     value: !Struct
       regs: !Expr self.code.bits(0,8) | self.code.bits(8,9) << 14
       user_mode: !Bool false
+
+  - name: zero
+    arg: u_imm
+    desc: Zero
+    value: !U32 0
+    no_bitmask: true
 
   - name: immed_3
     arg: u_imm
@@ -202,7 +249,7 @@ fields:
 
   - name: branch_offset_8
     arg: branch_dest
-    desc: 9-bit signed B/BL target offset
+    desc: 9-bit signed B target offset
     value: !Expr (self.code.bits(0,8) << 1) + 4
 
   - name: branch_offset_11
@@ -295,14 +342,16 @@ modifiers:
 opcodes:
   - name: adc
     desc: Add with Carry
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4140
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: add$3
     desc: Add 3-bit immediate
+    suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1c00
     args: [Rd_0, Rn_3, immed_3]
@@ -311,13 +360,16 @@ opcodes:
 
   - name: add$8
     desc: Add 8-bit immediate
+    suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x3000
     args: [Rd_8, immed_8]
     defs: [Rd_8]
+    uses: [Rd_8]
 
   - name: add$r
     desc: Add register
+    suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1800
     args: [Rd_0, Rn_3, Rm_6]
@@ -327,17 +379,9 @@ opcodes:
     desc: Add high register
     bitmask: 0xff00
     pattern: 0x4400
-    args: [Rd_H1, Rm_H2]
+    args: [Rd_H1, Rd_H1_ual, Rm_H2]
     defs: [Rd_H1]
-    uses: [Rm_H2]
-
-  - name: add$pc
-    desc: Add PC-relative address
-    bitmask: 0xf800
-    pattern: 0xa000
-    args: [Rd_8, pc, rel_immed_8]
-    defs: [Rd_8]
-    uses: [pc]
+    uses: [Rd_H1, Rm_H2]
 
   - name: add$sp
     desc: Add SP-relative address
@@ -351,19 +395,55 @@ opcodes:
     desc: Add 7-bit immediate multiple of 4 to SP
     bitmask: 0xff80
     pattern: 0xb000
-    args: [sp, rel_immed_7]
+    args: [sp, sp_ual, rel_immed_7]
     defs: [sp]
+    uses: [sp]
+
+  - name: add$reg$sp
+    desc: Add SP to register
+    bitmask: 0xff78
+    pattern: 0x4468
+    args: [Rd_H1, sp, Rd_H1]
+    defs: [Rd_H1]
+    uses: [sp, Rd_H1]
+
+  - name: add$sp$reg
+    desc: Add register to SP
+    bitmask: 0xff87
+    pattern: 0x4485
+    args: [sp, sp_ual, Rm_H2]
+    defs: [sp]
+    uses: [sp, Rm_H2]
+
+  - name: add$pc
+    desc: Add 8-bit immediate multiple of 4 to PC
+    bitmask: 0xf800
+    pattern: 0xa000
+    flags: [!Ual false]
+    args: [Rd_8, pc, rel_immed_8]
+    defs: [Rd_8]
+    uses: [pc]
+
+  - name: adr
+    desc: Add PC-relative address
+    bitmask: 0xf800
+    pattern: 0xa000
+    flags: [!Ual true]
+    args: [Rd_8, rel_immed_8]
+    defs: [Rd_8]
 
   - name: and
     desc: Bitwise AND
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4000
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: asr$i
     desc: Arithmetic Shift Right by 5-bit immediate
+    suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x1000
     args: [Rd_0, Rm_3, right_shift_imm]
@@ -372,11 +452,12 @@ opcodes:
 
   - name: asr$r
     desc: Arithmetic Shift Right by register
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4100
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: b
     desc: Branch
@@ -393,11 +474,12 @@ opcodes:
 
   - name: bic
     desc: Bit Clear
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4380
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: bl$h
     desc: Branch and Link (high part)
@@ -448,15 +530,27 @@ opcodes:
 
   - name: eor
     desc: Exclusive OR
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4040
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
+    defs: [Rd_0]
     uses: [Rd_0, Rm_3]
 
-  - name: ldmia
-    desc: Load Multiple Increment After
+  - name: ldm
+    desc: Load Multiple
     bitmask: 0xf800
     pattern: 0xc800
+    flags: [!Ual true]
+    args: [Rn_8_ldm, registers]
+    defs: [Rn_8_ldm]
+    uses: [Rn_8_ldm, registers]
+
+  - name: ldmia
+    desc: Load Multiple
+    bitmask: 0xf800
+    pattern: 0xc800
+    flags: [!Ual false]
     args: [Rn_8_wb, registers]
     defs: [Rn_8_wb]
     uses: [Rn_8_wb, registers]
@@ -543,6 +637,7 @@ opcodes:
 
   - name: lsl$i
     desc: Logical Shift Left by 5-bit immediate
+    suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x0000
     args: [Rd_0, Rm_3, left_shift_imm]
@@ -551,14 +646,16 @@ opcodes:
 
   - name: lsl$r
     desc: Logical Shift Left by register
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4080
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: lsr$i
     desc: Logical Shift Right by 5-bit immediate
+    suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x0800
     args: [Rd_0, Rm_3, right_shift_imm]
@@ -567,14 +664,16 @@ opcodes:
 
   - name: lsr$r
     desc: Logical Shift Right by register
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x40c0
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: mov$i
     desc: Move immediate
+    suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x2000
     args: [Rd_8, immed_8]
@@ -584,6 +683,16 @@ opcodes:
     desc: Move register
     bitmask: 0xffc0
     pattern: 0x1c00
+    flags: [!Ual false]
+    args: [Rd_0, Rn_3]
+    defs: [Rd_0]
+    uses: [Rn_3]
+
+  - name: movs$r
+    desc: Move register
+    bitmask: 0xffc0
+    pattern: 0x0000
+    flags: [!Ual true]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -598,14 +707,16 @@ opcodes:
 
   - name: mul
     desc: Multiply
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4340
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: mvn
     desc: Move Negative
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x43c0
     args: [Rd_0, Rm_3]
@@ -616,17 +727,28 @@ opcodes:
     desc: Negate
     bitmask: 0xffc0
     pattern: 0x4240
+    flags: [!Ual false]
     args: [Rd_0, Rm_3]
+    defs: [Rd_0]
+    uses: [Rm_3]
+
+  - name: rsbs
+    desc: Negate
+    bitmask: 0xffc0
+    pattern: 0x4240
+    flags: [!Ual true]
+    args: [Rd_0, Rm_3, zero]
     defs: [Rd_0]
     uses: [Rm_3]
 
   - name: orr
     desc: Bitwise OR
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4300
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
   - name: pop
     desc: Pop multiple registers
@@ -644,22 +766,25 @@ opcodes:
 
   - name: ror
     desc: Rotate Right
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x41c0
-    args: [Rd_0, Rs]
+    args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
-    uses: [Rs]
+    uses: [Rd_0, Rs]
 
   - name: sbc
     desc: Subtract with Carry
+    suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4180
-    args: [Rd_0, Rm_3]
+    args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
-    uses: [Rm_3]
+    uses: [Rd_0, Rm_3]
 
-  - name: stmia
-    desc: Store Multiple Increment After
+  - name: stm
+    desc: Store Multiple
+    suffix: !Divided ia
     bitmask: 0xf800
     pattern: 0xc000
     args: [Rn_8_wb, registers]
@@ -722,7 +847,7 @@ opcodes:
     defs: [Rn_3_deref]
     uses: [Rd_0, Rm_6_offset]
 
-  - name: sub$3
+  - name: subs$3
     desc: Subtract 3-bit immediate
     bitmask: 0xfe00
     pattern: 0x1e00
@@ -732,13 +857,16 @@ opcodes:
 
   - name: sub$8
     desc: Subtract 8-bit immediate
+    suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x3800
     args: [Rd_8, immed_8]
     defs: [Rd_8]
+    uses: [Rd_8]
 
   - name: sub$r
     desc: Subtract register
+    suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1a00
     args: [Rd_0, Rn_3, Rm_6]
@@ -748,13 +876,22 @@ opcodes:
     desc: Subtract 7-bit immediate multiple of 4 from SP
     bitmask: 0xff80
     pattern: 0xb080
-    args: [sp, rel_immed_7]
+    args: [sp, sp, rel_immed_7]
     defs: [sp]
+    uses: [sp]
+
+  - name: svc
+    desc: Supervisor Call
+    bitmask: 0xff00
+    pattern: 0xdf00
+    flags: [!Ual true]
+    args: [immed_8]
 
   - name: swi
     desc: Software Interrupt
     bitmask: 0xff00
     pattern: 0xdf00
+    flags: [!Ual false]
     args: [immed_8]
 
   - name: tst

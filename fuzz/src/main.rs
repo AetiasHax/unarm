@@ -4,15 +4,16 @@ mod v6k;
 
 use std::time::Instant;
 
-use unarm::parse::ArmVersion;
+use unarm::{parse::ArmVersion, ParseFlags};
 
 fn main() {
-    let (threads, iterations, arm, thumb, version) = {
+    let (threads, iterations, arm, thumb, version, ual) = {
         let mut threads = num_cpus::get();
         let mut iterations = 1;
         let mut arm = false;
         let mut thumb = false;
         let mut version = None;
+        let mut ual = false;
         let mut args = std::env::args();
         args.next(); // skip program name
         while let Some(arg) = args.next() {
@@ -24,10 +25,11 @@ fn main() {
                 "v4t" => version = Some(ArmVersion::V4T),
                 "v5te" => version = Some(ArmVersion::V5Te),
                 "v6k" => version = Some(ArmVersion::V6K),
+                "ual" => ual = true,
                 _ => panic!("Unknown argument '{}'", arg),
             }
         }
-        (threads, iterations, arm, thumb, version)
+        (threads, iterations, arm, thumb, version, ual)
     };
     if threads == 0 {
         panic!("Number of threads must be positive");
@@ -41,32 +43,33 @@ fn main() {
     let Some(version) = version else {
         panic!("Expected one of: v5te");
     };
+    let flags = ParseFlags { ual };
 
     println!("Starting {} threads running {} iterations", threads, iterations);
     let start = Instant::now();
     match version {
         ArmVersion::V4T => {
             if arm {
-                v4t::arm::fuzz(threads, iterations);
+                v4t::arm::fuzz(threads, iterations, flags);
             }
             if thumb {
-                v4t::thumb::fuzz(threads, iterations);
+                v4t::thumb::fuzz(threads, iterations, flags);
             }
         }
         ArmVersion::V5Te => {
             if arm {
-                v5te::arm::fuzz(threads, iterations);
+                v5te::arm::fuzz(threads, iterations, flags);
             }
             if thumb {
-                v5te::thumb::fuzz(threads, iterations);
+                v5te::thumb::fuzz(threads, iterations, flags);
             }
         }
         ArmVersion::V6K => {
             if arm {
-                v6k::arm::fuzz(threads, iterations);
+                v6k::arm::fuzz(threads, iterations, flags);
             }
             if thumb {
-                v6k::thumb::fuzz(threads, iterations);
+                v6k::thumb::fuzz(threads, iterations, flags);
             }
         }
     }

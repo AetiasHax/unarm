@@ -51,21 +51,32 @@ pub enum Argument {
 #[repr(u8)]
 pub enum Register {
     Illegal = u8::MAX,
+    /// R0 or A1
     R0 = 0,
+    /// R1 or A2
     R1 = 1,
+    /// R2 or A3
     R2 = 2,
+    /// R3 or A4
     R3 = 3,
+    /// R4 or V1
     R4 = 4,
+    /// R5 or V2
     R5 = 5,
+    /// R6 or V3
     R6 = 6,
+    /// R7 or V4
     R7 = 7,
+    /// R8 or V5
     R8 = 8,
+    /// R9 or V6 or SB (Static Base) or TR (TLS Register)
     R9 = 9,
+    /// R10 or V7 or SL (Stack Limit)
     R10 = 10,
-    /// Frame Pointer
-    Fp = 11,
-    /// Intra Procedure call scratch register
-    Ip = 12,
+    /// R11 or V8 or FP (frame pointer)
+    R11 = 11,
+    /// R12 or IP (Intra Procedure call scratch register)
+    R12 = 12,
     /// Stack Pointer
     Sp = 13,
     /// Link Register

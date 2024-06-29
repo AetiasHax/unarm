@@ -1,4 +1,4 @@
-use crate::{v6k::arm::generated::Opcode, ParsedIns};
+use crate::{v6k::arm::generated::Opcode, ParseFlags, ParsedIns};
 
 use super::parse;
 
@@ -9,14 +9,14 @@ pub struct Ins {
 }
 
 impl Ins {
-    pub fn new(code: u32) -> Self {
-        let op = Opcode::find(code);
+    pub fn new(code: u32, flags: &ParseFlags) -> Self {
+        let op = Opcode::find(code, flags);
         Self { code, op }
     }
 
-    pub fn parse(self) -> ParsedIns {
+    pub fn parse(self, flags: &ParseFlags) -> ParsedIns {
         let mut out = ParsedIns::default();
-        parse(&mut out, self);
+        parse(&mut out, self, flags);
         out
     }
 }
