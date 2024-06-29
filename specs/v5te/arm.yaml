@@ -73,7 +73,7 @@ fields:
       deref: !Bool false
       writeback: !Bool false
 
-  - name: Rt2
+  - name: Rt2_ual
     arg: reg
     desc: Second transferred register
     value: !Struct
@@ -81,6 +81,7 @@ fields:
       deref: !Bool false
       writeback: !Bool false
     allow_collide: true
+    flags: [!Ual true]
 
   - name: RdHi
     arg: reg
@@ -851,8 +852,8 @@ opcodes:
     bitmask: 0x0e1010f0
     pattern: 0x000000d0
     modifiers: [cond, addr_misc_ldr_str]
-    args: [Rt1, Rt2]
-    defs: [Rt1, Rt2]
+    args: [Rt1, Rt2_ual]
+    defs: [Rt1, Rt2_ual]
 
   - name: ldr$h
     desc: Load Register Halfword
@@ -1310,11 +1311,11 @@ opcodes:
   - name: str$d
     desc: Store Registers Doubleword
     suffix: !Suffix d
-    bitmask: 0x0e1000f0
+    bitmask: 0x0e1010f0
     pattern: 0x000000f0
     modifiers: [cond, addr_misc_ldr_str]
-    args: [Rd]
-    uses: [Rd]
+    args: [Rt1, Rt2_ual]
+    uses: [Rt1, Rt2_ual]
 
   - name: str$h
     desc: Store Register Halfword

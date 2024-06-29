@@ -546,12 +546,12 @@ fn test_strbt() {
 
 #[test]
 fn test_strd() {
-    assert_asm!(0xe1c12fff, "strd r2, [r1, #0xff]");
-    assert_asm!(0xe10120f3, "strd r2, [r1, -r3]");
-    assert_asm!(0xe1612fff, "strd r2, [r1, #-0xff]!");
-    assert_asm!(0xe1a120f3, "strd r2, [r1, r3]!");
-    assert_asm!(0xe0c12fff, "strd r2, [r1], #0xff");
-    assert_asm!(0xe00120f3, "strd r2, [r1], -r3");
+    assert_asm!(0xe1c12fff, "strd r2, r3, [r1, #0xff]");
+    assert_asm!(0xe10120f3, "strd r2, r3, [r1, -r3]");
+    assert_asm!(0xe1612fff, "strd r2, r3, [r1, #-0xff]!");
+    assert_asm!(0xe1a120f3, "strd r2, r3, [r1, r3]!");
+    assert_asm!(0xe0c12fff, "strd r2, r3, [r1], #0xff");
+    assert_asm!(0xe00120f3, "strd r2, r3, [r1], -r3");
 }
 
 #[test]

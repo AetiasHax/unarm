@@ -97,11 +97,15 @@ fn test_ldr_str() {
     assert_arm!(0x01d120b4, &divided, "ldreqh r2, [r1, #0x4]");
     assert_arm!(0x01d120d4, &unified, "ldrsbeq r2, [r1, #0x4]");
     assert_arm!(0x01d120d4, &divided, "ldreqsb r2, [r1, #0x4]");
+    assert_arm!(0x01c120d4, &unified, "ldrdeq r2, r3, [r1, #0x4]");
+    assert_arm!(0x01c120d4, &divided, "ldreqd r2, [r1, #0x4]");
 
     assert_arm!(0x01c120b4, &unified, "strheq r2, [r1, #0x4]");
     assert_arm!(0x01c120b4, &divided, "streqh r2, [r1, #0x4]");
     assert_arm!(0x04e12004, &unified, "strbteq r2, [r1], #0x4");
     assert_arm!(0x04e12004, &divided, "streqbt r2, [r1], #0x4");
+    assert_arm!(0x01c120f4, &unified, "strdeq r2, r3, [r1, #0x4]");
+    assert_arm!(0x01c120f4, &divided, "streqd r2, [r1, #0x4]");
 }
 
 #[test]
