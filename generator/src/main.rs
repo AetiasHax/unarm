@@ -47,7 +47,7 @@ fn main() -> Result<()> {
     let max_args: Result<usize> = {
         let mut max_args = 0;
         for (_, isa) in &isas {
-            max_args = max_args.max(isa.get_max_args()?);
+            max_args = max_args.max(isa.get_max_args(false)?).max(isa.get_max_args(true)?);
         }
         Ok(max_args)
     };

@@ -56,10 +56,10 @@ impl Isa {
             .with_context(|| format!("Failed to find field '{name}'"))
     }
 
-    pub fn get_max_args(&self) -> Result<usize> {
+    pub fn get_max_args(&self, ual: bool) -> Result<usize> {
         let mut max = 0;
         for opcode in self.opcodes.iter() {
-            let args = opcode.get_max_args(self)?;
+            let args = opcode.get_max_args(self, ual)?;
             if args > max {
                 max = args;
             }
@@ -186,7 +186,7 @@ impl FieldValue {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Modifier {
     pub name: String,
@@ -195,6 +195,10 @@ pub struct Modifier {
     pub pattern: Option<u32>,
     pub suffix: Option<String>,
     pub nsuffix: Option<String>,
+    #[serde(default)]
+    pub order_ual: i32,
+    #[serde(default)]
+    pub order: i32,
     pub cases: Option<Box<[ModifierCase]>>,
 }
 
@@ -279,6 +283,28 @@ impl Modifier {
     pub fn enum_name(&self) -> String {
         capitalize_with_delimiter(self.name.clone(), '_')
     }
+
+    pub fn has_suffix(&self) -> bool {
+        let has_suffix = self.suffix.as_ref().is_some_and(|s| !s.is_empty());
+        let has_nsuffix = self.nsuffix.as_ref().is_some_and(|s| !s.is_empty());
+        if has_suffix || has_nsuffix {
+            true
+        } else {
+            self.cases
+                .as_ref()
+                .map_or(false, |cases| cases.iter().any(|c| c.has_suffix()))
+        }
+    }
+
+    fn has_ual_order_changes(&self) -> bool {
+        self.order != self.order_ual
+    }
+
+    fn has_ual_case_changes(&self) -> bool {
+        self.cases
+            .as_ref()
+            .map_or(false, |cases| cases.iter().any(|c| c.has_ual_changes()))
+    }
 }
 
 #[derive(Deserialize, Default, Clone)]
@@ -287,10 +313,12 @@ pub struct ModifierCase {
     pub name: String,
     pub desc: Option<String>,
     pub suffix: Option<String>,
+    pub suffix_ual: Option<String>,
     pub bitmask: Option<u32>,
     pub ignored: Option<u32>,
     pub pattern: u32,
-    pub args: Option<Box<[String]>>,
+    #[serde(default)]
+    pub args: Box<[String]>,
     pub defs: Option<Box<[String]>>,
     pub uses: Option<Box<[String]>>,
 }
@@ -298,18 +326,14 @@ pub struct ModifierCase {
 impl ModifierCase {
     pub fn get_bitmask(&self, isa: &Isa, parent: &Modifier) -> Result<u32> {
         let case_bitmask = self.bitmask.or(parent.bitmask).unwrap_or(0);
-        if let Some(args) = &self.args {
-            let mut arg_bitmask = 0;
-            for arg in args.iter() {
-                let arg = isa
-                    .get_field(arg)
-                    .with_context(|| format!("While getting bitmask for modifier case '{}'", self.name))?;
-                arg_bitmask |= arg.get_bitmask()?;
-            }
-            Ok(arg_bitmask | case_bitmask)
-        } else {
-            Ok(case_bitmask)
+        let mut arg_bitmask = 0;
+        for arg in self.args.iter() {
+            let arg = isa
+                .get_field(arg)
+                .with_context(|| format!("While getting bitmask for modifier case '{}'", self.name))?;
+            arg_bitmask |= arg.get_bitmask()?;
         }
+        Ok(arg_bitmask | case_bitmask)
     }
 
     pub fn get_ignored_bitmask(&self) -> u32 {
@@ -339,10 +363,11 @@ impl ModifierCase {
             name: modifier.name.clone(),
             desc,
             suffix,
+            suffix_ual: None,
             bitmask: modifier.bitmask,
             ignored: None,
             pattern,
-            args: None,
+            args: Box::new([]),
             defs: None,
             uses: None,
         })
@@ -353,6 +378,7 @@ impl ModifierCase {
             name: self.name.clone(),
             desc: self.desc.clone(),
             suffix: self.suffix.clone().or(parent.suffix.clone()),
+            suffix_ual: self.suffix_ual.clone(),
             bitmask: self.bitmask.or(parent.bitmask),
             pattern: self.pattern,
             ignored: self.ignored,
@@ -373,6 +399,27 @@ impl ModifierCase {
             format!(" {}", self.name)
         }
     }
+
+    pub fn suffix(&self, ual: bool) -> &str {
+        if ual {
+            if let Some(suffix) = &self.suffix_ual {
+                return suffix.as_str();
+            }
+        }
+        self.suffix.as_ref().map_or("", |s| s.as_str())
+    }
+
+    pub fn has_suffix(&self) -> bool {
+        if self.suffix.as_ref().is_some_and(|s| !s.is_empty()) {
+            true
+        } else {
+            self.suffix_ual.as_ref().is_some_and(|s| !s.is_empty())
+        }
+    }
+
+    fn has_ual_changes(&self) -> bool {
+        self.suffix_ual.is_some()
+    }
 }
 
 #[derive(Deserialize, Clone)]
@@ -384,8 +431,12 @@ pub struct Opcode {
     pub suffix: String,
     pub bitmask: u32,
     pub pattern: u32,
-    pub modifiers: Option<Box<[String]>>,
-    pub args: Option<Box<[String]>>,
+    #[serde(default)]
+    pub flags: Box<[Flag]>,
+    #[serde(default)]
+    modifiers: Box<[String]>,
+    #[serde(default)]
+    pub args: Box<[String]>,
     pub defs: Option<Box<[String]>>,
     pub uses: Option<Box<[String]>>,
 }
@@ -402,34 +453,30 @@ impl Opcode {
         }
 
         let mut bitmask_acc = self.bitmask;
-        if let Some(modifiers) = &self.modifiers {
-            for modifier in modifiers.iter() {
-                let modifier = isa
-                    .get_modifier(modifier)
-                    .with_context(|| format!("While validating opcode '{}'", self.name))?;
-                let bitmask = modifier
-                    .get_full_bitmask(isa)
-                    .with_context(|| format!("While validating opcode '{}'", self.name))?;
-                bitmask_acc |= bitmask;
-            }
+        for modifier in self.modifiers.iter() {
+            let modifier = isa
+                .get_modifier(modifier)
+                .with_context(|| format!("While validating opcode '{}'", self.name))?;
+            let bitmask = modifier
+                .get_full_bitmask(isa)
+                .with_context(|| format!("While validating opcode '{}'", self.name))?;
+            bitmask_acc |= bitmask;
         }
-        if let Some(args) = &self.args {
-            for arg in args.iter() {
-                let arg = isa
-                    .get_field(arg)
-                    .with_context(|| format!("While validating opcode '{}'", self.name))?;
-                let bitmask = arg.get_bitmask()?;
-                if !arg.allow_collide && (bitmask_acc & bitmask) != 0 {
-                    bail!(
-                        "Argument '{}' (0x{:08x}) collides with other bitmasks in opcode '{}' (0x{:08x})",
-                        arg.name,
-                        bitmask,
-                        self.name,
-                        bitmask_acc
-                    )
-                }
-                bitmask_acc |= bitmask;
+        for arg in self.args.iter() {
+            let arg = isa
+                .get_field(arg)
+                .with_context(|| format!("While validating opcode '{}'", self.name))?;
+            let bitmask = arg.get_bitmask()?;
+            if !arg.allow_collide && (bitmask_acc & bitmask) != 0 {
+                bail!(
+                    "Argument '{}' (0x{:08x}) collides with other bitmasks in opcode '{}' (0x{:08x})",
+                    arg.name,
+                    bitmask,
+                    self.name,
+                    bitmask_acc
+                )
             }
+            bitmask_acc |= bitmask;
         }
         let complete_bitmask = ((1u64 << isa.ins_size) - 1).try_into().unwrap();
         if bitmask_acc != complete_bitmask {
@@ -468,33 +515,77 @@ impl Opcode {
         format!("parse_{}", self.ident_name())
     }
 
-    pub fn get_modifier_cases(&self, isa: &Isa) -> Result<Vec<Box<[ModifierCase]>>> {
-        if let Some(modifiers) = &self.modifiers {
-            let modifiers: Result<Vec<_>> = modifiers
-                .iter()
-                .map(|m| {
-                    let modifier = isa.get_modifier(m)?;
-                    modifier.get_cases()
-                })
-                .collect();
-            modifiers
+    pub fn get_modifiers(&self, isa: &Isa, ual: bool) -> Result<Vec<Modifier>> {
+        let mut modifiers = self
+            .modifiers
+            .iter()
+            .map(|m| isa.get_modifier(m).cloned())
+            .collect::<Result<Vec<_>>>()?;
+        if ual {
+            modifiers.sort_by_key(|m| m.order_ual);
         } else {
-            Ok(vec![])
+            modifiers.sort_by_key(|m| m.order);
         }
+        Ok(modifiers)
     }
 
-    fn get_max_args(&self, isa: &Isa) -> Result<usize> {
-        let base_args = self.args.as_ref().map(|args| args.len()).unwrap_or(0);
-        let modifiers = self.get_modifier_cases(isa)?;
+    pub fn get_modifier_cases(&self, isa: &Isa, ual: bool) -> Result<Vec<Box<[ModifierCase]>>> {
+        let modifiers = self.get_modifiers(isa, ual)?;
+        let modifiers = modifiers.iter().map(|m| m.get_cases()).collect::<Result<Vec<_>>>()?;
+        Ok(modifiers)
+    }
+
+    fn get_max_args(&self, isa: &Isa, ual: bool) -> Result<usize> {
+        let base_args = self.args.len();
+        let modifiers = self.get_modifier_cases(isa, ual)?;
         let max_case_args = cartesian(&modifiers)
-            .map(|modifiers| {
-                modifiers
-                    .iter()
-                    .map(|case| case.args.as_ref().map(|args| args.len()).unwrap_or(0))
-                    .sum()
-            })
+            .map(|modifiers| modifiers.iter().map(|case| case.args.len()).sum())
             .max()
             .unwrap_or(0);
         Ok(base_args + max_case_args)
     }
+
+    pub fn has_ual_changes(&self, isa: &Isa) -> Result<bool> {
+        let has_suffix = !self.suffix.is_empty();
+        let has_ual_tag = self.flags.iter().any(|f| matches!(f, Flag::Ual(_)));
+        if has_suffix || has_ual_tag {
+            Ok(true)
+        } else {
+            let modifiers = self
+                .modifiers
+                .iter()
+                .map(|m| isa.get_modifier(m))
+                .collect::<Result<Vec<_>>>()?;
+            let suffixed_modifier_count = modifiers.iter().filter(|m| m.has_suffix()).count();
+            for modifier in self.modifiers.iter() {
+                let modifier = isa.get_modifier(modifier)?;
+                if suffixed_modifier_count > 1 && modifier.has_ual_order_changes() {
+                    return Ok(true);
+                }
+                if modifier.has_ual_case_changes() {
+                    return Ok(true);
+                }
+            }
+            Ok(false)
+        }
+    }
+
+    /// Returns:
+    /// - `Some(true)` if this opcode only exists in unified syntax (UAL)
+    /// - `Some(false)` if this opcode only exists in divided syntax (pre-UAL)
+    /// - `None` if this opcode exists in both syntaxes
+    pub fn ual_flag(&self) -> Option<bool> {
+        self.flags
+            .iter()
+            .map(|f| {
+                let Flag::Ual(ual) = f;
+                *ual
+            })
+            .next()
+    }
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq)]
+pub enum Flag {
+    Ual(bool),
 }

@@ -12,16 +12,18 @@ pub struct Parser<'a> {
     pub mode: ParseMode,
     pub address: u32,
     pub endian: Endian,
+    pub flags: ParseFlags,
     data: &'a [u8],
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(version: ArmVersion, mode: ParseMode, address: u32, endian: Endian, data: &'a [u8]) -> Self {
+    pub fn new(version: ArmVersion, mode: ParseMode, address: u32, endian: Endian, flags: ParseFlags, data: &'a [u8]) -> Self {
         Self {
             version,
             mode,
             address,
             endian,
+            flags,
             data,
         }
     }
@@ -44,10 +46,21 @@ impl<'a> Parser<'a> {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ParseFlags {
+    pub ual: bool,
+}
+
+impl Default for ParseFlags {
+    fn default() -> Self {
+        Self { ual: true }
+    }
+}
+
 macro_rules! parse_arm {
-    ($module:ident, $op:ident, $code:expr) => {{
+    ($self:expr, $module:ident, $op:ident, $code:expr) => {{
         let ins = $module::arm::Ins::new($code);
-        (Op::$op(ins.op), ins.parse())
+        (Op::$op(ins.op), ins.parse(&$self.flags))
     }};
 }
 
@@ -55,11 +68,11 @@ macro_rules! parse_thumb {
     ($self:expr, $module:ident, $op:ident, $code:expr) => {{
         let ins = $module::thumb::Ins::new($code);
         let op = Op::$op(ins.op);
-        let parsed = ins.parse();
+        let parsed = ins.parse(&$self.flags);
         if ins.is_half_bl() {
             let (_, code) = $self.read_code()?;
             let ins = $module::thumb::Ins::new(code);
-            let second = ins.parse();
+            let second = ins.parse(&$self.flags);
             let combined = parsed.combine_thumb_bl(&second);
             (op, combined)
         } else {
@@ -77,15 +90,15 @@ impl<'a> Iterator for Parser<'a> {
 
         let (op, ins) = match (self.version, self.mode) {
             #[cfg(all(feature = "v4t", feature = "arm"))]
-            (ArmVersion::V4T, ParseMode::Arm) => parse_arm!(v4t, ArmV4T, code),
+            (ArmVersion::V4T, ParseMode::Arm) => parse_arm!(self, v4t, ArmV4T, code),
             #[cfg(all(feature = "v4t", feature = "thumb"))]
             (ArmVersion::V4T, ParseMode::Thumb) => parse_thumb!(self, v4t, ThumbV4T, code),
             #[cfg(all(feature = "v5te", feature = "arm"))]
-            (ArmVersion::V5Te, ParseMode::Arm) => parse_arm!(v5te, ArmV5Te, code),
+            (ArmVersion::V5Te, ParseMode::Arm) => parse_arm!(self, v5te, ArmV5Te, code),
             #[cfg(all(feature = "v5te", feature = "thumb"))]
             (ArmVersion::V5Te, ParseMode::Thumb) => parse_thumb!(self, v5te, ThumbV5Te, code),
             #[cfg(all(feature = "v6k", feature = "arm"))]
-            (ArmVersion::V6K, ParseMode::Arm) => parse_arm!(v6k, ArmV6K, code),
+            (ArmVersion::V6K, ParseMode::Arm) => parse_arm!(self, v6k, ArmV6K, code),
             #[cfg(all(feature = "v6k", feature = "thumb"))]
             (ArmVersion::V6K, ParseMode::Thumb) => parse_thumb!(self, v6k, ThumbV6K, code),
             (_, ParseMode::Data) => {

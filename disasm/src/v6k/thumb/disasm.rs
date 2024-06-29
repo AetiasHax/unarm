@@ -1,4 +1,4 @@
-use crate::{v6k::thumb::generated::Opcode, ParsedIns};
+use crate::{v6k::thumb::generated::Opcode, ParseFlags, ParsedIns};
 
 use super::parse;
 
@@ -19,9 +19,9 @@ impl Ins {
         self.op == Opcode::BlH
     }
 
-    pub fn parse(self) -> ParsedIns {
+    pub fn parse(self, flags: &ParseFlags) -> ParsedIns {
         let mut out = ParsedIns::default();
-        parse(&mut out, self);
+        parse(&mut out, self, flags);
         out
     }
 }
