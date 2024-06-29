@@ -1062,6 +1062,7 @@ opcodes:
     desc: Pop multiple registers
     bitmask: 0x0fff0000
     pattern: 0x08bd0000
+    flags: [!Ual true]
     modifiers: [cond]
     args: [registers]
     uses: [registers]
@@ -1070,6 +1071,7 @@ opcodes:
     desc: Pop register
     bitmask: 0x0fff0fff
     pattern: 0x049d0004
+    flags: [!Ual true]
     modifiers: [cond]
     args: [Rt_list]
     uses: [Rt_list]
