@@ -225,13 +225,26 @@ fn generate_instruction_parse_body(
         .collect();
     let modifier_values = modifier_values?;
 
-    let opcode_args = opcode.args.iter().map(|arg| isa.get_field(arg)).collect::<Result<Vec<_>>>()?;
+    let opcode_args = opcode
+        .args
+        .iter()
+        .filter_map(|arg| {
+            let field = isa.get_field(arg);
+            let Ok(field) = field else { return Some(field) };
+            match (field.ual_flag(), ual) {
+                (None, _) => Some(Ok(field)),
+                // Remove fields that only belong in unified/divided syntax but not both
+                (Some(a), b) if a == b => Some(Ok(field)),
+                _ => None,
+            }
+        })
+        .collect::<Result<Vec<_>>>()?;
     let modifier_cases = opcode.get_modifier_cases(isa, ual)?;
 
     let body = {
         let mut case_bodies: Vec<TokenStream> = vec![];
         if modifier_cases.is_empty() {
-            let mnemonic = opcode.name().to_string();
+            let mnemonic = opcode.name(ual).to_string();
             let args = generate_mnemonic_args(isa_args, max_args, opcode_args)?;
             quote! {
                 *out = ParsedIns {
@@ -255,10 +268,11 @@ fn generate_instruction_parse_body(
                     }
                 });
                 let suffix = cases.iter().map(|case| case.suffix(ual)).collect::<String>();
+                let opcode_suffix = opcode.suffix.as_ref().map_or("", |s| s.suffix(ual));
                 let mnemonic = if ual {
-                    opcode.base_name().to_string() + &opcode.suffix + &suffix
+                    opcode.base_name().to_string() + opcode_suffix + &suffix
                 } else {
-                    opcode.base_name().to_string() + &suffix + &opcode.suffix
+                    opcode.base_name().to_string() + &suffix + opcode_suffix
                 };
                 let case_args = {
                     let mut case_args = opcode_args.clone();
@@ -687,12 +701,12 @@ fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStrea
     let mut opcode_mnemonics_tokens = TokenStream::new();
     let num_opcodes_token = Literal::usize_unsuffixed(sorted_opcodes.len());
     for (i, opcode) in sorted_opcodes.iter().enumerate() {
-        let name = &opcode.name();
+        let name = &opcode.name(true);
         opcode_mnemonics_tokens.extend(quote! { #name, });
 
         let enum_name = Ident::new(&opcode.enum_name(), Span::call_site());
         let enum_value = Literal::u8_unsuffixed(i.try_into().unwrap());
-        let doc = opcode.doc();
+        let doc = opcode.doc(true);
         opcode_enum_tokens.extend(quote! {
             #[doc = #doc]
             #enum_name = #enum_value,

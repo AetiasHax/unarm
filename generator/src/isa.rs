@@ -79,6 +79,8 @@ pub struct Field {
     #[serde(default)]
     pub no_bitmask: bool,
     pub value: FieldValue,
+    #[serde(default)]
+    pub flags: Box<[Flag]>,
 }
 
 impl Field {
@@ -104,6 +106,20 @@ impl Field {
 
     pub fn doc(&self) -> String {
         format!(" {}: {}", self.name, self.desc)
+    }
+
+    /// Returns:
+    /// - `Some(true)` if this field only exists in unified syntax (UAL)
+    /// - `Some(false)` if this field only exists in divided syntax (pre-UAL)
+    /// - `None` if this field exists in both syntaxes
+    pub fn ual_flag(&self) -> Option<bool> {
+        self.flags
+            .iter()
+            .map(|f| {
+                let Flag::Ual(ual) = f;
+                *ual
+            })
+            .next()
     }
 }
 
@@ -300,10 +316,16 @@ impl Modifier {
         self.order != self.order_ual
     }
 
-    fn has_ual_case_changes(&self) -> bool {
-        self.cases
-            .as_ref()
-            .map_or(false, |cases| cases.iter().any(|c| c.has_ual_changes()))
+    fn has_ual_case_changes(&self, isa: &Isa) -> Result<bool> {
+        let Some(cases) = &self.cases else {
+            return Ok(false);
+        };
+        for case in cases.iter() {
+            if case.has_ual_changes(isa)? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 }
 
@@ -417,8 +439,18 @@ impl ModifierCase {
         }
     }
 
-    fn has_ual_changes(&self) -> bool {
-        self.suffix_ual.is_some()
+    fn has_ual_changes(&self, isa: &Isa) -> Result<bool> {
+        if self.suffix_ual.is_some() {
+            Ok(true)
+        } else {
+            for arg in self.args.iter() {
+                let field = isa.get_field(arg)?;
+                if field.ual_flag().is_some() {
+                    return Ok(true);
+                }
+            }
+            Ok(false)
+        }
     }
 }
 
@@ -427,8 +459,7 @@ impl ModifierCase {
 pub struct Opcode {
     name: String,
     pub desc: String,
-    #[serde(default)]
-    pub suffix: String,
+    pub suffix: Option<OpcodeSuffix>,
     pub bitmask: u32,
     pub pattern: u32,
     #[serde(default)]
@@ -493,12 +524,12 @@ impl Opcode {
         }
     }
 
-    pub fn name(&self) -> String {
-        self.base_name().to_owned() + &self.suffix
+    pub fn name(&self, ual: bool) -> String {
+        self.base_name().to_owned() + self.suffix.as_ref().map_or("", |s| s.suffix(ual))
     }
 
-    pub fn doc(&self) -> String {
-        format!(" {}: {}", self.name().to_uppercase(), self.desc)
+    pub fn doc(&self, ual: bool) -> String {
+        format!(" {}: {}", self.name(ual).to_uppercase(), self.desc)
     }
 
     pub fn enum_name(&self) -> String {
@@ -546,11 +577,18 @@ impl Opcode {
     }
 
     pub fn has_ual_changes(&self, isa: &Isa) -> Result<bool> {
-        let has_suffix = !self.suffix.is_empty();
+        let has_suffix = self.suffix.is_some();
         let has_ual_tag = self.flags.iter().any(|f| matches!(f, Flag::Ual(_)));
         if has_suffix || has_ual_tag {
             Ok(true)
         } else {
+            for arg in self.args.iter() {
+                let field = isa.get_field(arg)?;
+                if field.ual_flag().is_some() {
+                    return Ok(true);
+                }
+            }
+
             let modifiers = self
                 .modifiers
                 .iter()
@@ -562,7 +600,7 @@ impl Opcode {
                 if suffixed_modifier_count > 1 && modifier.has_ual_order_changes() {
                     return Ok(true);
                 }
-                if modifier.has_ual_case_changes() {
+                if modifier.has_ual_case_changes(isa)? {
                     return Ok(true);
                 }
             }
@@ -582,6 +620,28 @@ impl Opcode {
                 *ual
             })
             .next()
+    }
+}
+
+#[derive(Deserialize, Clone, PartialEq, Eq)]
+pub enum OpcodeSuffix {
+    /// Always apply this suffix
+    Suffix(String),
+    /// Only apply this suffix in unified syntax (UAL)
+    Unified(String),
+    /// Only apply this suffix in divided syntax (pre-UAL)
+    Divided(String),
+}
+
+impl OpcodeSuffix {
+    pub fn suffix(&self, ual: bool) -> &str {
+        match (self, ual) {
+            (OpcodeSuffix::Suffix(suffix), _) => suffix,
+            (OpcodeSuffix::Unified(suffix), true) => suffix,
+            (OpcodeSuffix::Unified(_), false) => "",
+            (OpcodeSuffix::Divided(_), true) => "",
+            (OpcodeSuffix::Divided(suffix), false) => suffix,
+        }
     }
 }
 

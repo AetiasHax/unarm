@@ -829,7 +829,7 @@ opcodes:
 
   - name: ldr$b
     desc: Load Register Byte
-    suffix: b
+    suffix: !Suffix b
     bitmask: 0x0c500000
     pattern: 0x04500000
     modifiers: [cond, addr_ldr_str]
@@ -838,7 +838,7 @@ opcodes:
 
   - name: ldr$bt
     desc: Load Register Byte with Translation
-    suffix: bt
+    suffix: !Suffix bt
     bitmask: 0x0d700000
     pattern: 0x04700000
     modifiers: [cond, addr_ldrt_strt]
@@ -847,7 +847,7 @@ opcodes:
 
   - name: ldr$d
     desc: Load Registers Doubleword
-    suffix: d
+    suffix: !Suffix d
     bitmask: 0x0e1010f0
     pattern: 0x000000d0
     modifiers: [cond, addr_misc_ldr_str]
@@ -856,7 +856,7 @@ opcodes:
 
   - name: ldr$h
     desc: Load Register Halfword
-    suffix: h
+    suffix: !Suffix h
     bitmask: 0x0e1000f0
     pattern: 0x001000b0
     modifiers: [cond, addr_misc_ldr_str]
@@ -865,7 +865,7 @@ opcodes:
 
   - name: ldr$sb
     desc: Load Register Signed Byte
-    suffix: sb
+    suffix: !Suffix sb
     bitmask: 0x0e1000f0
     pattern: 0x001000d0
     modifiers: [cond, addr_misc_ldr_str]
@@ -874,7 +874,7 @@ opcodes:
 
   - name: ldr$sh
     desc: Load Register Signed Halfword
-    suffix: sh
+    suffix: !Suffix sh
     bitmask: 0x0e1000f0
     pattern: 0x001000f0
     modifiers: [cond, addr_misc_ldr_str]
@@ -886,7 +886,7 @@ opcodes:
     bitmask: 0x0d700000
     pattern: 0x04300000
     modifiers: [cond, addr_ldrt_strt]
-    suffix: t
+    suffix: !Suffix t
     args: [Rd]
     defs: [Rd]
 
@@ -1291,7 +1291,7 @@ opcodes:
 
   - name: str$b
     desc: Store Register Byte
-    suffix: b
+    suffix: !Suffix b
     bitmask: 0x0c500000
     pattern: 0x04400000
     modifiers: [cond, addr_ldr_str]
@@ -1300,7 +1300,7 @@ opcodes:
 
   - name: str$bt
     desc: Store Register Byte with Translation
-    suffix: bt
+    suffix: !Suffix bt
     bitmask: 0x0d700000
     pattern: 0x04600000
     modifiers: [cond, addr_ldrt_strt]
@@ -1309,7 +1309,7 @@ opcodes:
 
   - name: str$d
     desc: Store Registers Doubleword
-    suffix: d
+    suffix: !Suffix d
     bitmask: 0x0e1000f0
     pattern: 0x000000f0
     modifiers: [cond, addr_misc_ldr_str]
@@ -1318,7 +1318,7 @@ opcodes:
 
   - name: str$h
     desc: Store Register Halfword
-    suffix: h
+    suffix: !Suffix h
     bitmask: 0x0e1000f0
     pattern: 0x000000b0
     modifiers: [cond, addr_misc_ldr_str]
@@ -1327,7 +1327,7 @@ opcodes:
 
   - name: str$t
     desc: Store Register with Translation
-    suffix: t
+    suffix: !Suffix t
     bitmask: 0x0d700000
     pattern: 0x04200000
     modifiers: [cond, addr_ldrt_strt]
