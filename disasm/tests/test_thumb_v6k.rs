@@ -2,19 +2,21 @@ use unarm::v6k::thumb::Ins;
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
-        let ins = Ins::new($code);
-        let parsed = ins.parse();
+        let flags = Default::default();
+        let ins = Ins::new($code, &flags);
+        let parsed = ins.parse(&flags);
         assert_eq!(parsed.display(Default::default()).to_string(), $disasm)
     }};
 }
 
 macro_rules! assert_bl {
     ($code:literal, $disasm:literal) => {{
-        let first = Ins::new($code >> 16);
+        let flags = Default::default();
+        let first = Ins::new($code >> 16, &flags);
         assert!(first.is_half_bl());
-        let second = Ins::new($code & 0xffff);
-        let first = first.parse();
-        let second = second.parse();
+        let second = Ins::new($code & 0xffff, &flags);
+        let first = first.parse(&flags);
+        let second = second.parse(&flags);
         let ins = first.combine_thumb_bl(&second);
         assert_eq!(ins.display(Default::default()).to_string(), $disasm);
     }};

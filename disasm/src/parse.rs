@@ -59,19 +59,19 @@ impl Default for ParseFlags {
 
 macro_rules! parse_arm {
     ($self:expr, $module:ident, $op:ident, $code:expr) => {{
-        let ins = $module::arm::Ins::new($code);
+        let ins = $module::arm::Ins::new($code, &$self.flags);
         (Op::$op(ins.op), ins.parse(&$self.flags))
     }};
 }
 
 macro_rules! parse_thumb {
     ($self:expr, $module:ident, $op:ident, $code:expr) => {{
-        let ins = $module::thumb::Ins::new($code);
+        let ins = $module::thumb::Ins::new($code, &$self.flags);
         let op = Op::$op(ins.op);
         let parsed = ins.parse(&$self.flags);
         if ins.is_half_bl() {
             let (_, code) = $self.read_code()?;
-            let ins = $module::thumb::Ins::new(code);
+            let ins = $module::thumb::Ins::new(code, &$self.flags);
             let second = ins.parse(&$self.flags);
             let combined = parsed.combine_thumb_bl(&second);
             (op, combined)

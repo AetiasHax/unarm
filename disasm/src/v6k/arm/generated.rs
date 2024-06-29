@@ -566,7 +566,7 @@ pub enum Opcode {
 }
 impl Opcode {
     #[inline]
-    pub fn find(code: u32) -> Self {
+    pub fn find(code: u32, flags: &ParseFlags) -> Self {
         if (code & 0x00200000) == 0x00000000 {
             if (code & 0x00100000) == 0x00100000 {
                 if (code & 0x00000010) == 0x00000000 {

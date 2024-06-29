@@ -2,8 +2,9 @@ use unarm::v4t::arm::Ins;
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
-        let ins = Ins::new($code);
-        let parsed = ins.parse();
+        let flags = Default::default();
+        let ins = Ins::new($code, &flags);
+        let parsed = ins.parse(&flags);
         assert_eq!(parsed.display(Default::default()).to_string(), $disasm)
     }};
 }

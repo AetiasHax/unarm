@@ -2,8 +2,9 @@ use unarm::{v6k::arm::Ins, DisplayOptions, R9Use, RegNames};
 
 macro_rules! assert_asm {
     ($code:literal, $options:expr, $disasm:literal) => {{
-        let ins = Ins::new($code);
-        let parsed = ins.parse();
+        let flags = Default::default();
+        let ins = Ins::new($code, &flags);
+        let parsed = ins.parse(&flags);
         assert_eq!(parsed.display($options).to_string(), $disasm)
     }};
 }

@@ -312,8 +312,8 @@ impl Modifier {
 pub struct ModifierCase {
     pub name: String,
     pub desc: Option<String>,
-    pub suffix: Option<String>,
-    pub suffix_ual: Option<String>,
+    suffix: Option<String>,
+    suffix_ual: Option<String>,
     pub bitmask: Option<u32>,
     pub ignored: Option<u32>,
     pub pattern: u32,
@@ -402,8 +402,8 @@ impl ModifierCase {
 
     pub fn suffix(&self, ual: bool) -> &str {
         if ual {
-            if let Some(suffix) = &self.suffix_ual {
-                return suffix.as_str();
+            if let Some(suffix_ual) = &self.suffix_ual {
+                return suffix_ual.as_str();
             }
         }
         self.suffix.as_ref().map_or("", |s| s.as_str())

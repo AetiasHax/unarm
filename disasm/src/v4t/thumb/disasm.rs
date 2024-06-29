@@ -9,8 +9,8 @@ pub struct Ins {
 }
 
 impl Ins {
-    pub fn new(code: u32) -> Self {
-        let op = Opcode::find(code);
+    pub fn new(code: u32, flags: &ParseFlags) -> Self {
+        let op = Opcode::find(code, flags);
         Self { code, op }
     }
 

@@ -9,7 +9,7 @@ use syn::{
 
 use crate::{
     args::{ArgType, IsaArgs},
-    isa::{Field, FieldValue, Isa, Opcode},
+    isa::{Field, FieldValue, Flag, Isa, Opcode},
     iter::cartesian,
     search::SearchTree,
     token::HexLiteral,
@@ -25,7 +25,7 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
     let body = generate_search_node(Some(Box::new(tree)), &mut opcodes);
     let opcode_find_tokens = quote! {
         #[inline]
-        pub fn find(code: u32) -> Self {
+        pub fn find(code: u32, flags: &ParseFlags) -> Self {
             #body
             Opcode::Illegal
         }
@@ -114,9 +114,24 @@ fn generate_search_node(node: Option<Box<SearchTree>>, opcodes: &mut Vec<Opcode>
                 quote! { code }
             };
 
-            quote! {
-                if #code_mask == #pattern_token {
-                    return Opcode::#variant_token;
+            if op.flags.is_empty() {
+                quote! {
+                    if #code_mask == #pattern_token {
+                        return Opcode::#variant_token;
+                    }
+                }
+            } else {
+                let flags_checks = op.flags.iter().map(|f| match f {
+                    Flag::Ual(true) => quote! { flags.ual },
+                    Flag::Ual(false) => quote! { !flags.ual },
+                });
+                let flags_expr = quote! {
+                    #(#flags_checks)&&*
+                };
+                quote! {
+                    if #flags_expr && #code_mask == #pattern_token {
+                        return Opcode::#variant_token;
+                    }
                 }
             }
         });
