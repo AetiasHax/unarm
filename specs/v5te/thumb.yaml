@@ -905,9 +905,17 @@ opcodes:
     uses: [sp]
 
   - name: svc
+    desc: Supervisor Call
+    bitmask: 0xff00
+    pattern: 0xdf00
+    flags: [!Ual true]
+    args: [immed_8]
+
+  - name: swi
     desc: Software Interrupt
     bitmask: 0xff00
     pattern: 0xdf00
+    flags: [!Ual false]
     args: [immed_8]
 
   - name: tst

@@ -156,7 +156,7 @@ fn test_mul() {
 
 #[test]
 fn test_mvn() {
-    assert_asm!(0x43d7, "mvns r7, r7, r2");
+    assert_asm!(0x43d7, "mvns r7, r2");
 }
 
 #[test]

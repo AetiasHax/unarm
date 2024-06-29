@@ -1,5 +1,5 @@
 use unarm::{
-    v5te::{arm, thumb},
+    v6k::{arm, thumb},
     ParseFlags,
 };
 

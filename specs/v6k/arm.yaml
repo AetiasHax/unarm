@@ -81,7 +81,7 @@ fields:
       deref: !Bool false
       writeback: !Bool false
 
-  - name: Rt2
+  - name: Rt2_ual
     arg: reg
     desc: Second transferred register
     value: !Struct
@@ -89,6 +89,7 @@ fields:
       deref: !Bool false
       writeback: !Bool false
     allow_collide: true
+    flags: [!Ual true]
 
   - name: RdHi
     arg: reg
@@ -497,6 +498,8 @@ modifiers:
   - name: cond
     desc: Condition code
     bitmask: 0xf0000000
+    order_ual: 0
+    order: -1
     cases:
       - name: eq
         suffix: eq
@@ -734,6 +737,8 @@ modifiers:
     bitmask: 0x01800000
     cases:
       - name: ia
+        suffix: ia
+        suffix_ual: ""
         desc: Increment After
         pattern: 0x00800000
       - name: ib
@@ -830,6 +835,7 @@ opcodes:
     desc: Arithmetic Right Shift
     bitmask: 0x0fef0060
     pattern: 0x01a00040
+    flags: [!Ual true]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1038,29 +1044,32 @@ opcodes:
     args: [Rd]
     defs: [Rd]
 
-  - name: ldrb
+  - name: ldr$b
     desc: Load Register Byte
+    suffix: !Suffix b
     bitmask: 0x0c500000
     pattern: 0x04500000
     modifiers: [cond, addr_ldr_str]
     args: [Rd]
     defs: [Rd]
 
-  - name: ldrbt
+  - name: ldr$bt
     desc: Load Register Byte with Translation
+    suffix: !Suffix bt
     bitmask: 0x0d700000
     pattern: 0x04700000
     modifiers: [cond, addr_ldrt_strt]
     args: [Rd]
     defs: [Rd]
 
-  - name: ldrd
+  - name: ldr$d
     desc: Load Registers Doubleword
+    suffix: !Suffix d
     bitmask: 0x0e1010f0
     pattern: 0x000000d0
     modifiers: [cond, addr_misc_ldr_str]
-    args: [Rt1, Rt2]
-    defs: [Rt1, Rt2]
+    args: [Rt1, Rt2_ual]
+    defs: [Rt1, Rt2_ual]
 
   - name: ldrex
     desc: Load Register Exclusive
@@ -1098,35 +1107,39 @@ opcodes:
     defs: [Rd]
     uses: [Rn_deref]
 
-  - name: ldrh
+  - name: ldr$h
     desc: Load Register Halfword
+    suffix: !Suffix h
     bitmask: 0x0e1000f0
     pattern: 0x001000b0
     modifiers: [cond, addr_misc_ldr_str]
     args: [Rd]
     defs: [Rd]
 
-  - name: ldrsb
+  - name: ldr$sb
     desc: Load Register Signed Byte
+    suffix: !Suffix sb
     bitmask: 0x0e1000f0
     pattern: 0x001000d0
     modifiers: [cond, addr_misc_ldr_str]
     args: [Rd]
     defs: [Rd]
 
-  - name: ldrsh
+  - name: ldr$sh
     desc: Load Register Signed Halfword
+    suffix: !Suffix sh
     bitmask: 0x0e1000f0
     pattern: 0x001000f0
     modifiers: [cond, addr_misc_ldr_str]
     args: [Rd]
     defs: [Rd]
 
-  - name: ldrt
+  - name: ldr$t
     desc: Load Register with Translation
     bitmask: 0x0d700000
     pattern: 0x04300000
     modifiers: [cond, addr_ldrt_strt]
+    suffix: !Suffix t
     args: [Rd]
     defs: [Rd]
 
@@ -1134,6 +1147,7 @@ opcodes:
     desc: Logical Shift Left
     bitmask: 0x0fef0060
     pattern: 0x01a00000
+    flags: [!Ual true]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1143,6 +1157,7 @@ opcodes:
     desc: Logical Shift Right
     bitmask: 0x0fef0060
     pattern: 0x01a00020
+    flags: [!Ual true]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1191,10 +1206,20 @@ opcodes:
     defs: [Rd]
     uses: [Rm, Rs, Rn]
 
+  - name: mov
+    desc: Move
+    bitmask: 0x0def0000
+    pattern: 0x01a00000
+    flags: [!Ual false]
+    modifiers: [S, cond, addr_data]
+    args: [Rd]
+    defs: [Rd]
+
   - name: mov$imm
     desc: Move immediate
     bitmask: 0x0fef0000
     pattern: 0x03a00000
+    flags: [!Ual true]
     modifiers: [S, cond]
     args: [Rd, rotated_immed_8]
     defs: [Rd]
@@ -1203,6 +1228,7 @@ opcodes:
     desc: Move register
     bitmask: 0x0fef0ff0
     pattern: 0x01a00000
+    flags: [!Ual true]
     modifiers: [S, cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1329,6 +1355,7 @@ opcodes:
     desc: Pop multiple registers
     bitmask: 0x0fff0000
     pattern: 0x08bd0000
+    flags: [!Ual true]
     modifiers: [cond]
     args: [registers]
     uses: [registers]
@@ -1337,6 +1364,7 @@ opcodes:
     desc: Pop register
     bitmask: 0x0fff0fff
     pattern: 0x049d0004
+    flags: [!Ual true]
     modifiers: [cond]
     args: [Rt_list]
     uses: [Rt_list]
@@ -1345,6 +1373,7 @@ opcodes:
     desc: Push multiple registers
     bitmask: 0x0fff0000
     pattern: 0x092d0000
+    flags: [!Ual true]
     modifiers: [cond]
     args: [registers]
     uses: [registers]
@@ -1353,6 +1382,7 @@ opcodes:
     desc: Push register
     bitmask: 0x0fff0fff
     pattern: 0x052d0004
+    flags: [!Ual true]
     modifiers: [cond]
     args: [Rt_list]
     uses: [Rt_list]
@@ -1484,6 +1514,7 @@ opcodes:
     desc: Rotate Right
     bitmask: 0x0fef0060
     pattern: 0x01a00060
+    flags: [!Ual true]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1493,6 +1524,7 @@ opcodes:
     desc: Rotate Right with Extend
     bitmask: 0x0fef0ff0
     pattern: 0x01a00060
+    flags: [!Ual true]
     modifiers: [S, cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1872,29 +1904,32 @@ opcodes:
     args: [Rd]
     uses: [Rd]
 
-  - name: strb
+  - name: str$b
     desc: Store Register Byte
+    suffix: !Suffix b
     bitmask: 0x0c500000
     pattern: 0x04400000
     modifiers: [cond, addr_ldr_str]
     args: [Rd]
     uses: [Rd]
 
-  - name: strbt
+  - name: str$bt
     desc: Store Register Byte with Translation
+    suffix: !Suffix bt
     bitmask: 0x0d700000
     pattern: 0x04600000
     modifiers: [cond, addr_ldrt_strt]
     args: [Rd]
     uses: [Rd]
 
-  - name: strd
+  - name: str$d
     desc: Store Registers Doubleword
-    bitmask: 0x0e1000f0
+    suffix: !Suffix d
+    bitmask: 0x0e1010f0
     pattern: 0x000000f0
     modifiers: [cond, addr_misc_ldr_str]
-    args: [Rd]
-    uses: [Rd]
+    args: [Rt1, Rt2_ual]
+    uses: [Rt1, Rt2_ual]
 
   - name: strex
     desc: Store Register Exclusive
@@ -1932,16 +1967,18 @@ opcodes:
     defs: [Rd]
     uses: [Rm, Rn_deref]
 
-  - name: strh
+  - name: str$h
     desc: Store Register Halfword
+    suffix: !Suffix h
     bitmask: 0x0e1000f0
     pattern: 0x000000b0
     modifiers: [cond, addr_misc_ldr_str]
     args: [Rd]
     uses: [Rd]
 
-  - name: strt
+  - name: str$t
     desc: Store Register with Translation
+    suffix: !Suffix t
     bitmask: 0x0d700000
     pattern: 0x04200000
     modifiers: [cond, addr_ldrt_strt]
@@ -1961,6 +1998,15 @@ opcodes:
     desc: Supervisor Call
     bitmask: 0x0f000000
     pattern: 0x0f000000
+    flags: [!Ual true]
+    modifiers: [cond]
+    args: [immed_24]
+
+  - name: swi
+    desc: Software Interrupt
+    bitmask: 0x0f000000
+    pattern: 0x0f000000
+    flags: [!Ual false]
     modifiers: [cond]
     args: [immed_24]
 
