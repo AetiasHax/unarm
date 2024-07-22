@@ -58,31 +58,30 @@ impl Default for ParseFlags {
 }
 
 macro_rules! parse_arm {
-    ($self:expr, $module:ident, $op:ident, $code:expr) => {{
+    ($self:expr, $module:ident, $ins:ident, $code:expr) => {{
         let ins = $module::arm::Ins::new($code, &$self.flags);
-        (Op::$op(ins.op), ins.parse(&$self.flags))
+        (Ins::$ins(ins), ins.parse(&$self.flags))
     }};
 }
 
 macro_rules! parse_thumb {
-    ($self:expr, $module:ident, $op:ident, $code:expr) => {{
+    ($self:expr, $module:ident, $ins:ident, $code:expr) => {{
         let ins = $module::thumb::Ins::new($code, &$self.flags);
-        let op = Op::$op(ins.op);
         let parsed = ins.parse(&$self.flags);
         if ins.is_half_bl() {
             let (_, code) = $self.read_code()?;
             let ins = $module::thumb::Ins::new(code, &$self.flags);
             let second = ins.parse(&$self.flags);
             let combined = parsed.combine_thumb_bl(&second);
-            (op, combined)
+            (Ins::$ins(ins), combined)
         } else {
-            (op, parsed)
+            (Ins::$ins(ins), parsed)
         }
     }};
 }
 
 impl<'a> Iterator for Parser<'a> {
-    type Item = (u32, Op, ParsedIns);
+    type Item = (u32, Ins, ParsedIns);
 
     fn next(&mut self) -> Option<Self::Item> {
         let address = self.address;
@@ -105,7 +104,7 @@ impl<'a> Iterator for Parser<'a> {
                 let mut args = Arguments::default();
                 args[0] = Argument::UImm(code);
                 let mnemonic = if ins_size == 4 { ".word" } else { ".hword" };
-                (Op::Data, ParsedIns { mnemonic, args })
+                (Ins::Data, ParsedIns { mnemonic, args })
             }
         };
 
@@ -162,37 +161,37 @@ pub enum Endian {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Op {
+pub enum Ins {
     #[cfg(all(feature = "v4t", feature = "arm"))]
-    ArmV4T(v4t::arm::Opcode),
+    ArmV4T(v4t::arm::Ins),
     #[cfg(all(feature = "v4t", feature = "thumb"))]
-    ThumbV4T(v4t::thumb::Opcode),
+    ThumbV4T(v4t::thumb::Ins),
     #[cfg(all(feature = "v5te", feature = "arm"))]
-    ArmV5Te(v5te::arm::Opcode),
+    ArmV5Te(v5te::arm::Ins),
     #[cfg(all(feature = "v5te", feature = "thumb"))]
-    ThumbV5Te(v5te::thumb::Opcode),
+    ThumbV5Te(v5te::thumb::Ins),
     #[cfg(all(feature = "v6k", feature = "arm"))]
-    ArmV6K(v6k::arm::Opcode),
+    ArmV6K(v6k::arm::Ins),
     #[cfg(all(feature = "v6k", feature = "thumb"))]
-    ThumbV6K(v6k::thumb::Opcode),
+    ThumbV6K(v6k::thumb::Ins),
     Data,
 }
 
-impl Op {
-    pub fn id(self) -> u16 {
+impl Ins {
+    pub fn opcode_id(self) -> u16 {
         match self {
             #[cfg(all(feature = "v4t", feature = "arm"))]
-            Self::ArmV4T(x) => x as u16,
+            Self::ArmV4T(x) => x.op as u16,
             #[cfg(all(feature = "v4t", feature = "thumb"))]
-            Self::ThumbV4T(x) => x as u16,
+            Self::ThumbV4T(x) => x.op as u16,
             #[cfg(all(feature = "v5te", feature = "arm"))]
-            Self::ArmV5Te(x) => x as u16,
+            Self::ArmV5Te(x) => x.op as u16,
             #[cfg(all(feature = "v5te", feature = "thumb"))]
-            Self::ThumbV5Te(x) => x as u16,
+            Self::ThumbV5Te(x) => x.op as u16,
             #[cfg(all(feature = "v6k", feature = "arm"))]
-            Self::ArmV6K(x) => x as u16,
+            Self::ArmV6K(x) => x.op as u16,
             #[cfg(all(feature = "v6k", feature = "thumb"))]
-            Self::ThumbV6K(x) => x as u16,
+            Self::ThumbV6K(x) => x.op as u16,
             Self::Data => u16::MAX,
         }
     }

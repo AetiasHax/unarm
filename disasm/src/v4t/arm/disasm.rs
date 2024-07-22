@@ -2,7 +2,7 @@ use crate::{v4t::arm::generated::Opcode, ParseFlags, ParsedIns};
 
 use super::parse;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Ins {
     pub code: u32,
     pub op: Opcode,
