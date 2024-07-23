@@ -1353,6 +1353,14 @@ impl Ins {
             _ => Cond::Illegal,
         }
     }
+    /// imod: Modify interrupt flags
+    pub fn has_imod(&self) -> bool {
+        matches!(self.op, Opcode::Cps)
+    }
+    /// cond: Condition code
+    pub fn has_cond(&self) -> bool {
+        matches!(self.op, Opcode::B)
+    }
 }
 /// imod: Modify interrupt flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

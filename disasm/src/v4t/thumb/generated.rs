@@ -1150,6 +1150,10 @@ impl Ins {
             _ => Cond::Illegal,
         }
     }
+    /// cond: Condition code
+    pub fn has_cond(&self) -> bool {
+        matches!(self.op, Opcode::B)
+    }
 }
 /// cond: Condition code
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -40,6 +40,9 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
     // Generate modifier accessors
     let modifier_accessors_tokens = generate_modifier_accessors(isa)?;
 
+    // Generate tag functions
+    let tag_functions_tokens = generate_tag_functions(isa);
+
     // Generate parse functions
     let parse_functions = generate_parse_functions(isa, isa_args, max_args, &isa.opcodes, &num_opcodes_token)?;
 
@@ -77,6 +80,7 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
         impl Ins {
             #field_accessors_tokens
             #modifier_accessors_tokens
+            #tag_functions_tokens
         }
 
         #case_enums_tokens
@@ -713,4 +717,45 @@ fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStrea
         });
     }
     (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes_token)
+}
+
+fn generate_tag_functions(isa: &Isa) -> TokenStream {
+    let modifier_tags = isa.modifiers.iter().map(|modifier| {
+        let fn_name = Ident::new(&modifier.tag_function_name(), Span::call_site());
+        let match_arms = isa
+            .opcodes
+            .iter()
+            .filter(|opcode| opcode.has_modifier(&modifier.name))
+            .map(|opcode| {
+                let enum_name = Ident::new(&opcode.enum_name(), Span::call_site());
+                quote! { Opcode::#enum_name }
+            });
+        let doc = modifier.doc();
+
+        quote! {
+            #[doc = #doc]
+            pub fn #fn_name(&self) -> bool {
+                matches!(self.op, #(#match_arms)|*)
+            }
+        }
+    });
+
+    let custom_tags = isa.collect_custom_tags().into_iter().map(|tag| {
+        let fn_name = Ident::new(tag, Span::call_site());
+        let match_arms = isa.opcodes.iter().filter(|opcode| opcode.has_tag(tag)).map(|opcode| {
+            let enum_name = Ident::new(&opcode.enum_name(), Span::call_site());
+            quote! { Opcode::#enum_name }
+        });
+
+        quote! {
+            pub fn #fn_name(&self) -> bool {
+                matches!(self.op, #(#match_arms)|*)
+            }
+        }
+    });
+
+    let tag_functions = modifier_tags.chain(custom_tags);
+    quote! {
+        #(#tag_functions)*
+    }
 }

@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
+    path::Path,
+};
 
 use anyhow::{bail, Context, Result};
 
@@ -65,6 +69,14 @@ impl Isa {
             }
         }
         Ok(max)
+    }
+
+    pub fn collect_custom_tags(&self) -> HashSet<&str> {
+        let mut tags = HashSet::new();
+        for opcode in self.opcodes.iter() {
+            tags.extend(opcode.tags.iter().map(|tag| tag.as_str()));
+        }
+        tags
     }
 }
 
@@ -296,6 +308,10 @@ impl Modifier {
         format!("modifier_{}", self.name.to_lowercase())
     }
 
+    pub fn tag_function_name(&self) -> String {
+        format!("has_{}", self.name.to_lowercase())
+    }
+
     pub fn enum_name(&self) -> String {
         capitalize_with_delimiter(self.name.clone(), '_')
     }
@@ -465,6 +481,8 @@ pub struct Opcode {
     #[serde(default)]
     pub flags: Box<[Flag]>,
     #[serde(default)]
+    tags: Box<[String]>,
+    #[serde(default)]
     modifiers: Box<[String]>,
     #[serde(default)]
     pub args: Box<[String]>,
@@ -544,6 +562,14 @@ impl Opcode {
 
     pub fn parser_name(&self) -> String {
         format!("parse_{}", self.ident_name())
+    }
+
+    pub fn has_modifier(&self, name: &str) -> bool {
+        self.modifiers.iter().any(|modifier| modifier == name)
+    }
+
+    pub fn has_tag(&self, name: &str) -> bool {
+        self.tags.iter().any(|tag| tag == name)
     }
 
     pub fn get_modifiers(&self, isa: &Isa, ual: bool) -> Result<Vec<Modifier>> {
