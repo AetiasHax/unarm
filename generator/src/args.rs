@@ -14,7 +14,8 @@ pub struct IsaArgs {
 }
 
 impl IsaArgs {
-    pub fn load(path: &Path) -> Result<Self> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let path = path.as_ref();
         let file = File::open(path).with_context(|| format!("Failed to open args file '{}'", path.display()))?;
         let args: Self =
             serde_yml::from_reader(file).with_context(|| format!("While parsing args file '{}'", path.display()))?;

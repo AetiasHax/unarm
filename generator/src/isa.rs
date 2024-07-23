@@ -26,7 +26,8 @@ pub struct Isa {
 }
 
 impl Isa {
-    pub fn load(path: &Path) -> Result<Self> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let path = path.as_ref();
         let file = File::open(path).with_context(|| format!("Failed to open ISA file '{}'", path.display()))?;
         let isa: Self =
             serde_yml::from_reader(file).with_context(|| format!("While parsing ISA file '{}'", path.display()))?;
@@ -127,9 +128,9 @@ impl Field {
     pub fn ual_flag(&self) -> Option<bool> {
         self.flags
             .iter()
-            .map(|f| {
-                let Flag::Ual(ual) = f;
-                *ual
+            .filter_map(|f| {
+                let Flag::Ual(ual) = f else { return None };
+                Some(*ual)
             })
             .next()
     }
@@ -641,9 +642,9 @@ impl Opcode {
     pub fn ual_flag(&self) -> Option<bool> {
         self.flags
             .iter()
-            .map(|f| {
-                let Flag::Ual(ual) = f;
-                *ual
+            .filter_map(|f| {
+                let Flag::Ual(ual) = f else { return None };
+                Some(*ual)
             })
             .next()
     }
@@ -674,4 +675,28 @@ impl OpcodeSuffix {
 #[derive(Deserialize, Clone, PartialEq, Eq)]
 pub enum Flag {
     Ual(bool),
+    Version(ArmVersion),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Deserialize)]
+pub enum ArmVersion {
+    V5Te,
+    V6K,
+}
+
+impl ArmVersion {
+    /// Lists which features will enable this version when used as a flag. Only one feature is needed.
+    pub fn feature_names(&self) -> &[&str] {
+        match self {
+            ArmVersion::V5Te => &["v5te", "v6k"],
+            ArmVersion::V6K => &["v6k"],
+        }
+    }
+
+    pub fn enum_variant_name(&self) -> &str {
+        match self {
+            ArmVersion::V5Te => "V5Te",
+            ArmVersion::V6K => "V6K",
+        }
+    }
 }

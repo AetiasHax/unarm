@@ -1,8 +1,11 @@
-use unarm::v4t::thumb::Ins;
+use unarm::{thumb::Ins, ArmVersion, ParseFlags};
 
 macro_rules! assert_asm {
     ($code:literal, $disasm:literal) => {{
-        let flags = Default::default();
+        let flags = ParseFlags {
+            version: ArmVersion::V4T,
+            ..Default::default()
+        };
         let ins = Ins::new($code, &flags);
         let parsed = ins.parse(&flags);
         assert_eq!(parsed.display(Default::default()).to_string(), $disasm)

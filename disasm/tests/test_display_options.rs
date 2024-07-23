@@ -1,4 +1,4 @@
-use unarm::{v6k::arm::Ins, DisplayOptions, R9Use, RegNames};
+use unarm::{arm::Ins, DisplayOptions, R9Use, RegNames};
 
 macro_rules! assert_asm {
     ($code:literal, $options:expr, $disasm:literal) => {{
