@@ -7,7 +7,6 @@ use crate::thumb;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Parser<'a> {
-    pub version: ArmVersion,
     pub mode: ParseMode,
     pub address: u32,
     pub endian: Endian,
@@ -16,9 +15,8 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(version: ArmVersion, mode: ParseMode, address: u32, endian: Endian, flags: ParseFlags, data: &'a [u8]) -> Self {
+    pub fn new(mode: ParseMode, address: u32, endian: Endian, flags: ParseFlags, data: &'a [u8]) -> Self {
         Self {
-            version,
             mode,
             address,
             endian,
@@ -90,20 +88,12 @@ impl<'a> Iterator for Parser<'a> {
         let address = self.address;
         let (ins_size, code) = self.read_code()?;
 
-        let (op, ins) = match (self.version, self.mode) {
-            #[cfg(all(feature = "v4t", feature = "arm"))]
-            (ArmVersion::V4T, ParseMode::Arm) => parse_arm!(self, code),
-            #[cfg(all(feature = "v4t", feature = "thumb"))]
-            (ArmVersion::V4T, ParseMode::Thumb) => parse_thumb!(self, code),
-            #[cfg(all(feature = "v5te", feature = "arm"))]
-            (ArmVersion::V5Te, ParseMode::Arm) => parse_arm!(self, code),
-            #[cfg(all(feature = "v5te", feature = "thumb"))]
-            (ArmVersion::V5Te, ParseMode::Thumb) => parse_thumb!(self, code),
-            #[cfg(all(feature = "v6k", feature = "arm"))]
-            (ArmVersion::V6K, ParseMode::Arm) => parse_arm!(self, code),
-            #[cfg(all(feature = "v6k", feature = "thumb"))]
-            (ArmVersion::V6K, ParseMode::Thumb) => parse_thumb!(self, code),
-            (_, ParseMode::Data) => {
+        let (op, ins) = match self.mode {
+            #[cfg(feature = "arm")]
+            ParseMode::Arm => parse_arm!(self, code),
+            #[cfg(feature = "thumb")]
+            ParseMode::Thumb => parse_thumb!(self, code),
+            ParseMode::Data => {
                 let mut args = Arguments::default();
                 args[0] = Argument::UImm(code);
                 let mnemonic = if ins_size == 4 { ".word" } else { ".hword" };
