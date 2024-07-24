@@ -130,17 +130,14 @@ pub enum Opcode {
     /// BICS: Bit Clear
     Bic = 16,
     /// BKPT: Breakpoint
-    #[cfg(any(feature = "v5te", feature = "v6k"))]
     Bkpt = 17,
     /// BL: Branch and Link (high part)
     BlH = 18,
     /// BL: Branch and Link (low part)
     Bl = 19,
     /// BLX: Branch and Link and Exchange to ARM (low part, immediate target)
-    #[cfg(any(feature = "v5te", feature = "v6k"))]
     BlxI = 20,
     /// BLX: Branch and Link and Exchange to ARM (register target)
-    #[cfg(any(feature = "v5te", feature = "v6k"))]
     BlxR = 21,
     /// BX: Branch and Exchange
     BxR = 22,
@@ -153,7 +150,6 @@ pub enum Opcode {
     /// CMP: Compare with high register
     CmpHr = 26,
     /// CPS: Change Processor State
-    #[cfg(any(feature = "v6k"))]
     Cps = 27,
     /// EORS: Exclusive OR
     Eor = 28,
@@ -212,20 +208,16 @@ pub enum Opcode {
     /// PUSH: Push multiple registers
     Push = 55,
     /// REV: Byte-Reverse Word
-    #[cfg(any(feature = "v6k"))]
     Rev = 56,
     /// REV16: Byte-Reverse Packed Halfword
-    #[cfg(any(feature = "v6k"))]
     Rev16 = 57,
     /// REVSH: Byte-Reverse Signed Halfword
-    #[cfg(any(feature = "v6k"))]
     Revsh = 58,
     /// RORS: Rotate Right
     Ror = 59,
     /// SBCS: Subtract with Carry
     Sbc = 60,
     /// SETEND: Set Endian
-    #[cfg(any(feature = "v6k"))]
     Setend = 61,
     /// STM: Store Multiple
     Stm = 62,
@@ -256,18 +248,14 @@ pub enum Opcode {
     /// SWI: Software Interrupt
     Swi = 75,
     /// SXTB: Sign Extend Byte to 32 bits
-    #[cfg(any(feature = "v6k"))]
     Sxtb = 76,
     /// SXTH: Sign Extend Halfword to 32 bits
-    #[cfg(any(feature = "v6k"))]
     Sxth = 77,
     /// TST: Test
     Tst = 78,
     /// UXTB: Zero Extend Byte to 32 bits
-    #[cfg(any(feature = "v6k"))]
     Uxtb = 79,
     /// UXTH: Zero Extend Halfword to 32 bits
-    #[cfg(any(feature = "v6k"))]
     Uxth = 80,
 }
 impl Opcode {

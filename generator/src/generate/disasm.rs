@@ -132,7 +132,7 @@ fn generate_search_node(node: Option<Box<SearchTree>>, opcodes: &mut Vec<Opcode>
                     .iter()
                     .filter_map(|f| match f {
                         Flag::Ual(_) => None,
-                        Flag::Version(version) => {
+                        Flag::MinVersion(version) => {
                             let features = version
                                 .feature_names()
                                 .iter()
@@ -144,7 +144,7 @@ fn generate_search_node(node: Option<Box<SearchTree>>, opcodes: &mut Vec<Opcode>
                 let flags_checks = op.flags.iter().map(|f| match f {
                     Flag::Ual(true) => quote! { flags.ual },
                     Flag::Ual(false) => quote! { !flags.ual },
-                    Flag::Version(version) => {
+                    Flag::MinVersion(version) => {
                         let variant_name = Ident::new(version.enum_variant_name(), Span::call_site());
                         quote! { flags.version >= ArmVersion::#variant_name }
                     }
@@ -733,20 +733,8 @@ fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStrea
         let enum_value = Literal::u8_unsuffixed(i.try_into().unwrap());
         let doc = opcode.doc(true);
 
-        let cfg_checks = opcode.flags.iter().filter_map(|flag| match flag {
-            Flag::Ual(_) => None,
-            Flag::Version(version) => {
-                let features = version
-                    .feature_names()
-                    .iter()
-                    .map(|feature_name| quote! { feature = #feature_name });
-                Some(quote! { #[cfg(any( #(#features),* ))] })
-            }
-        });
-
         opcode_enum_tokens.extend(quote! {
             #[doc = #doc]
-            #(#cfg_checks)*
             #enum_name = #enum_value,
         });
     }

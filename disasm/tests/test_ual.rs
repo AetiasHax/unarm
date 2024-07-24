@@ -1,4 +1,4 @@
-use unarm::{arm, thumb, ArmVersion, ParseFlags};
+use unarm::{arm, thumb, ParseFlags};
 
 macro_rules! assert_arm {
     ($code:literal, $flags:expr, $disasm:literal) => {{
@@ -16,108 +16,152 @@ macro_rules! assert_thumb {
     }};
 }
 
-const UNIFIED_FLAGS: ParseFlags = ParseFlags {
-    ual: true,
-    version: ArmVersion::V6K,
-};
-
-const DIVIDED_FLAGS: ParseFlags = ParseFlags {
-    ual: false,
-    version: ArmVersion::V6K,
-};
-
 #[test]
 fn test_data() {
-    assert_arm!(0x00912003, &UNIFIED_FLAGS, "addseq r2, r1, r3");
-    assert_arm!(0x00912003, &DIVIDED_FLAGS, "addeqs r2, r1, r3");
+    let unified = ParseFlags {
+        ual: true,
+        ..Default::default()
+    };
+    let divided = ParseFlags {
+        ual: false,
+        ..Default::default()
+    };
 
-    assert_thumb!(0x1cca, &UNIFIED_FLAGS, "adds r2, r1, #0x3");
-    assert_thumb!(0x1cca, &DIVIDED_FLAGS, "add r2, r1, #0x3");
+    assert_arm!(0x00912003, &unified, "addseq r2, r1, r3");
+    assert_arm!(0x00912003, &divided, "addeqs r2, r1, r3");
 
-    assert_thumb!(0xa1ff, &UNIFIED_FLAGS, "adr r1, #0x3fc");
-    assert_thumb!(0xa1ff, &DIVIDED_FLAGS, "add r1, pc, #0x3fc");
+    assert_thumb!(0x1cca, &unified, "adds r2, r1, #0x3");
+    assert_thumb!(0x1cca, &divided, "add r2, r1, #0x3");
 
-    assert_thumb!(0x400a, &UNIFIED_FLAGS, "ands r2, r2, r1");
-    assert_thumb!(0x400a, &DIVIDED_FLAGS, "and r2, r1");
+    assert_thumb!(0xa1ff, &unified, "adr r1, #0x3fc");
+    assert_thumb!(0xa1ff, &divided, "add r1, pc, #0x3fc");
 
-    assert_thumb!(0x1c0a, &UNIFIED_FLAGS, "adds r2, r1, #0x0");
-    assert_thumb!(0x1c0a, &DIVIDED_FLAGS, "mov r2, r1");
+    assert_thumb!(0x400a, &unified, "ands r2, r2, r1");
+    assert_thumb!(0x400a, &divided, "and r2, r1");
 
-    assert_thumb!(0x000a, &UNIFIED_FLAGS, "movs r2, r1");
-    assert_thumb!(0x000a, &DIVIDED_FLAGS, "lsl r2, r1, #0x0");
+    assert_thumb!(0x1c0a, &unified, "adds r2, r1, #0x0");
+    assert_thumb!(0x1c0a, &divided, "mov r2, r1");
 
-    assert_thumb!(0x424a, &UNIFIED_FLAGS, "rsbs r2, r1, #0x0");
-    assert_thumb!(0x424a, &DIVIDED_FLAGS, "neg r2, r1");
+    assert_thumb!(0x000a, &unified, "movs r2, r1");
+    assert_thumb!(0x000a, &divided, "lsl r2, r1, #0x0");
+
+    assert_thumb!(0x424a, &unified, "rsbs r2, r1, #0x0");
+    assert_thumb!(0x424a, &divided, "neg r2, r1");
 }
 
 #[test]
 fn test_shift() {
-    assert_arm!(0xe1a011c2, &UNIFIED_FLAGS, "asr r1, r2, #0x3");
-    assert_arm!(0xe1a011c2, &DIVIDED_FLAGS, "mov r1, r2, asr #0x3");
-    assert_arm!(0xe1a01182, &UNIFIED_FLAGS, "lsl r1, r2, #0x3");
-    assert_arm!(0xe1a01182, &DIVIDED_FLAGS, "mov r1, r2, lsl #0x3");
-    assert_arm!(0xe1a011a2, &UNIFIED_FLAGS, "lsr r1, r2, #0x3");
-    assert_arm!(0xe1a011a2, &DIVIDED_FLAGS, "mov r1, r2, lsr #0x3");
-    assert_arm!(0xe1a011e2, &UNIFIED_FLAGS, "ror r1, r2, #0x3");
-    assert_arm!(0xe1a011e2, &DIVIDED_FLAGS, "mov r1, r2, ror #0x3");
-    assert_arm!(0xe1a01062, &UNIFIED_FLAGS, "rrx r1, r2");
-    assert_arm!(0xe1a01062, &DIVIDED_FLAGS, "mov r1, r2, rrx");
+    let unified = ParseFlags {
+        ual: true,
+        ..Default::default()
+    };
+    let divided = ParseFlags {
+        ual: false,
+        ..Default::default()
+    };
+
+    assert_arm!(0xe1a011c2, &unified, "asr r1, r2, #0x3");
+    assert_arm!(0xe1a011c2, &divided, "mov r1, r2, asr #0x3");
+    assert_arm!(0xe1a01182, &unified, "lsl r1, r2, #0x3");
+    assert_arm!(0xe1a01182, &divided, "mov r1, r2, lsl #0x3");
+    assert_arm!(0xe1a011a2, &unified, "lsr r1, r2, #0x3");
+    assert_arm!(0xe1a011a2, &divided, "mov r1, r2, lsr #0x3");
+    assert_arm!(0xe1a011e2, &unified, "ror r1, r2, #0x3");
+    assert_arm!(0xe1a011e2, &divided, "mov r1, r2, ror #0x3");
+    assert_arm!(0xe1a01062, &unified, "rrx r1, r2");
+    assert_arm!(0xe1a01062, &divided, "mov r1, r2, rrx");
 }
 
 #[test]
 fn test_ldm_stm() {
-    assert_arm!(0xe8900011, &UNIFIED_FLAGS, "ldm r0, {r0, r4}");
-    assert_arm!(0xe8900011, &DIVIDED_FLAGS, "ldmia r0, {r0, r4}");
-    assert_arm!(0x09100011, &UNIFIED_FLAGS, "ldmdbeq r0, {r0, r4}");
-    assert_arm!(0x09100011, &DIVIDED_FLAGS, "ldmeqdb r0, {r0, r4}");
+    let unified = ParseFlags {
+        ual: true,
+        ..Default::default()
+    };
+    let divided = ParseFlags {
+        ual: false,
+        ..Default::default()
+    };
 
-    assert_arm!(0xe8800011, &UNIFIED_FLAGS, "stm r0, {r0, r4}");
-    assert_arm!(0xe8800011, &DIVIDED_FLAGS, "stmia r0, {r0, r4}");
-    assert_arm!(0x09000011, &UNIFIED_FLAGS, "stmdbeq r0, {r0, r4}");
-    assert_arm!(0x09000011, &DIVIDED_FLAGS, "stmeqdb r0, {r0, r4}");
+    assert_arm!(0xe8900011, &unified, "ldm r0, {r0, r4}");
+    assert_arm!(0xe8900011, &divided, "ldmia r0, {r0, r4}");
+    assert_arm!(0x09100011, &unified, "ldmdbeq r0, {r0, r4}");
+    assert_arm!(0x09100011, &divided, "ldmeqdb r0, {r0, r4}");
 
-    assert_thumb!(0xc811, &UNIFIED_FLAGS, "ldm r0, {r0, r4}");
-    assert_thumb!(0xc811, &DIVIDED_FLAGS, "ldmia r0!, {r0, r4}");
+    assert_arm!(0xe8800011, &unified, "stm r0, {r0, r4}");
+    assert_arm!(0xe8800011, &divided, "stmia r0, {r0, r4}");
+    assert_arm!(0x09000011, &unified, "stmdbeq r0, {r0, r4}");
+    assert_arm!(0x09000011, &divided, "stmeqdb r0, {r0, r4}");
 
-    assert_thumb!(0xc822, &UNIFIED_FLAGS, "ldm r0!, {r1, r5}");
-    assert_thumb!(0xc822, &DIVIDED_FLAGS, "ldmia r0!, {r1, r5}");
+    assert_thumb!(0xc811, &unified, "ldm r0, {r0, r4}");
+    assert_thumb!(0xc811, &divided, "ldmia r0!, {r0, r4}");
 
-    assert_thumb!(0xc011, &UNIFIED_FLAGS, "stm r0!, {r0, r4}");
-    assert_thumb!(0xc011, &DIVIDED_FLAGS, "stmia r0!, {r0, r4}");
+    assert_thumb!(0xc822, &unified, "ldm r0!, {r1, r5}");
+    assert_thumb!(0xc822, &divided, "ldmia r0!, {r1, r5}");
+
+    assert_thumb!(0xc011, &unified, "stm r0!, {r0, r4}");
+    assert_thumb!(0xc011, &divided, "stmia r0!, {r0, r4}");
 }
 
 #[test]
 fn test_ldr_str() {
-    assert_arm!(0x01d120b4, &UNIFIED_FLAGS, "ldrheq r2, [r1, #0x4]");
-    assert_arm!(0x01d120b4, &DIVIDED_FLAGS, "ldreqh r2, [r1, #0x4]");
-    assert_arm!(0x01d120d4, &UNIFIED_FLAGS, "ldrsbeq r2, [r1, #0x4]");
-    assert_arm!(0x01d120d4, &DIVIDED_FLAGS, "ldreqsb r2, [r1, #0x4]");
-    assert_arm!(0x01c120d4, &UNIFIED_FLAGS, "ldrdeq r2, r3, [r1, #0x4]");
-    assert_arm!(0x01c120d4, &DIVIDED_FLAGS, "ldreqd r2, [r1, #0x4]");
+    let unified = ParseFlags {
+        ual: true,
+        ..Default::default()
+    };
+    let divided = ParseFlags {
+        ual: false,
+        ..Default::default()
+    };
 
-    assert_arm!(0x01c120b4, &UNIFIED_FLAGS, "strheq r2, [r1, #0x4]");
-    assert_arm!(0x01c120b4, &DIVIDED_FLAGS, "streqh r2, [r1, #0x4]");
-    assert_arm!(0x04e12004, &UNIFIED_FLAGS, "strbteq r2, [r1], #0x4");
-    assert_arm!(0x04e12004, &DIVIDED_FLAGS, "streqbt r2, [r1], #0x4");
-    assert_arm!(0x01c120f4, &UNIFIED_FLAGS, "strdeq r2, r3, [r1, #0x4]");
-    assert_arm!(0x01c120f4, &DIVIDED_FLAGS, "streqd r2, [r1, #0x4]");
+    assert_arm!(0x01d120b4, &unified, "ldrheq r2, [r1, #0x4]");
+    assert_arm!(0x01d120b4, &divided, "ldreqh r2, [r1, #0x4]");
+    assert_arm!(0x01d120d4, &unified, "ldrsbeq r2, [r1, #0x4]");
+    assert_arm!(0x01d120d4, &divided, "ldreqsb r2, [r1, #0x4]");
+    assert_arm!(0x01c120d4, &unified, "ldrdeq r2, r3, [r1, #0x4]");
+    assert_arm!(0x01c120d4, &divided, "ldreqd r2, [r1, #0x4]");
+
+    assert_arm!(0x01c120b4, &unified, "strheq r2, [r1, #0x4]");
+    assert_arm!(0x01c120b4, &divided, "streqh r2, [r1, #0x4]");
+    assert_arm!(0x04e12004, &unified, "strbteq r2, [r1], #0x4");
+    assert_arm!(0x04e12004, &divided, "streqbt r2, [r1], #0x4");
+    assert_arm!(0x01c120f4, &unified, "strdeq r2, r3, [r1, #0x4]");
+    assert_arm!(0x01c120f4, &divided, "streqd r2, [r1, #0x4]");
 }
 
 #[test]
 fn test_push_pop() {
-    assert_arm!(0xe92d0011, &UNIFIED_FLAGS, "push {r0, r4}");
-    assert_arm!(0xe92d0011, &DIVIDED_FLAGS, "stmdb sp!, {r0, r4}");
-    assert_arm!(0xe52d3004, &UNIFIED_FLAGS, "push {r3}");
-    assert_arm!(0xe52d3004, &DIVIDED_FLAGS, "str r3, [sp, #-0x4]!");
+    let unified = ParseFlags {
+        ual: true,
+        ..Default::default()
+    };
+    let divided = ParseFlags {
+        ual: false,
+        ..Default::default()
+    };
 
-    assert_arm!(0xe8bd0011, &UNIFIED_FLAGS, "pop {r0, r4}");
-    assert_arm!(0xe8bd0011, &DIVIDED_FLAGS, "ldmia sp!, {r0, r4}");
-    assert_arm!(0xe49d3004, &UNIFIED_FLAGS, "pop {r3}");
-    assert_arm!(0xe49d3004, &DIVIDED_FLAGS, "ldr r3, [sp], #0x4");
+    assert_arm!(0xe92d0011, &unified, "push {r0, r4}");
+    assert_arm!(0xe92d0011, &divided, "stmdb sp!, {r0, r4}");
+    assert_arm!(0xe52d3004, &unified, "push {r3}");
+    assert_arm!(0xe52d3004, &divided, "str r3, [sp, #-0x4]!");
+
+    assert_arm!(0xe8bd0011, &unified, "pop {r0, r4}");
+    assert_arm!(0xe8bd0011, &divided, "ldmia sp!, {r0, r4}");
+    assert_arm!(0xe49d3004, &unified, "pop {r3}");
+    assert_arm!(0xe49d3004, &divided, "ldr r3, [sp], #0x4");
 }
 
 #[test]
 fn test_svc_swi() {
-    assert_arm!(0xef000123, &UNIFIED_FLAGS, "svc #0x123");
-    assert_arm!(0xef000123, &DIVIDED_FLAGS, "swi #0x123");
+    let unified = ParseFlags {
+        ual: true,
+        ..Default::default()
+    };
+    let divided = ParseFlags {
+        ual: false,
+        ..Default::default()
+    };
+
+    assert_arm!(0xef000123, &unified, "svc #0x123");
+    assert_arm!(0xef000123, &divided, "swi #0x123");
 }

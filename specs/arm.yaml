@@ -868,21 +868,21 @@ opcodes:
     desc: Breakpoint
     bitmask: 0xfff000f0
     pattern: 0xe1200070
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [immed_16]
 
   - name: blx$i
     desc: Branch and Link and Exchange to Thumb (immediate target)
     bitmask: 0xfe000000
     pattern: 0xfa000000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [blx_offset]
 
   - name: blx$r
     desc: Branch and Link and Exchange to Thumb (register target)
     bitmask: 0x0ffffff0
     pattern: 0x012fff30
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rm]
     uses: [Rm]
@@ -899,7 +899,7 @@ opcodes:
     desc: Branch and Exchange to Jazelle state
     bitmask: 0x0ffffff0
     pattern: 0x012fff20
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rm]
     uses: [Rm]
@@ -917,7 +917,7 @@ opcodes:
     desc: Coprocessor Data Processing (unconditional, extended)
     bitmask: 0xff000010
     pattern: 0xfe000000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [coproc, codat_opcode_1, CRd, CRn, CRm, opcode_2]
     defs: [CRd]
     uses: [CRn, CRm]
@@ -926,13 +926,13 @@ opcodes:
     desc: Clear Exclusive
     bitmask: 0xffffffff
     pattern: 0xf57ff01f
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
 
   - name: clz
     desc: Count Leading Zeros
     bitmask: 0x0fff0ff0
     pattern: 0x016f0f10
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -958,21 +958,21 @@ opcodes:
     desc: Change Processor State
     bitmask: 0xfff1fe20
     pattern: 0xf1000000
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [imod]
 
   - name: csdb
     desc: Consumption of Speculative Data Barrier
     bitmask: 0x0fffffff
     pattern: 0x0320f014
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: dbg
     desc: Debug Hint (does nothing)
     bitmask: 0x0ffffff0
     pattern: 0x0320f0f0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [dbg_option]
 
@@ -997,7 +997,7 @@ opcodes:
     desc: Load Coprocessor (unconditional, extended)
     bitmask: 0xfe100000
     pattern: 0xfc100000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [L, addr_coproc]
     args: [coproc, CRd]
     defs: [CRd]
@@ -1078,7 +1078,7 @@ opcodes:
     suffix: !Suffix d
     bitmask: 0x0e1010f0
     pattern: 0x000000d0
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond, addr_misc_ldr_str]
     args: [Rt1, Rt2_ual]
     defs: [Rt1, Rt2_ual]
@@ -1087,7 +1087,7 @@ opcodes:
     desc: Load Register Exclusive
     bitmask: 0x0ff00fff
     pattern: 0x01900f9f
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
     defs: [Rd]
@@ -1097,7 +1097,7 @@ opcodes:
     desc: Load Register Exclusive Byte
     bitmask: 0x0ff00fff
     pattern: 0x01d00f9f
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
     defs: [Rd]
@@ -1107,7 +1107,7 @@ opcodes:
     desc: Load Register Exclusive Doubleword
     bitmask: 0x0ff00fff
     pattern: 0x01b00f9f
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
     defs: [Rd]
@@ -1117,7 +1117,7 @@ opcodes:
     desc: Load Register Exclusive Halfword
     bitmask: 0x0ff00fff
     pattern: 0x01f00f9f
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
     defs: [Rd]
@@ -1192,7 +1192,7 @@ opcodes:
     desc: Move to Coprocessor from ARM Register (unconditional, extended)
     bitmask: 0xff100010
     pattern: 0xfe000010
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [coproc, comov_opcode_1, Rd, CRn, CRm, opcode_2]
     defs: [CRn, CRm]
     uses: [Rd, CRm]
@@ -1201,7 +1201,7 @@ opcodes:
     desc: Move to Coprocessor from two ARM Registers
     bitmask: 0x0ff00000
     pattern: 0x0c400000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [coproc, opcode, Rd, Rn, CRm]
     defs: [CRm]
@@ -1211,7 +1211,7 @@ opcodes:
     desc: Move to Coprocessor from two ARM Registers (unconditional, extended)
     bitmask: 0xfff00000
     pattern: 0xfc400000
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [coproc, opcode, Rd, Rn, CRm]
     defs: [CRm]
     uses: [Rn, Rd]
@@ -1266,7 +1266,7 @@ opcodes:
     desc: Move to ARM Register from Coprocessor (unconditional, extended)
     bitmask: 0xff100010
     pattern: 0xfe100010
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: []
     args: [coproc, comov_opcode_1, Rd, CRn, CRm, opcode_2]
     defs: [Rd, CRm]
@@ -1276,7 +1276,7 @@ opcodes:
     desc: Move to two ARM Registers from Coprocessor
     bitmask: 0x0ff00000
     pattern: 0x0c500000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [coproc, opcode, Rd, Rn, CRm]
     defs: [Rd, Rn]
@@ -1286,7 +1286,7 @@ opcodes:
     desc: Move to two ARM Registers from Coprocessor (unconditional, extended)
     bitmask: 0xfff00000
     pattern: 0xfc500000
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [coproc, opcode, Rd, Rn, CRm]
     defs: [Rd, Rn]
     uses: [CRm]
@@ -1338,7 +1338,7 @@ opcodes:
     desc: No Operation
     bitmask: 0x0fffffff
     pattern: 0x0320f000
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: orr
@@ -1354,7 +1354,7 @@ opcodes:
     desc: Pack Halfword Bottom Top
     bitmask: 0x0ff00070
     pattern: 0x06800010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, pack_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1364,7 +1364,7 @@ opcodes:
     desc: Pack Halfword Top Bottom
     bitmask: 0x0ff00070
     pattern: 0x06800050
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm, shift_imm]
     defs: [Rd]
@@ -1374,7 +1374,7 @@ opcodes:
     desc: Preload Data
     bitmask: 0xfd70f000
     pattern: 0xf550f000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [addr_ldr_str]
 
   - name: pop$m
@@ -1417,7 +1417,7 @@ opcodes:
     desc: Saturating Add
     bitmask: 0x0ff00ff0
     pattern: 0x01000050
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1427,7 +1427,7 @@ opcodes:
     desc: Saturating Add two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06200f10
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1437,7 +1437,7 @@ opcodes:
     desc: Saturating Add four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06200f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1447,7 +1447,7 @@ opcodes:
     desc: Saturating Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06200f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1457,7 +1457,7 @@ opcodes:
     desc: Saturating Double and Add
     bitmask: 0x0ff00ff0
     pattern: 0x01400050
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1467,7 +1467,7 @@ opcodes:
     desc: Saturating Double and Subtract
     bitmask: 0x0ff00ff0
     pattern: 0x01600050
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1477,7 +1477,7 @@ opcodes:
     desc: Saturating Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06200f50
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1487,7 +1487,7 @@ opcodes:
     desc: Saturating Subtract
     bitmask: 0x0ff00ff0
     pattern: 0x01200050
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1497,7 +1497,7 @@ opcodes:
     desc: Saturating Subtract two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06200f70
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1507,7 +1507,7 @@ opcodes:
     desc: Saturating Subtract four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06200ff0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1517,7 +1517,7 @@ opcodes:
     desc: Byte-Reverse Word
     bitmask: 0x0fff0ff0
     pattern: 0x06bf0f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1527,7 +1527,7 @@ opcodes:
     desc: Byte-Reverse Packed Halfword
     bitmask: 0x0fff0ff0
     pattern: 0x06bf0fb0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1537,7 +1537,7 @@ opcodes:
     desc: Byte-Reverse Signed Halfword
     bitmask: 0x0fff0ff0
     pattern: 0x06ff0fb0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1547,7 +1547,7 @@ opcodes:
     desc: Return From Exception
     bitmask: 0xfe50ffff
     pattern: 0xf8100a00
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [addr_system, rfe_rn]
 
   - name: ror
@@ -1592,7 +1592,7 @@ opcodes:
     desc: Signed Add two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06100f10
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1602,7 +1602,7 @@ opcodes:
     desc: Signed Add four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06100f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1612,7 +1612,7 @@ opcodes:
     desc: Signed Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06100f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1631,7 +1631,7 @@ opcodes:
     desc: Select
     bitmask: 0x0ff00ff0
     pattern: 0x06800fb0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1641,21 +1641,21 @@ opcodes:
     desc: Set Endian
     bitmask: 0xfffffdff
     pattern: 0xf1010000
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [endian]
 
   - name: sev
     desc: Send Event
     bitmask: 0x0fffffff
     pattern: 0x0320f004
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: shadd16
     desc: Signed Halving Add two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06300f10
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1665,7 +1665,7 @@ opcodes:
     desc: Signed Halving Add four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06300f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1675,7 +1675,7 @@ opcodes:
     desc: Signed Halving Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06300f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1685,7 +1685,7 @@ opcodes:
     desc: Signed Halving Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06300f50
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1695,7 +1695,7 @@ opcodes:
     desc: Signed Halving Subtract two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06300f70
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1705,7 +1705,7 @@ opcodes:
     desc: Signed Halving Subtract four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06300ff0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1715,7 +1715,7 @@ opcodes:
     desc: Signed Multiply Accumulate
     bitmask: 0x0ff00090
     pattern: 0x01000080
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [x, y, cond]
     args: [Rd, Rm, Rs, Rn]
     defs: [Rd]
@@ -1725,7 +1725,7 @@ opcodes:
     desc: Signed Multiply Accumulate Dual
     bitmask: 0x0ff000d0
     pattern: 0x07000010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [dual, cond]
     args: [Rd, Rm, Rs, Rn]
     defs: [Rd]
@@ -1744,7 +1744,7 @@ opcodes:
     desc: Signed Multiply Accumulate Long
     bitmask: 0x0ff00090
     pattern: 0x01400080
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [x, y, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1754,7 +1754,7 @@ opcodes:
     desc: Signed Multiply Accumulate Long Dual
     bitmask: 0x0ff000d0
     pattern: 0x07400010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [dual, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1764,7 +1764,7 @@ opcodes:
     desc: Signed Multiply Accumulate Word
     bitmask: 0x0ff000b0
     pattern: 0x01200080
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [y, cond]
     args: [Rd, Rm, Rs, Rn]
     defs: [Rd]
@@ -1774,7 +1774,7 @@ opcodes:
     desc: Signed Multiply Subtract accumulate Dual
     bitmask: 0x0ff000d0
     pattern: 0x07000050
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1784,7 +1784,7 @@ opcodes:
     desc: Signed Multiply Subtract accumulate Long Dual
     bitmask: 0x0ff000d0
     pattern: 0x07400050
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [dual, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1794,7 +1794,7 @@ opcodes:
     desc: Signed Most significant word Multiply Accumulate
     bitmask: 0x0ff000d0
     pattern: 0x07500010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [rounded, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1804,7 +1804,7 @@ opcodes:
     desc: Signed Most signifcant word Multiply Subtract
     bitmask: 0x0ff000d0
     pattern: 0x075000d0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [rounded, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1814,7 +1814,7 @@ opcodes:
     desc: Signed Most signifcant word Multiply
     bitmask: 0x0ff0f0d0
     pattern: 0x0750f010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [rounded, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1824,7 +1824,7 @@ opcodes:
     desc: Signed Multiply Add Dual
     bitmask: 0x0ff0f0d0
     pattern: 0x0700f010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1834,7 +1834,7 @@ opcodes:
     desc: Signed Multiply
     bitmask: 0x0ff0f090
     pattern: 0x01600080
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [x, y, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1853,7 +1853,7 @@ opcodes:
     desc: Signed Multiply Word
     bitmask: 0x0ff0f0b0
     pattern: 0x012000a0
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [y, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1863,7 +1863,7 @@ opcodes:
     desc: Signed Multiply Subtract Dual
     bitmask: 0x0ff0f0d0
     pattern: 0x0700f050
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1873,7 +1873,7 @@ opcodes:
     desc: Store Return State
     bitmask: 0xfe5fffe0
     pattern: 0xf84d0500
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [addr_system]
     args: [sp_wb, spsr_mode]
 
@@ -1881,7 +1881,7 @@ opcodes:
     desc: Signed Saturate
     bitmask: 0x0fe00030
     pattern: 0x06a00010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, sat_shift]
     args: [Rd, ssat_imm, Rm]
     defs: [Rd]
@@ -1891,7 +1891,7 @@ opcodes:
     desc: Signed Saturate two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06a00f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, ssat_imm, Rm]
     defs: [Rd]
@@ -1901,7 +1901,7 @@ opcodes:
     desc: Signed Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06100f50
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1911,7 +1911,7 @@ opcodes:
     desc: Signed Subtract two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06100f70
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1921,7 +1921,7 @@ opcodes:
     desc: Signed Subtract four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06100ff0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1939,7 +1939,7 @@ opcodes:
     desc: Store Coprocessor (unconditional, extended)
     bitmask: 0xfe100000
     pattern: 0xfc000000
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [L, addr_coproc]
     args: [coproc, CRd]
     defs: [CRd]
@@ -2000,7 +2000,7 @@ opcodes:
     suffix: !Suffix d
     bitmask: 0x0e1010f0
     pattern: 0x000000f0
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     modifiers: [cond, addr_misc_ldr_str]
     args: [Rt1, Rt2_ual]
     uses: [Rt1, Rt2_ual]
@@ -2009,7 +2009,7 @@ opcodes:
     desc: Store Register Exclusive
     bitmask: 0x0ff00ff0
     pattern: 0x01800f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
     defs: [Rd]
@@ -2019,7 +2019,7 @@ opcodes:
     desc: Store Register Exclusive Byte
     bitmask: 0x0ff00ff0
     pattern: 0x01c00f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
     defs: [Rd]
@@ -2029,7 +2029,7 @@ opcodes:
     desc: Store Register Exclusive Doubleword
     bitmask: 0x0ff00ff0
     pattern: 0x01a00f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
     defs: [Rd]
@@ -2039,7 +2039,7 @@ opcodes:
     desc: Store Register Exclusive Halfword
     bitmask: 0x0ff00ff0
     pattern: 0x01e00f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
     defs: [Rd]
@@ -2110,7 +2110,7 @@ opcodes:
     desc: Sign Extend one Byte to 32 bits and Add
     bitmask: 0x0ff003f0
     pattern: 0x06a00070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2120,7 +2120,7 @@ opcodes:
     desc: Sign Extend two Bytes to 16 bits and Add
     bitmask: 0x0ff003f0
     pattern: 0x06800070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2130,7 +2130,7 @@ opcodes:
     desc: Sign Extend one Halfword to 32 bits and Add
     bitmask: 0x0ff003f0
     pattern: 0x06b00070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2140,7 +2140,7 @@ opcodes:
     desc: Sign Extend Byte to 32 bits
     bitmask: 0x0fff03f0
     pattern: 0x06af0070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2150,7 +2150,7 @@ opcodes:
     desc: Sign Extend two Bytes to 16 bits
     bitmask: 0x0fff03f0
     pattern: 0x068f0070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2160,7 +2160,7 @@ opcodes:
     desc: Sign Extend Halfword to 32 bits
     bitmask: 0x0fff03f0
     pattern: 0x06bf0070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2186,7 +2186,7 @@ opcodes:
     desc: Unsigned Add two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06500f10
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2196,7 +2196,7 @@ opcodes:
     desc: Unsigned Add four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06500f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2206,7 +2206,7 @@ opcodes:
     desc: Unsigned Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06500f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2216,7 +2216,7 @@ opcodes:
     desc: Permanently Undefined
     bitmask: 0xfff000f0
     pattern: 0xe7f000f0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [immed_16]
 
@@ -2224,7 +2224,7 @@ opcodes:
     desc: Unsigned Halving Add two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06700f10
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2234,7 +2234,7 @@ opcodes:
     desc: Unsigned Halving Add four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06700f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2244,7 +2244,7 @@ opcodes:
     desc: Unsigned Halving Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06700f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2254,7 +2254,7 @@ opcodes:
     desc: Unsigned Halving Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06700f50
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2264,7 +2264,7 @@ opcodes:
     desc: Unsigned Halving Subtract two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06700f70
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2274,7 +2274,7 @@ opcodes:
     desc: Unsigned Halving Subtract four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06700ff0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2284,7 +2284,7 @@ opcodes:
     desc: Unsigned Multiply Accumulate Accumulate Long
     bitmask: 0x0ff000f0
     pattern: 0x00400090
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -2312,7 +2312,7 @@ opcodes:
     desc: Unsigned Saturating Add two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06600f10
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2322,7 +2322,7 @@ opcodes:
     desc: Unsigned Saturating Add four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06600f90
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2332,7 +2332,7 @@ opcodes:
     desc: Unsigned Saturating Add and Subtract with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06600f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2342,7 +2342,7 @@ opcodes:
     desc: Unsigned Saturating Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06600f50
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2352,7 +2352,7 @@ opcodes:
     desc: Unsigned Saturating Subtract two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06600f70
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2362,7 +2362,7 @@ opcodes:
     desc: Unsigned Saturating Subtract four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06600ff0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2372,7 +2372,7 @@ opcodes:
     desc: Unsigned Sum of Absolute Differences of four 8-bit integer pairs
     bitmask: 0x0ff0f0f0
     pattern: 0x0780f010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -2382,7 +2382,7 @@ opcodes:
     desc: Unsigned Sum of Absolute Differences of four 8-bit integer pairs and Accumulate
     bitmask: 0x0ff000f0
     pattern: 0x07800010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -2392,7 +2392,7 @@ opcodes:
     desc: Unsigned Saturate
     bitmask: 0x0fe00030
     pattern: 0x06e00010
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, sat_shift]
     args: [Rd, usat_imm, Rm]
     defs: [Rd]
@@ -2402,7 +2402,7 @@ opcodes:
     desc: Unsigned Saturate two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06e00f30
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, usat_imm, Rm]
     defs: [Rd]
@@ -2412,7 +2412,7 @@ opcodes:
     desc: Unsigned Subtract and Add with Exchange
     bitmask: 0x0ff00ff0
     pattern: 0x06500f50
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2422,7 +2422,7 @@ opcodes:
     desc: Unsigned Subtract two 16-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06500f70
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2432,7 +2432,7 @@ opcodes:
     desc: Unsigned Subtract four 8-bit integers
     bitmask: 0x0ff00ff0
     pattern: 0x06500ff0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2442,7 +2442,7 @@ opcodes:
     desc: Zero Extend Byte to 32 bits and Add
     bitmask: 0x0ff003f0
     pattern: 0x06e00070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2452,7 +2452,7 @@ opcodes:
     desc: Zero Extend two Bytes to 16 bits and Add
     bitmask: 0x0ff003f0
     pattern: 0x06c00070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2462,7 +2462,7 @@ opcodes:
     desc: Zero Extend Halfword to 32 bits and Add
     bitmask: 0x0ff003f0
     pattern: 0x06f00070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2472,7 +2472,7 @@ opcodes:
     desc: Zero Extend Byte to 32 bits
     bitmask: 0x0fff03f0
     pattern: 0x06ef0070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2482,7 +2482,7 @@ opcodes:
     desc: Zero Extend two Bytes to 16 bits
     bitmask: 0x0fff03f0
     pattern: 0x06cf0070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2492,7 +2492,7 @@ opcodes:
     desc: Zero Extend Halfword to 32 bits
     bitmask: 0x0fff03f0
     pattern: 0x06ff0070
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2502,19 +2502,19 @@ opcodes:
     desc: Wait For Event
     bitmask: 0x0fffffff
     pattern: 0x0320f002
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: wfi
     desc: Wait For Interrupt
     bitmask: 0x0fffffff
     pattern: 0x0320f003
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: yield
     desc: Yield
     bitmask: 0x0fffffff
     pattern: 0x0320f001
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [cond]

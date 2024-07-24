@@ -519,7 +519,7 @@ opcodes:
     desc: Breakpoint
     bitmask: 0xff00
     pattern: 0xde00
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [immed_8]
 
   - name: bl$h
@@ -538,14 +538,14 @@ opcodes:
     desc: Branch and Link and Exchange to ARM (low part, immediate target)
     bitmask: 0xf800
     pattern: 0xe800
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [low_blx_offset_11]
 
   - name: blx$r
     desc: Branch and Link and Exchange to ARM (register target)
     bitmask: 0xff87
     pattern: 0x4780
-    flags: [!Version V5Te]
+    flags: [!MinVersion V5Te]
     args: [Rm_H2]
     uses: [Rm_H2]
 
@@ -588,7 +588,7 @@ opcodes:
     desc: Change Processor State
     bitmask: 0xffe8
     pattern: 0xb660
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     modifiers: [imod]
 
   - name: eor
@@ -831,7 +831,7 @@ opcodes:
     desc: Byte-Reverse Word
     bitmask: 0xffc0
     pattern: 0xba00
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -840,7 +840,7 @@ opcodes:
     desc: Byte-Reverse Packed Halfword
     bitmask: 0xffc0
     pattern: 0xba40
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -849,7 +849,7 @@ opcodes:
     desc: Byte-Reverse Signed Halfword
     bitmask: 0xffc0
     pattern: 0xbac0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -876,7 +876,7 @@ opcodes:
     desc: Set Endian
     bitmask: 0xfff7
     pattern: 0xb650
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [endian]
 
   - name: stm
@@ -995,7 +995,7 @@ opcodes:
     desc: Sign Extend Byte to 32 bits
     bitmask: 0xffc0
     pattern: 0xb240
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -1004,7 +1004,7 @@ opcodes:
     desc: Sign Extend Halfword to 32 bits
     bitmask: 0xffc0
     pattern: 0xb200
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -1020,7 +1020,7 @@ opcodes:
     desc: Zero Extend Byte to 32 bits
     bitmask: 0xffc0
     pattern: 0xb2c0
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -1029,7 +1029,7 @@ opcodes:
     desc: Zero Extend Halfword to 32 bits
     bitmask: 0xffc0
     pattern: 0xb280
-    flags: [!Version V6K]
+    flags: [!MinVersion V6K]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]

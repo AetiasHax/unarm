@@ -648,6 +648,16 @@ impl Opcode {
             })
             .next()
     }
+
+    pub fn min_version_flag(&self) -> Option<ArmVersion> {
+        self.flags
+            .iter()
+            .filter_map(|f| {
+                let Flag::MinVersion(version) = f else { return None };
+                Some(*version)
+            })
+            .next()
+    }
 }
 
 #[derive(Deserialize, Clone, PartialEq, Eq)]
@@ -675,7 +685,7 @@ impl OpcodeSuffix {
 #[derive(Deserialize, Clone, PartialEq, Eq)]
 pub enum Flag {
     Ual(bool),
-    Version(ArmVersion),
+    MinVersion(ArmVersion),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Deserialize)]
