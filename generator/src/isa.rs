@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs::File,
-    path::Path,
-};
+use std::{collections::HashMap, fs::File, path::Path};
 
 use anyhow::{bail, Context, Result};
 
@@ -22,6 +18,7 @@ pub struct Isa {
     pub ins_size: u32,
     pub fields: Box<[Field]>,
     pub modifiers: Box<[Modifier]>,
+    pub tags: Box<[Tag]>,
     pub opcodes: Box<[Opcode]>,
 }
 
@@ -61,6 +58,13 @@ impl Isa {
             .with_context(|| format!("Failed to find field '{name}'"))
     }
 
+    pub fn get_tag(&self, name: &str) -> Result<&Tag> {
+        self.tags
+            .iter()
+            .find(|m| m.name == name)
+            .with_context(|| format!("Failed to find tag '{name}'"))
+    }
+
     pub fn get_max_args(&self, ual: bool) -> Result<usize> {
         let mut max = 0;
         for opcode in self.opcodes.iter() {
@@ -70,14 +74,6 @@ impl Isa {
             }
         }
         Ok(max)
-    }
-
-    pub fn collect_custom_tags(&self) -> HashSet<&str> {
-        let mut tags = HashSet::new();
-        for opcode in self.opcodes.iter() {
-            tags.extend(opcode.tags.iter().map(|tag| tag.as_str()));
-        }
-        tags
     }
 }
 
@@ -482,7 +478,7 @@ pub struct Opcode {
     #[serde(default)]
     pub flags: Box<[Flag]>,
     #[serde(default)]
-    tags: Box<[String]>,
+    pub tags: Box<[String]>,
     #[serde(default)]
     modifiers: Box<[String]>,
     #[serde(default)]
@@ -532,6 +528,12 @@ impl Opcode {
         if bitmask_acc != complete_bitmask {
             bail!("Opcode '{}' has an incomplete bitmask 0x{:08x}", self.name, bitmask_acc)
         }
+
+        for tag in self.tags.iter() {
+            isa.get_tag(tag)
+                .with_context(|| format!("While validating opcode '{}'", self.name))?;
+        }
+
         Ok(())
     }
 
@@ -709,4 +711,11 @@ impl ArmVersion {
             ArmVersion::V6K => "V6K",
         }
     }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Tag {
+    pub name: String,
+    pub desc: String,
 }

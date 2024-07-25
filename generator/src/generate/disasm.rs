@@ -762,14 +762,16 @@ fn generate_tag_functions(isa: &Isa) -> TokenStream {
         }
     });
 
-    let custom_tags = isa.collect_custom_tags().into_iter().map(|tag| {
-        let fn_name = Ident::new(tag, Span::call_site());
-        let match_arms = isa.opcodes.iter().filter(|opcode| opcode.has_tag(tag)).map(|opcode| {
+    let custom_tags = isa.tags.iter().map(|tag| {
+        let fn_name = Ident::new(&tag.name, Span::call_site());
+        let match_arms = isa.opcodes.iter().filter(|opcode| opcode.has_tag(&tag.name)).map(|opcode| {
             let enum_name = Ident::new(&opcode.enum_name(), Span::call_site());
             quote! { Opcode::#enum_name }
         });
+        let doc = format!(" {}", tag.desc);
 
         quote! {
+            #[doc = #doc]
             pub fn #fn_name(&self) -> bool {
                 matches!(self.op, #(#match_arms)|*)
             }
