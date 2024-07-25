@@ -1771,6 +1771,10 @@ impl Ins {
     pub fn has_cond(&self) -> bool {
         matches!(self.op, Opcode::B)
     }
+    /// This opcode loads multiple values from memory into registers.
+    pub fn loads_multiple(&self) -> bool {
+        matches!(self.op, Opcode::Ldm | Opcode::Ldmia | Opcode::Pop)
+    }
 }
 /// imod: Modify interrupt flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

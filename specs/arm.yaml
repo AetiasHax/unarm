@@ -803,6 +803,10 @@ modifiers:
         args: [Rn_deref, option]
         uses: [Rn_deref]
 
+tags:
+  - name: loads_multiple
+    desc: This opcode loads multiple values from memory into registers.
+
 opcodes:
   - name: adc
     desc: Add with Carry
@@ -1007,6 +1011,7 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08300000
     modifiers: [addr_ldm_stm, cond]
+    tags: [loads_multiple]
     args: [Rn_wb, registers]
     defs: [Rn_wb, registers]
     uses: [Rn_wb]
@@ -1016,6 +1021,7 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08100000
     modifiers: [addr_ldm_stm, cond]
+    tags: [loads_multiple]
     args: [Rn, registers]
     defs: [registers]
     uses: [Rn]
@@ -1025,6 +1031,7 @@ opcodes:
     bitmask: 0x0e708000
     pattern: 0x08500000
     modifiers: [addr_ldm_stm, cond]
+    tags: [loads_multiple]
     args: [Rn, registers_c]
     defs: [registers_c]
     uses: [Rn]
@@ -1034,6 +1041,7 @@ opcodes:
     bitmask: 0x0e708000
     pattern: 0x08708000
     modifiers: [addr_ldm_stm, cond]
+    tags: [loads_multiple]
     args: [Rn_wb, registers_c]
     defs: [Rn_wb, registers_c]
     uses: [Rn_wb]
@@ -1043,6 +1051,7 @@ opcodes:
     bitmask: 0x0e708000
     pattern: 0x08508000
     modifiers: [addr_ldm_stm, cond]
+    tags: [loads_multiple]
     args: [Rn, registers_c]
     defs: [registers_c]
     uses: [Rn]
@@ -1382,6 +1391,7 @@ opcodes:
     bitmask: 0x0fff0000
     pattern: 0x08bd0000
     flags: [!Ual true]
+    tags: [loads_multiple]
     modifiers: [cond]
     args: [registers]
     uses: [registers]
@@ -1391,6 +1401,7 @@ opcodes:
     bitmask: 0x0fff0fff
     pattern: 0x049d0004
     flags: [!Ual true]
+    tags: [loads_multiple]
     modifiers: [cond]
     args: [Rt_list]
     uses: [Rt_list]

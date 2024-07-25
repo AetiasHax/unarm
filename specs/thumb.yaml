@@ -373,6 +373,10 @@ modifiers:
         desc: Always
         pattern: 0x0e00
 
+tags:
+  - name: loads_multiple
+    desc: This opcode loads multiple values from memory into registers.
+
 opcodes:
   - name: adc
     desc: Add with Carry
@@ -605,6 +609,7 @@ opcodes:
     bitmask: 0xf800
     pattern: 0xc800
     flags: [!Ual true]
+    tags: [loads_multiple]
     args: [Rn_8_ldm, registers]
     defs: [Rn_8_ldm]
     uses: [Rn_8_ldm, registers]
@@ -614,6 +619,7 @@ opcodes:
     bitmask: 0xf800
     pattern: 0xc800
     flags: [!Ual false]
+    tags: [loads_multiple]
     args: [Rn_8_wb, registers]
     defs: [Rn_8_wb]
     uses: [Rn_8_wb, registers]
@@ -817,6 +823,7 @@ opcodes:
     desc: Pop multiple registers
     bitmask: 0xfe00
     pattern: 0xbc00
+    tags: [loads_multiple]
     args: [registers_pc]
     defs: [registers_pc]
 

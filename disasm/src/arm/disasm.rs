@@ -1,6 +1,6 @@
 use crate::{arm::generated::Opcode, ParseFlags, ParsedIns};
 
-use super::parse;
+use super::{parse, Cond};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Ins {
@@ -18,5 +18,9 @@ impl Ins {
         let mut out = ParsedIns::default();
         parse(&mut out, self, flags);
         out
+    }
+
+    pub fn is_conditional(&self) -> bool {
+        self.has_cond() && self.modifier_cond() != Cond::Al
     }
 }
