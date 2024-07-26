@@ -228,14 +228,18 @@ fields:
     value: !Bits 0..8
 
   - name: rel_immed_7
-    arg: u_imm
+    arg: offset_imm
     desc: Address-relative 7-bit immediate
-    value: !Expr self.code.bits(0,7) << 2
+    value: !Struct
+      value: !Expr self.code.bits(0,7) << 2
+      post_indexed: !Bool false
 
   - name: rel_immed_8
-    arg: u_imm
+    arg: offset_imm
     desc: Address-relative 8-bit immediate
-    value: !Expr self.code.bits(0,8) << 2
+    value: !Struct
+      value: !Expr self.code.bits(0,8) << 2
+      post_indexed: !Bool false
 
   - name: left_shift_imm
     arg: u_imm
@@ -253,7 +257,7 @@ fields:
     value: !Expr (self.code.bits(0,8) << 1) + 4
 
   - name: branch_offset_11
-    arg: s_imm
+    arg: branch_dest
     desc: 12-bit signed B target offset
     value: !Expr (self.code.bits(0,11) << 1) + 4
 

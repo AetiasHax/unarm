@@ -5,7 +5,8 @@
 use crate::{ArmVersion, ParseFlags, args::*, parse::ParsedIns};
 use super::Ins;
 /// These are the mnemonics of each opcode. Some mnemonics are duplicated due to them having multiple formats.
-static OPCODE_MNEMONICS: [&str; 81] = [
+static OPCODE_MNEMONICS: [&str; 82] = [
+    "<illegal>",
     "adcs",
     "adds",
     "adds",
@@ -94,169 +95,169 @@ static OPCODE_MNEMONICS: [&str; 81] = [
 pub enum Opcode {
     /// Illegal or unknown
     #[default]
-    Illegal = u8::MAX,
+    Illegal = 0,
     /// ADCS: Add with Carry
-    Adc = 0,
+    Adc = 1,
     /// ADDS: Add 3-bit immediate
-    Add3 = 1,
+    Add3 = 2,
     /// ADDS: Add 8-bit immediate
-    Add8 = 2,
+    Add8 = 3,
     /// ADDS: Add register
-    AddR = 3,
+    AddR = 4,
     /// ADD: Add high register
-    AddHr = 4,
+    AddHr = 5,
     /// ADD: Add SP-relative address
-    AddSp = 5,
+    AddSp = 6,
     /// ADD: Add 7-bit immediate multiple of 4 to SP
-    AddSp7 = 6,
+    AddSp7 = 7,
     /// ADD: Add SP to register
-    AddRegSp = 7,
+    AddRegSp = 8,
     /// ADD: Add register to SP
-    AddSpReg = 8,
+    AddSpReg = 9,
     /// ADD: Add 8-bit immediate multiple of 4 to PC
-    AddPc = 9,
+    AddPc = 10,
     /// ADR: Add PC-relative address
-    Adr = 10,
+    Adr = 11,
     /// ANDS: Bitwise AND
-    And = 11,
+    And = 12,
     /// ASRS: Arithmetic Shift Right by 5-bit immediate
-    AsrI = 12,
+    AsrI = 13,
     /// ASRS: Arithmetic Shift Right by register
-    AsrR = 13,
+    AsrR = 14,
     /// B: Branch
-    B = 14,
+    B = 15,
     /// B: Branch (unconditional, long)
-    BLong = 15,
+    BLong = 16,
     /// BICS: Bit Clear
-    Bic = 16,
+    Bic = 17,
     /// BKPT: Breakpoint
-    Bkpt = 17,
+    Bkpt = 18,
     /// BL: Branch and Link (high part)
-    BlH = 18,
+    BlH = 19,
     /// BL: Branch and Link (low part)
-    Bl = 19,
+    Bl = 20,
     /// BLX: Branch and Link and Exchange to ARM (low part, immediate target)
-    BlxI = 20,
+    BlxI = 21,
     /// BLX: Branch and Link and Exchange to ARM (register target)
-    BlxR = 21,
+    BlxR = 22,
     /// BX: Branch and Exchange
-    BxR = 22,
+    BxR = 23,
     /// CMN: Compare Negative
-    Cmn = 23,
+    Cmn = 24,
     /// CMP: Compare with immediate
-    CmpI = 24,
+    CmpI = 25,
     /// CMP: Compare with register
-    CmpR = 25,
+    CmpR = 26,
     /// CMP: Compare with high register
-    CmpHr = 26,
+    CmpHr = 27,
     /// CPS: Change Processor State
-    Cps = 27,
+    Cps = 28,
     /// EORS: Exclusive OR
-    Eor = 28,
+    Eor = 29,
     /// LDM: Load Multiple
-    Ldm = 29,
+    Ldm = 30,
     /// LDMIA: Load Multiple
-    Ldmia = 30,
+    Ldmia = 31,
     /// LDR: Load Register with immediate offset
-    LdrI = 31,
+    LdrI = 32,
     /// LDR: Load Register with register offset
-    LdrR = 32,
+    LdrR = 33,
     /// LDR: Load Register with PC-relative address
-    LdrPc = 33,
+    LdrPc = 34,
     /// LDR: Load Register with SP-relative address
-    LdrSp = 34,
+    LdrSp = 35,
     /// LDRB: Load Register Byte with immediate offset
-    LdrbI = 35,
+    LdrbI = 36,
     /// LDRB: Load Register Byte with register offset
-    LdrbR = 36,
+    LdrbR = 37,
     /// LDRH: Load Register Halfword with immediate offset
-    LdrhI = 37,
+    LdrhI = 38,
     /// LDRH: Load Register Halfword with register offset
-    LdrhR = 38,
+    LdrhR = 39,
     /// LDRSB: Load Register Signed Byte
-    Ldrsb = 39,
+    Ldrsb = 40,
     /// LDRSH: Load Register Signed Halfword
-    Ldrsh = 40,
+    Ldrsh = 41,
     /// LSLS: Logical Shift Left by 5-bit immediate
-    LslI = 41,
+    LslI = 42,
     /// LSLS: Logical Shift Left by register
-    LslR = 42,
+    LslR = 43,
     /// LSRS: Logical Shift Right by 5-bit immediate
-    LsrI = 43,
+    LsrI = 44,
     /// LSRS: Logical Shift Right by register
-    LsrR = 44,
+    LsrR = 45,
     /// MOVS: Move immediate
-    MovI = 45,
+    MovI = 46,
     /// MOV: Move register
-    MovR = 46,
+    MovR = 47,
     /// MOVS: Move register
-    MovsR = 47,
+    MovsR = 48,
     /// MOV: Move high register
-    MovHr = 48,
+    MovHr = 49,
     /// MULS: Multiply
-    Mul = 49,
+    Mul = 50,
     /// MVNS: Move Negative
-    Mvn = 50,
+    Mvn = 51,
     /// NEG: Negate
-    Neg = 51,
+    Neg = 52,
     /// RSBS: Negate
-    Rsbs = 52,
+    Rsbs = 53,
     /// ORRS: Bitwise OR
-    Orr = 53,
+    Orr = 54,
     /// POP: Pop multiple registers
-    Pop = 54,
+    Pop = 55,
     /// PUSH: Push multiple registers
-    Push = 55,
+    Push = 56,
     /// REV: Byte-Reverse Word
-    Rev = 56,
+    Rev = 57,
     /// REV16: Byte-Reverse Packed Halfword
-    Rev16 = 57,
+    Rev16 = 58,
     /// REVSH: Byte-Reverse Signed Halfword
-    Revsh = 58,
+    Revsh = 59,
     /// RORS: Rotate Right
-    Ror = 59,
+    Ror = 60,
     /// SBCS: Subtract with Carry
-    Sbc = 60,
+    Sbc = 61,
     /// SETEND: Set Endian
-    Setend = 61,
+    Setend = 62,
     /// STM: Store Multiple
-    Stm = 62,
+    Stm = 63,
     /// STR: Store Register with immediate offset
-    StrI = 63,
+    StrI = 64,
     /// STR: Store Register with register offset
-    StrR = 64,
+    StrR = 65,
     /// STR: Store Register with SP-relative address
-    StrSp = 65,
+    StrSp = 66,
     /// STRB: Store Register Byte with immediate offset
-    StrbI = 66,
+    StrbI = 67,
     /// STRB: Store Register Byte with register offset
-    StrbR = 67,
+    StrbR = 68,
     /// STRH: Store Register Halfword with immediate offset
-    StrhI = 68,
+    StrhI = 69,
     /// STRH: Store Register Halfword with register offset
-    StrhR = 69,
+    StrhR = 70,
     /// SUBS: Subtract 3-bit immediate
-    Subs3 = 70,
+    Subs3 = 71,
     /// SUBS: Subtract 8-bit immediate
-    Sub8 = 71,
+    Sub8 = 72,
     /// SUBS: Subtract register
-    SubR = 72,
+    SubR = 73,
     /// SUB: Subtract 7-bit immediate multiple of 4 from SP
-    SubSp7 = 73,
+    SubSp7 = 74,
     /// SVC: Supervisor Call
-    Svc = 74,
+    Svc = 75,
     /// SWI: Software Interrupt
-    Swi = 75,
+    Swi = 76,
     /// SXTB: Sign Extend Byte to 32 bits
-    Sxtb = 76,
+    Sxtb = 77,
     /// SXTH: Sign Extend Halfword to 32 bits
-    Sxth = 77,
+    Sxth = 78,
     /// TST: Test
-    Tst = 78,
+    Tst = 79,
     /// UXTB: Zero Extend Byte to 32 bits
-    Uxtb = 79,
+    Uxtb = 80,
     /// UXTH: Zero Extend Halfword to 32 bits
-    Uxth = 80,
+    Uxth = 81,
 }
 impl Opcode {
     #[inline]
@@ -1410,7 +1411,7 @@ impl Opcode {
         OPCODE_MNEMONICS[self as usize]
     }
     pub fn count() -> usize {
-        81
+        82
     }
 }
 impl Ins {
@@ -1660,13 +1661,19 @@ impl Ins {
     }
     /// rel_immed_7: Address-relative 7-bit immediate
     #[inline(always)]
-    pub fn field_rel_immed_7(&self) -> u32 {
-        (self.code & 0x0000007f) << 2
+    pub fn field_rel_immed_7(&self) -> OffsetImm {
+        OffsetImm {
+            post_indexed: false,
+            value: ((self.code & 0x0000007f) << 2) as i32,
+        }
     }
     /// rel_immed_8: Address-relative 8-bit immediate
     #[inline(always)]
-    pub fn field_rel_immed_8(&self) -> u32 {
-        (self.code & 0x000000ff) << 2
+    pub fn field_rel_immed_8(&self) -> OffsetImm {
+        OffsetImm {
+            post_indexed: false,
+            value: ((self.code & 0x000000ff) << 2) as i32,
+        }
     }
     /// left_shift_imm: 5-bit left shift offset
     #[inline(always)]
@@ -1820,6 +1827,19 @@ pub enum Cond {
     /// al: Always
     Al,
 }
+fn parse_illegal(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
+    *out = ParsedIns {
+        mnemonic: "<illegal>",
+        args: [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
 fn parse_adc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     if flags.ual {
         *out = ParsedIns {
@@ -1961,7 +1981,7 @@ fn parse_add_sp(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_sp()),
-            Argument::UImm(ins.field_rel_immed_8()),
+            Argument::OffsetImm(ins.field_rel_immed_8()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -1975,7 +1995,7 @@ fn parse_add_sp7(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
             args: [
                 Argument::Reg(ins.field_sp()),
                 Argument::Reg(ins.field_sp_ual()),
-                Argument::UImm(ins.field_rel_immed_7()),
+                Argument::OffsetImm(ins.field_rel_immed_7()),
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -1986,7 +2006,7 @@ fn parse_add_sp7(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
             mnemonic: "add",
             args: [
                 Argument::Reg(ins.field_sp()),
-                Argument::UImm(ins.field_rel_immed_7()),
+                Argument::OffsetImm(ins.field_rel_immed_7()),
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -2041,7 +2061,7 @@ fn parse_add_pc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_pc()),
-            Argument::UImm(ins.field_rel_immed_8()),
+            Argument::OffsetImm(ins.field_rel_immed_8()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2053,7 +2073,7 @@ fn parse_adr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         mnemonic: "adr",
         args: [
             Argument::Reg(ins.field_rd_8()),
-            Argument::UImm(ins.field_rel_immed_8()),
+            Argument::OffsetImm(ins.field_rel_immed_8()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2358,7 +2378,7 @@ fn parse_b_long(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     *out = ParsedIns {
         mnemonic: "b",
         args: [
-            Argument::SImm(ins.field_branch_offset_11()),
+            Argument::BranchDest(ins.field_branch_offset_11()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2652,7 +2672,7 @@ fn parse_ldr_pc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_pc_deref()),
-            Argument::UImm(ins.field_rel_immed_8()),
+            Argument::OffsetImm(ins.field_rel_immed_8()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2665,7 +2685,7 @@ fn parse_ldr_sp(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_sp_deref()),
-            Argument::UImm(ins.field_rel_immed_8()),
+            Argument::OffsetImm(ins.field_rel_immed_8()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -3222,7 +3242,7 @@ fn parse_str_sp(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_8()),
             Argument::Reg(ins.field_sp_deref()),
-            Argument::UImm(ins.field_rel_immed_8()),
+            Argument::OffsetImm(ins.field_rel_immed_8()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -3354,7 +3374,7 @@ fn parse_sub_sp7(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_sp()),
             Argument::Reg(ins.field_sp()),
-            Argument::UImm(ins.field_rel_immed_7()),
+            Argument::OffsetImm(ins.field_rel_immed_7()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -3453,7 +3473,8 @@ fn parse_uxth(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     };
 }
 type MnemonicParser = fn(&mut ParsedIns, Ins, &ParseFlags);
-static MNEMONIC_PARSERS: [MnemonicParser; 81] = [
+static MNEMONIC_PARSERS: [MnemonicParser; 82] = [
+    parse_illegal,
     parse_adc,
     parse_add_3,
     parse_add_8,

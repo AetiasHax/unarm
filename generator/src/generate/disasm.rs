@@ -64,7 +64,7 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
         pub enum Opcode {
             #[doc = " Illegal or unknown"]
             #[default]
-            Illegal = u8::MAX,
+            Illegal = 0,
             #opcode_enum_tokens
         }
         impl Opcode {
@@ -187,6 +187,16 @@ fn generate_parse_functions(
     num_opcodes_token: &Literal,
 ) -> Result<TokenStream, anyhow::Error> {
     let mut parse_functions = TokenStream::new();
+
+    let illegal_ins = illegal_ins(max_args);
+    let parse_illegal_ident = Ident::new("parse_illegal", Span::call_site());
+
+    parse_functions.extend(quote! {
+        fn #parse_illegal_ident(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
+            *out = #illegal_ins;
+        }
+    });
+
     for opcode in isa.opcodes.iter() {
         let parse_body = match (opcode.has_ual_changes(isa)?, opcode.ual_flag()) {
             (true, None) => {
@@ -211,10 +221,11 @@ fn generate_parse_functions(
             }
         })
     }
-    let parser_fns = sorted_opcodes
-        .iter()
-        .map(|op| Ident::new(&op.parser_name(), Span::call_site()));
-    let illegal_ins = illegal_ins(max_args);
+    let parser_fns = [parse_illegal_ident].into_iter().chain(
+        sorted_opcodes
+            .iter()
+            .map(|op| Ident::new(&op.parser_name(), Span::call_site())),
+    );
     parse_functions.extend(quote! {
         type MnemonicParser = fn(&mut ParsedIns, Ins, &ParseFlags);
         static MNEMONIC_PARSERS: [MnemonicParser; #num_opcodes_token] = [
@@ -724,13 +735,16 @@ fn generate_argument_expr(value: &FieldValue, field: &Field) -> Result<TokenStre
 fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStream, Literal) {
     let mut opcode_enum_tokens = TokenStream::new();
     let mut opcode_mnemonics_tokens = TokenStream::new();
-    let num_opcodes_token = Literal::usize_unsuffixed(sorted_opcodes.len());
+    let num_opcodes_token = Literal::usize_unsuffixed(sorted_opcodes.len() + 1);
+
+    opcode_mnemonics_tokens.extend(quote! { "<illegal>", });
+
     for (i, opcode) in sorted_opcodes.iter().enumerate() {
         let name = &opcode.name(true);
         opcode_mnemonics_tokens.extend(quote! { #name, });
 
         let enum_name = Ident::new(&opcode.enum_name(), Span::call_site());
-        let enum_value = Literal::u8_unsuffixed(i.try_into().unwrap());
+        let enum_value = Literal::u8_unsuffixed((i + 1).try_into().unwrap());
         let doc = opcode.doc(true);
 
         opcode_enum_tokens.extend(quote! {

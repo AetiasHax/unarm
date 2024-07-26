@@ -153,9 +153,10 @@ fn generate_enum(values: &[EnumValue], ident: Ident) -> TokenStream {
     };
 
     quote! {
-        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
         #[repr(u8)]
         pub enum #ident {
+            #[default]
             Illegal = u8::MAX,
             #(#values_tokens),*
         }
@@ -197,7 +198,7 @@ fn generate_struct(
         })
         .collect::<Result<Vec<_>>>()?;
     Ok(quote! {
-        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
         pub struct #ident {
             #(#members),*
         }

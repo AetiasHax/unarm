@@ -47,9 +47,10 @@ pub enum Argument {
     /// Endian specifier
     Endian(Endian),
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Register {
+    #[default]
     Illegal = u8::MAX,
     /// R0 or A1
     R0 = 0,
@@ -93,9 +94,10 @@ impl Register {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum StatusReg {
+    #[default]
     Illegal = u8::MAX,
     Cpsr = 0,
     Spsr = 1,
@@ -109,9 +111,10 @@ impl StatusReg {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Shift {
+    #[default]
     Illegal = u8::MAX,
     /// Logical shift left
     Lsl = 0,
@@ -133,7 +136,7 @@ impl Shift {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Reg {
     /// Use as base register
     pub deref: bool,
@@ -142,16 +145,17 @@ pub struct Reg {
     /// When used as a base register, update this register's value
     pub writeback: bool,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct RegList {
     /// Bitfield of registers
     pub regs: u32,
     /// Access user-mode registers from elevated mode
     pub user_mode: bool,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum CoReg {
+    #[default]
     Illegal = u8::MAX,
     C0 = 0,
     C1 = 1,
@@ -179,7 +183,7 @@ impl CoReg {
         }
     }
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct StatusMask {
     /// Control field mask (c)
     pub control: bool,
@@ -192,28 +196,28 @@ pub struct StatusMask {
     /// Status field mask (s)
     pub status: bool,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ShiftImm {
     /// Immediate shift offset
     pub imm: u32,
     /// Shift operation
     pub op: Shift,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ShiftReg {
     /// Shift operation
     pub op: Shift,
     /// Register shift offset
     pub reg: Register,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct OffsetImm {
     /// If true, add the offset to the base register and write-back AFTER derefencing the base register
     pub post_indexed: bool,
     /// Offset value
     pub value: i32,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct OffsetReg {
     /// If true, add the offset to the base register, otherwise subtract
     pub add: bool,
@@ -222,14 +226,14 @@ pub struct OffsetReg {
     /// Offset value
     pub reg: Register,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CpsrMode {
     /// Mode bits
     pub mode: u32,
     /// Writeback to base register
     pub writeback: bool,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CpsrFlags {
     /// Imprecise data abort
     pub a: bool,
@@ -240,9 +244,10 @@ pub struct CpsrFlags {
     /// IRQ interrupt
     pub i: bool,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum Endian {
+    #[default]
     Illegal = u8::MAX,
     /// Little-endian
     Le = 0,
