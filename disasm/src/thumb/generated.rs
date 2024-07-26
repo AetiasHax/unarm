@@ -1694,12 +1694,12 @@ impl Ins {
     /// branch_offset_8: 9-bit signed B target offset
     #[inline(always)]
     pub fn field_branch_offset_8(&self) -> i32 {
-        (((self.code & 0x000000ff) << 1) + 4) as i32
+        (((((self.code & 0x000000ff) << 1) as i32) << 23 >> 23) + 4) as i32
     }
     /// branch_offset_11: 12-bit signed B target offset
     #[inline(always)]
     pub fn field_branch_offset_11(&self) -> i32 {
-        (((self.code & 0x000007ff) << 1) + 4) as i32
+        (((((self.code & 0x000007ff) << 1) as i32) << 20 >> 20) + 4) as i32
     }
     /// high_branch_offset_11: 23-bit signed BL/BLX target offset (high part)
     #[inline(always)]

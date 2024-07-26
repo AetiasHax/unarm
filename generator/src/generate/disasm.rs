@@ -665,7 +665,7 @@ impl VisitMut for FoldFieldExpr {
                     }
                     let rhs = call.args[0].clone();
                     *node = parse_quote! {
-                        (#lhs as i32) << #rhs >> #rhs
+                        ((#lhs as i32) << #rhs >> #rhs)
                     };
                 }
                 "arm_shift" => {

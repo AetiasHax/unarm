@@ -65,6 +65,8 @@ mod tests {
         assert_asm!(0xd042, "beq #0x88");
         assert_asm!(0xd942, "bls #0x88");
         assert_asm!(0xdc42, "bgt #0x88");
+        assert_asm!(0xdbf3, "blt #-0x16");
+        assert_asm!(0xe5ee, "b #-0x420");
     }
 
     #[test]
