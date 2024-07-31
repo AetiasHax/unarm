@@ -1,6 +1,6 @@
 use crate::{
     args::{Argument, RegList, Register},
-    Ins, ParsedIns,
+    arm, thumb, Ins, ParsedIns,
 };
 
 impl Register {
@@ -18,6 +18,30 @@ impl RegList {
 }
 
 impl Ins {
+    pub fn code(&self) -> u32 {
+        match self {
+            Ins::Arm(ins) => ins.code,
+            Ins::Thumb(ins) => ins.code,
+            Ins::Data => 0,
+        }
+    }
+
+    pub fn is_illegal(&self) -> bool {
+        match self {
+            Ins::Arm(ins) => ins.op == arm::Opcode::Illegal,
+            Ins::Thumb(ins) => ins.op == thumb::Opcode::Illegal,
+            Ins::Data => false,
+        }
+    }
+
+    pub fn updates_condition_flags(&self) -> bool {
+        match self {
+            Ins::Arm(ins) => ins.updates_condition_flags(),
+            Ins::Thumb(ins) => ins.updates_condition_flags(),
+            Ins::Data => false,
+        }
+    }
+
     pub fn is_conditional(&self) -> bool {
         match self {
             Ins::Arm(ins) => ins.is_conditional(),

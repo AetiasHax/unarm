@@ -1782,6 +1782,18 @@ impl Ins {
     pub fn loads_multiple(&self) -> bool {
         matches!(self.op, Opcode::Ldm | Opcode::Ldmia | Opcode::Pop)
     }
+    /// This opcode sets the comparison flags according to the resulting value.
+    pub fn updates_condition_flags(&self) -> bool {
+        matches!(
+            self.op, Opcode::Adc | Opcode::Add3 | Opcode::Add8 | Opcode::AddR |
+            Opcode::And | Opcode::AsrI | Opcode::AsrR | Opcode::Bic | Opcode::Cmn |
+            Opcode::CmpI | Opcode::CmpR | Opcode::CmpHr | Opcode::Eor | Opcode::LslI |
+            Opcode::LslR | Opcode::LsrI | Opcode::LsrR | Opcode::MovI | Opcode::MovsR |
+            Opcode::Mul | Opcode::Mvn | Opcode::Neg | Opcode::Rsbs | Opcode::Orr |
+            Opcode::Ror | Opcode::Sbc | Opcode::Subs3 | Opcode::Sub8 | Opcode::SubR |
+            Opcode::Tst
+        )
+    }
 }
 /// imod: Modify interrupt flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

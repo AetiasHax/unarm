@@ -7,5 +7,5 @@ pub mod parse;
 pub mod thumb;
 mod util;
 
-pub use display::{DisplayOptions, R9Use, RegNames};
+pub use display::{DisplayOptions, LookupSymbol, R9Use, RegNames, SignedHex};
 pub use parse::*;

@@ -23,4 +23,8 @@ impl Ins {
     pub fn is_conditional(&self) -> bool {
         self.has_cond() && self.modifier_cond() != Cond::Al
     }
+
+    pub fn updates_condition_flags(&self) -> bool {
+        (self.has_s() && self.modifier_s()) || self.is_compare_op()
+    }
 }

@@ -10,7 +10,24 @@ use crate::{
 
 impl ParsedIns {
     pub fn display(&self, options: DisplayOptions) -> ParsedInsDisplay<'_> {
-        ParsedInsDisplay { ins: self, options }
+        ParsedInsDisplay {
+            ins: self,
+            options,
+            symbols: None,
+        }
+    }
+
+    pub fn display_with_symbols<'a>(
+        &'a self,
+        options: DisplayOptions,
+        lookup: &'a dyn LookupSymbol,
+        program_counter: u32,
+    ) -> ParsedInsDisplay<'_> {
+        ParsedInsDisplay {
+            ins: self,
+            options,
+            symbols: Some(Symbols { lookup, program_counter }),
+        }
     }
 }
 
@@ -19,9 +36,20 @@ pub struct DisplayOptions {
     pub reg_names: RegNames,
 }
 
+pub trait LookupSymbol {
+    fn lookup_symbol_name(&self, source: u32, destination: u32) -> Option<&str>;
+}
+
+#[derive(Clone, Copy)]
+pub struct Symbols<'a> {
+    lookup: &'a dyn LookupSymbol,
+    program_counter: u32,
+}
+
 pub struct ParsedInsDisplay<'a> {
     ins: &'a ParsedIns,
     options: DisplayOptions,
+    symbols: Option<Symbols<'a>>,
 }
 
 impl<'a> Display for ParsedInsDisplay<'a> {
@@ -69,7 +97,7 @@ impl<'a> Display for ParsedInsDisplay<'a> {
                 writeback = *wb;
                 write!(f, "[{}", reg.display(self.options.reg_names))?;
             } else {
-                write!(f, "{}", arg.display(self.options))?;
+                write!(f, "{}", arg.display(self.options, self.symbols))?;
             }
             comma = true;
         }
@@ -83,7 +111,7 @@ impl<'a> Display for ParsedInsDisplay<'a> {
     }
 }
 
-pub struct SignedHex(i32);
+pub struct SignedHex(pub i32);
 
 impl Display for SignedHex {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -96,14 +124,19 @@ impl Display for SignedHex {
 }
 
 impl Argument {
-    pub fn display(&self, options: DisplayOptions) -> DisplayArgument<'_> {
-        DisplayArgument { arg: self, options }
+    pub fn display<'a>(&'a self, options: DisplayOptions, symbols: Option<Symbols<'a>>) -> DisplayArgument<'_> {
+        DisplayArgument {
+            arg: self,
+            options,
+            symbols,
+        }
     }
 }
 
 pub struct DisplayArgument<'a> {
     arg: &'a Argument,
     options: DisplayOptions,
+    symbols: Option<Symbols<'a>>,
 }
 
 impl<'a> Display for DisplayArgument<'a> {
@@ -146,7 +179,15 @@ impl<'a> Display for DisplayArgument<'a> {
             Argument::ShiftImm(x) => write!(f, "{}", x),
             Argument::ShiftReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
             Argument::OffsetReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
-            Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
+            Argument::BranchDest(dest) => {
+                if let Some(symbols) = &self.symbols {
+                    let destination = (symbols.program_counter as i32 + *dest) as u32;
+                    if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
+                        return write!(f, "{name}");
+                    }
+                }
+                write!(f, "{}", SignedHex(*dest))
+            }
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
             Argument::SatImm(x) => write!(f, "#0x{:x}", x),

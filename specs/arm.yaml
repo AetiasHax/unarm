@@ -806,6 +806,8 @@ modifiers:
 tags:
   - name: loads_multiple
     desc: This opcode loads multiple values from memory into registers.
+  - name: is_compare_op
+    desc: This opcode compares a register with another value.
 
 opcodes:
   - name: adc
@@ -946,6 +948,7 @@ opcodes:
     desc: Compare Negative
     bitmask: 0x0df0f000
     pattern: 0x01700000
+    tags: [is_compare_op]
     modifiers: [cond, addr_data]
     args: [Rn]
     uses: [Rn]
@@ -954,6 +957,7 @@ opcodes:
     desc: Compare
     bitmask: 0x0df0f000
     pattern: 0x01500000
+    tags: [is_compare_op]
     modifiers: [cond, addr_data]
     args: [Rn]
     uses: [Rn]
@@ -2182,6 +2186,7 @@ opcodes:
     bitmask: 0x0df0f000
     pattern: 0x01300000
     modifiers: [cond, addr_data]
+    tags: [is_compare_op]
     args: [Rn]
     uses: [Rn]
 
@@ -2189,6 +2194,7 @@ opcodes:
     desc: Test
     bitmask: 0x0df0f000
     pattern: 0x01100000
+    tags: [is_compare_op]
     modifiers: [cond, addr_data]
     args: [Rn]
     uses: [Rn]

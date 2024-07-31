@@ -380,6 +380,8 @@ modifiers:
 tags:
   - name: loads_multiple
     desc: This opcode loads multiple values from memory into registers.
+  - name: updates_condition_flags
+    desc: This opcode sets the comparison flags according to the resulting value.
 
 opcodes:
   - name: adc
@@ -387,6 +389,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4140
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -396,6 +399,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1c00
+    tags: [updates_condition_flags]
     args: [Rd_0, Rn_3, immed_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -405,6 +409,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x3000
+    tags: [updates_condition_flags]
     args: [Rd_8, immed_8]
     defs: [Rd_8]
     uses: [Rd_8]
@@ -414,6 +419,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1800
+    tags: [updates_condition_flags]
     args: [Rd_0, Rn_3, Rm_6]
     defs: [Rd_0]
 
@@ -479,6 +485,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4000
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -488,6 +495,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x1000
+    tags: [updates_condition_flags]
     args: [Rd_0, Rm_3, right_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -497,6 +505,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4100
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -519,6 +528,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4380
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -568,6 +578,7 @@ opcodes:
     desc: Compare Negative
     bitmask: 0xffc0
     pattern: 0x42c0
+    tags: [updates_condition_flags]
     args: [Rn_0, Rm_3]
     uses: [Rn_0, Rm_3]
 
@@ -575,6 +586,7 @@ opcodes:
     desc: Compare with immediate
     bitmask: 0xf800
     pattern: 0x2800
+    tags: [updates_condition_flags]
     args: [Rn_8, immed_8]
     uses: [Rn_8]
 
@@ -582,6 +594,7 @@ opcodes:
     desc: Compare with register
     bitmask: 0xffc0
     pattern: 0x4280
+    tags: [updates_condition_flags]
     args: [Rn_0, Rm_3]
     uses: [Rn_0, Rm_3]
 
@@ -589,6 +602,7 @@ opcodes:
     desc: Compare with high register
     bitmask: 0xff00
     pattern: 0x4500
+    tags: [updates_condition_flags]
     args: [Rn_H1, Rm_H2]
     uses: [Rn_H1, Rm_H2]
 
@@ -604,6 +618,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4040
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -713,6 +728,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x0000
+    tags: [updates_condition_flags]
     args: [Rd_0, Rm_3, left_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -722,6 +738,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4080
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -731,6 +748,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x0800
+    tags: [updates_condition_flags]
     args: [Rd_0, Rm_3, right_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -740,6 +758,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x40c0
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -749,6 +768,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x2000
+    tags: [updates_condition_flags]
     args: [Rd_8, immed_8]
     defs: [Rd_8]
 
@@ -766,6 +786,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0x0000
     flags: [!Ual true]
+    tags: [updates_condition_flags]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -783,6 +804,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4340
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -792,6 +814,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x43c0
+    tags: [updates_condition_flags]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -801,6 +824,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0x4240
     flags: [!Ual false]
+    tags: [updates_condition_flags]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -810,6 +834,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0x4240
     flags: [!Ual true]
+    tags: [updates_condition_flags]
     args: [Rd_0, Rm_3, zero]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -819,6 +844,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4300
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -870,6 +896,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x41c0
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -879,6 +906,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4180
+    tags: [updates_condition_flags]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -959,6 +987,7 @@ opcodes:
     desc: Subtract 3-bit immediate
     bitmask: 0xfe00
     pattern: 0x1e00
+    tags: [updates_condition_flags]
     args: [Rd_0, Rn_3, immed_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -968,6 +997,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x3800
+    tags: [updates_condition_flags]
     args: [Rd_8, immed_8]
     defs: [Rd_8]
     uses: [Rd_8]
@@ -977,6 +1007,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1a00
+    tags: [updates_condition_flags]
     args: [Rd_0, Rn_3, Rm_6]
     defs: [Rd_0]
 
@@ -1024,6 +1055,7 @@ opcodes:
     desc: Test
     bitmask: 0xffc0
     pattern: 0x4200
+    tags: [updates_condition_flags]
     args: [Rn_0, Rm_3]
     uses: [Rn_0, Rm_3]
 
