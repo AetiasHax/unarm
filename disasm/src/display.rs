@@ -17,16 +17,11 @@ impl ParsedIns {
         }
     }
 
-    pub fn display_with_symbols<'a>(
-        &'a self,
-        options: DisplayOptions,
-        lookup: &'a dyn LookupSymbol,
-        program_counter: u32,
-    ) -> ParsedInsDisplay<'_> {
+    pub fn display_with_symbols<'a>(&'a self, options: DisplayOptions, symbols: Symbols<'a>) -> ParsedInsDisplay<'_> {
         ParsedInsDisplay {
             ins: self,
             options,
-            symbols: Some(Symbols { lookup, program_counter }),
+            symbols: Some(symbols),
         }
     }
 }
@@ -42,8 +37,9 @@ pub trait LookupSymbol {
 
 #[derive(Clone, Copy)]
 pub struct Symbols<'a> {
-    lookup: &'a dyn LookupSymbol,
-    program_counter: u32,
+    pub lookup: &'a dyn LookupSymbol,
+    pub program_counter: u32,
+    pub pc_load_offset: i32,
 }
 
 pub struct ParsedInsDisplay<'a> {
@@ -63,13 +59,30 @@ impl<'a> ParsedInsDisplay<'a> {
                 reg,
                 writeback,
             }) => {
+                let next = iter.next();
+
+                // replace PC-relative dereferences with symbol name
+                if let Some(symbols) = self.symbols {
+                    if *reg == Register::Pc {
+                        if let Some(Argument::OffsetImm(OffsetImm {
+                            post_indexed: false,
+                            value,
+                        })) = next
+                        {
+                            let destination = (symbols.program_counter as i32 + value + symbols.pc_load_offset) as u32 & !3;
+                            if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
+                                return write!(f, "{name}");
+                            }
+                        }
+                    }
+                }
+
                 // display reg instead of arg to avoid writing "!" too soon
                 write!(f, "[{}", reg.display(self.options.reg_names))?;
 
-                if let Some(next) = iter.next() {
+                if let Some(next) = next {
                     if next.ends_deref() {
-                        write!(f, "], {}", next.display(self.options, self.symbols))?;
-                        return Ok(());
+                        return write!(f, "], {}", next.display(self.options, self.symbols));
                     } else {
                         write!(f, ", {}", next.display(self.options, self.symbols))?;
                         while let Some(more) = iter.next() {
@@ -191,7 +204,7 @@ impl<'a> Display for DisplayArgument<'a> {
             Argument::OffsetReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
             Argument::BranchDest(dest) => {
                 if let Some(symbols) = &self.symbols {
-                    let destination = (symbols.program_counter as i32 + *dest) as u32;
+                    let destination = ((symbols.program_counter as i32) + *dest) as u32 & !3;
                     if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
                         return write!(f, "{name}");
                     }
