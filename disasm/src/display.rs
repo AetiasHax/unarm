@@ -52,60 +52,56 @@ pub struct ParsedInsDisplay<'a> {
     symbols: Option<Symbols<'a>>,
 }
 
+impl<'a> ParsedInsDisplay<'a> {
+    fn write_arg<I>(&self, f: &mut Formatter<'_>, iter: &mut I, arg: &Argument) -> fmt::Result
+    where
+        I: Iterator<Item = &'a Argument>,
+    {
+        match arg {
+            Argument::Reg(Reg {
+                deref: true,
+                reg,
+                writeback,
+            }) => {
+                // display reg instead of arg to avoid writing "!" too soon
+                write!(f, "[{}", reg.display(self.options.reg_names))?;
+
+                if let Some(next) = iter.next() {
+                    if next.ends_deref() {
+                        write!(f, "], {}", next.display(self.options, self.symbols))?;
+                        return Ok(());
+                    } else {
+                        write!(f, ", {}", next.display(self.options, self.symbols))?;
+                        while let Some(more) = iter.next() {
+                            write!(f, ", {}", more.display(self.options, self.symbols))?;
+                        }
+                    }
+                }
+
+                write!(f, "]")?;
+                if *writeback {
+                    write!(f, "!")?;
+                }
+            }
+            _ => {
+                write!(f, "{}", arg.display(self.options, self.symbols))?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl<'a> Display for ParsedInsDisplay<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.ins.mnemonic)?;
-        if self.ins.args[0] != Argument::None {
+        let mut iter = self.ins.args_iter();
+        if let Some(arg) = iter.next() {
             write!(f, " ")?;
+            self.write_arg(f, &mut iter, arg)?;
         }
-        let mut comma = false;
-        let mut deref = false;
-        let mut writeback = false;
-        for arg in self.ins.args_iter() {
-            if deref {
-                match arg {
-                    Argument::OffsetImm(OffsetImm {
-                        post_indexed: true,
-                        value: _,
-                    })
-                    | Argument::OffsetReg(OffsetReg {
-                        add: _,
-                        post_indexed: true,
-                        reg: _,
-                    })
-                    | Argument::CoOption(_) => {
-                        deref = false;
-                        write!(f, "]")?;
-                        if writeback {
-                            write!(f, "!")?;
-                            writeback = false;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            if comma {
-                write!(f, ", ")?;
-            }
-            if let Argument::Reg(Reg {
-                deref: true,
-                reg,
-                writeback: wb,
-            }) = arg
-            {
-                deref = true;
-                writeback = *wb;
-                write!(f, "[{}", reg.display(self.options.reg_names))?;
-            } else {
-                write!(f, "{}", arg.display(self.options, self.symbols))?;
-            }
-            comma = true;
-        }
-        if deref {
-            write!(f, "]")?;
-            if writeback {
-                write!(f, "!")?;
-            }
+        while let Some(arg) = iter.next() {
+            write!(f, ", ")?;
+            self.write_arg(f, &mut iter, arg)?;
         }
         Ok(())
     }
@@ -124,6 +120,20 @@ impl Display for SignedHex {
 }
 
 impl Argument {
+    fn ends_deref(&self) -> bool {
+        matches!(
+            self,
+            Argument::OffsetImm(OffsetImm {
+                post_indexed: true,
+                value: _,
+            }) | Argument::OffsetReg(OffsetReg {
+                add: _,
+                post_indexed: true,
+                reg: _,
+            }) | Argument::CoOption(_)
+        )
+    }
+
     pub fn display<'a>(&'a self, options: DisplayOptions, symbols: Option<Symbols<'a>>) -> DisplayArgument<'_> {
         DisplayArgument {
             arg: self,
