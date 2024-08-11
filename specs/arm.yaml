@@ -886,8 +886,9 @@ opcodes:
 
   - name: blx$r
     desc: Branch and Link and Exchange to Thumb (register target)
-    bitmask: 0x0ffffff0
-    pattern: 0x012fff30
+    bitmask: 0x0ff000f0
+    pattern: 0x01200030
+    sbo: 0x000fff00
     flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rm]
@@ -895,16 +896,18 @@ opcodes:
 
   - name: bx
     desc: Branch and Exchange
-    bitmask: 0x0ffffff0
-    pattern: 0x012fff10
+    bitmask: 0x0ff000f0
+    pattern: 0x01200010
+    sbo: 0x000fff00
     modifiers: [cond]
     args: [Rm]
     uses: [Rm]
 
   - name: bxj
     desc: Branch and Exchange to Jazelle state
-    bitmask: 0x0ffffff0
-    pattern: 0x012fff20
+    bitmask: 0x0ff000f0
+    pattern: 0x01200020
+    sbo: 0x000fff00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rm]
@@ -930,14 +933,17 @@ opcodes:
 
   - name: clrex
     desc: Clear Exclusive
-    bitmask: 0xffffffff
-    pattern: 0xf57ff01f
+    bitmask: 0xfff000f0
+    pattern: 0xf5700010
+    sbo: 0x000ff00f
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
 
   - name: clz
     desc: Count Leading Zeros
-    bitmask: 0x0fff0ff0
-    pattern: 0x016f0f10
+    bitmask: 0x0ff000f0
+    pattern: 0x01600010
+    sbo: 0x000f0f00
     flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm]
@@ -946,8 +952,9 @@ opcodes:
 
   - name: cmn
     desc: Compare Negative
-    bitmask: 0x0df0f000
+    bitmask: 0x0df00000
     pattern: 0x01700000
+    sbz: 0x0000f000
     tags: [is_compare_op]
     modifiers: [cond, addr_data]
     args: [Rn]
@@ -965,22 +972,27 @@ opcodes:
 
   - name: cps
     desc: Change Processor State
-    bitmask: 0xfff1fe20
+    bitmask: 0xfff10020
     pattern: 0xf1000000
+    sbz: 0x0000fe00
     flags: [!MinVersion V6K]
     modifiers: [imod]
 
   - name: csdb
     desc: Consumption of Speculative Data Barrier
-    bitmask: 0x0fffffff
-    pattern: 0x0320f014
+    bitmask: 0x0fff00ff
+    pattern: 0x03200014
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: dbg
     desc: Debug Hint (does nothing)
-    bitmask: 0x0ffffff0
-    pattern: 0x0320f0f0
+    bitmask: 0x0fff00f0
+    pattern: 0x032000f0
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [dbg_option]
@@ -1099,8 +1111,9 @@ opcodes:
 
   - name: ldrex
     desc: Load Register Exclusive
-    bitmask: 0x0ff00fff
-    pattern: 0x01900f9f
+    bitmask: 0x0ff000f0
+    pattern: 0x01900090
+    sbo: 0x00000f0f
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
@@ -1109,8 +1122,9 @@ opcodes:
 
   - name: ldrexb
     desc: Load Register Exclusive Byte
-    bitmask: 0x0ff00fff
-    pattern: 0x01d00f9f
+    bitmask: 0x0ff000ff
+    pattern: 0x01d0009f
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
@@ -1119,8 +1133,9 @@ opcodes:
 
   - name: ldrexd
     desc: Load Register Exclusive Doubleword
-    bitmask: 0x0ff00fff
-    pattern: 0x01b00f9f
+    bitmask: 0x0ff000ff
+    pattern: 0x01b0009f
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
@@ -1129,8 +1144,9 @@ opcodes:
 
   - name: ldrexh
     desc: Load Register Exclusive Halfword
-    bitmask: 0x0ff00fff
-    pattern: 0x01f00f9f
+    bitmask: 0x0ff000ff
+    pattern: 0x01f0009f
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn_deref]
@@ -1241,8 +1257,9 @@ opcodes:
 
   - name: mov
     desc: Move
-    bitmask: 0x0def0000
+    bitmask: 0x0de00000
     pattern: 0x01a00000
+    sbz: 0x000f0000
     flags: [!Ual false]
     modifiers: [S, cond, addr_data]
     args: [Rd]
@@ -1307,8 +1324,10 @@ opcodes:
 
   - name: mrs
     desc: Move to ARM Register from Status Register
-    bitmask: 0x0fbf0fff
-    pattern: 0x010f0000
+    bitmask: 0x0fb00000
+    pattern: 0x01000000
+    sbz: 0x00000fff
+    sbo: 0x000f0000
     modifiers: [cond]
     args: [Rd, R]
     defs: [Rd]
@@ -1316,16 +1335,19 @@ opcodes:
 
   - name: msr$i
     desc: Move to Status Register from ARM Register
-    bitmask: 0x0fb0f000
-    pattern: 0x0320f000
+    bitmask: 0x0fb00000
+    pattern: 0x03200000
+    sbo: 0x0000f000
     modifiers: [cond]
     args: [field_mask, rotated_immed_8]
     defs: [field_mask]
 
   - name: msr
     desc: Move to Status Register from ARM Register
-    bitmask: 0x0fb0fff0
-    pattern: 0x0120f000
+    bitmask: 0x0fb000f0
+    pattern: 0x01200000
+    sbz: 0x00000f00
+    sbo: 0x0000f000
     modifiers: [cond]
     args: [field_mask, Rm]
     defs: [field_mask]
@@ -1333,8 +1355,9 @@ opcodes:
 
   - name: mul
     desc: Multiply
-    bitmask: 0x0fe0f0f0
+    bitmask: 0x0fe000f0
     pattern: 0x00000090
+    sbz: 0x0000f000
     modifiers: [S, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1351,8 +1374,10 @@ opcodes:
 
   - name: nop
     desc: No Operation
-    bitmask: 0x0fffffff
-    pattern: 0x0320f000
+    bitmask: 0x0fff00ff
+    pattern: 0x03200000
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
 
@@ -1432,8 +1457,9 @@ opcodes:
 
   - name: qadd
     desc: Saturating Add
-    bitmask: 0x0ff00ff0
+    bitmask: 0x0ff000f0
     pattern: 0x01000050
+    sbz: 0x00000f00
     flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
@@ -1442,8 +1468,9 @@ opcodes:
 
   - name: qadd16
     desc: Saturating Add two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06200f10
+    bitmask: 0x0ff000f0
+    pattern: 0x06200010
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1452,8 +1479,9 @@ opcodes:
 
   - name: qadd8
     desc: Saturating Add four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06200f90
+    bitmask: 0x0ff000f0
+    pattern: 0x06200090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1462,8 +1490,9 @@ opcodes:
 
   - name: qasx
     desc: Saturating Add and Subtract with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06200f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06200030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1472,8 +1501,9 @@ opcodes:
 
   - name: qdadd
     desc: Saturating Double and Add
-    bitmask: 0x0ff00ff0
+    bitmask: 0x0ff000f0
     pattern: 0x01400050
+    sbz: 0x00000f00
     flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
@@ -1482,8 +1512,9 @@ opcodes:
 
   - name: qdsub
     desc: Saturating Double and Subtract
-    bitmask: 0x0ff00ff0
+    bitmask: 0x0ff000f0
     pattern: 0x01600050
+    sbz: 0x00000f00
     flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
@@ -1492,8 +1523,9 @@ opcodes:
 
   - name: qsax
     desc: Saturating Subtract and Add with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06200f50
+    bitmask: 0x0ff000f0
+    pattern: 0x06200050
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1502,8 +1534,9 @@ opcodes:
 
   - name: qsub
     desc: Saturating Subtract
-    bitmask: 0x0ff00ff0
+    bitmask: 0x0ff000f0
     pattern: 0x01200050
+    sbz: 0x00000f00
     flags: [!MinVersion V5Te]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
@@ -1512,8 +1545,9 @@ opcodes:
 
   - name: qsub16
     desc: Saturating Subtract two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06200f70
+    bitmask: 0x0ff000f0
+    pattern: 0x06200070
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1522,8 +1556,9 @@ opcodes:
 
   - name: qsub8
     desc: Saturating Subtract four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06200ff0
+    bitmask: 0x0ff000f0
+    pattern: 0x062000f0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1532,8 +1567,9 @@ opcodes:
 
   - name: rev
     desc: Byte-Reverse Word
-    bitmask: 0x0fff0ff0
-    pattern: 0x06bf0f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06b00030
+    sbo: 0x000f0f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm]
@@ -1542,8 +1578,9 @@ opcodes:
 
   - name: rev16
     desc: Byte-Reverse Packed Halfword
-    bitmask: 0x0fff0ff0
-    pattern: 0x06bf0fb0
+    bitmask: 0x0ff000f0
+    pattern: 0x06b000b0
+    sbo: 0x000f0f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm]
@@ -1552,8 +1589,9 @@ opcodes:
 
   - name: revsh
     desc: Byte-Reverse Signed Halfword
-    bitmask: 0x0fff0ff0
-    pattern: 0x06ff0fb0
+    bitmask: 0x0ff000f0
+    pattern: 0x06f000b0
+    sbo: 0x000f0f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm]
@@ -1562,8 +1600,9 @@ opcodes:
 
   - name: rfe
     desc: Return From Exception
-    bitmask: 0xfe50ffff
+    bitmask: 0xfe500f00
     pattern: 0xf8100a00
+    sbz: 0x0000f0ff
     flags: [!MinVersion V6K]
     modifiers: [addr_system, rfe_rn]
 
@@ -1607,8 +1646,9 @@ opcodes:
 
   - name: sadd16
     desc: Signed Add two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06100f10
+    bitmask: 0x0ff000f0
+    pattern: 0x06100010
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1617,8 +1657,9 @@ opcodes:
 
   - name: sadd8
     desc: Signed Add four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06100f90
+    bitmask: 0x0ff000f0
+    pattern: 0x06100090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1627,8 +1668,9 @@ opcodes:
 
   - name: sasx
     desc: Signed Add and Subtract with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06100f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06100030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1646,8 +1688,9 @@ opcodes:
 
   - name: sel
     desc: Select
-    bitmask: 0x0ff00ff0
-    pattern: 0x06800fb0
+    bitmask: 0x0ff000f0
+    pattern: 0x068000b0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1656,22 +1699,26 @@ opcodes:
 
   - name: setend
     desc: Set Endian
-    bitmask: 0xfffffdff
+    bitmask: 0xffff00f0
     pattern: 0xf1010000
+    sbz: 0x0000fd0f
     flags: [!MinVersion V6K]
     args: [endian]
 
   - name: sev
     desc: Send Event
-    bitmask: 0x0fffffff
-    pattern: 0x0320f004
+    bitmask: 0x0fff00ff
+    pattern: 0x03200004
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: shadd16
     desc: Signed Halving Add two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06300f10
+    bitmask: 0x0ff000f0
+    pattern: 0x06300010
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1680,8 +1727,9 @@ opcodes:
 
   - name: shadd8
     desc: Signed Halving Add four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06300f90
+    bitmask: 0x0ff000f0
+    pattern: 0x06300090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1690,8 +1738,9 @@ opcodes:
 
   - name: shasx
     desc: Signed Halving Add and Subtract with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06300f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06300030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1700,8 +1749,9 @@ opcodes:
 
   - name: shsax
     desc: Signed Halving Subtract and Add with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06300f50
+    bitmask: 0x0ff000f0
+    pattern: 0x06300050
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1710,8 +1760,9 @@ opcodes:
 
   - name: shsub16
     desc: Signed Halving Subtract two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06300f70
+    bitmask: 0x0ff000f0
+    pattern: 0x06300070
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1720,8 +1771,9 @@ opcodes:
 
   - name: shsub8
     desc: Signed Halving Subtract four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06300ff0
+    bitmask: 0x0ff000f0
+    pattern: 0x063000f0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1849,8 +1901,9 @@ opcodes:
 
   - name: smul
     desc: Signed Multiply
-    bitmask: 0x0ff0f090
+    bitmask: 0x0ff00090
     pattern: 0x01600080
+    sbz: 0x0000f000
     flags: [!MinVersion V5Te]
     modifiers: [x, y, cond]
     args: [RdHi, Rm, Rs]
@@ -1868,8 +1921,9 @@ opcodes:
 
   - name: smulw
     desc: Signed Multiply Word
-    bitmask: 0x0ff0f0b0
+    bitmask: 0x0ff000b0
     pattern: 0x012000a0
+    sbz: 0x0000f000
     flags: [!MinVersion V5Te]
     modifiers: [y, cond]
     args: [RdHi, Rm, Rs]
@@ -1888,8 +1942,9 @@ opcodes:
 
   - name: srs
     desc: Store Return State
-    bitmask: 0xfe5fffe0
+    bitmask: 0xfe5f0f00
     pattern: 0xf84d0500
+    sbz: 0x0000f0e0
     flags: [!MinVersion V6K]
     modifiers: [addr_system]
     args: [sp_wb, spsr_mode]
@@ -1906,8 +1961,9 @@ opcodes:
 
   - name: ssat16
     desc: Signed Saturate two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06a00f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06a00030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, ssat_imm, Rm]
@@ -1916,8 +1972,9 @@ opcodes:
 
   - name: ssax
     desc: Signed Subtract and Add with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06100f50
+    bitmask: 0x0ff000f0
+    pattern: 0x06100050
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1926,8 +1983,9 @@ opcodes:
 
   - name: ssub16
     desc: Signed Subtract two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06100f70
+    bitmask: 0x0ff000f0
+    pattern: 0x06100070
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -1936,8 +1994,9 @@ opcodes:
 
   - name: ssub8
     desc: Signed Subtract four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06100ff0
+    bitmask: 0x0ff000f0
+    pattern: 0x061000f0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2024,8 +2083,9 @@ opcodes:
 
   - name: strex
     desc: Store Register Exclusive
-    bitmask: 0x0ff00ff0
-    pattern: 0x01800f90
+    bitmask: 0x0ff000f0
+    pattern: 0x01800090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
@@ -2034,8 +2094,9 @@ opcodes:
 
   - name: strexb
     desc: Store Register Exclusive Byte
-    bitmask: 0x0ff00ff0
-    pattern: 0x01c00f90
+    bitmask: 0x0ff000f0
+    pattern: 0x01c00090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
@@ -2044,8 +2105,9 @@ opcodes:
 
   - name: strexd
     desc: Store Register Exclusive Doubleword
-    bitmask: 0x0ff00ff0
-    pattern: 0x01a00f90
+    bitmask: 0x0ff000f0
+    pattern: 0x01a00090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
@@ -2054,8 +2116,9 @@ opcodes:
 
   - name: strexh
     desc: Store Register Exclusive Halfword
-    bitmask: 0x0ff00ff0
-    pattern: 0x01e00f90
+    bitmask: 0x0ff000f0
+    pattern: 0x01e00090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
@@ -2107,8 +2170,9 @@ opcodes:
 
   - name: swp
     desc: Swap
-    bitmask: 0x0ff00ff0
+    bitmask: 0x0ff000f0
     pattern: 0x01000090
+    sbz: 0x00000f00
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
     defs: [Rd]
@@ -2116,8 +2180,9 @@ opcodes:
 
   - name: swpb
     desc: Swap Byte
-    bitmask: 0x0ff00ff0
+    bitmask: 0x0ff000f0
     pattern: 0x01400090
+    sbz: 0x00000f00
     modifiers: [cond]
     args: [Rd, Rm, Rn_deref]
     defs: [Rd]
@@ -2125,8 +2190,9 @@ opcodes:
 
   - name: sxtab
     desc: Sign Extend one Byte to 32 bits and Add
-    bitmask: 0x0ff003f0
+    bitmask: 0x0ff000f0
     pattern: 0x06a00070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
@@ -2135,8 +2201,9 @@ opcodes:
 
   - name: sxtab16
     desc: Sign Extend two Bytes to 16 bits and Add
-    bitmask: 0x0ff003f0
+    bitmask: 0x0ff000f0
     pattern: 0x06800070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
@@ -2145,8 +2212,9 @@ opcodes:
 
   - name: sxtah
     desc: Sign Extend one Halfword to 32 bits and Add
-    bitmask: 0x0ff003f0
+    bitmask: 0x0ff000f0
     pattern: 0x06b00070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
@@ -2155,8 +2223,9 @@ opcodes:
 
   - name: sxtb
     desc: Sign Extend Byte to 32 bits
-    bitmask: 0x0fff03f0
+    bitmask: 0x0fff00f0
     pattern: 0x06af0070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
@@ -2165,8 +2234,9 @@ opcodes:
 
   - name: sxtb16
     desc: Sign Extend two Bytes to 16 bits
-    bitmask: 0x0fff03f0
+    bitmask: 0x0fff00f0
     pattern: 0x068f0070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
@@ -2175,8 +2245,9 @@ opcodes:
 
   - name: sxth
     desc: Sign Extend Halfword to 32 bits
-    bitmask: 0x0fff03f0
+    bitmask: 0x0fff00f0
     pattern: 0x06bf0070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
@@ -2185,8 +2256,9 @@ opcodes:
 
   - name: teq
     desc: Test Equivalence
-    bitmask: 0x0df0f000
+    bitmask: 0x0df00000
     pattern: 0x01300000
+    sbz: 0x0000f000
     modifiers: [cond, addr_data]
     tags: [is_compare_op]
     args: [Rn]
@@ -2194,8 +2266,9 @@ opcodes:
 
   - name: tst
     desc: Test
-    bitmask: 0x0df0f000
+    bitmask: 0x0df00000
     pattern: 0x01100000
+    sbz: 0x0000f000
     tags: [is_compare_op]
     modifiers: [cond, addr_data]
     args: [Rn]
@@ -2203,8 +2276,9 @@ opcodes:
 
   - name: uadd16
     desc: Unsigned Add two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06500f10
+    bitmask: 0x0ff000f0
+    pattern: 0x06500010
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2213,8 +2287,9 @@ opcodes:
 
   - name: uadd8
     desc: Unsigned Add four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06500f90
+    bitmask: 0x0ff000f0
+    pattern: 0x06500090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2223,8 +2298,9 @@ opcodes:
 
   - name: uasx
     desc: Unsigned Add and Subtract with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06500f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06500030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2241,8 +2317,9 @@ opcodes:
 
   - name: uhadd16
     desc: Unsigned Halving Add two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06700f10
+    bitmask: 0x0ff000f0
+    pattern: 0x06700010
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2251,8 +2328,9 @@ opcodes:
 
   - name: uhadd8
     desc: Unsigned Halving Add four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06700f90
+    bitmask: 0x0ff000f0
+    pattern: 0x06700090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2261,8 +2339,9 @@ opcodes:
 
   - name: uhasx
     desc: Unsigned Halving Add and Subtract with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06700f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06700030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2271,8 +2350,9 @@ opcodes:
 
   - name: uhsax
     desc: Unsigned Halving Subtract and Add with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06700f50
+    bitmask: 0x0ff000f0
+    pattern: 0x06700050
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2281,8 +2361,9 @@ opcodes:
 
   - name: uhsub16
     desc: Unsigned Halving Subtract two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06700f70
+    bitmask: 0x0ff000f0
+    pattern: 0x06700070
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2291,8 +2372,9 @@ opcodes:
 
   - name: uhsub8
     desc: Unsigned Halving Subtract four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06700ff0
+    bitmask: 0x0ff000f0
+    pattern: 0x067000f0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2329,8 +2411,9 @@ opcodes:
 
   - name: uqadd16
     desc: Unsigned Saturating Add two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06600f10
+    bitmask: 0x0ff000f0
+    pattern: 0x06600010
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2339,8 +2422,9 @@ opcodes:
 
   - name: uqadd8
     desc: Unsigned Saturating Add four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06600f90
+    bitmask: 0x0ff000f0
+    pattern: 0x06600090
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2349,8 +2433,9 @@ opcodes:
 
   - name: uqasx
     desc: Unsigned Saturating Add and Subtract with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06600f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06600030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2359,8 +2444,9 @@ opcodes:
 
   - name: uqsax
     desc: Unsigned Saturating Subtract and Add with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06600f50
+    bitmask: 0x0ff000f0
+    pattern: 0x06600050
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2369,8 +2455,9 @@ opcodes:
 
   - name: uqsub16
     desc: Unsigned Saturating Subtract two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06600f70
+    bitmask: 0x0ff000f0
+    pattern: 0x06600070
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2379,8 +2466,9 @@ opcodes:
 
   - name: uqsub8
     desc: Unsigned Saturating Subtract four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06600ff0
+    bitmask: 0x0ff000f0
+    pattern: 0x066000f0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2419,8 +2507,9 @@ opcodes:
 
   - name: usat16
     desc: Unsigned Saturate two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06e00f30
+    bitmask: 0x0ff000f0
+    pattern: 0x06e00030
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, usat_imm, Rm]
@@ -2429,8 +2518,9 @@ opcodes:
 
   - name: usax
     desc: Unsigned Subtract and Add with Exchange
-    bitmask: 0x0ff00ff0
-    pattern: 0x06500f50
+    bitmask: 0x0ff000f0
+    pattern: 0x06500050
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2439,8 +2529,9 @@ opcodes:
 
   - name: usub16
     desc: Unsigned Subtract two 16-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06500f70
+    bitmask: 0x0ff000f0
+    pattern: 0x06500070
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2449,8 +2540,9 @@ opcodes:
 
   - name: usub8
     desc: Unsigned Subtract four 8-bit integers
-    bitmask: 0x0ff00ff0
-    pattern: 0x06500ff0
+    bitmask: 0x0ff000f0
+    pattern: 0x065000f0
+    sbo: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
@@ -2459,8 +2551,9 @@ opcodes:
 
   - name: uxtab
     desc: Zero Extend Byte to 32 bits and Add
-    bitmask: 0x0ff003f0
+    bitmask: 0x0ff000f0
     pattern: 0x06e00070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
@@ -2469,8 +2562,9 @@ opcodes:
 
   - name: uxtab16
     desc: Zero Extend two Bytes to 16 bits and Add
-    bitmask: 0x0ff003f0
+    bitmask: 0x0ff000f0
     pattern: 0x06c00070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
@@ -2479,8 +2573,9 @@ opcodes:
 
   - name: uxtah
     desc: Zero Extend Halfword to 32 bits and Add
-    bitmask: 0x0ff003f0
+    bitmask: 0x0ff000f0
     pattern: 0x06f00070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
@@ -2489,8 +2584,9 @@ opcodes:
 
   - name: uxtb
     desc: Zero Extend Byte to 32 bits
-    bitmask: 0x0fff03f0
+    bitmask: 0x0fff00f0
     pattern: 0x06ef0070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
@@ -2499,8 +2595,9 @@ opcodes:
 
   - name: uxtb16
     desc: Zero Extend two Bytes to 16 bits
-    bitmask: 0x0fff03f0
+    bitmask: 0x0fff00f0
     pattern: 0x06cf0070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
@@ -2509,8 +2606,9 @@ opcodes:
 
   - name: uxth
     desc: Zero Extend Halfword to 32 bits
-    bitmask: 0x0fff03f0
+    bitmask: 0x0fff00f0
     pattern: 0x06ff0070
+    sbz: 0x00000300
     flags: [!MinVersion V6K]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
@@ -2519,21 +2617,27 @@ opcodes:
 
   - name: wfe
     desc: Wait For Event
-    bitmask: 0x0fffffff
-    pattern: 0x0320f002
+    bitmask: 0x0fff00ff
+    pattern: 0x03200002
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: wfi
     desc: Wait For Interrupt
-    bitmask: 0x0fffffff
-    pattern: 0x0320f003
+    bitmask: 0x0fff00ff
+    pattern: 0x03200003
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]
 
   - name: yield
     desc: Yield
-    bitmask: 0x0fffffff
-    pattern: 0x0320f001
+    bitmask: 0x0fff00ff
+    pattern: 0x03200001
+    sbo: 0x0000f000
+    sbz: 0x00000f00
     flags: [!MinVersion V6K]
     modifiers: [cond]

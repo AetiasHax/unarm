@@ -307,13 +307,13 @@ impl Opcode {
                                         }
                                     } else {
                                         if (code & 0x00000080) == 0x00000000 {
-                                            if (code & 0x0000ff87) == 0x00004700 {
+                                            if (code & 0x0000ff80) == 0x00004700 {
                                                 return Opcode::BxR;
                                             }
                                         } else {
                                             #[cfg(any(feature = "v5te", feature = "v6k"))]
                                             if flags.version >= ArmVersion::V5Te
-                                                && (code & 0x0000ff87) == 0x00004780
+                                                && (code & 0x0000ff80) == 0x00004780
                                             {
                                                 return Opcode::BlxR;
                                             }
@@ -1084,7 +1084,7 @@ impl Opcode {
                                     if (code & 0x00000020) == 0x00000000 {
                                         #[cfg(any(feature = "v6k"))]
                                         if flags.version >= ArmVersion::V6K
-                                            && (code & 0x0000fff7) == 0x0000b650
+                                            && (code & 0x0000fff0) == 0x0000b650
                                         {
                                             return Opcode::Setend;
                                         }
@@ -2479,30 +2479,58 @@ fn parse_blx_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     };
 }
 fn parse_blx_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    *out = ParsedIns {
-        mnemonic: "blx",
-        args: [
-            Argument::Reg(ins.field_rm_h2()),
-            Argument::None,
-            Argument::None,
-            Argument::None,
-            Argument::None,
-            Argument::None,
-        ],
-    };
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = ParsedIns {
+            mnemonic: "blx",
+            args: [
+                Argument::Reg(ins.field_rm_h2()),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    } else {
+        *out = ParsedIns {
+            mnemonic: "<illegal>",
+            args: [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+    }
 }
 fn parse_bx_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    *out = ParsedIns {
-        mnemonic: "bx",
-        args: [
-            Argument::Reg(ins.field_rm_h2()),
-            Argument::None,
-            Argument::None,
-            Argument::None,
-            Argument::None,
-            Argument::None,
-        ],
-    };
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = ParsedIns {
+            mnemonic: "bx",
+            args: [
+                Argument::Reg(ins.field_rm_h2()),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    } else {
+        *out = ParsedIns {
+            mnemonic: "<illegal>",
+            args: [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+    }
 }
 fn parse_cmn(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     *out = ParsedIns {
@@ -3183,17 +3211,31 @@ fn parse_sbc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     }
 }
 fn parse_setend(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    *out = ParsedIns {
-        mnemonic: "setend",
-        args: [
-            Argument::Endian(ins.field_endian()),
-            Argument::None,
-            Argument::None,
-            Argument::None,
-            Argument::None,
-            Argument::None,
-        ],
-    };
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = ParsedIns {
+            mnemonic: "setend",
+            args: [
+                Argument::Endian(ins.field_endian()),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    } else {
+        *out = ParsedIns {
+            mnemonic: "<illegal>",
+            args: [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+    }
 }
 fn parse_stm(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     if flags.ual {

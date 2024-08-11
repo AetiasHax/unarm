@@ -561,16 +561,18 @@ opcodes:
 
   - name: blx$r
     desc: Branch and Link and Exchange to ARM (register target)
-    bitmask: 0xff87
+    bitmask: 0xff80
     pattern: 0x4780
+    sbz: 0x0007
     flags: [!MinVersion V5Te]
     args: [Rm_H2]
     uses: [Rm_H2]
 
   - name: bx$r
     desc: Branch and Exchange
-    bitmask: 0xff87
+    bitmask: 0xff80
     pattern: 0x4700
+    sbz: 0x0007
     args: [Rm_H2]
     uses: [Rm_H2]
 
@@ -913,8 +915,9 @@ opcodes:
 
   - name: setend
     desc: Set Endian
-    bitmask: 0xfff7
+    bitmask: 0xfff0
     pattern: 0xb650
+    sbz: 0x0007
     flags: [!MinVersion V6K]
     args: [endian]
 
