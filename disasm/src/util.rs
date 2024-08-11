@@ -84,6 +84,10 @@ impl Ins {
 }
 
 impl ParsedIns {
+    pub fn is_illegal(&self) -> bool {
+        self.mnemonic == "<illegal>"
+    }
+
     pub fn registers(&self) -> impl Iterator<Item = Register> + '_ {
         self.args_iter().filter_map(|a| match a {
             Argument::Reg(reg) => Some(reg.reg),
