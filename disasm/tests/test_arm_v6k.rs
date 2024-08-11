@@ -273,6 +273,7 @@ mod tests {
         assert_asm!(0xe0d12fbf, "ldrh r2, [r1], #0xff");
         assert_asm!(0xe01120b3, "ldrh r2, [r1], -r3");
         assert_asm!(0xe15101b4, "ldrh r0, [r1, #-0x14]");
+        assert_asm!(0xe1f030b1, "ldrh r3, [r0, #0x1]!");
     }
 
     #[test]
@@ -284,6 +285,7 @@ mod tests {
         assert_asm!(0xe0d12fdf, "ldrsb r2, [r1], #0xff");
         assert_asm!(0xe01120d3, "ldrsb r2, [r1], -r3");
         assert_asm!(0xe15101d4, "ldrsb r0, [r1, #-0x14]");
+        assert_asm!(0xe1f030d1, "ldrsb r3, [r0, #0x1]!");
     }
 
     #[test]
@@ -295,6 +297,7 @@ mod tests {
         assert_asm!(0xe0d12fff, "ldrsh r2, [r1], #0xff");
         assert_asm!(0xe01120f3, "ldrsh r2, [r1], -r3");
         assert_asm!(0xe15101f4, "ldrsh r0, [r1, #-0x14]");
+        assert_asm!(0xe1f030f1, "ldrsh r3, [r0, #0x1]!");
     }
 
     #[test]

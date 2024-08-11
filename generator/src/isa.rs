@@ -483,6 +483,15 @@ pub struct Opcode {
     modifiers: Box<[String]>,
     #[serde(default)]
     pub args: Box<[String]>,
+
+    /// Should Be One, these bits must be 1 or else the instruction is illegal
+    #[serde(default)]
+    sbo: u32,
+
+    /// Should Be Zero, these bits must be 0 or else the instruction is illegal
+    #[serde(default)]
+    sbz: u32,
+
     pub defs: Option<Box<[String]>>,
     pub uses: Option<Box<[String]>>,
 }
@@ -498,7 +507,7 @@ impl Opcode {
             )
         }
 
-        let mut bitmask_acc = self.bitmask;
+        let mut bitmask_acc = self.bitmask | self.sbo_sbz_bitmask();
         for modifier in self.modifiers.iter() {
             let modifier = isa
                 .get_modifier(modifier)
@@ -659,6 +668,14 @@ impl Opcode {
                 Some(*version)
             })
             .next()
+    }
+
+    pub fn sbo_sbz_bitmask(&self) -> u32 {
+        self.sbo | self.sbz
+    }
+
+    pub fn sbo_sbz_pattern(&self) -> u32 {
+        self.sbo
     }
 }
 

@@ -390,13 +390,6 @@ modifiers:
     pattern: 0x00000020
     suffix: r
 
-  - name: sbz_12_to_16
-    desc: Bits 12..16 should be zero (SBZ)
-    bitmask: 0x0000f000
-    cases:
-      - name: valid
-        pattern: 0x00000000
-
   - name: imod
     desc: Modify interrupt flags
     cases:
@@ -964,9 +957,9 @@ opcodes:
     desc: Compare
     bitmask: 0x0df00000
     pattern: 0x01500000
+    sbz: 0x0000f000
     tags: [is_compare_op]
-    # SBZ modifier added to decrease parse priority so that LDRSB, LDRH, and LDRSH are checked first
-    modifiers: [cond, addr_data, sbz_12_to_16]
+    modifiers: [cond, addr_data]
     args: [Rn]
     uses: [Rn]
 
@@ -1349,8 +1342,9 @@ opcodes:
 
   - name: mvn
     desc: Move Not
-    bitmask: 0x0def0000
+    bitmask: 0x0de00000
     pattern: 0x01e00000
+    sbz: 0x000f0000
     modifiers: [S, cond, addr_data]
     args: [Rd]
     defs: [Rd]

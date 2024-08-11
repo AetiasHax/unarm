@@ -278,7 +278,7 @@ fn generate_instruction_parse_body(
         .collect::<Result<Vec<_>>>()?;
     let modifier_cases = opcode.get_modifier_cases(isa, ual)?;
 
-    let body = {
+    let match_modifiers = {
         let mut case_bodies: Vec<TokenStream> = vec![];
         if modifier_cases.is_empty() {
             let mnemonic = opcode.name(ual).to_string();
@@ -358,6 +358,26 @@ fn generate_instruction_parse_body(
             }
         }
     };
+
+    let body = {
+        let bitmask = opcode.sbo_sbz_bitmask();
+        if bitmask == 0 {
+            match_modifiers
+        } else {
+            let pattern = opcode.sbo_sbz_pattern();
+
+            let bitmask = HexLiteral(bitmask);
+            let pattern = HexLiteral(pattern);
+            quote! {
+                if (ins.code & #bitmask) == #pattern {
+                    #match_modifiers
+                } else {
+                    *out = #illegal_ins;
+                }
+            }
+        }
+    };
+
     Ok(body)
 }
 
