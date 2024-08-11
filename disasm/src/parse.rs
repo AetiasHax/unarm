@@ -41,6 +41,15 @@ impl<'a> Parser<'a> {
         self.address += ins_size as u32;
         Some((ins_size as u32, code))
     }
+
+    pub fn seek_forward(&mut self, address: u32) {
+        if address < self.address {
+            panic!("cannot seek backwards using Parser::seek_forward");
+        }
+        let diff = address - self.address;
+        self.data = &self.data[diff as usize..];
+        self.address = address;
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
