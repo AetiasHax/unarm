@@ -785,6 +785,10 @@ mod tests {
         assert_asm!(0xc9843333, "stmibgt r4, {r0, r1, r4, r5, r8, r9, r12, sp}");
         assert_asm!(0xe8450003, "stmda r5, {r0, r1}^");
         assert_asm!(0xe8468003, "stmda r6, {r0, r1, pc}^");
+        assert_asm!(
+            0xe9e07ffc,
+            "stmib r0!, {r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, sp, lr}^"
+        );
     }
 
     #[test]

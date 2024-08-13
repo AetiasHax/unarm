@@ -2045,6 +2045,16 @@ opcodes:
     args: [Rn, registers_c]
     uses: [Rn, registers_c]
 
+  # Non-standard, but some platforms have this
+  - name: stm$pw
+    desc: Store Multiple (privilege, writeback)
+    bitmask: 0x0e700000
+    pattern: 0x08600000
+    modifiers: [addr_ldm_stm, cond]
+    args: [Rn_wb, registers_c]
+    defs: [Rn_wb]
+    uses: [Rn_wb, registers_c]
+
   - name: str
     desc: Store Register
     bitmask: 0x0c500000
