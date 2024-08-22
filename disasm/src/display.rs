@@ -204,7 +204,7 @@ impl<'a> Display for DisplayArgument<'a> {
             Argument::OffsetReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
             Argument::BranchDest(dest) => {
                 if let Some(symbols) = &self.symbols {
-                    let destination = ((symbols.program_counter as i32) + *dest) as u32 & !3;
+                    let destination = ((symbols.program_counter as i32) + *dest) as u32 & !1;
                     if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
                         return write!(f, "{name}");
                     }

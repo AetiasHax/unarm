@@ -97,6 +97,7 @@ mod tests {
         assert_asm!(0xfafffffd, "blx #-0x4");
         assert_asm!(0xe12fff30, "blx r0");
         assert_asm!(0x512fff35, "blxpl r5");
+        assert_asm!(0xfb000000, "blx #0xa");
     }
 
     #[test]
