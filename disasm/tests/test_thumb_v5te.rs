@@ -89,6 +89,8 @@ mod tests {
     fn test_blx() {
         assert_bl!(0xf099e866, "blx #0x990d0");
         assert_bl!(0xf799e866, "blx #-0x66f30");
+        assert_bl!(0xf000e800, "blx #0x4");
+        assert_bl!(0xf000e801, "blx #0x4");
         assert_asm!(0x47d0, "blx r10");
     }
 
