@@ -1,12 +1,11 @@
 pub mod args;
+#[cfg(feature = "arm")]
+pub mod arm;
 mod display;
 pub mod parse;
-#[cfg(feature = "v4t")]
-pub mod v4t;
-#[cfg(feature = "v5te")]
-pub mod v5te;
-#[cfg(feature = "v6k")]
-pub mod v6k;
+#[cfg(feature = "thumb")]
+pub mod thumb;
+mod util;
 
-pub use display::{DisplayOptions, R9Use, RegNames};
+pub use display::{DisplayOptions, LookupSymbol, R9Use, RegNames, SignedHex, Symbols};
 pub use parse::*;

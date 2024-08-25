@@ -10,7 +10,19 @@ use crate::{
 
 impl ParsedIns {
     pub fn display(&self, options: DisplayOptions) -> ParsedInsDisplay<'_> {
-        ParsedInsDisplay { ins: self, options }
+        ParsedInsDisplay {
+            ins: self,
+            options,
+            symbols: None,
+        }
+    }
+
+    pub fn display_with_symbols<'a>(&'a self, options: DisplayOptions, symbols: Symbols<'a>) -> ParsedInsDisplay<'_> {
+        ParsedInsDisplay {
+            ins: self,
+            options,
+            symbols: Some(symbols),
+        }
     }
 }
 
@@ -19,71 +31,96 @@ pub struct DisplayOptions {
     pub reg_names: RegNames,
 }
 
+pub trait LookupSymbol {
+    fn lookup_symbol_name(&self, source: u32, destination: u32) -> Option<&str>;
+}
+
+#[derive(Clone, Copy)]
+pub struct Symbols<'a> {
+    pub lookup: &'a dyn LookupSymbol,
+    pub program_counter: u32,
+    pub pc_load_offset: i32,
+}
+
 pub struct ParsedInsDisplay<'a> {
     ins: &'a ParsedIns,
     options: DisplayOptions,
+    symbols: Option<Symbols<'a>>,
 }
 
-impl<'a> Display for ParsedInsDisplay<'a> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.ins.mnemonic)?;
-        if self.ins.args[0] != Argument::None {
-            write!(f, " ")?;
-        }
-        let mut comma = false;
-        let mut deref = false;
-        let mut writeback = false;
-        for arg in self.ins.args_iter() {
-            if deref {
-                match arg {
-                    Argument::OffsetImm(OffsetImm {
-                        post_indexed: true,
-                        value: _,
-                    })
-                    | Argument::OffsetReg(OffsetReg {
-                        add: _,
-                        post_indexed: true,
-                        reg: _,
-                    })
-                    | Argument::CoOption(_) => {
-                        deref = false;
-                        write!(f, "]")?;
-                        if writeback {
-                            write!(f, "!")?;
-                            writeback = false;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            if comma {
-                write!(f, ", ")?;
-            }
-            if let Argument::Reg(Reg {
+impl<'a> ParsedInsDisplay<'a> {
+    fn write_arg<I>(&self, f: &mut Formatter<'_>, iter: &mut I, arg: &Argument) -> fmt::Result
+    where
+        I: Iterator<Item = &'a Argument>,
+    {
+        match arg {
+            Argument::Reg(Reg {
                 deref: true,
                 reg,
-                writeback: wb,
-            }) = arg
-            {
-                deref = true;
-                writeback = *wb;
+                writeback,
+            }) => {
+                let next = iter.next();
+
+                // replace PC-relative dereferences with symbol name
+                if let Some(symbols) = self.symbols {
+                    if *reg == Register::Pc {
+                        if let Some(Argument::OffsetImm(OffsetImm {
+                            post_indexed: false,
+                            value,
+                        })) = next
+                        {
+                            let destination = (symbols.program_counter as i32 + value + symbols.pc_load_offset) as u32 & !3;
+                            if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
+                                return write!(f, "{name}");
+                            }
+                        }
+                    }
+                }
+
+                // display reg instead of arg to avoid writing "!" too soon
                 write!(f, "[{}", reg.display(self.options.reg_names))?;
-            } else {
-                write!(f, "{}", arg.display(self.options))?;
+
+                if let Some(next) = next {
+                    if next.ends_deref() {
+                        return write!(f, "], {}", next.display(self.options, self.symbols));
+                    } else {
+                        write!(f, ", {}", next.display(self.options, self.symbols))?;
+                        while let Some(more) = iter.next() {
+                            write!(f, ", {}", more.display(self.options, self.symbols))?;
+                        }
+                    }
+                }
+
+                write!(f, "]")?;
+                if *writeback {
+                    write!(f, "!")?;
+                }
             }
-            comma = true;
-        }
-        if deref {
-            write!(f, "]")?;
-            if writeback {
-                write!(f, "!")?;
+            _ => {
+                write!(f, "{}", arg.display(self.options, self.symbols))?;
             }
         }
         Ok(())
     }
 }
 
-pub struct SignedHex(i32);
+impl<'a> Display for ParsedInsDisplay<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.ins.mnemonic)?;
+        let mut iter = self.ins.args_iter();
+        if let Some(arg) = iter.next() {
+            write!(f, " ")?;
+            self.write_arg(f, &mut iter, arg)?;
+        }
+        while let Some(arg) = iter.next() {
+            write!(f, ", ")?;
+            self.write_arg(f, &mut iter, arg)?;
+        }
+        Ok(())
+    }
+}
+
+pub struct SignedHex(pub i32);
 
 impl Display for SignedHex {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -96,14 +133,33 @@ impl Display for SignedHex {
 }
 
 impl Argument {
-    pub fn display(&self, options: DisplayOptions) -> DisplayArgument<'_> {
-        DisplayArgument { arg: self, options }
+    fn ends_deref(&self) -> bool {
+        matches!(
+            self,
+            Argument::OffsetImm(OffsetImm {
+                post_indexed: true,
+                value: _,
+            }) | Argument::OffsetReg(OffsetReg {
+                add: _,
+                post_indexed: true,
+                reg: _,
+            }) | Argument::CoOption(_)
+        )
+    }
+
+    pub fn display<'a>(&'a self, options: DisplayOptions, symbols: Option<Symbols<'a>>) -> DisplayArgument<'_> {
+        DisplayArgument {
+            arg: self,
+            options,
+            symbols,
+        }
     }
 }
 
 pub struct DisplayArgument<'a> {
     arg: &'a Argument,
     options: DisplayOptions,
+    symbols: Option<Symbols<'a>>,
 }
 
 impl<'a> Display for DisplayArgument<'a> {
@@ -146,7 +202,15 @@ impl<'a> Display for DisplayArgument<'a> {
             Argument::ShiftImm(x) => write!(f, "{}", x),
             Argument::ShiftReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
             Argument::OffsetReg(x) => write!(f, "{}", x.display(self.options.reg_names)),
-            Argument::BranchDest(x) => write!(f, "{}", SignedHex(*x)),
+            Argument::BranchDest(dest) => {
+                if let Some(symbols) = &self.symbols {
+                    let destination = ((symbols.program_counter as i32) + *dest) as u32 & !1;
+                    if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
+                        return write!(f, "{name}");
+                    }
+                }
+                write!(f, "{}", SignedHex(*dest))
+            }
             Argument::StatusMask(x) => write!(f, "{}", x),
             Argument::Shift(x) => write!(f, "{}", x),
             Argument::SatImm(x) => write!(f, "#0x{:x}", x),

@@ -1,4 +1,4 @@
-use unarm::{v6k::arm::Ins, DisplayOptions, R9Use, RegNames};
+use unarm::{arm::Ins, DisplayOptions, R9Use, RegNames};
 
 macro_rules! assert_asm {
     ($code:literal, $options:expr, $disasm:literal) => {{
@@ -16,6 +16,7 @@ pub fn test_av() {
             av_registers: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     assert_asm!(0xe0812007, options, "add a3, a2, v4");
     assert_asm!(0xe1d52153, options, "bics a3, v2, a4, asr a2");
@@ -32,18 +33,21 @@ pub fn test_r9() {
             r9_use: R9Use::Pid,
             ..Default::default()
         },
+        ..Default::default()
     };
     let tls = DisplayOptions {
         reg_names: RegNames {
             r9_use: R9Use::Tls,
             ..Default::default()
         },
+        ..Default::default()
     };
     let v6 = DisplayOptions {
         reg_names: RegNames {
             av_registers: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     let r9 = Default::default();
 
@@ -65,12 +69,14 @@ pub fn test_r10() {
             explicit_stack_limit: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     let v7 = DisplayOptions {
         reg_names: RegNames {
             av_registers: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     let r10 = Default::default();
 
@@ -90,12 +96,14 @@ pub fn test_r11() {
             frame_pointer: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     let v8 = DisplayOptions {
         reg_names: RegNames {
             av_registers: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     let r11 = Default::default();
 
@@ -115,6 +123,7 @@ pub fn test_r12() {
             ip: true,
             ..Default::default()
         },
+        ..Default::default()
     };
     let r12 = Default::default();
 

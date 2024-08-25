@@ -1,6 +1,5 @@
-mod v4t;
-mod v5te;
-mod v6k;
+mod arm;
+mod thumb;
 
 use std::time::Instant;
 
@@ -43,35 +42,15 @@ fn main() {
     let Some(version) = version else {
         panic!("Expected one of: v5te");
     };
-    let flags = ParseFlags { ual };
+    let flags = ParseFlags { ual, version };
 
     println!("Starting {} threads running {} iterations", threads, iterations);
     let start = Instant::now();
-    match version {
-        ArmVersion::V4T => {
-            if arm {
-                v4t::arm::fuzz(threads, iterations, flags);
-            }
-            if thumb {
-                v4t::thumb::fuzz(threads, iterations, flags);
-            }
-        }
-        ArmVersion::V5Te => {
-            if arm {
-                v5te::arm::fuzz(threads, iterations, flags);
-            }
-            if thumb {
-                v5te::thumb::fuzz(threads, iterations, flags);
-            }
-        }
-        ArmVersion::V6K => {
-            if arm {
-                v6k::arm::fuzz(threads, iterations, flags);
-            }
-            if thumb {
-                v6k::thumb::fuzz(threads, iterations, flags);
-            }
-        }
+    if arm {
+        arm::fuzz(threads, iterations, flags);
+    }
+    if thumb {
+        thumb::fuzz(threads, iterations, flags);
     }
     println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 }

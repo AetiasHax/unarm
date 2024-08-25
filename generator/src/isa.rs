@@ -18,11 +18,13 @@ pub struct Isa {
     pub ins_size: u32,
     pub fields: Box<[Field]>,
     pub modifiers: Box<[Modifier]>,
+    pub tags: Box<[Tag]>,
     pub opcodes: Box<[Opcode]>,
 }
 
 impl Isa {
-    pub fn load(path: &Path) -> Result<Self> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let path = path.as_ref();
         let file = File::open(path).with_context(|| format!("Failed to open ISA file '{}'", path.display()))?;
         let isa: Self =
             serde_yml::from_reader(file).with_context(|| format!("While parsing ISA file '{}'", path.display()))?;
@@ -54,6 +56,13 @@ impl Isa {
             .iter()
             .find(|f| f.name == name)
             .with_context(|| format!("Failed to find field '{name}'"))
+    }
+
+    pub fn get_tag(&self, name: &str) -> Result<&Tag> {
+        self.tags
+            .iter()
+            .find(|m| m.name == name)
+            .with_context(|| format!("Failed to find tag '{name}'"))
     }
 
     pub fn get_max_args(&self, ual: bool) -> Result<usize> {
@@ -115,9 +124,9 @@ impl Field {
     pub fn ual_flag(&self) -> Option<bool> {
         self.flags
             .iter()
-            .map(|f| {
-                let Flag::Ual(ual) = f;
-                *ual
+            .filter_map(|f| {
+                let Flag::Ual(ual) = f else { return None };
+                Some(*ual)
             })
             .next()
     }
@@ -296,6 +305,10 @@ impl Modifier {
         format!("modifier_{}", self.name.to_lowercase())
     }
 
+    pub fn tag_function_name(&self) -> String {
+        format!("has_{}", self.name.to_lowercase())
+    }
+
     pub fn enum_name(&self) -> String {
         capitalize_with_delimiter(self.name.clone(), '_')
     }
@@ -465,9 +478,20 @@ pub struct Opcode {
     #[serde(default)]
     pub flags: Box<[Flag]>,
     #[serde(default)]
+    pub tags: Box<[String]>,
+    #[serde(default)]
     modifiers: Box<[String]>,
     #[serde(default)]
     pub args: Box<[String]>,
+
+    /// Should Be One, these bits must be 1 or else the instruction is illegal
+    #[serde(default)]
+    sbo: u32,
+
+    /// Should Be Zero, these bits must be 0 or else the instruction is illegal
+    #[serde(default)]
+    sbz: u32,
+
     pub defs: Option<Box<[String]>>,
     pub uses: Option<Box<[String]>>,
 }
@@ -483,7 +507,7 @@ impl Opcode {
             )
         }
 
-        let mut bitmask_acc = self.bitmask;
+        let mut bitmask_acc = self.bitmask | self.sbo_sbz_bitmask();
         for modifier in self.modifiers.iter() {
             let modifier = isa
                 .get_modifier(modifier)
@@ -513,6 +537,12 @@ impl Opcode {
         if bitmask_acc != complete_bitmask {
             bail!("Opcode '{}' has an incomplete bitmask 0x{:08x}", self.name, bitmask_acc)
         }
+
+        for tag in self.tags.iter() {
+            isa.get_tag(tag)
+                .with_context(|| format!("While validating opcode '{}'", self.name))?;
+        }
+
         Ok(())
     }
 
@@ -544,6 +574,14 @@ impl Opcode {
 
     pub fn parser_name(&self) -> String {
         format!("parse_{}", self.ident_name())
+    }
+
+    pub fn has_modifier(&self, name: &str) -> bool {
+        self.modifiers.iter().any(|modifier| modifier == name)
+    }
+
+    pub fn has_tag(&self, name: &str) -> bool {
+        self.tags.iter().any(|tag| tag == name)
     }
 
     pub fn get_modifiers(&self, isa: &Isa, ual: bool) -> Result<Vec<Modifier>> {
@@ -615,11 +653,29 @@ impl Opcode {
     pub fn ual_flag(&self) -> Option<bool> {
         self.flags
             .iter()
-            .map(|f| {
-                let Flag::Ual(ual) = f;
-                *ual
+            .filter_map(|f| {
+                let Flag::Ual(ual) = f else { return None };
+                Some(*ual)
             })
             .next()
+    }
+
+    pub fn min_version_flag(&self) -> Option<ArmVersion> {
+        self.flags
+            .iter()
+            .filter_map(|f| {
+                let Flag::MinVersion(version) = f else { return None };
+                Some(*version)
+            })
+            .next()
+    }
+
+    pub fn sbo_sbz_bitmask(&self) -> u32 {
+        self.sbo | self.sbz
+    }
+
+    pub fn sbo_sbz_pattern(&self) -> u32 {
+        self.sbo
     }
 }
 
@@ -648,4 +704,35 @@ impl OpcodeSuffix {
 #[derive(Deserialize, Clone, PartialEq, Eq)]
 pub enum Flag {
     Ual(bool),
+    MinVersion(ArmVersion),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Deserialize)]
+pub enum ArmVersion {
+    V5Te,
+    V6K,
+}
+
+impl ArmVersion {
+    /// Lists which features will enable this version when used as a flag. Only one feature is needed.
+    pub fn feature_names(&self) -> &[&str] {
+        match self {
+            ArmVersion::V5Te => &["v5te", "v6k"],
+            ArmVersion::V6K => &["v6k"],
+        }
+    }
+
+    pub fn enum_variant_name(&self) -> &str {
+        match self {
+            ArmVersion::V5Te => "V5Te",
+            ArmVersion::V6K => "V6K",
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Tag {
+    pub name: String,
+    pub desc: String,
 }
