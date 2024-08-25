@@ -30,14 +30,14 @@ The [`/disasm/`](/disasm/) module has disassemblers for ARM and Thumb instructio
 
 Tested on all 2^32 ARM instructions in each supported version using the [`/fuzz/`](/fuzz/) module on a single thread:
 
-- Intel Core i7-8700: 140 million insn/s (~534 MB/s)
+- AMD Ryzen 7 7700X: 160 million insn/s (~610 MB/s)
 
 ### Performance (Thumb)
 
 Tested on all 2^16 Thumb instructions in each supported version using the [`/fuzz/`](/fuzz/) module on a single thread,
 averaged after 100,000 iterations:
 
-- Intel Core i7-8700: 256 million insn/s (~488 MB/s)
+- AMD Ryzen 7 7700X: 300 million insn/s (~572 MB/s)
 
 ## Usage
 
