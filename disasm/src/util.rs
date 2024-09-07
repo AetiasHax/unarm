@@ -1,5 +1,5 @@
 use crate::{
-    args::{Argument, RegList, Register},
+    args::{Argument, OffsetImm, Reg, RegList, Register},
     arm, thumb, Ins, ParsedIns,
 };
 
@@ -50,7 +50,7 @@ impl Ins {
         }
     }
 
-    pub fn mnemonic(&self) -> &str {
+    pub fn mnemonic(self) -> &'static str {
         match self {
             Ins::Arm(ins) => ins.op.mnemonic(),
             Ins::Thumb(ins) => ins.op.mnemonic(),
@@ -104,5 +104,30 @@ impl ParsedIns {
                 _ => None,
             })
             .next()
+    }
+
+    pub fn pc_relative_reference(&self, pc: u32, pc_load_offset: i32) -> Option<u32> {
+        let mut args = self.args_iter().peekable();
+        while let Some(arg) = args.next() {
+            let next = args.peek();
+            match arg {
+                Argument::Reg(Reg { reg: Register::Pc, .. }) => {
+                    if let Some(Argument::OffsetImm(OffsetImm {
+                        post_indexed: false,
+                        value,
+                    })) = next
+                    {
+                        let destination = (pc as i32 + value + pc_load_offset) as u32 & !3;
+                        return Some(destination);
+                    }
+                }
+                Argument::BranchDest(value) => {
+                    let destination = (pc as i32 + *value) as u32 & !3;
+                    return Some(destination);
+                }
+                _ => continue,
+            }
+        }
+        None
     }
 }
