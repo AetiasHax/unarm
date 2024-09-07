@@ -1,11 +1,11 @@
 [package]
 name = "unarm"
-version = "1.5.0"
+version = "1.6.0"
 edition = "2021"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
 description = "Disassembles ARM instructions"
-keywords = ["arm", "armv5te"]
+keywords = ["arm", "disassembler"]
 repository = "https://github.com/AetiasHax/unarm"
 readme = "../README.md"
 
