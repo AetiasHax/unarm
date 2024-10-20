@@ -241,8 +241,8 @@ mod tests {
 
     #[test]
     fn test_mla() {
-        assert_asm!(0xe0212394, "mla r2, r4, r3, r1");
-        assert_asm!(0xa0312394, "mlasge r2, r4, r3, r1");
+        assert_asm!(0xe0212394, "mla r1, r4, r3, r2");
+        assert_asm!(0xa0312394, "mlasge r1, r4, r3, r2");
     }
 
     #[test]
