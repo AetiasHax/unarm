@@ -342,8 +342,8 @@ mod tests {
 
     #[test]
     fn test_mla() {
-        assert_asm!(0xe0212394, "mla r2, r4, r3, r1");
-        assert_asm!(0xa0312394, "mlasge r2, r4, r3, r1");
+        assert_asm!(0xe0212394, "mla r1, r4, r3, r2");
+        assert_asm!(0xa0312394, "mlasge r1, r4, r3, r2");
     }
 
     #[test]
@@ -636,10 +636,16 @@ mod tests {
 
     #[test]
     fn test_smla() {
-        assert_asm!(0xe1012384, "smlabb r2, r4, r3, r1");
-        assert_asm!(0xe10123a4, "smlatb r2, r4, r3, r1");
-        assert_asm!(0xe10123c4, "smlabt r2, r4, r3, r1");
-        assert_asm!(0xe10123e4, "smlatt r2, r4, r3, r1");
+        assert_asm!(0xe1012384, "smlabb r1, r4, r3, r2");
+        assert_asm!(0xe10123a4, "smlatb r1, r4, r3, r2");
+        assert_asm!(0xe10123c4, "smlabt r1, r4, r3, r2");
+        assert_asm!(0xe10123e4, "smlatt r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smlad() {
+        assert_asm!(0xe7012314, "smlad r1, r4, r3, r2");
+        assert_asm!(0x07012334, "smladxeq r1, r4, r3, r2");
     }
 
     #[test]
@@ -660,8 +666,8 @@ mod tests {
 
     #[test]
     fn test_smlaw() {
-        assert_asm!(0xe1212384, "smlawb r2, r4, r3, r1");
-        assert_asm!(0xe12123c4, "smlawt r2, r4, r3, r1");
+        assert_asm!(0xe1212384, "smlawb r1, r4, r3, r2");
+        assert_asm!(0xe12123c4, "smlawt r1, r4, r3, r2");
     }
 
     #[test]

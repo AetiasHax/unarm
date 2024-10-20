@@ -1251,9 +1251,9 @@ opcodes:
     bitmask: 0x0fe000f0
     pattern: 0x00200090
     modifiers: [S, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: mov
     desc: Move
@@ -1786,9 +1786,9 @@ opcodes:
     pattern: 0x01000080
     flags: [!MinVersion V5Te]
     modifiers: [x, y, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: smlad
     desc: Signed Multiply Accumulate Dual
@@ -1796,9 +1796,9 @@ opcodes:
     pattern: 0x07000010
     flags: [!MinVersion V6K]
     modifiers: [dual, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: smlal
     desc: Signed Multiply Accumulate Long
@@ -1835,9 +1835,9 @@ opcodes:
     pattern: 0x01200080
     flags: [!MinVersion V5Te]
     modifiers: [y, cond]
-    args: [Rd, Rm, Rs, Rn]
-    defs: [Rd]
-    uses: [Rm, Rs, Rn]
+    args: [RdHi, Rm, Rs, Rn_12]
+    defs: [RdHi]
+    uses: [Rm, Rs, Rn_12]
 
   - name: smlsd
     desc: Signed Multiply Subtract accumulate Dual
