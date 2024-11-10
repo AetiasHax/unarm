@@ -808,12 +808,16 @@ tags:
     desc: This opcode loads multiple values from memory into registers.
   - name: is_compare_op
     desc: This opcode compares a register with another value.
+  - name: is_data_operation
+    desc: This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and
+      selects. Does not include moves, loads, stores, swaps, compares and coprocessor opcodes.
 
 opcodes:
   - name: adc
     desc: Add with Carry
     bitmask: 0x0de00000
     pattern: 0x00a00000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -823,6 +827,7 @@ opcodes:
     desc: Add
     bitmask: 0x0de00000
     pattern: 0x00800000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -832,6 +837,7 @@ opcodes:
     desc: Bitwise AND
     bitmask: 0x0de00000
     pattern: 0x00000000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -842,6 +848,7 @@ opcodes:
     bitmask: 0x0fef0060
     pattern: 0x01a00040
     flags: [!Ual true]
+    tags: [is_data_operation]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -865,6 +872,7 @@ opcodes:
     desc: Bit Clear
     bitmask: 0x0de00000
     pattern: 0x01c00000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -945,6 +953,7 @@ opcodes:
     pattern: 0x01600010
     sbo: 0x000f0f00
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1001,6 +1010,7 @@ opcodes:
     desc: Bitwise Exclusive OR
     bitmask: 0x0de00000
     pattern: 0x00200000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -1194,6 +1204,7 @@ opcodes:
     bitmask: 0x0fef0060
     pattern: 0x01a00000
     flags: [!Ual true]
+    tags: [is_data_operation]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1204,6 +1215,7 @@ opcodes:
     bitmask: 0x0fef0060
     pattern: 0x01a00020
     flags: [!Ual true]
+    tags: [is_data_operation]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1250,6 +1262,7 @@ opcodes:
     desc: Multiply Accumulate
     bitmask: 0x0fe000f0
     pattern: 0x00200090
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1358,6 +1371,7 @@ opcodes:
     bitmask: 0x0fe000f0
     pattern: 0x00000090
     sbz: 0x0000f000
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1385,6 +1399,7 @@ opcodes:
     desc: Logical OR
     bitmask: 0x0de00000
     pattern: 0x01800000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -1395,6 +1410,7 @@ opcodes:
     bitmask: 0x0ff00070
     pattern: 0x06800010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, pack_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1405,6 +1421,7 @@ opcodes:
     bitmask: 0x0ff00070
     pattern: 0x06800050
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm, shift_imm]
     defs: [Rd]
@@ -1461,6 +1478,7 @@ opcodes:
     pattern: 0x01000050
     sbz: 0x00000f00
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1472,6 +1490,7 @@ opcodes:
     pattern: 0x06200010
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1483,6 +1502,7 @@ opcodes:
     pattern: 0x06200090
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1494,6 +1514,7 @@ opcodes:
     pattern: 0x06200030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1505,6 +1526,7 @@ opcodes:
     pattern: 0x01400050
     sbz: 0x00000f00
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1516,6 +1538,7 @@ opcodes:
     pattern: 0x01600050
     sbz: 0x00000f00
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1527,6 +1550,7 @@ opcodes:
     pattern: 0x06200050
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1538,6 +1562,7 @@ opcodes:
     pattern: 0x01200050
     sbz: 0x00000f00
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm, Rn]
     defs: [Rd]
@@ -1549,6 +1574,7 @@ opcodes:
     pattern: 0x06200070
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1560,6 +1586,7 @@ opcodes:
     pattern: 0x062000f0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1571,6 +1598,7 @@ opcodes:
     pattern: 0x06b00030
     sbo: 0x000f0f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1582,6 +1610,7 @@ opcodes:
     pattern: 0x06b000b0
     sbo: 0x000f0f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1593,6 +1622,7 @@ opcodes:
     pattern: 0x06f000b0
     sbo: 0x000f0f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1611,6 +1641,7 @@ opcodes:
     bitmask: 0x0fef0060
     pattern: 0x01a00060
     flags: [!Ual true]
+    tags: [is_data_operation]
     modifiers: [S, cond, shift_arg]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1621,6 +1652,7 @@ opcodes:
     bitmask: 0x0fef0ff0
     pattern: 0x01a00060
     flags: [!Ual true]
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [Rd, Rm]
     defs: [Rd]
@@ -1630,6 +1662,7 @@ opcodes:
     desc: Reverse Subtract
     bitmask: 0x0de00000
     pattern: 0x00600000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -1639,6 +1672,7 @@ opcodes:
     desc: Reverse Subtract with Carry
     bitmask: 0x0de00000
     pattern: 0x00e00000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -1650,6 +1684,7 @@ opcodes:
     pattern: 0x06100010
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1661,6 +1696,7 @@ opcodes:
     pattern: 0x06100090
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1672,6 +1708,7 @@ opcodes:
     pattern: 0x06100030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1681,6 +1718,7 @@ opcodes:
     desc: Subtract with Carry
     bitmask: 0x0de00000
     pattern: 0x00c00000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -1692,6 +1730,7 @@ opcodes:
     pattern: 0x068000b0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1720,6 +1759,7 @@ opcodes:
     pattern: 0x06300010
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1731,6 +1771,7 @@ opcodes:
     pattern: 0x06300090
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1742,6 +1783,7 @@ opcodes:
     pattern: 0x06300030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1753,6 +1795,7 @@ opcodes:
     pattern: 0x06300050
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1764,6 +1807,7 @@ opcodes:
     pattern: 0x06300070
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1775,6 +1819,7 @@ opcodes:
     pattern: 0x063000f0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1785,6 +1830,7 @@ opcodes:
     bitmask: 0x0ff00090
     pattern: 0x01000080
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [x, y, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1795,6 +1841,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07000010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1804,6 +1851,7 @@ opcodes:
     desc: Signed Multiply Accumulate Long
     bitmask: 0x0fe000f0
     pattern: 0x00e00090
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1814,6 +1862,7 @@ opcodes:
     bitmask: 0x0ff00090
     pattern: 0x01400080
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [x, y, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1824,6 +1873,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07400010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [dual, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1834,6 +1884,7 @@ opcodes:
     bitmask: 0x0ff000b0
     pattern: 0x01200080
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [y, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1844,6 +1895,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07000050
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1854,6 +1906,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07400050
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [dual, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1864,6 +1917,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x07500010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [rounded, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1874,6 +1928,7 @@ opcodes:
     bitmask: 0x0ff000d0
     pattern: 0x075000d0
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [rounded, cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -1884,6 +1939,7 @@ opcodes:
     bitmask: 0x0ff0f0d0
     pattern: 0x0750f010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [rounded, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1894,6 +1950,7 @@ opcodes:
     bitmask: 0x0ff0f0d0
     pattern: 0x0700f010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1905,6 +1962,7 @@ opcodes:
     pattern: 0x01600080
     sbz: 0x0000f000
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [x, y, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1914,6 +1972,7 @@ opcodes:
     desc: Signed Multiply Long
     bitmask: 0x0fe000f0
     pattern: 0x00c00090
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -1925,6 +1984,7 @@ opcodes:
     pattern: 0x012000a0
     sbz: 0x0000f000
     flags: [!MinVersion V5Te]
+    tags: [is_data_operation]
     modifiers: [y, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1935,6 +1995,7 @@ opcodes:
     bitmask: 0x0ff0f0d0
     pattern: 0x0700f050
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [dual, cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -1954,6 +2015,7 @@ opcodes:
     bitmask: 0x0fe00030
     pattern: 0x06a00010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, sat_shift]
     args: [Rd, ssat_imm, Rm]
     defs: [Rd]
@@ -1965,6 +2027,7 @@ opcodes:
     pattern: 0x06a00030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, ssat_imm, Rm]
     defs: [Rd]
@@ -1976,6 +2039,7 @@ opcodes:
     pattern: 0x06100050
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1987,6 +2051,7 @@ opcodes:
     pattern: 0x06100070
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -1998,6 +2063,7 @@ opcodes:
     pattern: 0x061000f0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2157,6 +2223,7 @@ opcodes:
     desc: Subtract
     bitmask: 0x0de00000
     pattern: 0x00400000
+    tags: [is_data_operation]
     modifiers: [S, cond, addr_data]
     args: [Rd, Rn]
     defs: [Rd]
@@ -2204,6 +2271,7 @@ opcodes:
     pattern: 0x06a00070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2215,6 +2283,7 @@ opcodes:
     pattern: 0x06800070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2226,6 +2295,7 @@ opcodes:
     pattern: 0x06b00070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2237,6 +2307,7 @@ opcodes:
     pattern: 0x06af0070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2248,6 +2319,7 @@ opcodes:
     pattern: 0x068f0070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2259,6 +2331,7 @@ opcodes:
     pattern: 0x06bf0070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2290,6 +2363,7 @@ opcodes:
     pattern: 0x06500010
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2301,6 +2375,7 @@ opcodes:
     pattern: 0x06500090
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2312,6 +2387,7 @@ opcodes:
     pattern: 0x06500030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2331,6 +2407,7 @@ opcodes:
     pattern: 0x06700010
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2342,6 +2419,7 @@ opcodes:
     pattern: 0x06700090
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2353,6 +2431,7 @@ opcodes:
     pattern: 0x06700030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2364,6 +2443,7 @@ opcodes:
     pattern: 0x06700050
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2375,6 +2455,7 @@ opcodes:
     pattern: 0x06700070
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2386,6 +2467,7 @@ opcodes:
     pattern: 0x067000f0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2396,6 +2478,7 @@ opcodes:
     bitmask: 0x0ff000f0
     pattern: 0x00400090
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -2405,6 +2488,7 @@ opcodes:
     desc: Unsigned Multiply Accumulate Long
     bitmask: 0x0fe000f0
     pattern: 0x00a00090
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -2414,6 +2498,7 @@ opcodes:
     desc: Unsigned Multiply Long
     bitmask: 0x0fe000f0
     pattern: 0x00800090
+    tags: [is_data_operation]
     modifiers: [S, cond]
     args: [RdLo, RdHi, Rm, Rs]
     defs: [RdLo, RdHi]
@@ -2425,6 +2510,7 @@ opcodes:
     pattern: 0x06600010
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2436,6 +2522,7 @@ opcodes:
     pattern: 0x06600090
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2447,6 +2534,7 @@ opcodes:
     pattern: 0x06600030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2458,6 +2546,7 @@ opcodes:
     pattern: 0x06600050
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2469,6 +2558,7 @@ opcodes:
     pattern: 0x06600070
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2480,6 +2570,7 @@ opcodes:
     pattern: 0x066000f0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2490,6 +2581,7 @@ opcodes:
     bitmask: 0x0ff0f0f0
     pattern: 0x0780f010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [RdHi, Rm, Rs]
     defs: [RdHi]
@@ -2500,6 +2592,7 @@ opcodes:
     bitmask: 0x0ff000f0
     pattern: 0x07800010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [RdHi, Rm, Rs, Rn_12]
     defs: [RdHi]
@@ -2510,6 +2603,7 @@ opcodes:
     bitmask: 0x0fe00030
     pattern: 0x06e00010
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, sat_shift]
     args: [Rd, usat_imm, Rm]
     defs: [Rd]
@@ -2521,6 +2615,7 @@ opcodes:
     pattern: 0x06e00030
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, usat_imm, Rm]
     defs: [Rd]
@@ -2532,6 +2627,7 @@ opcodes:
     pattern: 0x06500050
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2543,6 +2639,7 @@ opcodes:
     pattern: 0x06500070
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2554,6 +2651,7 @@ opcodes:
     pattern: 0x065000f0
     sbo: 0x00000f00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2565,6 +2663,7 @@ opcodes:
     pattern: 0x06e00070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2576,6 +2675,7 @@ opcodes:
     pattern: 0x06c00070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2587,6 +2687,7 @@ opcodes:
     pattern: 0x06f00070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rn, Rm]
     defs: [Rd]
@@ -2598,6 +2699,7 @@ opcodes:
     pattern: 0x06ef0070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2609,6 +2711,7 @@ opcodes:
     pattern: 0x06cf0070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]
@@ -2620,6 +2723,7 @@ opcodes:
     pattern: 0x06ff0070
     sbz: 0x00000300
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     modifiers: [cond, ext_shift]
     args: [Rd, Rm]
     defs: [Rd]

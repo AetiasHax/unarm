@@ -382,6 +382,9 @@ tags:
     desc: This opcode loads multiple values from memory into registers.
   - name: updates_condition_flags
     desc: This opcode sets the comparison flags according to the resulting value.
+  - name: is_data_operation
+    desc: This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and
+      selects. Does not include moves, loads, stores, swaps, compares and coprocessor opcodes.
 
 opcodes:
   - name: adc
@@ -389,7 +392,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4140
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -399,7 +402,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1c00
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rn_3, immed_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -409,7 +412,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x3000
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_8, immed_8]
     defs: [Rd_8]
     uses: [Rd_8]
@@ -419,7 +422,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1800
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rn_3, Rm_6]
     defs: [Rd_0]
 
@@ -427,6 +430,7 @@ opcodes:
     desc: Add high register
     bitmask: 0xff00
     pattern: 0x4400
+    tags: [is_data_operation]
     args: [Rd_H1, Rd_H1_ual, Rm_H2]
     defs: [Rd_H1]
     uses: [Rd_H1, Rm_H2]
@@ -435,6 +439,7 @@ opcodes:
     desc: Add SP-relative address
     bitmask: 0xf800
     pattern: 0xa800
+    tags: [is_data_operation]
     args: [Rd_8, sp, rel_immed_8]
     defs: [Rd_8]
     uses: [sp]
@@ -443,6 +448,7 @@ opcodes:
     desc: Add 7-bit immediate multiple of 4 to SP
     bitmask: 0xff80
     pattern: 0xb000
+    tags: [is_data_operation]
     args: [sp, sp_ual, rel_immed_7]
     defs: [sp]
     uses: [sp]
@@ -451,6 +457,7 @@ opcodes:
     desc: Add SP to register
     bitmask: 0xff78
     pattern: 0x4468
+    tags: [is_data_operation]
     args: [Rd_H1, sp, Rd_H1]
     defs: [Rd_H1]
     uses: [sp, Rd_H1]
@@ -459,6 +466,7 @@ opcodes:
     desc: Add register to SP
     bitmask: 0xff87
     pattern: 0x4485
+    tags: [is_data_operation]
     args: [sp, sp_ual, Rm_H2]
     defs: [sp]
     uses: [sp, Rm_H2]
@@ -468,6 +476,7 @@ opcodes:
     bitmask: 0xf800
     pattern: 0xa000
     flags: [!Ual false]
+    tags: [is_data_operation]
     args: [Rd_8, pc, rel_immed_8]
     defs: [Rd_8]
     uses: [pc]
@@ -477,6 +486,7 @@ opcodes:
     bitmask: 0xf800
     pattern: 0xa000
     flags: [!Ual true]
+    tags: [is_data_operation]
     args: [Rd_8, rel_immed_8]
     defs: [Rd_8]
 
@@ -485,7 +495,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4000
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -495,7 +505,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x1000
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rm_3, right_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -505,7 +515,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4100
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -528,7 +538,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4380
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -620,7 +630,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4040
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -730,7 +740,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x0000
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rm_3, left_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -740,7 +750,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4080
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -750,7 +760,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x0800
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rm_3, right_shift_imm]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -760,7 +770,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x40c0
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -806,7 +816,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4340
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -826,7 +836,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0x4240
     flags: [!Ual false]
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -836,7 +846,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0x4240
     flags: [!Ual true]
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rm_3, zero]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -846,7 +856,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4300
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -871,6 +881,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xba00
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -880,6 +891,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xba40
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -889,6 +901,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xbac0
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rn_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -898,7 +911,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x41c0
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rs]
     defs: [Rd_0]
     uses: [Rd_0, Rs]
@@ -908,7 +921,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xffc0
     pattern: 0x4180
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rd_0_ual, Rm_3]
     defs: [Rd_0]
     uses: [Rd_0, Rm_3]
@@ -990,7 +1003,7 @@ opcodes:
     desc: Subtract 3-bit immediate
     bitmask: 0xfe00
     pattern: 0x1e00
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rn_3, immed_3]
     defs: [Rd_0]
     uses: [Rn_3]
@@ -1000,7 +1013,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xf800
     pattern: 0x3800
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_8, immed_8]
     defs: [Rd_8]
     uses: [Rd_8]
@@ -1010,7 +1023,7 @@ opcodes:
     suffix: !Unified s
     bitmask: 0xfe00
     pattern: 0x1a00
-    tags: [updates_condition_flags]
+    tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rn_3, Rm_6]
     defs: [Rd_0]
 
@@ -1018,6 +1031,7 @@ opcodes:
     desc: Subtract 7-bit immediate multiple of 4 from SP
     bitmask: 0xff80
     pattern: 0xb080
+    tags: [is_data_operation]
     args: [sp, sp, rel_immed_7]
     defs: [sp]
     uses: [sp]
@@ -1041,6 +1055,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xb240
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -1050,6 +1065,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xb200
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -1067,6 +1083,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xb2c0
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]
@@ -1076,6 +1093,7 @@ opcodes:
     bitmask: 0xffc0
     pattern: 0xb280
     flags: [!MinVersion V6K]
+    tags: [is_data_operation]
     args: [Rd_0, Rm_3]
     defs: [Rd_0]
     uses: [Rm_3]

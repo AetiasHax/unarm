@@ -1794,6 +1794,19 @@ impl Ins {
             Opcode::Tst
         )
     }
+    /// This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and selects. Does not include moves, loads, stores, swaps, compares and coprocessor opcodes.
+    pub fn is_data_operation(&self) -> bool {
+        matches!(
+            self.op, Opcode::Adc | Opcode::Add3 | Opcode::Add8 | Opcode::AddR |
+            Opcode::AddHr | Opcode::AddSp | Opcode::AddSp7 | Opcode::AddRegSp |
+            Opcode::AddSpReg | Opcode::AddPc | Opcode::Adr | Opcode::And | Opcode::AsrI |
+            Opcode::AsrR | Opcode::Bic | Opcode::Eor | Opcode::LslI | Opcode::LslR |
+            Opcode::LsrI | Opcode::LsrR | Opcode::Mul | Opcode::Neg | Opcode::Rsbs |
+            Opcode::Orr | Opcode::Rev | Opcode::Rev16 | Opcode::Revsh | Opcode::Ror |
+            Opcode::Sbc | Opcode::Subs3 | Opcode::Sub8 | Opcode::SubR | Opcode::SubSp7 |
+            Opcode::Sxtb | Opcode::Sxth | Opcode::Uxtb | Opcode::Uxth
+        )
+    }
 }
 /// imod: Modify interrupt flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

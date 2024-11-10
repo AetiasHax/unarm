@@ -81,6 +81,14 @@ impl Ins {
             Ins::Data => Default::default(),
         }
     }
+
+    pub fn is_data_operation(&self) -> bool {
+        match self {
+            Ins::Arm(ins) => ins.is_data_operation(),
+            Ins::Thumb(ins) => ins.is_data_operation(),
+            Ins::Data => false,
+        }
+    }
 }
 
 impl ParsedIns {
