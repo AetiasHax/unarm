@@ -184,6 +184,10 @@ mod tests {
         assert_asm!(0xe8550003, "ldmda r5, {r0, r1}^");
         assert_asm!(0xe8568003, "ldmda r6, {r0, r1, pc}^");
         assert_asm!(0xe8778003, "ldmda r7!, {r0, r1, pc}^");
+        assert_asm!(
+            0xe9f17fff,
+            "ldmib r1!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, sp, lr}^"
+        );
     }
 
     #[test]

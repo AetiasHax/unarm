@@ -1063,6 +1063,17 @@ opcodes:
     defs: [registers_c]
     uses: [Rn]
 
+  # Non-standard, but some platforms have this
+  - name: ldm$pw
+    desc: Load Multiple (privilege, writeback)
+    bitmask: 0x0e708000
+    pattern: 0x08700000
+    modifiers: [addr_ldm_stm, cond]
+    tags: [loads_multiple]
+    args: [Rn_wb, registers_c]
+    defs: [registers_c]
+    uses: [Rn_wb]
+
   - name: ldm$pc$w
     desc: Load Multiple (including PC, writeback)
     bitmask: 0x0e708000
