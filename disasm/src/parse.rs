@@ -186,7 +186,7 @@ impl Ins {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct ParsedIns {
     pub mnemonic: &'static str,
     pub args: Arguments,
