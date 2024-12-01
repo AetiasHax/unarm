@@ -237,4 +237,9 @@ mod tests {
     fn test_tst() {
         assert_asm!(0x4217, "tst r7, r2");
     }
+
+    #[test]
+    fn test_udf() {
+        assert_asm!(0xde42, "udf #0x42");
+    }
 }

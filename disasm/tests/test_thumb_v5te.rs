@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_bkpt() {
-        assert_asm!(0xde42, "bkpt #0x42");
+        assert_asm!(0xbe42, "bkpt #0x42");
     }
 
     #[test]
@@ -250,5 +250,10 @@ mod tests {
     #[test]
     fn test_tst() {
         assert_asm!(0x4217, "tst r7, r2");
+    }
+
+    #[test]
+    fn test_udf() {
+        assert_asm!(0xde42, "udf #0x42");
     }
 }

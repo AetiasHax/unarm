@@ -5,7 +5,7 @@
 use crate::{ArmVersion, ParseFlags, args::*, parse::ParsedIns};
 use super::Ins;
 /// These are the mnemonics of each opcode. Some mnemonics are duplicated due to them having multiple formats.
-static OPCODE_MNEMONICS: [&str; 82] = [
+static OPCODE_MNEMONICS: [&str; 83] = [
     "<illegal>",
     "adcs",
     "adds",
@@ -86,6 +86,7 @@ static OPCODE_MNEMONICS: [&str; 82] = [
     "sxtb",
     "sxth",
     "tst",
+    "udf",
     "uxtb",
     "uxth",
 ];
@@ -254,10 +255,12 @@ pub enum Opcode {
     Sxth = 78,
     /// TST: Test
     Tst = 79,
+    /// UDF: Permanently Undefined
+    Udf = 80,
     /// UXTB: Zero Extend Byte to 32 bits
-    Uxtb = 80,
+    Uxtb = 81,
     /// UXTH: Zero Extend Halfword to 32 bits
-    Uxth = 81,
+    Uxth = 82,
 }
 impl Opcode {
     #[inline]
@@ -957,9 +960,9 @@ impl Opcode {
                 }
             }
         } else {
-            if (code & 0x00000800) == 0x00000000 {
-                if (code & 0x00000200) == 0x00000000 {
-                    if (code & 0x00002000) == 0x00000000 {
+            if (code & 0x00002000) == 0x00000000 {
+                if (code & 0x00000400) == 0x00000000 {
+                    if (code & 0x00000800) == 0x00000000 {
                         if (code & 0x00004000) == 0x00000000 {
                             if (code & 0x00008000) == 0x00000000 {
                                 if (code & 0x0000f800) == 0x00001000 {
@@ -976,18 +979,186 @@ impl Opcode {
                                     return Opcode::B;
                                 }
                             } else {
-                                if (code & 0x00000400) == 0x00000000 {
+                                if (code & 0x00000200) == 0x00000000 {
                                     if (code & 0x0000fe00) == 0x00005000 {
                                         return Opcode::StrR;
                                     }
                                 } else {
-                                    if (code & 0x0000fe00) == 0x00005400 {
-                                        return Opcode::StrbR;
+                                    if (code & 0x0000fe00) == 0x00005200 {
+                                        return Opcode::StrhR;
                                     }
                                 }
                             }
                         }
                     } else {
+                        if (code & 0x00004000) == 0x00000000 {
+                            if (code & 0x00008000) == 0x00008000 {
+                                if (code & 0x0000f800) == 0x00009800 {
+                                    return Opcode::LdrSp;
+                                }
+                            } else {
+                                if (code & 0x00000200) == 0x00000000 {
+                                    if (code & 0x0000fe00) == 0x00001800 {
+                                        return Opcode::AddR;
+                                    }
+                                } else {
+                                    if (code & 0x0000fe00) == 0x00001a00 {
+                                        return Opcode::SubR;
+                                    }
+                                }
+                            }
+                        } else {
+                            if (code & 0x00008000) == 0x00008000 {
+                                if (code & 0x0000f000) == 0x0000d000 {
+                                    return Opcode::B;
+                                }
+                            } else {
+                                if (code & 0x00000200) == 0x00000000 {
+                                    if (code & 0x0000fe00) == 0x00005800 {
+                                        return Opcode::LdrR;
+                                    }
+                                } else {
+                                    if (code & 0x0000fe00) == 0x00005a00 {
+                                        return Opcode::LdrhR;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (code & 0x00000200) == 0x00000000 {
+                        if (code & 0x00000800) == 0x00000000 {
+                            if (code & 0x00004000) == 0x00000000 {
+                                if (code & 0x00008000) == 0x00000000 {
+                                    if (code & 0x0000f800) == 0x00001000 {
+                                        return Opcode::AsrI;
+                                    }
+                                } else {
+                                    if (code & 0x0000f800) == 0x00009000 {
+                                        return Opcode::StrSp;
+                                    }
+                                }
+                            } else {
+                                if (code & 0x00008000) == 0x00000000 {
+                                    if (code & 0x0000fe00) == 0x00005400 {
+                                        return Opcode::StrbR;
+                                    }
+                                } else {
+                                    if (code & 0x0000f000) == 0x0000d000 {
+                                        return Opcode::B;
+                                    }
+                                }
+                            }
+                        } else {
+                            if (code & 0x00004000) == 0x00004000 {
+                                if (code & 0x00008000) == 0x00000000 {
+                                    if (code & 0x0000fe00) == 0x00005c00 {
+                                        return Opcode::LdrbR;
+                                    }
+                                } else {
+                                    if (code & 0x0000f000) == 0x0000d000 {
+                                        return Opcode::B;
+                                    }
+                                }
+                            } else {
+                                if (code & 0x00008000) == 0x00008000 {
+                                    if (code & 0x0000f800) == 0x00009800 {
+                                        return Opcode::LdrSp;
+                                    }
+                                } else {
+                                    if !flags.ual && (code & 0x0000ffc0) == 0x00001c00 {
+                                        return Opcode::MovR;
+                                    }
+                                    if (code & 0x0000fe00) == 0x00001c00 {
+                                        return Opcode::Add3;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        if (code & 0x00004000) == 0x00004000 {
+                            if (code & 0x00000100) == 0x00000000 {
+                                if (code & 0x00000800) == 0x00000000 {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000fe00) == 0x00005600 {
+                                            return Opcode::Ldrsb;
+                                        }
+                                    } else {
+                                        if (code & 0x0000f000) == 0x0000d000 {
+                                            return Opcode::B;
+                                        }
+                                    }
+                                } else {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000fe00) == 0x00005e00 {
+                                            return Opcode::Ldrsh;
+                                        }
+                                    } else {
+                                        if (code & 0x0000ff00) == 0x0000de00 {
+                                            return Opcode::Udf;
+                                        }
+                                        if (code & 0x0000f000) == 0x0000d000 {
+                                            return Opcode::B;
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (code & 0x00000800) == 0x00000000 {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000fe00) == 0x00005600 {
+                                            return Opcode::Ldrsb;
+                                        }
+                                    } else {
+                                        if (code & 0x0000f000) == 0x0000d000 {
+                                            return Opcode::B;
+                                        }
+                                    }
+                                } else {
+                                    if (code & 0x00008000) == 0x00008000 {
+                                        if flags.ual && (code & 0x0000ff00) == 0x0000df00 {
+                                            return Opcode::Svc;
+                                        }
+                                        if !flags.ual && (code & 0x0000ff00) == 0x0000df00 {
+                                            return Opcode::Swi;
+                                        }
+                                        if (code & 0x0000f000) == 0x0000d000 {
+                                            return Opcode::B;
+                                        }
+                                    } else {
+                                        if (code & 0x0000fe00) == 0x00005e00 {
+                                            return Opcode::Ldrsh;
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            if (code & 0x00000800) == 0x00000000 {
+                                if (code & 0x00008000) == 0x00000000 {
+                                    if (code & 0x0000f800) == 0x00001000 {
+                                        return Opcode::AsrI;
+                                    }
+                                } else {
+                                    if (code & 0x0000f800) == 0x00009000 {
+                                        return Opcode::StrSp;
+                                    }
+                                }
+                            } else {
+                                if (code & 0x00008000) == 0x00000000 {
+                                    if (code & 0x0000fe00) == 0x00001e00 {
+                                        return Opcode::Subs3;
+                                    }
+                                } else {
+                                    if (code & 0x0000f800) == 0x00009800 {
+                                        return Opcode::LdrSp;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (code & 0x00000200) == 0x00000000 {
+                    if (code & 0x00000800) == 0x00000000 {
                         if (code & 0x00000400) == 0x00000400 {
                             if (code & 0x00004000) == 0x00000000 {
                                 if (code & 0x00008000) == 0x00000000 {
@@ -1039,28 +1210,53 @@ impl Opcode {
                                 }
                             }
                         }
+                    } else {
+                        if (code & 0x00004000) == 0x00000000 {
+                            if (code & 0x00008000) == 0x00000000 {
+                                if (code & 0x0000f800) == 0x00003800 {
+                                    return Opcode::Sub8;
+                                }
+                            } else {
+                                if (code & 0x0000fe00) == 0x0000bc00 {
+                                    return Opcode::Pop;
+                                }
+                            }
+                        } else {
+                            if (code & 0x00008000) == 0x00000000 {
+                                if (code & 0x0000f800) == 0x00007800 {
+                                    return Opcode::LdrbI;
+                                }
+                            } else {
+                                if (code & 0x0000f800) == 0x0000f800 {
+                                    return Opcode::Bl;
+                                }
+                            }
+                        }
                     }
                 } else {
                     if (code & 0x00000400) == 0x00000400 {
-                        if (code & 0x00002000) == 0x00000000 {
+                        if (code & 0x00000800) == 0x00000800 {
                             if (code & 0x00004000) == 0x00000000 {
                                 if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000f800) == 0x00001000 {
-                                        return Opcode::AsrI;
+                                    if (code & 0x0000f800) == 0x00003800 {
+                                        return Opcode::Sub8;
                                     }
                                 } else {
-                                    if (code & 0x0000f800) == 0x00009000 {
-                                        return Opcode::StrSp;
+                                    #[cfg(any(feature = "v5te", feature = "v6k"))]
+                                    if flags.version >= ArmVersion::V5Te
+                                        && (code & 0x0000ff00) == 0x0000be00
+                                    {
+                                        return Opcode::Bkpt;
                                     }
                                 }
                             } else {
                                 if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000fe00) == 0x00005600 {
-                                        return Opcode::Ldrsb;
+                                    if (code & 0x0000f800) == 0x00007800 {
+                                        return Opcode::LdrbI;
                                     }
                                 } else {
-                                    if (code & 0x0000f000) == 0x0000d000 {
-                                        return Opcode::B;
+                                    if (code & 0x0000f800) == 0x0000f800 {
+                                        return Opcode::Bl;
                                     }
                                 }
                             }
@@ -1100,7 +1296,68 @@ impl Opcode {
                             }
                         }
                     } else {
-                        if (code & 0x00002000) == 0x00002000 {
+                        if (code & 0x00000800) == 0x00000800 {
+                            if (code & 0x00000040) == 0x00000000 {
+                                if (code & 0x00004000) == 0x00000000 {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000f800) == 0x00003800 {
+                                            return Opcode::Sub8;
+                                        }
+                                    } else {
+                                        #[cfg(any(feature = "v6k"))]
+                                        if flags.version >= ArmVersion::V6K
+                                            && (code & 0x0000ffc0) == 0x0000ba00
+                                        {
+                                            return Opcode::Rev;
+                                        }
+                                    }
+                                } else {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000f800) == 0x00007800 {
+                                            return Opcode::LdrbI;
+                                        }
+                                    } else {
+                                        if (code & 0x0000f800) == 0x0000f800 {
+                                            return Opcode::Bl;
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (code & 0x00004000) == 0x00004000 {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000f800) == 0x00007800 {
+                                            return Opcode::LdrbI;
+                                        }
+                                    } else {
+                                        if (code & 0x0000f800) == 0x0000f800 {
+                                            return Opcode::Bl;
+                                        }
+                                    }
+                                } else {
+                                    if (code & 0x00008000) == 0x00000000 {
+                                        if (code & 0x0000f800) == 0x00003800 {
+                                            return Opcode::Sub8;
+                                        }
+                                    } else {
+                                        if (code & 0x00000080) == 0x00000000 {
+                                            #[cfg(any(feature = "v6k"))]
+                                            if flags.version >= ArmVersion::V6K
+                                                && (code & 0x0000ffc0) == 0x0000ba40
+                                            {
+                                                return Opcode::Rev16;
+                                            }
+                                        } else {
+                                            #[cfg(any(feature = "v6k"))]
+                                            if flags.version >= ArmVersion::V6K
+                                                && (code & 0x0000ffc0) == 0x0000bac0
+                                            {
+                                                return Opcode::Revsh;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
                             if (code & 0x00000040) == 0x00000000 {
                                 if (code & 0x00004000) == 0x00004000 {
                                     if (code & 0x00008000) == 0x00000000 {
@@ -1170,236 +1427,6 @@ impl Opcode {
                                     }
                                 }
                             }
-                        } else {
-                            if (code & 0x00004000) == 0x00000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000f800) == 0x00001000 {
-                                        return Opcode::AsrI;
-                                    }
-                                } else {
-                                    if (code & 0x0000f800) == 0x00009000 {
-                                        return Opcode::StrSp;
-                                    }
-                                }
-                            } else {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000fe00) == 0x00005200 {
-                                        return Opcode::StrhR;
-                                    }
-                                } else {
-                                    if (code & 0x0000f000) == 0x0000d000 {
-                                        return Opcode::B;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (code & 0x00004000) == 0x00004000 {
-                    if (code & 0x00000200) == 0x00000000 {
-                        if (code & 0x00002000) == 0x00002000 {
-                            if (code & 0x00008000) == 0x00000000 {
-                                if (code & 0x0000f800) == 0x00007800 {
-                                    return Opcode::LdrbI;
-                                }
-                            } else {
-                                if (code & 0x0000f800) == 0x0000f800 {
-                                    return Opcode::Bl;
-                                }
-                            }
-                        } else {
-                            if (code & 0x00008000) == 0x00008000 {
-                                if (code & 0x0000f000) == 0x0000d000 {
-                                    return Opcode::B;
-                                }
-                            } else {
-                                if (code & 0x00000400) == 0x00000000 {
-                                    if (code & 0x0000fe00) == 0x00005800 {
-                                        return Opcode::LdrR;
-                                    }
-                                } else {
-                                    if (code & 0x0000fe00) == 0x00005c00 {
-                                        return Opcode::LdrbR;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (code & 0x00000400) == 0x00000000 {
-                            if (code & 0x00002000) == 0x00000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000fe00) == 0x00005a00 {
-                                        return Opcode::LdrhR;
-                                    }
-                                } else {
-                                    if (code & 0x0000f000) == 0x0000d000 {
-                                        return Opcode::B;
-                                    }
-                                }
-                            } else {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000f800) == 0x00007800 {
-                                        return Opcode::LdrbI;
-                                    }
-                                } else {
-                                    if (code & 0x0000f800) == 0x0000f800 {
-                                        return Opcode::Bl;
-                                    }
-                                }
-                            }
-                        } else {
-                            if (code & 0x00000100) == 0x00000000 {
-                                if (code & 0x00002000) == 0x00002000 {
-                                    if (code & 0x00008000) == 0x00000000 {
-                                        if (code & 0x0000f800) == 0x00007800 {
-                                            return Opcode::LdrbI;
-                                        }
-                                    } else {
-                                        if (code & 0x0000f800) == 0x0000f800 {
-                                            return Opcode::Bl;
-                                        }
-                                    }
-                                } else {
-                                    if (code & 0x00008000) == 0x00000000 {
-                                        if (code & 0x0000fe00) == 0x00005e00 {
-                                            return Opcode::Ldrsh;
-                                        }
-                                    } else {
-                                        #[cfg(any(feature = "v5te", feature = "v6k"))]
-                                        if flags.version >= ArmVersion::V5Te
-                                            && (code & 0x0000ff00) == 0x0000de00
-                                        {
-                                            return Opcode::Bkpt;
-                                        }
-                                        if (code & 0x0000f000) == 0x0000d000 {
-                                            return Opcode::B;
-                                        }
-                                    }
-                                }
-                            } else {
-                                if (code & 0x00002000) == 0x00000000 {
-                                    if (code & 0x00008000) == 0x00008000 {
-                                        if flags.ual && (code & 0x0000ff00) == 0x0000df00 {
-                                            return Opcode::Svc;
-                                        }
-                                        if !flags.ual && (code & 0x0000ff00) == 0x0000df00 {
-                                            return Opcode::Swi;
-                                        }
-                                        if (code & 0x0000f000) == 0x0000d000 {
-                                            return Opcode::B;
-                                        }
-                                    } else {
-                                        if (code & 0x0000fe00) == 0x00005e00 {
-                                            return Opcode::Ldrsh;
-                                        }
-                                    }
-                                } else {
-                                    if (code & 0x00008000) == 0x00000000 {
-                                        if (code & 0x0000f800) == 0x00007800 {
-                                            return Opcode::LdrbI;
-                                        }
-                                    } else {
-                                        if (code & 0x0000f800) == 0x0000f800 {
-                                            return Opcode::Bl;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if (code & 0x00002000) == 0x00002000 {
-                        if (code & 0x00000200) == 0x00000000 {
-                            if (code & 0x00008000) == 0x00000000 {
-                                if (code & 0x0000f800) == 0x00003800 {
-                                    return Opcode::Sub8;
-                                }
-                            } else {
-                                if (code & 0x0000fe00) == 0x0000bc00 {
-                                    return Opcode::Pop;
-                                }
-                            }
-                        } else {
-                            if (code & 0x00000040) == 0x00000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000f800) == 0x00003800 {
-                                        return Opcode::Sub8;
-                                    }
-                                } else {
-                                    #[cfg(any(feature = "v6k"))]
-                                    if flags.version >= ArmVersion::V6K
-                                        && (code & 0x0000ffc0) == 0x0000ba00
-                                    {
-                                        return Opcode::Rev;
-                                    }
-                                }
-                            } else {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000f800) == 0x00003800 {
-                                        return Opcode::Sub8;
-                                    }
-                                } else {
-                                    if (code & 0x00000080) == 0x00000000 {
-                                        #[cfg(any(feature = "v6k"))]
-                                        if flags.version >= ArmVersion::V6K
-                                            && (code & 0x0000ffc0) == 0x0000ba40
-                                        {
-                                            return Opcode::Rev16;
-                                        }
-                                    } else {
-                                        #[cfg(any(feature = "v6k"))]
-                                        if flags.version >= ArmVersion::V6K
-                                            && (code & 0x0000ffc0) == 0x0000bac0
-                                        {
-                                            return Opcode::Revsh;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (code & 0x00000200) == 0x00000200 {
-                            if (code & 0x00008000) == 0x00008000 {
-                                if (code & 0x0000f800) == 0x00009800 {
-                                    return Opcode::LdrSp;
-                                }
-                            } else {
-                                if (code & 0x00000400) == 0x00000000 {
-                                    if (code & 0x0000fe00) == 0x00001a00 {
-                                        return Opcode::SubR;
-                                    }
-                                } else {
-                                    if (code & 0x0000fe00) == 0x00001e00 {
-                                        return Opcode::Subs3;
-                                    }
-                                }
-                            }
-                        } else {
-                            if (code & 0x00000400) == 0x00000000 {
-                                if (code & 0x00008000) == 0x00000000 {
-                                    if (code & 0x0000fe00) == 0x00001800 {
-                                        return Opcode::AddR;
-                                    }
-                                } else {
-                                    if (code & 0x0000f800) == 0x00009800 {
-                                        return Opcode::LdrSp;
-                                    }
-                                }
-                            } else {
-                                if (code & 0x00008000) == 0x00008000 {
-                                    if (code & 0x0000f800) == 0x00009800 {
-                                        return Opcode::LdrSp;
-                                    }
-                                } else {
-                                    if !flags.ual && (code & 0x0000ffc0) == 0x00001c00 {
-                                        return Opcode::MovR;
-                                    }
-                                    if (code & 0x0000fe00) == 0x00001c00 {
-                                        return Opcode::Add3;
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -1411,7 +1438,7 @@ impl Opcode {
         OPCODE_MNEMONICS[self as usize]
     }
     pub fn count() -> usize {
-        82
+        83
     }
 }
 impl Ins {
@@ -3513,6 +3540,19 @@ fn parse_tst(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         ],
     };
 }
+fn parse_udf(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
+    *out = ParsedIns {
+        mnemonic: "udf",
+        args: [
+            Argument::UImm(ins.field_immed_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
 fn parse_uxtb(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     *out = ParsedIns {
         mnemonic: "uxtb",
@@ -3540,7 +3580,7 @@ fn parse_uxth(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     };
 }
 type MnemonicParser = fn(&mut ParsedIns, Ins, &ParseFlags);
-static MNEMONIC_PARSERS: [MnemonicParser; 82] = [
+static MNEMONIC_PARSERS: [MnemonicParser; 83] = [
     parse_illegal,
     parse_adc,
     parse_add_3,
@@ -3621,6 +3661,7 @@ static MNEMONIC_PARSERS: [MnemonicParser; 82] = [
     parse_sxtb,
     parse_sxth,
     parse_tst,
+    parse_udf,
     parse_uxtb,
     parse_uxth,
 ];
