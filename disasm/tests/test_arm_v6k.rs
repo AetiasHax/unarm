@@ -973,6 +973,7 @@ mod tests {
     fn test_udf() {
         assert_asm!(0xe7f000f0, "udf #0x0");
         assert_asm!(0xe7fa45f5, "udf #0xa455");
+        assert_asm!(0xe7ffffff, "udf #0xffff");
     }
 
     #[test]
