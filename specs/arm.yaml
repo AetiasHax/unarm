@@ -2408,7 +2408,6 @@ opcodes:
     desc: Permanently Undefined
     bitmask: 0xfff000f0
     pattern: 0xe7f000f0
-    flags: [!MinVersion V6K]
     modifiers: [cond]
     args: [immed_16]
 

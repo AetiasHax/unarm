@@ -546,7 +546,7 @@ opcodes:
   - name: bkpt
     desc: Breakpoint
     bitmask: 0xff00
-    pattern: 0xde00
+    pattern: 0xbe00
     flags: [!MinVersion V5Te]
     args: [immed_8]
 
@@ -1077,6 +1077,12 @@ opcodes:
     tags: [updates_condition_flags]
     args: [Rn_0, Rm_3]
     uses: [Rn_0, Rm_3]
+
+  - name: udf
+    desc: Permanently Undefined
+    bitmask: 0xff00
+    pattern: 0xde00
+    args: [immed_8]
 
   - name: uxtb
     desc: Zero Extend Byte to 32 bits
