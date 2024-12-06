@@ -1,6 +1,6 @@
 [package]
 name = "unarm"
-version = "1.6.5"
+version = "1.6.6"
 edition = "2021"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
