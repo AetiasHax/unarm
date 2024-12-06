@@ -1743,12 +1743,28 @@ impl Ins {
     pub fn field_low_blx_offset_11(&self) -> u32 {
         (self.code & 0x000007ff) << 1 & !3
     }
-    /// offset_5: 7-bit immediate offset
+    /// word_offset_5: 7-bit immediate offset
     #[inline(always)]
-    pub fn field_offset_5(&self) -> OffsetImm {
+    pub fn field_word_offset_5(&self) -> OffsetImm {
         OffsetImm {
             post_indexed: false,
             value: (((self.code >> 6) & 0x0000001f) << 2) as i32,
+        }
+    }
+    /// halfword_offset_5: 6-bit immediate offset
+    #[inline(always)]
+    pub fn field_halfword_offset_5(&self) -> OffsetImm {
+        OffsetImm {
+            post_indexed: false,
+            value: (((self.code >> 6) & 0x0000001f) << 1) as i32,
+        }
+    }
+    /// byte_offset_5: 5-bit immediate offset
+    #[inline(always)]
+    pub fn field_byte_offset_5(&self) -> OffsetImm {
+        OffsetImm {
+            post_indexed: false,
+            value: (((self.code >> 6) & 0x0000001f)) as i32,
         }
     }
     /// cpsr_flags: CPSR flags
@@ -2726,7 +2742,7 @@ fn parse_ldr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
-            Argument::OffsetImm(ins.field_offset_5()),
+            Argument::OffsetImm(ins.field_word_offset_5()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2778,7 +2794,7 @@ fn parse_ldrb_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
-            Argument::OffsetImm(ins.field_offset_5()),
+            Argument::OffsetImm(ins.field_byte_offset_5()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -2804,7 +2820,7 @@ fn parse_ldrh_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
-            Argument::OffsetImm(ins.field_offset_5()),
+            Argument::OffsetImm(ins.field_halfword_offset_5()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -3310,7 +3326,7 @@ fn parse_str_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
-            Argument::OffsetImm(ins.field_offset_5()),
+            Argument::OffsetImm(ins.field_word_offset_5()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -3349,7 +3365,7 @@ fn parse_strb_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
-            Argument::OffsetImm(ins.field_offset_5()),
+            Argument::OffsetImm(ins.field_byte_offset_5()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -3375,7 +3391,7 @@ fn parse_strh_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
         args: [
             Argument::Reg(ins.field_rd_0()),
             Argument::Reg(ins.field_rn_3_deref()),
-            Argument::OffsetImm(ins.field_offset_5()),
+            Argument::OffsetImm(ins.field_halfword_offset_5()),
             Argument::None,
             Argument::None,
             Argument::None,

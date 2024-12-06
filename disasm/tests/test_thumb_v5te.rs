@@ -131,13 +131,13 @@ mod tests {
 
     #[test]
     fn test_ldrb() {
-        assert_asm!(0x7c22, "ldrb r2, [r4, #0x40]");
+        assert_asm!(0x7c22, "ldrb r2, [r4, #0x10]");
         assert_asm!(0x5c22, "ldrb r2, [r4, r0]");
     }
 
     #[test]
     fn test_ldrh() {
-        assert_asm!(0x8c22, "ldrh r2, [r4, #0x40]");
+        assert_asm!(0x8c22, "ldrh r2, [r4, #0x20]");
         assert_asm!(0x5a22, "ldrh r2, [r4, r0]");
     }
 
@@ -224,13 +224,13 @@ mod tests {
 
     #[test]
     fn test_strb() {
-        assert_asm!(0x7422, "strb r2, [r4, #0x40]");
+        assert_asm!(0x7422, "strb r2, [r4, #0x10]");
         assert_asm!(0x5422, "strb r2, [r4, r0]");
     }
 
     #[test]
     fn test_strh() {
-        assert_asm!(0x8422, "strh r2, [r4, #0x40]");
+        assert_asm!(0x8422, "strh r2, [r4, #0x20]");
         assert_asm!(0x5222, "strh r2, [r4, r0]");
     }
 
