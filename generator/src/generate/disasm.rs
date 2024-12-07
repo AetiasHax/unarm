@@ -17,7 +17,10 @@ use crate::{
 
 pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
     // Generate opcode enum and mnemonics array
-    let (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes_token) = generate_opcode_tokens(&isa.opcodes);
+    let (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes) = generate_opcode_tokens(&isa.opcodes);
+    assert!(num_opcodes <= 256);
+    let num_opcodes_token = Literal::usize_unsuffixed(num_opcodes);
+    let opcode_max_token = Literal::usize_unsuffixed(num_opcodes - 1);
 
     // Generate opcode search function
     let mut opcodes = isa.opcodes.to_vec();
@@ -74,6 +77,23 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
             }
             pub fn count() -> usize {
                 #num_opcodes_token
+            }
+        }
+        impl From<u8> for Opcode {
+            #[inline]
+            fn from(value: u8) -> Self {
+                if value > #opcode_max_token {
+                    Self::Illegal
+                } else {
+                    #[comment = " Safety: The enum is repr(u8) and the value is within the enum's range"]
+                    unsafe { core::mem::transmute::<u8, Self>(value) }
+                }
+            }
+        }
+        impl From<Opcode> for u8 {
+            #[inline]
+            fn from(value: Opcode) -> Self {
+                value as u8
             }
         }
 
@@ -752,10 +772,10 @@ fn generate_argument_expr(value: &FieldValue, field: &Field) -> Result<TokenStre
     Ok(expr)
 }
 
-fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStream, Literal) {
+fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStream, usize) {
     let mut opcode_enum_tokens = TokenStream::new();
     let mut opcode_mnemonics_tokens = TokenStream::new();
-    let num_opcodes_token = Literal::usize_unsuffixed(sorted_opcodes.len() + 1);
+    let num_opcodes = sorted_opcodes.len() + 1;
 
     opcode_mnemonics_tokens.extend(quote! { "<illegal>", });
 
@@ -772,7 +792,7 @@ fn generate_opcode_tokens(sorted_opcodes: &[Opcode]) -> (TokenStream, TokenStrea
             #enum_name = #enum_value,
         });
     }
-    (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes_token)
+    (opcode_enum_tokens, opcode_mnemonics_tokens, num_opcodes)
 }
 
 fn generate_tag_functions(isa: &Isa) -> TokenStream {

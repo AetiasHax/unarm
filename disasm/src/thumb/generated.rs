@@ -1441,6 +1441,23 @@ impl Opcode {
         83
     }
 }
+impl From<u8> for Opcode {
+    #[inline]
+    fn from(value: u8) -> Self {
+        if value > 82 {
+            Self::Illegal
+        } else {
+            // Safety: The enum is repr(u8) and the value is within the enum's range
+            unsafe { core::mem::transmute::<u8, Self>(value) }
+        }
+    }
+}
+impl From<Opcode> for u8 {
+    #[inline]
+    fn from(value: Opcode) -> Self {
+        value as u8
+    }
+}
 impl Ins {
     /// Rd_0: Destination register
     #[inline(always)]
