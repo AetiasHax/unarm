@@ -1,4 +1,4 @@
-use std::fmt::{self, Display, Formatter};
+use core::fmt::{self, Display, Formatter};
 
 use crate::{
     args::{
@@ -17,7 +17,7 @@ impl ParsedIns {
         }
     }
 
-    pub fn display_with_symbols<'a>(&'a self, options: DisplayOptions, symbols: Symbols<'a>) -> ParsedInsDisplay<'_> {
+    pub fn display_with_symbols<'a>(&'a self, options: DisplayOptions, symbols: Symbols<'a>) -> ParsedInsDisplay<'a> {
         ParsedInsDisplay {
             ins: self,
             options,
@@ -147,7 +147,7 @@ impl Argument {
         )
     }
 
-    pub fn display<'a>(&'a self, options: DisplayOptions, symbols: Option<Symbols<'a>>) -> DisplayArgument<'_> {
+    pub fn display<'a>(&'a self, options: DisplayOptions, symbols: Option<Symbols<'a>>) -> DisplayArgument<'a> {
         DisplayArgument {
             arg: self,
             options,

@@ -1,3 +1,5 @@
+#![no_std]
+
 pub mod args;
 #[cfg(feature = "arm")]
 pub mod arm;

@@ -88,7 +88,7 @@ pub enum Register {
 impl Register {
     pub fn parse(value: u32) -> Self {
         if value <= 15 {
-            unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+            unsafe { core::mem::transmute::<u8, Self>(value as u8) }
         } else {
             Self::Illegal
         }
@@ -105,7 +105,7 @@ pub enum StatusReg {
 impl StatusReg {
     pub fn parse(value: u32) -> Self {
         if value <= 1 {
-            unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+            unsafe { core::mem::transmute::<u8, Self>(value as u8) }
         } else {
             Self::Illegal
         }
@@ -130,7 +130,7 @@ pub enum Shift {
 impl Shift {
     pub fn parse(value: u32) -> Self {
         if value <= 4 {
-            unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+            unsafe { core::mem::transmute::<u8, Self>(value as u8) }
         } else {
             Self::Illegal
         }
@@ -177,7 +177,7 @@ pub enum CoReg {
 impl CoReg {
     pub fn parse(value: u32) -> Self {
         if value <= 15 {
-            unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+            unsafe { core::mem::transmute::<u8, Self>(value as u8) }
         } else {
             Self::Illegal
         }
@@ -257,7 +257,7 @@ pub enum Endian {
 impl Endian {
     pub fn parse(value: u32) -> Self {
         if value <= 1 {
-            unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+            unsafe { core::mem::transmute::<u8, Self>(value as u8) }
         } else {
             Self::Illegal
         }
