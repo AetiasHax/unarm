@@ -133,7 +133,7 @@ fn generate_enum(values: &[EnumValue], ident: Ident) -> TokenStream {
 
         quote! {
             if #cond {
-                unsafe { std::mem::transmute::<u8, Self>(value as u8) }
+                unsafe { core::mem::transmute::<u8, Self>(value as u8) }
             } else {
                 Self::Illegal
             }
