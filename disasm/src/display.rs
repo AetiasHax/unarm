@@ -120,6 +120,7 @@ impl<'a> Display for ParsedInsDisplay<'a> {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub struct SignedHex(pub i32);
 
 impl Display for SignedHex {
@@ -254,13 +255,14 @@ impl Register {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct RegDisplay(Register, RegNames);
 
-impl Display for RegDisplay {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+impl RegDisplay {
+    pub fn as_str(self) -> &'static str {
         #[rustfmt::skip]
-        let s = match self.0 {
-            Register::Illegal => todo!(),
+        match self.0 {
+            Register::Illegal => "<illegal>",
             Register::R0 => if self.1.av_registers { "a1" } else { "r0" },
             Register::R1 => if self.1.av_registers { "a2" } else { "r1" },
             Register::R2 => if self.1.av_registers { "a3" } else { "r2" },
@@ -281,42 +283,59 @@ impl Display for RegDisplay {
             Register::Sp => "sp",
             Register::Lr => "lr",
             Register::Pc => "pc",
-        };
-        write!(f, "{}", s)
+        }
+    }
+}
+
+impl Display for RegDisplay {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl CoReg {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            CoReg::Illegal => "<illegal>",
+            CoReg::C0 => "c0",
+            CoReg::C1 => "c1",
+            CoReg::C2 => "c2",
+            CoReg::C3 => "c3",
+            CoReg::C4 => "c4",
+            CoReg::C5 => "c5",
+            CoReg::C6 => "c6",
+            CoReg::C7 => "c7",
+            CoReg::C8 => "c8",
+            CoReg::C9 => "c9",
+            CoReg::C10 => "c10",
+            CoReg::C11 => "c11",
+            CoReg::C12 => "c12",
+            CoReg::C13 => "c13",
+            CoReg::C14 => "c14",
+            CoReg::C15 => "c15",
+        }
     }
 }
 
 impl Display for CoReg {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl StatusReg {
+    pub fn as_str(self) -> &'static str {
         match self {
-            CoReg::Illegal => write!(f, "<illegal>"),
-            CoReg::C0 => write!(f, "c0"),
-            CoReg::C1 => write!(f, "c1"),
-            CoReg::C2 => write!(f, "c2"),
-            CoReg::C3 => write!(f, "c3"),
-            CoReg::C4 => write!(f, "c4"),
-            CoReg::C5 => write!(f, "c5"),
-            CoReg::C6 => write!(f, "c6"),
-            CoReg::C7 => write!(f, "c7"),
-            CoReg::C8 => write!(f, "c8"),
-            CoReg::C9 => write!(f, "c9"),
-            CoReg::C10 => write!(f, "c10"),
-            CoReg::C11 => write!(f, "c11"),
-            CoReg::C12 => write!(f, "c12"),
-            CoReg::C13 => write!(f, "c13"),
-            CoReg::C14 => write!(f, "c14"),
-            CoReg::C15 => write!(f, "c15"),
+            StatusReg::Illegal => "<illegal>",
+            StatusReg::Cpsr => "cpsr",
+            StatusReg::Spsr => "spsr",
         }
     }
 }
 
 impl Display for StatusReg {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            StatusReg::Illegal => write!(f, "<illegal>"),
-            StatusReg::Cpsr => write!(f, "cpsr"),
-            StatusReg::Spsr => write!(f, "spsr"),
-        }
+        f.write_str(self.as_str())
     }
 }
 
@@ -342,16 +361,22 @@ impl Display for StatusMask {
     }
 }
 
+impl Shift {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Shift::Illegal => "<illegal>",
+            Shift::Lsl => "lsl",
+            Shift::Lsr => "lsr",
+            Shift::Asr => "asr",
+            Shift::Ror => "ror",
+            Shift::Rrx => "rrx",
+        }
+    }
+}
+
 impl Display for Shift {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Shift::Illegal => write!(f, "<illegal>"),
-            Shift::Lsl => write!(f, "lsl"),
-            Shift::Lsr => write!(f, "lsr"),
-            Shift::Asr => write!(f, "asr"),
-            Shift::Ror => write!(f, "ror"),
-            Shift::Rrx => write!(f, "rrx"),
-        }
+        f.write_str(self.as_str())
     }
 }
 
@@ -420,12 +445,18 @@ impl Display for CpsrFlags {
     }
 }
 
+impl Endian {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Endian::Illegal => "<illegal>",
+            Endian::Le => "le",
+            Endian::Be => "be",
+        }
+    }
+}
+
 impl Display for Endian {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Endian::Illegal => write!(f, "<illegal>"),
-            Endian::Le => write!(f, "le"),
-            Endian::Be => write!(f, "be"),
-        }
+        f.write_str(self.as_str())
     }
 }
