@@ -261,7 +261,7 @@ pub struct RegDisplay(Register, RegNames);
 impl RegDisplay {
     pub fn as_str(self) -> &'static str {
         #[rustfmt::skip]
-        match self.0 {
+        let str = match self.0 {
             Register::Illegal => "<illegal>",
             Register::R0 => if self.1.av_registers { "a1" } else { "r0" },
             Register::R1 => if self.1.av_registers { "a2" } else { "r1" },
@@ -283,7 +283,8 @@ impl RegDisplay {
             Register::Sp => "sp",
             Register::Lr => "lr",
             Register::Pc => "pc",
-        }
+        };
+        str
     }
 }
 
