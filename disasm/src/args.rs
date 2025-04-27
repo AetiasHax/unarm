@@ -47,7 +47,7 @@ pub enum Argument {
     /// Endian specifier
     Endian(Endian),
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
 pub enum Register {
     #[default]
@@ -94,7 +94,7 @@ impl Register {
         }
     }
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
 pub enum StatusReg {
     #[default]
@@ -111,7 +111,7 @@ impl StatusReg {
         }
     }
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
 pub enum Shift {
     #[default]
@@ -152,7 +152,7 @@ pub struct RegList {
     /// Access user-mode registers from elevated mode
     pub user_mode: bool,
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
 pub enum CoReg {
     #[default]
@@ -244,7 +244,7 @@ pub struct CpsrFlags {
     /// IRQ interrupt
     pub i: bool,
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
 pub enum Endian {
     #[default]

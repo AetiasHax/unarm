@@ -153,7 +153,7 @@ fn generate_enum(values: &[EnumValue], ident: Ident) -> TokenStream {
     };
 
     quote! {
-        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
         #[repr(u8)]
         pub enum #ident {
             #[default]
