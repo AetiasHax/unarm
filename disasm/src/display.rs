@@ -85,7 +85,7 @@ impl<'a> ParsedInsDisplay<'a> {
                         return write!(f, "], {}", next.display(self.options, self.symbols));
                     } else {
                         write!(f, ", {}", next.display(self.options, self.symbols))?;
-                        while let Some(more) = iter.next() {
+                        for more in iter {
                             write!(f, ", {}", more.display(self.options, self.symbols))?;
                         }
                     }
@@ -104,7 +104,7 @@ impl<'a> ParsedInsDisplay<'a> {
     }
 }
 
-impl<'a> Display for ParsedInsDisplay<'a> {
+impl Display for ParsedInsDisplay<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.ins.mnemonic)?;
         let mut iter = self.ins.args_iter();
@@ -163,7 +163,7 @@ pub struct DisplayArgument<'a> {
     symbols: Option<Symbols<'a>>,
 }
 
-impl<'a> Display for DisplayArgument<'a> {
+impl Display for DisplayArgument<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.arg {
             Argument::None => Ok(()),

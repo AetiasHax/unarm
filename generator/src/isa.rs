@@ -319,9 +319,7 @@ impl Modifier {
         if has_suffix || has_nsuffix {
             true
         } else {
-            self.cases
-                .as_ref()
-                .map_or(false, |cases| cases.iter().any(|c| c.has_suffix()))
+            self.cases.as_ref().is_some_and(|cases| cases.iter().any(|c| c.has_suffix()))
         }
     }
 

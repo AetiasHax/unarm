@@ -20,12 +20,12 @@ fn main() -> Result<()> {
     let arm_isa = Isa::load("specs/arm.yaml")?;
     arm_isa
         .validate(&args)
-        .with_context(|| format!("While validating arm.yaml"))?;
+        .with_context(|| "While validating arm.yaml".to_string())?;
 
     let thumb_isa = Isa::load("specs/thumb.yaml")?;
     thumb_isa
         .validate(&args)
-        .with_context(|| format!("While validating thumb.yaml"))?;
+        .with_context(|| "While validating thumb.yaml".to_string())?;
 
     let max_args = arm_isa
         .get_max_args(false)?
@@ -38,15 +38,15 @@ fn main() -> Result<()> {
     let formatted = prettyplease::unparse(&file);
     fs::write("disasm/src/args.rs", formatted)?;
 
-    let tokens =
-        generate_disasm(&arm_isa, &args, max_args).with_context(|| format!("While generating disassembler for arm.yaml"))?;
-    let file = syn::parse2(tokens).with_context(|| format!("While parsing disassembler tokens for arm.yaml"))?;
+    let tokens = generate_disasm(&arm_isa, &args, max_args)
+        .with_context(|| "While generating disassembler for arm.yaml".to_string())?;
+    let file = syn::parse2(tokens).with_context(|| "While parsing disassembler tokens for arm.yaml".to_string())?;
     let formatted = prettyplease::unparse(&file);
     fs::write("disasm/src/arm/generated.rs", formatted)?;
 
     let tokens = generate_disasm(&thumb_isa, &args, max_args)
-        .with_context(|| format!("While generating disassembler for thumb.yaml"))?;
-    let file = syn::parse2(tokens).with_context(|| format!("While parsing disassembler tokens for thumb.yaml"))?;
+        .with_context(|| "While generating disassembler for thumb.yaml".to_string())?;
+    let file = syn::parse2(tokens).with_context(|| "While parsing disassembler tokens for thumb.yaml".to_string())?;
     let formatted = prettyplease::unparse(&file);
     fs::write("disasm/src/thumb/generated.rs", formatted)?;
 

@@ -90,7 +90,7 @@ macro_rules! parse_thumb {
     }};
 }
 
-impl<'a> Iterator for Parser<'a> {
+impl Iterator for Parser<'_> {
     type Item = (u32, Ins, ParsedIns);
 
     fn next(&mut self) -> Option<Self::Item> {

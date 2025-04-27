@@ -19,3 +19,6 @@ v5te = []
 v6k = []
 
 [dependencies]
+
+[lints.clippy]
+needless_update = "allow"
