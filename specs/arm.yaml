@@ -806,6 +806,8 @@ modifiers:
 tags:
   - name: loads_multiple
     desc: This opcode loads multiple values from memory into registers.
+  - name: stores_multiple
+    desc: This opcode stores multiple values from registers into memory.
   - name: is_compare_op
     desc: This opcode compares a register with another value.
   - name: is_data_operation
@@ -1472,6 +1474,7 @@ opcodes:
     pattern: 0x092d0000
     flags: [!Ual true]
     modifiers: [cond]
+    tags: [stores_multiple]
     args: [registers]
     uses: [registers]
 
@@ -1481,6 +1484,7 @@ opcodes:
     pattern: 0x052d0004
     flags: [!Ual true]
     modifiers: [cond]
+    tags: [stores_multiple]
     args: [Rt_list]
     uses: [Rt_list]
 
@@ -2103,6 +2107,7 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08000000
     modifiers: [addr_ldm_stm, cond]
+    tags: [stores_multiple]
     args: [Rn, registers]
     uses: [Rn, registers]
 
@@ -2111,6 +2116,7 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08200000
     modifiers: [addr_ldm_stm, cond]
+    tags: [stores_multiple]
     args: [Rn_wb, registers]
     defs: [Rn_wb]
     uses: [Rn_wb, registers]
@@ -2120,6 +2126,7 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08400000
     modifiers: [addr_ldm_stm, cond]
+    tags: [stores_multiple]
     args: [Rn, registers_c]
     uses: [Rn, registers_c]
 
@@ -2129,6 +2136,7 @@ opcodes:
     bitmask: 0x0e700000
     pattern: 0x08600000
     modifiers: [addr_ldm_stm, cond]
+    tags: [stores_multiple]
     args: [Rn_wb, registers_c]
     defs: [Rn_wb]
     uses: [Rn_wb, registers_c]

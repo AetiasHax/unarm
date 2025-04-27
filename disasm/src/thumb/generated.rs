@@ -1842,6 +1842,10 @@ impl Ins {
     pub fn loads_multiple(&self) -> bool {
         matches!(self.op, Opcode::Ldm | Opcode::Ldmia | Opcode::Pop)
     }
+    /// This opcode stores multiple values from registers into memory.
+    pub fn stores_multiple(&self) -> bool {
+        matches!(self.op, Opcode::Push | Opcode::Stm)
+    }
     /// This opcode sets the comparison flags according to the resulting value.
     pub fn updates_condition_flags(&self) -> bool {
         matches!(

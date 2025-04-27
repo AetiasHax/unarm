@@ -66,6 +66,14 @@ impl Ins {
         }
     }
 
+    pub fn stores_multiple(&self) -> bool {
+        match self {
+            Ins::Arm(ins) => ins.stores_multiple(),
+            Ins::Thumb(ins) => ins.stores_multiple(),
+            Ins::Data => false,
+        }
+    }
+
     pub fn register_list(&self) -> RegList {
         match self {
             Ins::Arm(ins) => ins.field_registers(),

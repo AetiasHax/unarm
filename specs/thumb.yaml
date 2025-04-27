@@ -394,6 +394,8 @@ modifiers:
 tags:
   - name: loads_multiple
     desc: This opcode loads multiple values from memory into registers.
+  - name: stores_multiple
+    desc: This opcode stores multiple values from registers into memory.
   - name: updates_condition_flags
     desc: This opcode sets the comparison flags according to the resulting value.
   - name: is_data_operation
@@ -889,6 +891,7 @@ opcodes:
     desc: Push multiple registers
     bitmask: 0xfe00
     pattern: 0xb400
+    tags: [stores_multiple]
     args: [registers_lr]
     uses: [registers_lr]
 
@@ -955,6 +958,7 @@ opcodes:
     suffix: !Divided ia
     bitmask: 0xf800
     pattern: 0xc000
+    tags: [stores_multiple]
     args: [Rn_8_wb, registers]
     defs: [Rn_8_wb]
     uses: [Rn_8_wb, registers]
