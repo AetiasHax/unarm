@@ -1,6 +1,6 @@
-use crate::{thumb::generated::Opcode, ParseFlags, ParsedIns};
+use crate::{args::Arguments, thumb::generated::Opcode, ParseFlags, ParsedIns};
 
-use super::{parse, Cond};
+use super::{defs, parse, uses, Cond};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Ins {
@@ -22,6 +22,18 @@ impl Ins {
     pub fn parse(self, flags: &ParseFlags) -> ParsedIns {
         let mut out = ParsedIns::default();
         parse(&mut out, self, flags);
+        out
+    }
+
+    pub fn defs(self, flags: &ParseFlags) -> Arguments {
+        let mut out = Arguments::default();
+        defs(&mut out, self, flags);
+        out
+    }
+
+    pub fn uses(self, flags: &ParseFlags) -> Arguments {
+        let mut out = Arguments::default();
+        uses(&mut out, self, flags);
         out
     }
 

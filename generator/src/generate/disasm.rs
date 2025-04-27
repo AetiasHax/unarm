@@ -46,8 +46,11 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
     // Generate tag functions
     let tag_functions_tokens = generate_tag_functions(isa);
 
-    // Generate parse functions
-    let parse_functions = generate_parse_functions(isa, isa_args, max_args, &isa.opcodes, &num_opcodes_token)?;
+    // Generate parse/defs/uses functions
+    let parse_functions = generate_parse_functions(isa)?;
+    let parse_functions_tokens = parse_functions.generate_parse_functions(isa_args, max_args, &num_opcodes_token)?;
+    let defs_functions_tokens = parse_functions.generate_defs_functions(isa_args, max_args, &num_opcodes_token)?;
+    let uses_functions_tokens = parse_functions.generate_uses_functions(isa_args, max_args, &num_opcodes_token)?;
 
     Ok(quote! {
         #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -105,7 +108,11 @@ pub fn generate_disasm(isa: &Isa, isa_args: &IsaArgs, max_args: usize) -> Result
 
         #case_enums_tokens
 
-        #parse_functions
+        #parse_functions_tokens
+
+        #defs_functions_tokens
+
+        #uses_functions_tokens
     })
 }
 
@@ -188,90 +195,447 @@ fn generate_search_node(node: Option<Box<SearchTree>>, opcodes: &mut Vec<Opcode>
 }
 
 fn illegal_ins(max_args: usize) -> TokenStream {
-    let illegal_args = (0..max_args).map(|_| quote! { Argument::None });
+    let illegal_args = illegal_ins_args(max_args);
     quote! {
         ParsedIns {
             mnemonic: "<illegal>",
-            args: [
-                #(#illegal_args),*
-            ],
+            args: #illegal_args,
         }
     }
 }
 
-fn generate_parse_functions(
-    isa: &Isa,
-    isa_args: &IsaArgs,
-    max_args: usize,
-    sorted_opcodes: &[Opcode],
-    num_opcodes_token: &Literal,
-) -> Result<TokenStream, anyhow::Error> {
-    let mut parse_functions = TokenStream::new();
+fn illegal_ins_args(max_args: usize) -> TokenStream {
+    let illegal_args = (0..max_args).map(|_| quote! { Argument::None });
+    quote! {
+        [
+            #(#illegal_args),*
+        ]
+    }
+}
 
-    let illegal_ins = illegal_ins(max_args);
-    let parse_illegal_ident = Ident::new("parse_illegal", Span::call_site());
+struct ParseFunctions<'a> {
+    parse_functions: Vec<ParseFunction<'a>>,
+}
 
-    parse_functions.extend(quote! {
-        fn #parse_illegal_ident(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-            *out = #illegal_ins;
-        }
-    });
+impl ParseFunctions<'_> {
+    fn generate_parse_functions(
+        &self,
+        isa_args: &IsaArgs,
+        max_args: usize,
+        num_opcodes_token: &Literal,
+    ) -> Result<TokenStream> {
+        let parse_functions = self
+            .parse_functions
+            .iter()
+            .map(|pf| pf.create_parse_function(isa_args, max_args))
+            .collect::<Result<Vec<_>>>()?;
+        let parser_fns = self
+            .parse_functions
+            .iter()
+            .map(|pf| Ident::new(&pf.parser_fn_name(), Span::call_site()))
+            .collect::<Vec<_>>();
+        let illegal_ins = illegal_ins(max_args);
 
-    for opcode in isa.opcodes.iter() {
-        let parse_body = match (opcode.has_ual_changes(isa)?, opcode.ual_flag()) {
-            (true, None) => {
-                let body_pre_ual = generate_instruction_parse_body(opcode, isa, isa_args, max_args, false)?;
-                let body_ual = generate_instruction_parse_body(opcode, isa, isa_args, max_args, true)?;
-                quote! {
-                    if flags.ual {
-                        #body_ual
-                    } else {
-                        #body_pre_ual
-                    }
+        Ok(quote! {
+            #(#parse_functions)*
+            type MnemonicParser = fn(&mut ParsedIns, Ins, &ParseFlags);
+            static MNEMONIC_PARSERS: [MnemonicParser; #num_opcodes_token] = [
+                #(#parser_fns),*
+            ];
+            #[inline]
+            pub fn parse(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
+                if ins.op != Opcode::Illegal {
+                    MNEMONIC_PARSERS[ins.op as usize](out, ins, flags);
+                } else {
+                    *out = #illegal_ins;
                 }
-            }
-            (_, Some(false)) => generate_instruction_parse_body(opcode, isa, isa_args, max_args, false)?,
-            (_, Some(true)) | (false, None) => generate_instruction_parse_body(opcode, isa, isa_args, max_args, true)?,
-        };
-
-        let parse_fn = Ident::new(&opcode.parser_name(), Span::call_site());
-        parse_functions.extend(quote! {
-            fn #parse_fn(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-                #parse_body
             }
         })
     }
-    let parser_fns = [parse_illegal_ident].into_iter().chain(
-        sorted_opcodes
+
+    fn generate_defs_functions(
+        &self,
+        isa_args: &IsaArgs,
+        max_args: usize,
+        num_opcodes_token: &Literal,
+    ) -> Result<TokenStream> {
+        let defs_functions = self
+            .parse_functions
             .iter()
-            .map(|op| Ident::new(&op.parser_name(), Span::call_site())),
-    );
-    parse_functions.extend(quote! {
-        type MnemonicParser = fn(&mut ParsedIns, Ins, &ParseFlags);
-        static MNEMONIC_PARSERS: [MnemonicParser; #num_opcodes_token] = [
-            #(#parser_fns),*
-        ];
-        #[inline]
-        pub fn parse(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-            if ins.op != Opcode::Illegal {
-                MNEMONIC_PARSERS[ins.op as usize](out, ins, flags);
-            } else {
-                *out = #illegal_ins;
+            .map(|pf| pf.create_defs_uses_function(ArgGroup::Defs, isa_args, max_args))
+            .collect::<Result<Vec<_>>>()?;
+        let defs_fns = self
+            .parse_functions
+            .iter()
+            .map(|pf| Ident::new(&pf.defs_fn_name(), Span::call_site()))
+            .collect::<Vec<_>>();
+        let illegal_ins_args = illegal_ins_args(max_args);
+
+        Ok(quote! {
+            #(#defs_functions)*
+            type DefsFn = fn(&mut Arguments, Ins, &ParseFlags);
+            static DEFS_FNS: [DefsFn; #num_opcodes_token] = [
+                #(#defs_fns),*
+            ];
+            #[inline]
+            pub fn defs(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+                if ins.op != Opcode::Illegal {
+                    DEFS_FNS[ins.op as usize](out, ins, flags);
+                } else {
+                    *out = #illegal_ins_args;
+                }
             }
-        }
-    });
-    Ok(parse_functions)
+        })
+    }
+
+    fn generate_uses_functions(
+        &self,
+        isa_args: &IsaArgs,
+        max_args: usize,
+        num_opcodes_token: &Literal,
+    ) -> Result<TokenStream> {
+        let uses_functions = self
+            .parse_functions
+            .iter()
+            .map(|pf| pf.create_defs_uses_function(ArgGroup::Uses, isa_args, max_args))
+            .collect::<Result<Vec<_>>>()?;
+        let uses_fns = self
+            .parse_functions
+            .iter()
+            .map(|pf| Ident::new(&pf.uses_fn_name(), Span::call_site()))
+            .collect::<Vec<_>>();
+        let illegal_ins_args = illegal_ins_args(max_args);
+
+        Ok(quote! {
+            #(#uses_functions)*
+            type UsesFn = fn(&mut Arguments, Ins, &ParseFlags);
+            static USES_FNS: [UsesFn; #num_opcodes_token] = [
+                #(#uses_fns),*
+            ];
+            #[inline]
+            pub fn uses(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+                if ins.op != Opcode::Illegal {
+                    USES_FNS[ins.op as usize](out, ins, flags);
+                } else {
+                    *out = #illegal_ins_args;
+                }
+            }
+        })
+    }
 }
 
-fn generate_instruction_parse_body(
-    opcode: &Opcode,
-    isa: &Isa,
-    isa_args: &IsaArgs,
-    max_args: usize,
-    ual: bool,
-) -> Result<TokenStream, anyhow::Error> {
-    let illegal_ins = illegal_ins(max_args);
+struct ParseFunction<'a> {
+    opcode: Option<&'a Opcode>,
+    modifier_cases: ModifierCases<'a>,
+    /// Modifier cases in divided syntax, if it differs from unified syntax
+    modifier_cases_divided: Option<ModifierCases<'a>>,
+}
 
+impl ParseFunction<'_> {
+    fn parser_fn_name(&self) -> String {
+        if let Some(opcode) = self.opcode {
+            opcode.parser_name()
+        } else {
+            "parse_illegal".to_string()
+        }
+    }
+
+    fn create_parse_function(&self, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
+        let fn_ident = Ident::new(&self.parser_fn_name(), Span::call_site());
+
+        let fn_body = if let Some(modifier_cases_divided) = &self.modifier_cases_divided {
+            let unified_parsed_ins = self
+                .modifier_cases
+                .create_token_stream(ArgGroup::Default, isa_args, max_args)?;
+            let divided_parsed_ins = modifier_cases_divided.create_token_stream(ArgGroup::Default, isa_args, max_args)?;
+            quote! {
+                if flags.ual {
+                    *out = #unified_parsed_ins;
+                } else {
+                    *out = #divided_parsed_ins;
+                }
+            }
+        } else {
+            let parsed_ins = self
+                .modifier_cases
+                .create_token_stream(ArgGroup::Default, isa_args, max_args)?;
+            quote! {
+                *out = #parsed_ins;
+            }
+        };
+
+        Ok(quote! {
+            fn #fn_ident(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
+                #fn_body
+            }
+        })
+    }
+
+    fn defs_fn_name(&self) -> String {
+        if let Some(opcode) = self.opcode {
+            opcode.defs_fn_name()
+        } else {
+            "defs_illegal".to_string()
+        }
+    }
+
+    fn uses_fn_name(&self) -> String {
+        if let Some(opcode) = self.opcode {
+            opcode.uses_fn_name()
+        } else {
+            "uses_illegal".to_string()
+        }
+    }
+
+    fn create_defs_uses_function(&self, arg_group: ArgGroup, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
+        let fn_name = match arg_group {
+            ArgGroup::Default => panic!(),
+            ArgGroup::Defs => self.defs_fn_name(),
+            ArgGroup::Uses => self.uses_fn_name(),
+        };
+        let fn_ident = Ident::new(&fn_name, Span::call_site());
+
+        let fn_body = if let Some(modifier_cases_divided) = &self.modifier_cases_divided {
+            let unified_args = self.modifier_cases.create_token_stream(arg_group, isa_args, max_args)?;
+            let divided_args = modifier_cases_divided.create_token_stream(arg_group, isa_args, max_args)?;
+            quote! {
+                if flags.ual {
+                    *out = #unified_args;
+                } else {
+                    *out = #divided_args;
+                }
+            }
+        } else {
+            let args = self.modifier_cases.create_token_stream(arg_group, isa_args, max_args)?;
+            quote! {
+                *out = #args;
+            }
+        };
+
+        // Wrap in SBO/SBZ checks if needed
+        let fn_body = if let Some(opcode) = self.opcode {
+            let sbo_sbz_bitmask = opcode.sbo_sbz_bitmask();
+            if sbo_sbz_bitmask != 0 {
+                let illegal_ins = match arg_group {
+                    ArgGroup::Default => illegal_ins(max_args),
+                    ArgGroup::Defs => illegal_ins_args(max_args),
+                    ArgGroup::Uses => illegal_ins_args(max_args),
+                };
+
+                let pattern = opcode.sbo_sbz_pattern();
+                let bitmask = HexLiteral(sbo_sbz_bitmask);
+                let pattern = HexLiteral(pattern);
+                quote! {
+                    if (ins.code & #bitmask) == #pattern {
+                        #fn_body
+                    } else {
+                        *out = #illegal_ins;
+                    }
+                }
+            } else {
+                fn_body
+            }
+        } else {
+            fn_body
+        };
+
+        Ok(quote! {
+            fn #fn_ident(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+                #fn_body
+            }
+        })
+    }
+}
+
+struct ModifierCases<'a> {
+    modifier_values: Vec<TokenStream>,
+    cases: Vec<ModifierCase<'a>>,
+}
+
+impl ModifierCases<'_> {
+    fn create_token_stream(&self, arg_group: ArgGroup, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
+        if self.cases.len() == 1 {
+            match arg_group {
+                ArgGroup::Default => return self.cases[0].create_parsed_ins(isa_args, max_args),
+                ArgGroup::Defs => return self.cases[0].create_defs(isa_args, max_args),
+                ArgGroup::Uses => return self.cases[0].create_uses(isa_args, max_args),
+            }
+        }
+
+        let illegal_ins = match arg_group {
+            ArgGroup::Default => illegal_ins(max_args),
+            ArgGroup::Defs => illegal_ins_args(max_args),
+            ArgGroup::Uses => illegal_ins_args(max_args),
+        };
+
+        let modifier_fields = &self.modifier_values;
+        let cases: Result<Vec<TokenStream>> = match arg_group {
+            ArgGroup::Default => self
+                .cases
+                .iter()
+                .map(|case| case.create_parsed_ins(isa_args, max_args))
+                .collect(),
+            ArgGroup::Defs => self.cases.iter().map(|case| case.create_defs(isa_args, max_args)).collect(),
+            ArgGroup::Uses => self.cases.iter().map(|case| case.create_uses(isa_args, max_args)).collect(),
+        };
+        let cases = cases?;
+        Ok(quote! {
+            match (#(#modifier_fields),*) {
+                #(#cases),*,
+                _ => #illegal_ins,
+            }
+        })
+    }
+}
+
+struct ModifierCase<'a> {
+    patterns: Vec<TokenStream>,
+    mnemonic: String,
+    args: Vec<OpcodeArgument<'a>>,
+}
+
+impl ModifierCase<'_> {
+    fn create_parsed_ins(&self, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
+        let patterns = &self.patterns;
+        let mnemonic = &self.mnemonic;
+        let mut args = self
+            .args
+            .iter()
+            .map(|arg| arg.create_argument(isa_args))
+            .collect::<Result<Vec<_>>>()?;
+        while args.len() < max_args {
+            args.push(quote! { Argument::None });
+        }
+
+        let parsed_ins = quote! {
+            ParsedIns {
+                mnemonic: #mnemonic,
+                args: [
+                    #(#args),*
+                ]
+            }
+        };
+        if patterns.is_empty() {
+            Ok(parsed_ins)
+        } else {
+            Ok(quote! {
+                (#(#patterns),*) => #parsed_ins
+            })
+        }
+    }
+
+    fn create_defs(&self, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
+        let patterns = &self.patterns;
+        let mut args = self
+            .args
+            .iter()
+            .filter(|arg| arg.is_def)
+            .map(|arg| arg.create_argument(isa_args))
+            .collect::<Result<Vec<_>>>()?;
+        while args.len() < max_args {
+            args.push(quote! { Argument::None });
+        }
+        let arguments = quote! {
+            [ #(#args),* ]
+        };
+        if patterns.is_empty() {
+            Ok(arguments)
+        } else {
+            Ok(quote! {
+                (#(#patterns),*) => #arguments
+            })
+        }
+    }
+
+    fn create_uses(&self, isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream> {
+        let patterns = &self.patterns;
+        let mut args = self
+            .args
+            .iter()
+            .filter(|arg| arg.is_use)
+            .map(|arg| arg.create_argument(isa_args))
+            .collect::<Result<Vec<_>>>()?;
+        while args.len() < max_args {
+            args.push(quote! { Argument::None });
+        }
+        let arguments = quote! {
+            [ #(#args),* ]
+        };
+        if patterns.is_empty() {
+            Ok(arguments)
+        } else {
+            Ok(quote! {
+                (#(#patterns),*) => #arguments
+            })
+        }
+    }
+}
+
+struct OpcodeArgument<'a> {
+    field: &'a Field,
+    is_def: bool,
+    is_use: bool,
+}
+
+impl OpcodeArgument<'_> {
+    fn create_argument(&self, isa_args: &IsaArgs) -> Result<TokenStream> {
+        let accessor = Ident::new(&self.field.accessor_name(), Span::call_site());
+        let arg = isa_args.get_arg(&self.field.arg)?;
+        let arg_variant = Ident::new(&arg.pascal_case_name(), Span::call_site());
+
+        Ok(quote! {
+            Argument::#arg_variant(ins.#accessor())
+        })
+    }
+}
+
+fn generate_parse_functions<'a>(isa: &'a Isa) -> Result<ParseFunctions<'a>> {
+    let mut parse_functions: Vec<ParseFunction<'a>> = vec![];
+
+    parse_functions.push(ParseFunction {
+        opcode: None,
+        modifier_cases: ModifierCases {
+            modifier_values: vec![],
+            cases: vec![ModifierCase {
+                patterns: vec![],
+                mnemonic: "<illegal>".to_string(),
+                args: vec![],
+            }],
+        },
+        modifier_cases_divided: None,
+    });
+
+    for opcode in isa.opcodes.iter() {
+        let parse_fn: ParseFunction = generate_parse_function(isa, opcode)?;
+        parse_functions.push(parse_fn);
+    }
+    Ok(ParseFunctions { parse_functions })
+}
+
+#[derive(Clone, Copy)]
+enum ArgGroup {
+    Default,
+    Defs,
+    Uses,
+}
+
+fn generate_parse_function<'a>(isa: &'a Isa, opcode: &'a Opcode) -> Result<ParseFunction<'a>, anyhow::Error> {
+    let (modifier_cases, modifier_cases_divided) = match (opcode.has_ual_changes(isa)?, opcode.ual_flag()) {
+        (true, None) => (
+            generate_modifier_cases(opcode, isa, true)?,
+            Some(generate_modifier_cases(opcode, isa, false)?),
+        ),
+        (_, Some(false)) => (generate_modifier_cases(opcode, isa, false)?, None),
+        (_, Some(true)) | (false, None) => (generate_modifier_cases(opcode, isa, true)?, None),
+    };
+    Ok(ParseFunction {
+        opcode: Some(opcode),
+        modifier_cases,
+        modifier_cases_divided,
+    })
+}
+
+fn generate_modifier_cases<'a>(opcode: &Opcode, isa: &'a Isa, ual: bool) -> Result<ModifierCases<'a>, anyhow::Error> {
     let modifiers = opcode.get_modifiers(isa, ual)?;
     let modifier_values: Result<Vec<_>> = modifiers
         .iter()
@@ -282,8 +646,11 @@ fn generate_instruction_parse_body(
         .collect();
     let modifier_values = modifier_values?;
 
-    let opcode_args = opcode
-        .args
+    let args = &opcode.args;
+    let defs = &opcode.defs;
+    let uses = &opcode.uses;
+
+    let opcode_args = args
         .iter()
         .filter_map(|arg| {
             let field = isa.get_field(arg);
@@ -298,32 +665,35 @@ fn generate_instruction_parse_body(
         .collect::<Result<Vec<_>>>()?;
     let modifier_cases = opcode.get_modifier_cases(isa, ual)?;
 
-    let match_modifiers = {
-        let mut case_bodies: Vec<TokenStream> = vec![];
+    let cases: Vec<ModifierCase> = {
         if modifier_cases.is_empty() {
             let mnemonic = opcode.name(ual).to_string();
-            let args = generate_mnemonic_args(isa_args, max_args, opcode_args)?;
-            quote! {
-                *out = ParsedIns {
-                    mnemonic: #mnemonic,
-                    args: [ #(#args),* ],
-                }
-            }
+            let args = generate_mnemonic_args(opcode_args, defs, uses)?;
+            vec![ModifierCase {
+                patterns: vec![],
+                mnemonic,
+                args,
+            }]
         } else {
+            let mut cases_vec: Vec<ModifierCase> = vec![];
             for cases in cartesian(&modifier_cases) {
-                let mut case_values = cases.iter().zip(modifiers.iter()).map(|(case, modifier)| {
-                    if modifier.pattern.is_some() {
-                        if case.pattern != 0 {
-                            quote! { true }
+                let case_values = cases
+                    .iter()
+                    .zip(modifiers.iter())
+                    .map(|(case, modifier)| {
+                        if modifier.pattern.is_some() {
+                            if case.pattern != 0 {
+                                quote! { true }
+                            } else {
+                                quote! { false }
+                            }
                         } else {
-                            quote! { false }
+                            let enum_name = Ident::new(&modifier.enum_name(), Span::call_site());
+                            let variant_name = Ident::new(&case.variant_name(), Span::call_site());
+                            quote! { #enum_name::#variant_name }
                         }
-                    } else {
-                        let enum_name = Ident::new(&modifier.enum_name(), Span::call_site());
-                        let variant_name = Ident::new(&case.variant_name(), Span::call_site());
-                        quote! { #enum_name::#variant_name }
-                    }
-                });
+                    })
+                    .collect();
                 let suffix = cases.iter().map(|case| case.suffix(ual)).collect::<String>();
                 let opcode_suffix = opcode.suffix.as_ref().map_or("", |s| s.suffix(ual));
                 let mnemonic = if ual {
@@ -331,89 +701,43 @@ fn generate_instruction_parse_body(
                 } else {
                     opcode.base_name().to_string() + &suffix + opcode_suffix
                 };
-                let case_args = {
-                    let mut case_args = opcode_args.clone();
-                    for case in cases.iter() {
-                        for arg in case.args.iter() {
-                            let arg = isa.get_field(arg)?;
-                            case_args.push(arg);
-                        }
-                    }
-                    case_args
-                };
 
-                let args = generate_mnemonic_args(isa_args, max_args, case_args)?;
-                if case_values.len() > 1 {
-                    case_bodies.push(quote! {
-                        (#(#case_values),*) => ParsedIns {
-                            mnemonic: #mnemonic,
-                            args: [ #(#args),* ],
-                        }
-                    });
-                } else {
-                    let case_value = case_values.next().unwrap();
-                    case_bodies.push(quote! {
-                        #case_value => ParsedIns {
-                            mnemonic: #mnemonic,
-                            args: [ #(#args),* ],
-                        }
-                    });
-                }
-            }
-            if modifier_values.len() > 1 {
-                quote! {
-                    *out = match (#(#modifier_values),*) {
-                        #(#case_bodies),*,
-                        _ => #illegal_ins,
+                let mut case_args = opcode_args.clone();
+                let mut case_defs = defs.clone().to_vec();
+                let mut case_uses = uses.clone().to_vec();
+                for case in cases.iter() {
+                    let case_arg_group = &case.args;
+                    for arg in case_arg_group.iter() {
+                        let arg = isa.get_field(arg)?;
+                        case_args.push(arg);
                     }
+                    case_defs.extend(case.defs.iter().cloned());
+                    case_uses.extend(case.uses.iter().cloned());
                 }
-            } else {
-                let modifier_value = &modifier_values[0];
-                quote! {
-                    *out = match #modifier_value {
-                        #(#case_bodies),*,
-                        _ => #illegal_ins,
-                    }
-                }
+
+                let args = generate_mnemonic_args(case_args, &case_defs, &case_uses)?;
+                cases_vec.push(ModifierCase {
+                    patterns: case_values,
+                    mnemonic: mnemonic.clone(),
+                    args,
+                });
             }
+            cases_vec
         }
     };
 
-    let body = {
-        let bitmask = opcode.sbo_sbz_bitmask();
-        if bitmask == 0 {
-            match_modifiers
-        } else {
-            let pattern = opcode.sbo_sbz_pattern();
-
-            let bitmask = HexLiteral(bitmask);
-            let pattern = HexLiteral(pattern);
-            quote! {
-                if (ins.code & #bitmask) == #pattern {
-                    #match_modifiers
-                } else {
-                    *out = #illegal_ins;
-                }
-            }
-        }
-    };
-
-    Ok(body)
+    Ok(ModifierCases { modifier_values, cases })
 }
 
-fn generate_mnemonic_args(isa_args: &IsaArgs, max_args: usize, args: Vec<&Field>) -> Result<Vec<TokenStream>> {
-    let args = (0..max_args)
-        .map(|i| {
-            if i < args.len() {
-                let field = args[i];
-                let accessor = Ident::new(&field.accessor_name(), Span::call_site());
-                let arg = isa_args.get_arg(&field.arg)?;
-                let arg_variant = Ident::new(&arg.pascal_case_name(), Span::call_site());
-                let access_variant = quote! { #arg_variant(ins.#accessor()) };
-                Ok(quote! { Argument::#access_variant })
-            } else {
-                Ok(quote! { Argument::None })
-            }
+fn generate_mnemonic_args<'a>(args: Vec<&'a Field>, defs: &[String], uses: &[String]) -> Result<Vec<OpcodeArgument<'a>>> {
+    let args = args
+        .iter()
+        .map(|field| {
+            Ok(OpcodeArgument {
+                field,
+                is_def: defs.contains(&field.name),
+                is_use: uses.contains(&field.name),
+            })
         })
         .collect::<Result<Vec<_>>>()?;
     Ok(args)

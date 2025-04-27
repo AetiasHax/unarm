@@ -1937,7 +1937,7 @@ fn parse_adc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "adc",
@@ -1949,7 +1949,7 @@ fn parse_adc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_3(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -1964,7 +1964,7 @@ fn parse_add_3(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "add",
@@ -1976,7 +1976,7 @@ fn parse_add_3(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_8(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -1991,7 +1991,7 @@ fn parse_add_8(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "add",
@@ -2003,7 +2003,7 @@ fn parse_add_8(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2018,7 +2018,7 @@ fn parse_add_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "add",
@@ -2030,7 +2030,7 @@ fn parse_add_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_hr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2045,7 +2045,7 @@ fn parse_add_hr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "add",
@@ -2057,7 +2057,7 @@ fn parse_add_hr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_sp(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2085,7 +2085,7 @@ fn parse_add_sp7(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "add",
@@ -2097,7 +2097,7 @@ fn parse_add_sp7(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_reg_sp(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2125,7 +2125,7 @@ fn parse_add_sp_reg(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "add",
@@ -2137,7 +2137,7 @@ fn parse_add_sp_reg(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_add_pc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2178,7 +2178,7 @@ fn parse_and(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "and",
@@ -2190,7 +2190,7 @@ fn parse_and(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_asr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2205,7 +2205,7 @@ fn parse_asr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "asr",
@@ -2217,7 +2217,7 @@ fn parse_asr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_asr_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2232,7 +2232,7 @@ fn parse_asr_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "asr",
@@ -2244,12 +2244,12 @@ fn parse_asr_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    *out = match ins.modifier_cond() {
-        Cond::Eq => {
+    *out = match (ins.modifier_cond()) {
+        (Cond::Eq) => {
             ParsedIns {
                 mnemonic: "beq",
                 args: [
@@ -2262,7 +2262,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Ne => {
+        (Cond::Ne) => {
             ParsedIns {
                 mnemonic: "bne",
                 args: [
@@ -2275,7 +2275,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Hs => {
+        (Cond::Hs) => {
             ParsedIns {
                 mnemonic: "bhs",
                 args: [
@@ -2288,7 +2288,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Lo => {
+        (Cond::Lo) => {
             ParsedIns {
                 mnemonic: "blo",
                 args: [
@@ -2301,7 +2301,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Mi => {
+        (Cond::Mi) => {
             ParsedIns {
                 mnemonic: "bmi",
                 args: [
@@ -2314,7 +2314,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Pl => {
+        (Cond::Pl) => {
             ParsedIns {
                 mnemonic: "bpl",
                 args: [
@@ -2327,7 +2327,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Vs => {
+        (Cond::Vs) => {
             ParsedIns {
                 mnemonic: "bvs",
                 args: [
@@ -2340,7 +2340,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Vc => {
+        (Cond::Vc) => {
             ParsedIns {
                 mnemonic: "bvc",
                 args: [
@@ -2353,7 +2353,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Hi => {
+        (Cond::Hi) => {
             ParsedIns {
                 mnemonic: "bhi",
                 args: [
@@ -2366,7 +2366,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Ls => {
+        (Cond::Ls) => {
             ParsedIns {
                 mnemonic: "bls",
                 args: [
@@ -2379,7 +2379,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Ge => {
+        (Cond::Ge) => {
             ParsedIns {
                 mnemonic: "bge",
                 args: [
@@ -2392,7 +2392,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Lt => {
+        (Cond::Lt) => {
             ParsedIns {
                 mnemonic: "blt",
                 args: [
@@ -2405,7 +2405,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Gt => {
+        (Cond::Gt) => {
             ParsedIns {
                 mnemonic: "bgt",
                 args: [
@@ -2418,7 +2418,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Le => {
+        (Cond::Le) => {
             ParsedIns {
                 mnemonic: "ble",
                 args: [
@@ -2431,7 +2431,7 @@ fn parse_b(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Cond::Al => {
+        (Cond::Al) => {
             ParsedIns {
                 mnemonic: "b",
                 args: [
@@ -2484,7 +2484,7 @@ fn parse_bic(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "bic",
@@ -2496,7 +2496,7 @@ fn parse_bic(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_bkpt(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2552,58 +2552,30 @@ fn parse_blx_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     };
 }
 fn parse_blx_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    if (ins.code & 0x00000007) == 0x00000000 {
-        *out = ParsedIns {
-            mnemonic: "blx",
-            args: [
-                Argument::Reg(ins.field_rm_h2()),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
-    } else {
-        *out = ParsedIns {
-            mnemonic: "<illegal>",
-            args: [
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        };
-    }
+    *out = ParsedIns {
+        mnemonic: "blx",
+        args: [
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
 }
 fn parse_bx_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    if (ins.code & 0x00000007) == 0x00000000 {
-        *out = ParsedIns {
-            mnemonic: "bx",
-            args: [
-                Argument::Reg(ins.field_rm_h2()),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
-    } else {
-        *out = ParsedIns {
-            mnemonic: "<illegal>",
-            args: [
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        };
-    }
+    *out = ParsedIns {
+        mnemonic: "bx",
+        args: [
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
 }
 fn parse_cmn(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     *out = ParsedIns {
@@ -2658,8 +2630,8 @@ fn parse_cmp_hr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     };
 }
 fn parse_cps(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    *out = match ins.modifier_imod() {
-        Imod::Ie => {
+    *out = match (ins.modifier_imod()) {
+        (Imod::Ie) => {
             ParsedIns {
                 mnemonic: "cpsie",
                 args: [
@@ -2672,7 +2644,7 @@ fn parse_cps(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 ],
             }
         }
-        Imod::Id => {
+        (Imod::Id) => {
             ParsedIns {
                 mnemonic: "cpsid",
                 args: [
@@ -2712,7 +2684,7 @@ fn parse_eor(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "eor",
@@ -2724,7 +2696,7 @@ fn parse_eor(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_ldm(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2895,7 +2867,7 @@ fn parse_lsl_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "lsl",
@@ -2907,7 +2879,7 @@ fn parse_lsl_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_lsl_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2922,7 +2894,7 @@ fn parse_lsl_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "lsl",
@@ -2934,7 +2906,7 @@ fn parse_lsl_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_lsr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2949,7 +2921,7 @@ fn parse_lsr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "lsr",
@@ -2961,7 +2933,7 @@ fn parse_lsr_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_lsr_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -2976,7 +2948,7 @@ fn parse_lsr_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "lsr",
@@ -2988,7 +2960,7 @@ fn parse_lsr_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_mov_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3003,7 +2975,7 @@ fn parse_mov_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "mov",
@@ -3015,7 +2987,7 @@ fn parse_mov_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_mov_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3069,7 +3041,7 @@ fn parse_mul(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "mul",
@@ -3081,7 +3053,7 @@ fn parse_mul(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_mvn(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3096,7 +3068,7 @@ fn parse_mvn(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "mvn",
@@ -3108,7 +3080,7 @@ fn parse_mvn(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_neg(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3149,7 +3121,7 @@ fn parse_orr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "orr",
@@ -3161,7 +3133,7 @@ fn parse_orr(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_pop(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3241,7 +3213,7 @@ fn parse_ror(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "ror",
@@ -3253,7 +3225,7 @@ fn parse_ror(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_sbc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3268,7 +3240,7 @@ fn parse_sbc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "sbc",
@@ -3280,35 +3252,21 @@ fn parse_sbc(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_setend(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
-    if (ins.code & 0x00000007) == 0x00000000 {
-        *out = ParsedIns {
-            mnemonic: "setend",
-            args: [
-                Argument::Endian(ins.field_endian()),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
-    } else {
-        *out = ParsedIns {
-            mnemonic: "<illegal>",
-            args: [
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        };
-    }
+    *out = ParsedIns {
+        mnemonic: "setend",
+        args: [
+            Argument::Endian(ins.field_endian()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
 }
 fn parse_stm(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
     if flags.ual {
@@ -3322,7 +3280,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "stmia",
@@ -3334,7 +3292,7 @@ fn parse_stm(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_str_i(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3453,7 +3411,7 @@ fn parse_sub_8(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "sub",
@@ -3465,7 +3423,7 @@ fn parse_sub_8(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_sub_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3480,7 +3438,7 @@ fn parse_sub_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     } else {
         *out = ParsedIns {
             mnemonic: "sub",
@@ -3492,7 +3450,7 @@ fn parse_sub_r(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
                 Argument::None,
             ],
-        }
+        };
     }
 }
 fn parse_sub_sp7(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
@@ -3714,5 +3672,2839 @@ pub fn parse(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 Argument::None,
             ],
         };
+    }
+}
+fn defs_illegal(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_adc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_3(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_8(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_hr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_h1()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_h1()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_add_sp7(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_reg_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_h1()),
+        Argument::Reg(ins.field_rd_h1()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_add_sp_reg(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_add_pc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_adr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_and(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_asr_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_asr_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_b(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = match (ins.modifier_cond()) {
+        (Cond::Eq) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Ne) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Hs) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Lo) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Mi) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Pl) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Vs) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Vc) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Hi) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Ls) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Ge) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Lt) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Gt) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Le) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Al) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        _ => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+    };
+}
+fn defs_b_long(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_bic(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_bkpt(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_bl_h(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_bl(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_blx_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_blx_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_bx_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_cmn(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_cmp_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_cmp_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_cmp_hr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_cps(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = match (ins.modifier_imod()) {
+        (Imod::Ie) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Imod::Id) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        _ => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+    };
+}
+fn defs_eor(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_ldm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_8_ldm()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldmia(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_8_wb()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldr_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldr_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldr_pc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldr_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldrb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldrb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldrh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldrh_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldrsb(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldrsh(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lsl_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_lsl_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_lsr_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_lsr_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_mov_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_mov_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_movs_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_mov_hr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_h1()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_mul(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_mvn(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_neg(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rsbs(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_orr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_pop(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::RegList(ins.field_registers_pc()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_push(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rev(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rev16(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_revsh(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ror(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_sbc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_setend(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rn_8_wb()),
+            Argument::RegList(ins.field_registers()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rn_8_wb()),
+            Argument::RegList(ins.field_registers()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_str_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_str_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_str_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_sp_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_strb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_strb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_strh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_strh_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_subs_3(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_sub_8(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_sub_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn defs_sub_sp7(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_sp()),
+        Argument::Reg(ins.field_sp()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_svc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_swi(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_sxtb(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_sxth(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_tst(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_udf(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_uxtb(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_uxth(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+type DefsFn = fn(&mut Arguments, Ins, &ParseFlags);
+static DEFS_FNS: [DefsFn; 83] = [
+    defs_illegal,
+    defs_adc,
+    defs_add_3,
+    defs_add_8,
+    defs_add_r,
+    defs_add_hr,
+    defs_add_sp,
+    defs_add_sp7,
+    defs_add_reg_sp,
+    defs_add_sp_reg,
+    defs_add_pc,
+    defs_adr,
+    defs_and,
+    defs_asr_i,
+    defs_asr_r,
+    defs_b,
+    defs_b_long,
+    defs_bic,
+    defs_bkpt,
+    defs_bl_h,
+    defs_bl,
+    defs_blx_i,
+    defs_blx_r,
+    defs_bx_r,
+    defs_cmn,
+    defs_cmp_i,
+    defs_cmp_r,
+    defs_cmp_hr,
+    defs_cps,
+    defs_eor,
+    defs_ldm,
+    defs_ldmia,
+    defs_ldr_i,
+    defs_ldr_r,
+    defs_ldr_pc,
+    defs_ldr_sp,
+    defs_ldrb_i,
+    defs_ldrb_r,
+    defs_ldrh_i,
+    defs_ldrh_r,
+    defs_ldrsb,
+    defs_ldrsh,
+    defs_lsl_i,
+    defs_lsl_r,
+    defs_lsr_i,
+    defs_lsr_r,
+    defs_mov_i,
+    defs_mov_r,
+    defs_movs_r,
+    defs_mov_hr,
+    defs_mul,
+    defs_mvn,
+    defs_neg,
+    defs_rsbs,
+    defs_orr,
+    defs_pop,
+    defs_push,
+    defs_rev,
+    defs_rev16,
+    defs_revsh,
+    defs_ror,
+    defs_sbc,
+    defs_setend,
+    defs_stm,
+    defs_str_i,
+    defs_str_r,
+    defs_str_sp,
+    defs_strb_i,
+    defs_strb_r,
+    defs_strh_i,
+    defs_strh_r,
+    defs_subs_3,
+    defs_sub_8,
+    defs_sub_r,
+    defs_sub_sp7,
+    defs_svc,
+    defs_swi,
+    defs_sxtb,
+    defs_sxth,
+    defs_tst,
+    defs_udf,
+    defs_uxtb,
+    defs_uxth,
+];
+#[inline]
+pub fn defs(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if ins.op != Opcode::Illegal {
+        DEFS_FNS[ins.op as usize](out, ins, flags);
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_illegal(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_adc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_3(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rn_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rn_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_8(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_hr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_h1()),
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_h1()),
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_sp()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_add_sp7(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_reg_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_h1()),
+        Argument::Reg(ins.field_sp()),
+        Argument::Reg(ins.field_rd_h1()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_add_sp_reg(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_sp()),
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_add_pc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_pc()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_adr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_and(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_asr_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_asr_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_b(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = match (ins.modifier_cond()) {
+        (Cond::Eq) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Ne) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Hs) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Lo) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Mi) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Pl) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Vs) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Vc) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Hi) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Ls) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Ge) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Lt) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Gt) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Le) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Cond::Al) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        _ => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+    };
+}
+fn uses_b_long(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_bic(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_bkpt(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_bl_h(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_bl(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_blx_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_blx_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = [
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_bx_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = [
+            Argument::Reg(ins.field_rm_h2()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_cmn(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_0()),
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_cmp_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_cmp_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_0()),
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_cmp_hr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_h1()),
+        Argument::Reg(ins.field_rm_h2()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_cps(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = match (ins.modifier_imod()) {
+        (Imod::Ie) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        (Imod::Id) => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+        _ => {
+            [
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ]
+        }
+    };
+}
+fn uses_eor(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_ldm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_8_ldm()),
+        Argument::RegList(ins.field_registers()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldmia(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_8_wb()),
+        Argument::RegList(ins.field_registers()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldr_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldr_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldr_pc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_pc_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldr_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_sp_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldrb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldrb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldrh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldrh_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldrsb(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldrsh(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lsl_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_lsl_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_lsr_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_lsr_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_mov_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_mov_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_movs_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mov_hr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_h2()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mul(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_mvn(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_neg(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rsbs(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_orr(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_pop(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_push(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::RegList(ins.field_registers_lr()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rev(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rev16(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_revsh(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ror(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rs()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_sbc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_0()),
+            Argument::Reg(ins.field_rm_3()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_setend(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if (ins.code & 0x00000007) == 0x00000000 {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rn_8_wb()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rn_8_wb()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_str_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_str_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_str_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_8()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_strb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_strb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_strh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_strh_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rd_0()),
+        Argument::OffsetReg(ins.field_rm_6_offset()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_subs_3(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_sub_8(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::Reg(ins.field_rd_8()),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_sub_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if flags.ual {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
+    }
+}
+fn uses_sub_sp7(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_sp()),
+        Argument::Reg(ins.field_sp()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_svc(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_swi(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_sxtb(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_sxth(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_tst(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rn_0()),
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_udf(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_uxtb(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_uxth(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    *out = [
+        Argument::Reg(ins.field_rm_3()),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+type UsesFn = fn(&mut Arguments, Ins, &ParseFlags);
+static USES_FNS: [UsesFn; 83] = [
+    uses_illegal,
+    uses_adc,
+    uses_add_3,
+    uses_add_8,
+    uses_add_r,
+    uses_add_hr,
+    uses_add_sp,
+    uses_add_sp7,
+    uses_add_reg_sp,
+    uses_add_sp_reg,
+    uses_add_pc,
+    uses_adr,
+    uses_and,
+    uses_asr_i,
+    uses_asr_r,
+    uses_b,
+    uses_b_long,
+    uses_bic,
+    uses_bkpt,
+    uses_bl_h,
+    uses_bl,
+    uses_blx_i,
+    uses_blx_r,
+    uses_bx_r,
+    uses_cmn,
+    uses_cmp_i,
+    uses_cmp_r,
+    uses_cmp_hr,
+    uses_cps,
+    uses_eor,
+    uses_ldm,
+    uses_ldmia,
+    uses_ldr_i,
+    uses_ldr_r,
+    uses_ldr_pc,
+    uses_ldr_sp,
+    uses_ldrb_i,
+    uses_ldrb_r,
+    uses_ldrh_i,
+    uses_ldrh_r,
+    uses_ldrsb,
+    uses_ldrsh,
+    uses_lsl_i,
+    uses_lsl_r,
+    uses_lsr_i,
+    uses_lsr_r,
+    uses_mov_i,
+    uses_mov_r,
+    uses_movs_r,
+    uses_mov_hr,
+    uses_mul,
+    uses_mvn,
+    uses_neg,
+    uses_rsbs,
+    uses_orr,
+    uses_pop,
+    uses_push,
+    uses_rev,
+    uses_rev16,
+    uses_revsh,
+    uses_ror,
+    uses_sbc,
+    uses_setend,
+    uses_stm,
+    uses_str_i,
+    uses_str_r,
+    uses_str_sp,
+    uses_strb_i,
+    uses_strb_r,
+    uses_strh_i,
+    uses_strh_r,
+    uses_subs_3,
+    uses_sub_8,
+    uses_sub_r,
+    uses_sub_sp7,
+    uses_svc,
+    uses_swi,
+    uses_sxtb,
+    uses_sxth,
+    uses_tst,
+    uses_udf,
+    uses_uxtb,
+    uses_uxth,
+];
+#[inline]
+pub fn uses(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+    if ins.op != Opcode::Illegal {
+        USES_FNS[ins.op as usize](out, ins, flags);
+    } else {
+        *out = [
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ];
     }
 }

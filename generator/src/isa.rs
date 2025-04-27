@@ -354,8 +354,10 @@ pub struct ModifierCase {
     pub pattern: u32,
     #[serde(default)]
     pub args: Box<[String]>,
-    pub defs: Option<Box<[String]>>,
-    pub uses: Option<Box<[String]>>,
+    #[serde(default)]
+    pub defs: Box<[String]>,
+    #[serde(default)]
+    pub uses: Box<[String]>,
 }
 
 impl ModifierCase {
@@ -403,8 +405,8 @@ impl ModifierCase {
             ignored: None,
             pattern,
             args: Box::new([]),
-            defs: None,
-            uses: None,
+            defs: Box::new([]),
+            uses: Box::new([]),
         })
     }
 
@@ -492,8 +494,10 @@ pub struct Opcode {
     #[serde(default)]
     sbz: u32,
 
-    pub defs: Option<Box<[String]>>,
-    pub uses: Option<Box<[String]>>,
+    #[serde(default)]
+    pub defs: Box<[String]>,
+    #[serde(default)]
+    pub uses: Box<[String]>,
 }
 
 impl Opcode {
@@ -574,6 +578,14 @@ impl Opcode {
 
     pub fn parser_name(&self) -> String {
         format!("parse_{}", self.ident_name())
+    }
+
+    pub fn defs_fn_name(&self) -> String {
+        format!("defs_{}", self.ident_name())
+    }
+
+    pub fn uses_fn_name(&self) -> String {
+        format!("uses_{}", self.ident_name())
     }
 
     pub fn has_modifier(&self, name: &str) -> bool {
