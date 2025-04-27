@@ -397,7 +397,8 @@ tags:
   - name: updates_condition_flags
     desc: This opcode sets the comparison flags according to the resulting value.
   - name: is_data_operation
-    desc: This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and
+    desc:
+      This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and
       selects. Does not include moves, loads, stores, swaps, compares and coprocessor opcodes.
 
 opcodes:
@@ -439,6 +440,7 @@ opcodes:
     tags: [updates_condition_flags, is_data_operation]
     args: [Rd_0, Rn_3, Rm_6]
     defs: [Rd_0]
+    uses: [Rn_3, Rm_6]
 
   - name: add$hr
     desc: Add high register
@@ -954,64 +956,57 @@ opcodes:
     bitmask: 0xf800
     pattern: 0xc000
     args: [Rn_8_wb, registers]
-    defs: [Rn_8_wb, registers]
-    uses: [Rn_8_wb]
+    defs: [Rn_8_wb]
+    uses: [Rn_8_wb, registers]
 
   - name: str$i
     desc: Store Register with immediate offset
     bitmask: 0xf800
     pattern: 0x6000
     args: [Rd_0, Rn_3_deref, word_offset_5]
-    defs: [Rn_3_deref]
-    uses: [Rd_0]
+    uses: [Rd_0, Rn_3_deref]
 
   - name: str$r
     desc: Store Register with register offset
     bitmask: 0xfe00
     pattern: 0x5000
     args: [Rd_0, Rn_3_deref, Rm_6_offset]
-    defs: [Rn_3_deref]
-    uses: [Rd_0, Rm_6_offset]
+    uses: [Rd_0, Rn_3_deref, Rm_6_offset]
 
   - name: str$sp
     desc: Store Register with SP-relative address
     bitmask: 0xf800
     pattern: 0x9000
     args: [Rd_8, sp_deref, rel_immed_8]
-    defs: [sp_deref]
-    uses: [Rd_8]
+    uses: [Rd_8, sp_deref]
 
   - name: strb$i
     desc: Store Register Byte with immediate offset
     bitmask: 0xf800
     pattern: 0x7000
     args: [Rd_0, Rn_3_deref, byte_offset_5]
-    defs: [Rn_3_deref]
-    uses: [Rd_0]
+    uses: [Rd_0, Rn_3_deref]
 
   - name: strb$r
     desc: Store Register Byte with register offset
     bitmask: 0xfe00
     pattern: 0x5400
     args: [Rd_0, Rn_3_deref, Rm_6_offset]
-    defs: [Rn_3_deref]
-    uses: [Rd_0, Rm_6_offset]
+    uses: [Rd_0, Rn_3_deref, Rm_6_offset]
 
   - name: strh$i
     desc: Store Register Halfword with immediate offset
     bitmask: 0xf800
     pattern: 0x8000
     args: [Rd_0, Rn_3_deref, halfword_offset_5]
-    defs: [Rn_3_deref]
-    uses: [Rd_0]
+    uses: [Rd_0, Rn_3_deref]
 
   - name: strh$r
     desc: Store Register Halfword with register offset
     bitmask: 0xfe00
     pattern: 0x5200
     args: [Rd_0, Rn_3_deref, Rm_6_offset]
-    defs: [Rn_3_deref]
-    uses: [Rd_0, Rm_6_offset]
+    uses: [Rd_0, Rn_3_deref, Rm_6_offset]
 
   - name: subs$3
     desc: Subtract 3-bit immediate

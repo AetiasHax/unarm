@@ -4761,7 +4761,7 @@ fn defs_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     if flags.ual {
         *out = [
             Argument::Reg(ins.field_rn_8_wb()),
-            Argument::RegList(ins.field_registers()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -4770,7 +4770,7 @@ fn defs_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     } else {
         *out = [
             Argument::Reg(ins.field_rn_8_wb()),
-            Argument::RegList(ins.field_registers()),
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -4780,7 +4780,7 @@ fn defs_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_str_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -4790,7 +4790,7 @@ fn defs_str_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_str_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -4800,7 +4800,7 @@ fn defs_str_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_str_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_sp_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -4810,7 +4810,7 @@ fn defs_str_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_strb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -4820,7 +4820,7 @@ fn defs_strb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_strb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -4830,7 +4830,7 @@ fn defs_strb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_strh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -4840,7 +4840,7 @@ fn defs_strh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 }
 fn defs_strh_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
-        Argument::Reg(ins.field_rn_3_deref()),
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -5167,8 +5167,8 @@ fn uses_add_8(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_add_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     if flags.ual {
         *out = [
-            Argument::None,
-            Argument::None,
+            Argument::Reg(ins.field_rn_3()),
+            Argument::Reg(ins.field_rm_6()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -5176,8 +5176,8 @@ fn uses_add_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
         ];
     } else {
         *out = [
-            Argument::None,
-            Argument::None,
+            Argument::Reg(ins.field_rn_3()),
+            Argument::Reg(ins.field_rm_6()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -6178,7 +6178,7 @@ fn uses_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     if flags.ual {
         *out = [
             Argument::Reg(ins.field_rn_8_wb()),
-            Argument::None,
+            Argument::RegList(ins.field_registers()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -6187,7 +6187,7 @@ fn uses_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     } else {
         *out = [
             Argument::Reg(ins.field_rn_8_wb()),
-            Argument::None,
+            Argument::RegList(ins.field_registers()),
             Argument::None,
             Argument::None,
             Argument::None,
@@ -6198,7 +6198,7 @@ fn uses_stm(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_str_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_0()),
-        Argument::None,
+        Argument::Reg(ins.field_rn_3_deref()),
         Argument::None,
         Argument::None,
         Argument::None,
@@ -6208,8 +6208,8 @@ fn uses_str_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_str_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_0()),
+        Argument::Reg(ins.field_rn_3_deref()),
         Argument::OffsetReg(ins.field_rm_6_offset()),
-        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -6218,7 +6218,7 @@ fn uses_str_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_str_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_8()),
-        Argument::None,
+        Argument::Reg(ins.field_sp_deref()),
         Argument::None,
         Argument::None,
         Argument::None,
@@ -6228,7 +6228,7 @@ fn uses_str_sp(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_strb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_0()),
-        Argument::None,
+        Argument::Reg(ins.field_rn_3_deref()),
         Argument::None,
         Argument::None,
         Argument::None,
@@ -6238,8 +6238,8 @@ fn uses_strb_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_strb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_0()),
+        Argument::Reg(ins.field_rn_3_deref()),
         Argument::OffsetReg(ins.field_rm_6_offset()),
-        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -6248,7 +6248,7 @@ fn uses_strb_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_strh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_0()),
-        Argument::None,
+        Argument::Reg(ins.field_rn_3_deref()),
         Argument::None,
         Argument::None,
         Argument::None,
@@ -6258,8 +6258,8 @@ fn uses_strh_i(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
 fn uses_strh_r(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
     *out = [
         Argument::Reg(ins.field_rd_0()),
+        Argument::Reg(ins.field_rn_3_deref()),
         Argument::OffsetReg(ins.field_rm_6_offset()),
-        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,

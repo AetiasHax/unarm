@@ -809,7 +809,8 @@ tags:
   - name: is_compare_op
     desc: This opcode compares a register with another value.
   - name: is_data_operation
-    desc: This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and
+    desc:
+      This opcode is a data operation, including arithmetic, bitwise, sign/zero extends, saturations, reverses, packs and
       selects. Does not include moves, loads, stores, swaps, compares and coprocessor opcodes.
 
 opcodes:
@@ -1453,7 +1454,7 @@ opcodes:
     tags: [loads_multiple]
     modifiers: [cond]
     args: [registers]
-    uses: [registers]
+    defs: [registers]
 
   - name: pop$r
     desc: Pop register
@@ -1463,7 +1464,7 @@ opcodes:
     tags: [loads_multiple]
     modifiers: [cond]
     args: [Rt_list]
-    uses: [Rt_list]
+    defs: [Rt_list]
 
   - name: push$m
     desc: Push multiple registers
@@ -1613,7 +1614,7 @@ opcodes:
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
-    uses: [Rn]
+    uses: [Rm]
 
   - name: rev16
     desc: Byte-Reverse Packed Halfword
@@ -1625,7 +1626,7 @@ opcodes:
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
-    uses: [Rn]
+    uses: [Rm]
 
   - name: revsh
     desc: Byte-Reverse Signed Halfword
@@ -1637,7 +1638,7 @@ opcodes:
     modifiers: [cond]
     args: [Rd, Rm]
     defs: [Rd]
-    uses: [Rn]
+    uses: [Rm]
 
   - name: rfe
     desc: Return From Exception
