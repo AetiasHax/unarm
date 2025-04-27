@@ -139,3 +139,12 @@ impl ParsedIns {
         None
     }
 }
+
+impl RegList {
+    pub fn iter(&self) -> impl Iterator<Item = Register> + '_ {
+        (0..16).filter_map(move |i| {
+            let reg = Register::parse(i);
+            self.contains(reg).then_some(reg)
+        })
+    }
+}
