@@ -364,6 +364,9 @@ impl ParseFunction<'_> {
             }
         };
 
+        // Wrap in SBO/SBZ checks if needed
+        let fn_body = self.wrap_sbo_sbz_checks(ArgGroup::Default, max_args, fn_body);
+
         Ok(quote! {
             fn #fn_ident(out: &mut ParsedIns, ins: Ins, flags: &ParseFlags) {
                 #fn_body
@@ -413,7 +416,17 @@ impl ParseFunction<'_> {
         };
 
         // Wrap in SBO/SBZ checks if needed
-        let fn_body = if let Some(opcode) = self.opcode {
+        let fn_body = self.wrap_sbo_sbz_checks(arg_group, max_args, fn_body);
+
+        Ok(quote! {
+            fn #fn_ident(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
+                #fn_body
+            }
+        })
+    }
+
+    fn wrap_sbo_sbz_checks(&self, arg_group: ArgGroup, max_args: usize, fn_body: TokenStream) -> TokenStream {
+        if let Some(opcode) = self.opcode {
             let sbo_sbz_bitmask = opcode.sbo_sbz_bitmask();
             if sbo_sbz_bitmask != 0 {
                 let illegal_ins = match arg_group {
@@ -437,13 +450,7 @@ impl ParseFunction<'_> {
             }
         } else {
             fn_body
-        };
-
-        Ok(quote! {
-            fn #fn_ident(out: &mut Arguments, ins: Ins, flags: &ParseFlags) {
-                #fn_body
-            }
-        })
+        }
     }
 }
 
