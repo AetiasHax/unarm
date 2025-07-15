@@ -448,11 +448,13 @@ modifiers:
         desc: Writeback to source operand
         pattern: 0x00200000
         args: [Rn_wb]
+        uses: [Rn_wb]
         defs: [Rn_wb]
       - name: no_writeback
         desc: No writeback
         pattern: 0x00000000
         args: [Rn]
+        uses: [Rn]
 
   - name: sat_shift
     desc: Saturation shift

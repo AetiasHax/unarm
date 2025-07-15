@@ -225,6 +225,10 @@ mod tests {
         assert_arm!(0xe1012053, [reg!(R2)], [reg!(R3), reg!(R1)]);
         // rev r1, r2
         assert_arm!(0xe6bf1f32, [reg!(R1)], [reg!(R2)]);
+        // rfeda r7
+        assert_arm!(0xf8170a00, [], [reg!(R7)]);
+        // rfeda r7!
+        assert_arm!(0xf9370a00, [reg!(write R7)], [reg!(write R7)]);
         // ror r1, r2, #0x3
         assert_arm!(0xe1a011e2, [reg!(R1)], [reg!(R2)]);
         // ror r1, r2, r3
