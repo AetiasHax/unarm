@@ -62,12 +62,24 @@ fn test_shift() {
 
     assert_arm!(0xe1a011c2, &unified, "asr r1, r2, #0x3");
     assert_arm!(0xe1a011c2, &divided, "mov r1, r2, asr #0x3");
+    assert_arm!(0xe1a01352, &unified, "asr r1, r2, r3");
+    assert_arm!(0xe1a01352, &divided, "mov r1, r2, asr r3");
+
     assert_arm!(0xe1a01182, &unified, "lsl r1, r2, #0x3");
     assert_arm!(0xe1a01182, &divided, "mov r1, r2, lsl #0x3");
+    assert_arm!(0xe1a01312, &unified, "lsl r1, r2, r3");
+    assert_arm!(0xe1a01312, &divided, "mov r1, r2, lsl r3");
+
     assert_arm!(0xe1a011a2, &unified, "lsr r1, r2, #0x3");
     assert_arm!(0xe1a011a2, &divided, "mov r1, r2, lsr #0x3");
+    assert_arm!(0xe1a01332, &unified, "lsr r1, r2, r3");
+    assert_arm!(0xe1a01332, &divided, "mov r1, r2, lsr r3");
+
     assert_arm!(0xe1a011e2, &unified, "ror r1, r2, #0x3");
     assert_arm!(0xe1a011e2, &divided, "mov r1, r2, ror #0x3");
+    assert_arm!(0xe1a01372, &unified, "ror r1, r2, r3");
+    assert_arm!(0xe1a01372, &divided, "mov r1, r2, ror r3");
+
     assert_arm!(0xe1a01062, &unified, "rrx r1, r2");
     assert_arm!(0xe1a01062, &divided, "mov r1, r2, rrx");
 }

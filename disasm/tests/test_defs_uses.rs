@@ -112,6 +112,10 @@ mod tests {
         assert_arm!(0xe0812003, [reg!(R2)], [reg!(R1), reg!(R3)]);
         // addmi pc, r5, r8, lsr r2
         assert_arm!(0x4085f238, [reg!(Pc)], [reg!(R5), reg!(R8), shiftreg!(Lsr, R2)]);
+        // asr r1, r2, #0x3
+        assert_arm!(0xe1a011c2, [reg!(R1)], [reg!(R2)]);
+        // asr r1, r2, r3
+        assert_arm!(0xe1a01352, [reg!(R1)], [reg!(R2), reg!(R3)]);
         // bl #0x8
         assert_arm!(0xeb000000, [], []);
         // blx r0
@@ -151,6 +155,14 @@ mod tests {
         assert_arm!(0xe1c12fdf, [reg!(R2), reg!(R3)], [reg!(deref R1)]);
         // ldrd r2, r3, [r1, -r3]
         assert_arm!(0xe10120d3, [reg!(R2), reg!(R3)], [reg!(deref R1), offsetreg!(sub R3)]);
+        // lsl r1, r2, #0x3
+        assert_arm!(0xe1a01182, [reg!(R1)], [reg!(R2)]);
+        // lsl r1, r2, r3
+        assert_arm!(0xe1a01312, [reg!(R1)], [reg!(R2), reg!(R3)]);
+        // lsr r1, r2, #0x3
+        assert_arm!(0xe1a011a2, [reg!(R1)], [reg!(R2)]);
+        // lsr r1, r2, r3
+        assert_arm!(0xe1a01332, [reg!(R1)], [reg!(R2), reg!(R3)]);
         // mcr p4, #1, r3, c2, c6, #5
         assert_arm!(0xee2234b6, [coreg!(C2), coreg!(C6)], [reg!(R3), coreg!(C6)]);
         // mcrr p3, #4, r2, r1, c5
@@ -213,6 +225,10 @@ mod tests {
         assert_arm!(0xe1012053, [reg!(R2)], [reg!(R3), reg!(R1)]);
         // rev r1, r2
         assert_arm!(0xe6bf1f32, [reg!(R1)], [reg!(R2)]);
+        // ror r1, r2, #0x3
+        assert_arm!(0xe1a011e2, [reg!(R1)], [reg!(R2)]);
+        // ror r1, r2, r3
+        assert_arm!(0xe1a01372, [reg!(R1)], [reg!(R2), reg!(R3)]);
         // smlabb r1, r4, r3, r2
         assert_arm!(0xe1012384, [reg!(R1)], [reg!(R4), reg!(R3), reg!(R2)]);
         // smlal r2, r1, r4, r3

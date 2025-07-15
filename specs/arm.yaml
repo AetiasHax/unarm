@@ -494,6 +494,7 @@ modifiers:
         bitmask: 0x00000090
         pattern: 0x00000010
         args: [Rs]
+        uses: [Rs]
 
   - name: cond
     desc: Condition code
