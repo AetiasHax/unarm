@@ -32,7 +32,7 @@ pub struct DisplayOptions {
 }
 
 pub trait LookupSymbol {
-    fn lookup_symbol_name(&self, source: u32, destination: u32) -> Option<&str>;
+    fn lookup_symbol_name(&self, source: u32, destination: u32, parsed_ins: &ParsedIns) -> Option<&str>;
 }
 
 #[derive(Clone, Copy)]
@@ -70,7 +70,11 @@ impl<'a> ParsedInsDisplay<'a> {
                         })) = next
                         {
                             let destination = (symbols.program_counter as i32 + value + symbols.pc_load_offset) as u32 & !3;
-                            if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
+                            if let Some(name) =
+                                symbols
+                                    .lookup
+                                    .lookup_symbol_name(symbols.program_counter, destination, self.ins)
+                            {
                                 return write!(f, "{name}");
                             }
                         }
@@ -82,11 +86,11 @@ impl<'a> ParsedInsDisplay<'a> {
 
                 if let Some(next) = next {
                     if next.ends_deref() {
-                        return write!(f, "], {}", next.display(self.options, self.symbols));
+                        return write!(f, "], {}", next.display(self.options, self.symbols, self.ins));
                     } else {
-                        write!(f, ", {}", next.display(self.options, self.symbols))?;
+                        write!(f, ", {}", next.display(self.options, self.symbols, self.ins))?;
                         for more in iter {
-                            write!(f, ", {}", more.display(self.options, self.symbols))?;
+                            write!(f, ", {}", more.display(self.options, self.symbols, self.ins))?;
                         }
                     }
                 }
@@ -97,7 +101,7 @@ impl<'a> ParsedInsDisplay<'a> {
                 }
             }
             _ => {
-                write!(f, "{}", arg.display(self.options, self.symbols))?;
+                write!(f, "{}", arg.display(self.options, self.symbols, self.ins))?;
             }
         }
         Ok(())
@@ -148,11 +152,17 @@ impl Argument {
         )
     }
 
-    pub fn display<'a>(&'a self, options: DisplayOptions, symbols: Option<Symbols<'a>>) -> DisplayArgument<'a> {
+    pub fn display<'a>(
+        &'a self,
+        options: DisplayOptions,
+        symbols: Option<Symbols<'a>>,
+        parsed_ins: &'a ParsedIns,
+    ) -> DisplayArgument<'a> {
         DisplayArgument {
             arg: self,
             options,
             symbols,
+            parsed_ins,
         }
     }
 }
@@ -161,6 +171,7 @@ pub struct DisplayArgument<'a> {
     arg: &'a Argument,
     options: DisplayOptions,
     symbols: Option<Symbols<'a>>,
+    parsed_ins: &'a ParsedIns,
 }
 
 impl Display for DisplayArgument<'_> {
@@ -206,7 +217,11 @@ impl Display for DisplayArgument<'_> {
             Argument::BranchDest(dest) => {
                 if let Some(symbols) = &self.symbols {
                     let destination = ((symbols.program_counter as i32) + *dest) as u32 & !1;
-                    if let Some(name) = symbols.lookup.lookup_symbol_name(symbols.program_counter, destination) {
+                    if let Some(name) =
+                        symbols
+                            .lookup
+                            .lookup_symbol_name(symbols.program_counter, destination, self.parsed_ins)
+                    {
                         return write!(f, "{name}");
                     }
                 }
