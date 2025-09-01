@@ -1,0 +1,256 @@
+options:
+  version:
+    description: The version of ARM to use
+    kind: !version
+  av:
+    description: If true, r0-r3 and r4-11 will display as a1-a4 and v1-v8 respectively
+    kind: !bool
+  r9_use:
+    description: How R9 should be displayed
+    kind: !enum
+      - name: r9
+        description: General purpose register
+      - name: sb
+        description: Static base (SB), used for position-independent data
+      - name: tr
+        description: TLS register (TR), used for thread-local storage
+  sl:
+    description: If true, R10 will display as SL (stack limit)
+    kind: !bool
+  fp:
+    description: If true, R11 will display as FP (frame pointer)
+    kind: !bool
+  ip:
+    description: If true, R12 will display as IP (intra-procedure call scratch register)
+    kind: !bool
+  ual:
+    description: If true, use Unified Assembly Language syntax (UAL), otherwise use divided syntax
+    kind: !bool
+
+versions:
+- v4
+- v4t
+- v5
+- v5t
+- v5te
+- v6k
+
+types:
+  s: !bool 0
+  cond: !enum
+    bits: 0..4
+    default: al
+    variants:
+      0000:
+        name: eq
+        description: Equal
+      0001:
+        name: ne
+        description: Not equal
+      0010:
+        name: hs
+        description: Unsigned higher or same
+      0011:
+        name: lo
+        description: Unsigned lower
+      0100:
+        name: mi
+        description: Minus/negative
+      0101:
+        name: pl
+        description: Plus/positive
+      0110:
+        name: vs
+        description: Overflow set
+      0111:
+        name: vc
+        description: Overflow clear
+      1000:
+        name: hi
+        description: Unsigned higher
+      1001:
+        name: ls
+        description: Unsigned lower or same
+      1010:
+        name: ge
+        description: Signed greater than or equal
+      1011:
+        name: lt
+        description: Signed less than
+      1100:
+        name: gt
+        description: Signed greater than
+      1101:
+        name: le
+        description: Signed less than or equal
+      1110:
+        name: al
+        description: Always
+        format: !fmt ""
+  reg: !enum
+    bits: 0..4
+    variants:
+      0000:
+        name: r0
+        format: !if
+          cond: option(av)
+          then: !fmt a1
+          else: !fmt r0
+      0001:
+        name: r1
+        format: !if
+          cond: option(av)
+          then: !fmt a2
+          else: !fmt r1
+      0010:
+        name: r2
+        format: !if
+          cond: option(av)
+          then: !fmt a3
+          else: !fmt r2
+      0011:
+        name: r3
+        format: !if
+          cond: option(av)
+          then: !fmt a4
+          else: !fmt r3
+      0100:
+        name: r4
+        format: !if
+          cond: option(av)
+          then: !fmt v1
+          else: !fmt r4
+      0101:
+        name: r5
+        format: !if
+          cond: option(av)
+          then: !fmt v2
+          else: !fmt r5
+      0110:
+        name: r6
+        format: !if
+          cond: option(av)
+          then: !fmt v3
+          else: !fmt r6
+      0111:
+        name: r7
+        format: !if
+          cond: option(av)
+          then: !fmt v4
+          else: !fmt r7
+      1000:
+        name: r8
+        format: !if
+          cond: option(av)
+          then: !fmt v5
+          else: !fmt r8
+      1001:
+        name: r9
+        format: !match
+          value: option(r9_use)
+          cases:
+            r9: !if
+              cond: option(av)
+              then: !fmt v6
+              else: !fmt r9
+            sb: !fmt sb
+            tr: !fmt tr
+      1010:
+        name: r10
+        format: !if
+          cond: option(sl)
+          then: !fmt sl
+          else: !if
+            cond: option(av)
+            then: !fmt v7
+            else: !fmt r10
+      1011:
+        name: r11
+        format: !if
+          cond: option(fp)
+          then: !fmt fp
+          else: !if
+            cond: option(av)
+            then: !fmt v8
+            else: !fmt r11
+      1100:
+        name: r12
+        format: !if
+          cond: option(ip)
+          then: !fmt ip
+          else: !fmt r12
+      1101:
+        name: sp
+      1110:
+        name: lr
+      1111:
+        name: pc
+  shift_op: !enum
+    bits: 0..2
+    default: lsl
+    variants:
+      00:
+        name: lsl
+        description: Logical shift left
+      01:
+        name: lsr
+        description: Logical shift right
+      10:
+        name: asr
+        description: Arithmetic shift right
+      11:
+        name: ror
+        description: Rotate right
+  op2: !enum
+    bits: 0..32
+    variants:
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: imm
+        description: Immediate
+        format: !fmt \#(data)
+        data: !uint 0..12
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx1_xxxx:
+        name: shift_reg
+        description: Register shifted by register
+        data: !struct
+          format: !fmt (rm), (shift_op) (rs)
+          fields:
+            rm: !type [reg, 0..4]
+            shift_op: !type [shift_op, 5..7]
+            rs: !type [reg, 8..12]
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
+        name: shift_imm
+        description: Register shifted by immediate
+        data: !struct
+          format: !if
+            cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
+            then: !fmt (rm)
+            else: !fmt (rm), (shift_op) \#(imm)
+          fields:
+            rm: !type [reg, 0..4]
+            shift_op: !type [shift_op, 5..7]
+            imm: !uint 7..12
+
+opcodes:
+- mnemonic: adc
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format: !if
+    cond: option(ual)
+    then: !fmt adc(s)(cond) (rd), (rn), (op2)
+    else: !fmt adc(cond)(s) (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5*, v6*, v7]
+    pattern: xxxx_00x0_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params: 
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_01xx_xxxx
+    params:
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]

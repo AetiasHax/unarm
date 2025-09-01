@@ -1,2 +1,3 @@
-pub mod args;
-pub mod disasm;
+mod disasm;
+
+pub use disasm::*;
