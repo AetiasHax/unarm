@@ -77,6 +77,7 @@ impl OptionKind {
                 let type_name = Ident::new(&snake_to_pascal_case(name), Span::call_site());
                 let variants = variants.iter().map(|v| v.variant_tokens());
                 Some(quote! {
+                    #[derive(PartialEq, Eq)]
                     pub enum #type_name {
                         #(#variants),*
                     }

@@ -6,7 +6,7 @@ use serde::{
     de::{self, IgnoredAny, Visitor},
 };
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Pattern {
     pattern: u64,
     bitmask: u64,

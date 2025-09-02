@@ -7,7 +7,7 @@ use serde::{Deserialize, de::Visitor};
 
 use crate::util::hex_literal::HexLiteral;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BitRange(Range<u8>);
 
 impl BitRange {

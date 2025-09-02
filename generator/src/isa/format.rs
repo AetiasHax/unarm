@@ -1,68 +1,152 @@
-use std::{fmt::Debug, str::FromStr};
+use std::{collections::HashMap, fmt::Debug, str::FromStr};
 
-use indexmap::IndexMap;
+use proc_macro2::{Span, TokenStream};
+use quote::{ToTokens, quote};
 use serde::Deserialize;
+use syn::{Ident, visit_mut::VisitMut};
+
+use crate::{
+    isa::{DataType, Isa},
+    util::str::snake_to_pascal_case,
+};
 
 #[derive(Deserialize, Debug, Clone)]
 pub enum Format {
     #[serde(rename = "if")]
     If(IfFormat),
-    #[serde(rename = "match")]
-    Match(MatchFormat),
     #[serde(rename = "fmt")]
     Fragments(FragmentsFormat),
 }
 
+pub type FormatParams = HashMap<String, DataType>;
+
 impl Format {
-    pub fn new_string(s: String) -> Self {
-        Self::Fragments(FragmentsFormat { fragments: vec![FormatFragment::Text(s)] })
+    pub fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+        match self {
+            Format::If(if_format) => if_format.display_expr_tokens(isa, params),
+            Format::Fragments(fragments_format) => {
+                fragments_format.display_expr_tokens(isa, params)
+            }
+        }
     }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-struct IfFormat {
-    cond: SynExpr,
+pub struct IfFormat {
+    cond: FormatCond,
     #[serde(rename = "then")]
     if_true: Box<Format>,
     #[serde(rename = "else")]
     if_false: Box<Format>,
 }
 
-#[derive(Clone)]
-struct SynExpr(syn::Expr);
+impl IfFormat {
+    fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+        let condition = self.cond.as_tokens();
+        let display_true = self.if_true.display_expr_tokens(isa, params);
+        let display_false = self.if_false.display_expr_tokens(isa, params);
+        quote! {
+            if #condition {
+                #display_true
+            } else {
+                #display_false
+            }
+        }
+    }
+}
 
-impl<'de> Deserialize<'de> for SynExpr {
+#[derive(Debug, Clone)]
+struct FormatCond(syn::Expr);
+
+impl FormatCond {
+    fn as_tokens(&self) -> TokenStream {
+        let mut replace = FormatCondReplace;
+        let mut expr = self.0.clone();
+        replace.visit_expr_mut(&mut expr);
+        expr.to_token_stream()
+    }
+}
+
+struct FormatCondReplace;
+
+impl VisitMut for FormatCondReplace {
+    fn visit_expr_mut(&mut self, node: &mut syn::Expr) {
+        if let syn::Expr::Call(call) = node {
+            let fn_name = call.func.to_token_stream().to_string();
+            match fn_name.as_str() {
+                "option" => {
+                    if call.args.len() != 1 {
+                        panic!("option function takes one argument");
+                    }
+                    let option = &call.args[0];
+                    *node = syn::parse2(quote!(options.#option)).unwrap();
+                }
+                "field" => {
+                    if call.args.len() != 1 {
+                        panic!("field function takes one argument");
+                    }
+                    let field = &call.args[0];
+                    *node = syn::parse2(quote!(*#field)).unwrap();
+                }
+                "enum_variant" => {
+                    if call.args.len() != 2 {
+                        panic!("enum_variant function takes two arguments");
+                    }
+                    let type_name = call.args[0].to_token_stream().to_string();
+                    let variant_name = call.args[1].to_token_stream().to_string();
+                    let type_ident =
+                        Ident::new(&snake_to_pascal_case(&type_name), Span::call_site());
+                    let variant_ident =
+                        Ident::new(&snake_to_pascal_case(&variant_name), Span::call_site());
+                    *node = syn::parse2(quote!(#type_ident::#variant_ident)).unwrap();
+                }
+                _ => panic!("Unknown format condition function {fn_name}"),
+            }
+        }
+        syn::visit_mut::visit_expr_mut(self, node);
+    }
+}
+
+impl<'de> Deserialize<'de> for FormatCond {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        syn::parse_str(&s).map(SynExpr).map_err(serde::de::Error::custom)
+        syn::parse_str(&s).map(FormatCond).map_err(serde::de::Error::custom)
     }
-}
-
-impl Debug for SynExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let expr = &self.0;
-        write!(f, "{}", quote::quote! { #expr })
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-struct MatchFormat {
-    value: String,
-    cases: IndexMap<String, Format>,
 }
 
 #[derive(Debug, Clone)]
-struct FragmentsFormat {
+pub struct FragmentsFormat {
     fragments: Vec<FormatFragment>,
+}
+
+impl FragmentsFormat {
+    fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+        let fragments = self.fragments.iter().map(|f| f.display_expr_tokens(isa, params));
+        quote!(#(#fragments)*)
+    }
 }
 
 #[derive(Debug, Clone)]
 enum FormatFragment {
     Text(String),
     Param(String),
+}
+
+impl FormatFragment {
+    fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+        match self {
+            FormatFragment::Text(text) => quote!(f.write_str(#text)?;),
+            FormatFragment::Param(param_name) => {
+                let Some(param) = params.get(param_name) else {
+                    panic!();
+                };
+                param.display_expr_tokens(isa)
+            }
+        }
+    }
 }
 
 impl FromStr for FragmentsFormat {

@@ -22,6 +22,7 @@ pub enum Version {
     V5Te,
     V6K,
 }
+#[derive(PartialEq, Eq)]
 pub enum R9Use {
     ///General purpose register
     R9,
@@ -30,6 +31,7 @@ pub enum R9Use {
     ///TLS register (TR), used for thread-local storage
     Tr,
 }
+#[derive(PartialEq, Eq)]
 pub enum Cond {
     ///Equal
     Eq,
@@ -62,6 +64,7 @@ pub enum Cond {
     ///Always
     Al,
 }
+#[derive(PartialEq, Eq)]
 pub enum Reg {
     R0,
     R1,
@@ -80,6 +83,7 @@ pub enum Reg {
     Lr,
     Pc,
 }
+#[derive(PartialEq, Eq)]
 pub enum ShiftOp {
     ///Logical shift left
     Lsl,
@@ -90,6 +94,7 @@ pub enum ShiftOp {
     ///Rotate right
     Ror,
 }
+#[derive(PartialEq, Eq)]
 pub enum Op2 {
     ///Immediate
     Imm(u32),
@@ -183,6 +188,243 @@ impl Default for Cond {
 impl Default for ShiftOp {
     fn default() -> Self {
         Self::Lsl
+    }
+}
+impl Cond {
+    pub fn display(
+        &self,
+        options: &Options,
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        match self {
+            Self::Eq => {
+                f.write_str("eq")?;
+            }
+            Self::Ne => {
+                f.write_str("ne")?;
+            }
+            Self::Hs => {
+                f.write_str("hs")?;
+            }
+            Self::Lo => {
+                f.write_str("lo")?;
+            }
+            Self::Mi => {
+                f.write_str("mi")?;
+            }
+            Self::Pl => {
+                f.write_str("pl")?;
+            }
+            Self::Vs => {
+                f.write_str("vs")?;
+            }
+            Self::Vc => {
+                f.write_str("vc")?;
+            }
+            Self::Hi => {
+                f.write_str("hi")?;
+            }
+            Self::Ls => {
+                f.write_str("ls")?;
+            }
+            Self::Ge => {
+                f.write_str("ge")?;
+            }
+            Self::Lt => {
+                f.write_str("lt")?;
+            }
+            Self::Gt => {
+                f.write_str("gt")?;
+            }
+            Self::Le => {
+                f.write_str("le")?;
+            }
+            Self::Al => {}
+        }
+        Ok(())
+    }
+}
+impl Reg {
+    pub fn display(
+        &self,
+        options: &Options,
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        match self {
+            Self::R0 => {
+                if options.av {
+                    f.write_str("a1")?;
+                } else {
+                    f.write_str("r0")?;
+                }
+            }
+            Self::R1 => {
+                if options.av {
+                    f.write_str("a2")?;
+                } else {
+                    f.write_str("r1")?;
+                }
+            }
+            Self::R2 => {
+                if options.av {
+                    f.write_str("a3")?;
+                } else {
+                    f.write_str("r2")?;
+                }
+            }
+            Self::R3 => {
+                if options.av {
+                    f.write_str("a4")?;
+                } else {
+                    f.write_str("r3")?;
+                }
+            }
+            Self::R4 => {
+                if options.av {
+                    f.write_str("v1")?;
+                } else {
+                    f.write_str("r4")?;
+                }
+            }
+            Self::R5 => {
+                if options.av {
+                    f.write_str("v2")?;
+                } else {
+                    f.write_str("r5")?;
+                }
+            }
+            Self::R6 => {
+                if options.av {
+                    f.write_str("v3")?;
+                } else {
+                    f.write_str("r6")?;
+                }
+            }
+            Self::R7 => {
+                if options.av {
+                    f.write_str("v4")?;
+                } else {
+                    f.write_str("r7")?;
+                }
+            }
+            Self::R8 => {
+                if options.av {
+                    f.write_str("v5")?;
+                } else {
+                    f.write_str("r8")?;
+                }
+            }
+            Self::R9 => {
+                if options.r9_use == R9Use::R9 {
+                    if options.av {
+                        f.write_str("v6")?;
+                    } else {
+                        f.write_str("r9")?;
+                    }
+                } else {
+                    if options.r9_use == R9Use::Sb {
+                        f.write_str("sb")?;
+                    } else {
+                        f.write_str("tr")?;
+                    }
+                }
+            }
+            Self::R10 => {
+                if options.sl {
+                    f.write_str("sl")?;
+                } else {
+                    if options.av {
+                        f.write_str("v7")?;
+                    } else {
+                        f.write_str("r10")?;
+                    }
+                }
+            }
+            Self::R11 => {
+                if options.fp {
+                    f.write_str("fp")?;
+                } else {
+                    if options.av {
+                        f.write_str("v8")?;
+                    } else {
+                        f.write_str("r11")?;
+                    }
+                }
+            }
+            Self::R12 => {
+                if options.ip {
+                    f.write_str("ip")?;
+                } else {
+                    f.write_str("r12")?;
+                }
+            }
+            Self::Sp => {
+                f.write_str("sp")?;
+            }
+            Self::Lr => {
+                f.write_str("lr")?;
+            }
+            Self::Pc => {
+                f.write_str("pc")?;
+            }
+        }
+        Ok(())
+    }
+}
+impl ShiftOp {
+    pub fn display(
+        &self,
+        options: &Options,
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        match self {
+            Self::Lsl => {
+                f.write_str("lsl")?;
+            }
+            Self::Lsr => {
+                f.write_str("lsr")?;
+            }
+            Self::Asr => {
+                f.write_str("asr")?;
+            }
+            Self::Ror => {
+                f.write_str("ror")?;
+            }
+        }
+        Ok(())
+    }
+}
+impl Op2 {
+    pub fn display(
+        &self,
+        options: &Options,
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        match self {
+            Self::Imm(imm) => {
+                f.write_str("#")?;
+                write!(f, "{:#x}", imm)?;
+            }
+            Self::ShiftReg { rm, shift_op, rs } => {
+                rm.display(options, f)?;
+                f.write_str(", ")?;
+                shift_op.display(options, f)?;
+                f.write_str(" ")?;
+                rs.display(options, f)?;
+            }
+            Self::ShiftImm { rm, shift_op, imm } => {
+                if *imm == 0 && *shift_op == ShiftOp::Lsl {
+                    rm.display(options, f)?;
+                } else {
+                    rm.display(options, f)?;
+                    f.write_str(", ")?;
+                    shift_op.display(options, f)?;
+                    f.write_str(" #")?;
+                    write!(f, "{:#x}", imm)?;
+                }
+            }
+        }
+        Ok(())
     }
 }
 pub enum Ins {

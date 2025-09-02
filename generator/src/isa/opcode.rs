@@ -9,8 +9,8 @@ use syn::Ident;
 
 use crate::{
     isa::{
-        BitRange, DataType, DataTypeEnumVariantName, DataTypeName, Format, Isa, IsaVersionPattern,
-        OpcodePattern,
+        BitRange, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName, Format, Isa,
+        IsaVersionPattern, OpcodePattern,
     },
     util::str::capitalize,
 };
@@ -76,7 +76,7 @@ impl Opcode {
                 panic!();
             };
             let name_ident = Ident::new(&name.0, Span::call_site());
-            let type_ident = data_type.type_tokens(&type_name.0);
+            let type_ident = data_type.type_tokens();
             quote!(#name_ident: #type_ident)
         });
         quote!(#variant_ident { #(#params),* })
@@ -122,9 +122,9 @@ impl OpcodeEncoding {
         let params = opcode.params().iter().map(|(name, type_name)| {
             let data_type = isa.types().get(type_name).unwrap();
             let parse_expr = if let Some(value) = self.get_param(name) {
-                value.parse_expr_tokens(Some(type_name), data_type)
+                value.parse_expr_tokens(data_type)
             } else {
-                data_type.default_expr_tokens(Some(type_name))
+                data_type.default_expr_tokens()
             };
 
             let name_ident = Ident::new(&name.0, Span::call_site());
@@ -154,36 +154,29 @@ pub enum OpcodeParamValue {
     Struct(IndexMap<String, OpcodeParamValue>),
 }
 impl OpcodeParamValue {
-    pub fn parse_expr_tokens(
-        &self,
-        type_name: Option<&DataTypeName>,
-        data_type: &DataType,
-    ) -> TokenStream {
+    pub fn parse_expr_tokens(&self, data_type: &DataType) -> TokenStream {
         match self {
             OpcodeParamValue::Bits(bit_range) => {
-                data_type.parse_expr_tokens(type_name, Some(bit_range.shift_mask_tokens()))
+                data_type.parse_expr_tokens(Some(bit_range.shift_mask_tokens()))
             }
             OpcodeParamValue::Const(value) => {
-                let type_name = type_name.unwrap();
                 let literal = Literal::u32_unsuffixed(*value).into_token_stream();
-                data_type.parse_expr_tokens(Some(type_name), Some(literal))
+                data_type.parse_expr_tokens(Some(literal))
             }
             OpcodeParamValue::Enum(variant, value) => {
-                let type_name = type_name.unwrap();
-                let DataType::Enum(data_type_enum) = data_type else {
+                let DataTypeKind::Enum(data_type_enum) = data_type.kind() else {
                     panic!();
                 };
                 let Some((_, variant)) = data_type_enum.get_variant(variant) else {
                     panic!();
                 };
-                variant.param_expr_tokens(type_name, value)
+                variant.param_expr_tokens(data_type.name(), value)
             }
             OpcodeParamValue::Struct(params) => {
-                let type_name = type_name.unwrap();
-                let DataType::Struct(data_type_struct) = data_type else {
+                let DataTypeKind::Struct(data_type_struct) = data_type.kind() else {
                     panic!();
                 };
-                data_type_struct.param_tokens(type_name, params)
+                data_type_struct.param_tokens(data_type.name(), params)
             }
         }
     }

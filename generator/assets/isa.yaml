@@ -36,8 +36,10 @@ versions:
 - v6k
 
 types:
-  s: !bool 0
-  cond: !enum
+- name: s
+  kind: !bool 0
+- name: cond
+  kind: !enum
     bits: 0..4
     default: al
     variants:
@@ -87,7 +89,8 @@ types:
         name: al
         description: Always
         format: !fmt ""
-  reg: !enum
+- name: reg
+  kind: !enum
     bits: 0..4
     variants:
       0000:
@@ -146,15 +149,16 @@ types:
           else: !fmt r8
       1001:
         name: r9
-        format: !match
-          value: option(r9_use)
-          cases:
-            r9: !if
-              cond: option(av)
-              then: !fmt v6
-              else: !fmt r9
-            sb: !fmt sb
-            tr: !fmt tr
+        format: !if
+          cond: option(r9_use) == enum_variant(r9_use, r9)
+          then: !if
+            cond: option(av)
+            then: !fmt v6
+            else: !fmt r9
+          else: !if
+            cond: option(r9_use) == enum_variant(r9_use, sb)
+            then: !fmt sb
+            else: !fmt tr
       1010:
         name: r10
         format: !if
@@ -185,7 +189,8 @@ types:
         name: lr
       1111:
         name: pc
-  shift_op: !enum
+- name: shift_op
+  kind: !enum
     bits: 0..2
     default: lsl
     variants:
@@ -201,35 +206,48 @@ types:
       11:
         name: ror
         description: Rotate right
-  op2: !enum
+- name: op2
+  kind: !enum
     bits: 0..32
     variants:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
         description: Immediate
-        format: !fmt \#(data)
-        data: !uint 0..12
+        format: !fmt "#(data)"
+        data:
+          name: imm
+          kind: !uint 0..12
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx1_xxxx:
         name: shift_reg
         description: Register shifted by register
-        data: !struct
-          format: !fmt (rm), (shift_op) (rs)
-          fields:
-            rm: !type [reg, 0..4]
-            shift_op: !type [shift_op, 5..7]
-            rs: !type [reg, 8..12]
+        data:
+          name: shift_reg
+          kind: !struct
+            format: !fmt (rm), (shift_op) (rs)
+            fields:
+            - name: rm
+              kind: !type [reg, 0..4]
+            - name: shift_op
+              kind: !type [shift_op, 5..7]
+            - name: rs
+              kind: !type [reg, 8..12]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: shift_imm
         description: Register shifted by immediate
-        data: !struct
-          format: !if
-            cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
-            then: !fmt (rm)
-            else: !fmt (rm), (shift_op) \#(imm)
-          fields:
-            rm: !type [reg, 0..4]
-            shift_op: !type [shift_op, 5..7]
-            imm: !uint 7..12
+        data:
+          name: shift_imm
+          kind: !struct
+            format: !if
+              cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
+              then: !fmt (rm)
+              else: !fmt "(rm), (shift_op) #(imm)"
+            fields:
+            - name: rm
+              kind: !type [reg, 0..4]
+            - name: shift_op
+              kind: !type [shift_op, 5..7]
+            - name: imm
+              kind: !uint 7..12
 
 opcodes:
 - mnemonic: adc
