@@ -16,10 +16,12 @@ impl DisassemblerGenerator {
         let data_types = self.isa.types().types_tokens();
         let data_parse_impls = self.isa.types().parse_impls_tokens();
         let data_default_impls = self.isa.types().default_impls_tokens();
-        let data_display_impls = self.isa.types().display_impls_tokens(&self.isa);
+        let data_fmt_impls = self.isa.types().fmt_impls_tokens(&self.isa);
 
         let ins_enum = self.isa.opcodes().ins_enum_tokens(&self.isa);
-        let ins_display_impl = self.isa.opcodes().display_impl_tokens(&self.isa);
+        let ins_fmt_impl = self.isa.opcodes().fmt_impl_tokens(&self.isa);
+        let ins_display_impl = self.isa.opcodes().display_impl_tokens();
+        let parse_arm_ifchain_fn = self.isa.opcodes().parse_arm_ifchain_fn_tokens();
         let opcode_parse_fns = self.isa.opcodes().parse_fns_tokens(&self.isa);
 
         quote! {
@@ -30,10 +32,12 @@ impl DisassemblerGenerator {
             #data_types
             #data_parse_impls
             #data_default_impls
-            #data_display_impls
+            #data_fmt_impls
 
             #ins_enum
+            #ins_fmt_impl
             #ins_display_impl
+            #parse_arm_ifchain_fn
             #opcode_parse_fns
         }
     }
@@ -225,6 +229,7 @@ impl ShiftOp {
 
 pub enum Ins {
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Illegal,
 }
 
 impl Ins {
@@ -241,9 +246,20 @@ impl Ins {
                 rn.display(options, f)?;
                 f.write_str(", ")?;
                 op2.display(options, f)?;
-                Ok(())
+            }
+            Ins::Illegal => {
+                f.write_str("<illegal>")?;
             }
         }
+        Ok(())
+    }
+}
+
+fn parse_arm(ins: u32) -> Ins {
+    if (ins & 0x0de00000) == 0x00a00000 {
+        parse_arm_adc_0(ins)
+    } else {
+        Ins::Illegal
     }
 }
 

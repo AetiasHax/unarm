@@ -69,6 +69,16 @@ pub struct OpcodePattern {
     second: Option<Pattern>,
 }
 
+impl OpcodePattern {
+    pub fn first(&self) -> &Pattern {
+        &self.first
+    }
+
+    pub fn second(&self) -> Option<&Pattern> {
+        self.second.as_ref()
+    }
+}
+
 impl<'de> Deserialize<'de> for OpcodePattern {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

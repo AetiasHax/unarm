@@ -8,7 +8,7 @@ use serde::{Deserialize, de::Visitor};
 use crate::util::hex_literal::HexLiteral;
 
 #[derive(Debug, Clone)]
-pub struct BitRange(Range<u8>);
+pub struct BitRange(pub Range<u8>);
 
 impl BitRange {
     pub fn mask(&self) -> u64 {

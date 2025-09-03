@@ -5,10 +5,10 @@ use indexmap::IndexMap;
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use serde::Deserialize;
-use syn::Ident;
+use syn::{Ident, visit_mut::VisitMut};
 
 use crate::{
-    isa::{BitRange, Format, FormatParams, Isa, OpcodeParamValue, Pattern},
+    isa::{BitRange, Format, FormatParams, Isa, OpcodeParamValue, Pattern, SynExpr},
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
 
@@ -42,9 +42,9 @@ impl DataTypes {
         quote!(#(#default_impls)*)
     }
 
-    pub fn display_impls_tokens(&self, isa: &Isa) -> TokenStream {
-        let display_impls = self.0.iter().filter_map(|dt| dt.display_impl_tokens(isa));
-        quote!(#(#display_impls)*)
+    pub fn fmt_impls_tokens(&self, isa: &Isa) -> TokenStream {
+        let fmt_impls = self.0.iter().filter_map(|dt| dt.fmt_impl_tokens(isa));
+        quote!(#(#fmt_impls)*)
     }
 }
 
@@ -75,7 +75,7 @@ pub enum DataTypeKind {
     #[serde(rename = "bool")]
     Bool(BitRange),
     #[serde(rename = "uint")]
-    UInt(BitRange),
+    UInt(DataExpr),
     #[serde(rename = "enum")]
     Enum(DataTypeEnum),
     #[serde(rename = "struct")]
@@ -164,7 +164,9 @@ impl DataType {
                 let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens());
                 quote!((#value) != 0)
             }
-            DataTypeKind::UInt(bit_range) => value.unwrap_or_else(|| bit_range.shift_mask_tokens()),
+            DataTypeKind::UInt(data_expr) => {
+                value.unwrap_or_else(|| data_expr.as_tokens(Ident::new("value", Span::call_site())))
+            }
             DataTypeKind::Enum(data_type_enum) => {
                 data_type_enum.parse_expr_tokens(&self.name, value)
             }
@@ -214,21 +216,19 @@ impl DataType {
         })
     }
 
-    pub fn display_impl_body_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+    pub fn fmt_impl_body_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
             DataTypeKind::Bool(_) => None,
             DataTypeKind::UInt(_) => None,
-            DataTypeKind::Enum(data_type_enum) => {
-                Some(data_type_enum.display_impl_body_tokens(isa))
-            }
+            DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.fmt_impl_body_tokens(isa)),
             DataTypeKind::Struct(data_type_struct) => {
-                Some(data_type_struct.display_impl_body_tokens(isa))
+                Some(data_type_struct.fmt_impl_body_tokens(isa))
             }
             DataTypeKind::Type(_, _) => None,
         }
     }
 
-    fn display_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+    fn fmt_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
             DataTypeKind::Bool(_) => return None,
             DataTypeKind::UInt(_) => return None,
@@ -236,11 +236,11 @@ impl DataType {
             DataTypeKind::Struct(_) => {}
             DataTypeKind::Type(_, _) => return None,
         };
-        let display_expr = self.display_impl_body_tokens(isa);
+        let display_expr = self.fmt_impl_body_tokens(isa);
         let name_ident = Ident::new(&snake_to_pascal_case(&self.name.0), Span::call_site());
         Some(quote! {
             impl #name_ident {
-                pub fn display(&self, options: &Options, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                pub fn fmt(&self, options: &Options, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                     #display_expr
                 }
             }
@@ -261,13 +261,11 @@ impl DataType {
                 quote!(write!(f, "{:#x}", #value)?;)
             }
             DataTypeKind::Enum(_) => {
-                quote!(#value.display(options, f)?;)
+                quote!(#value.fmt(options, f)?;)
             }
-            DataTypeKind::Struct(data_type_struct) => {
-                data_type_struct.display_impl_body_tokens(isa)
-            }
+            DataTypeKind::Struct(data_type_struct) => data_type_struct.fmt_impl_body_tokens(isa),
             DataTypeKind::Type(_, _) => {
-                quote!(#value.display(options, f)?;)
+                quote!(#value.fmt(options, f)?;)
             }
         }
     }
@@ -364,7 +362,7 @@ impl DataTypeEnum {
         quote!(#name_ident::default())
     }
 
-    fn display_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
+    fn fmt_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
         let variants = self.variants.iter().map(|(_, variant)| variant.display_expr_tokens(isa));
         quote! {
             match self {
@@ -622,11 +620,58 @@ impl DataTypeStruct {
         }
     }
 
-    fn display_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
+    fn fmt_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
         let mut params: FormatParams = HashMap::new();
         for field in &self.fields {
             params.insert(field.name.0.clone(), field.clone());
         }
         self.format.display_expr_tokens(isa, &params)
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DataExpr(SynExpr);
+
+impl DataExpr {
+    fn as_tokens(&self, input_ident: Ident) -> TokenStream {
+        let mut replace = DataExprReplace { input_ident };
+        let mut expr = self.0.0.clone();
+        replace.visit_expr_mut(&mut expr);
+        expr.into_token_stream()
+    }
+}
+
+struct DataExprReplace {
+    input_ident: Ident,
+}
+
+impl VisitMut for DataExprReplace {
+    fn visit_expr_mut(&mut self, node: &mut syn::Expr) {
+        if let syn::Expr::Call(call) = node {
+            let fn_name = call.func.to_token_stream().to_string();
+            match fn_name.as_str() {
+                "bits" => {
+                    if call.args.len() != 1 {
+                        panic!("bits function takes one argument");
+                    }
+                    let arg = &call.args[0];
+                    let syn::Expr::Range(range) = arg else {
+                        panic!("bits argument must be a range");
+                    };
+                    let Some(start) = &range.start else {
+                        panic!("bits range must have a start");
+                    };
+                    let Some(end) = &range.end else {
+                        panic!("bits range must have a start");
+                    };
+                    let start: u8 = start.to_token_stream().to_string().parse().unwrap();
+                    let end: u8 = end.to_token_stream().to_string().parse().unwrap();
+                    let range = BitRange(start..end);
+                    *node = syn::parse2(range.shift_mask_tokens()).unwrap();
+                }
+                _ => panic!("Unknown format condition function {fn_name}"),
+            }
+        }
+        syn::visit_mut::visit_expr_mut(self, node);
     }
 }

@@ -216,7 +216,7 @@ types:
         format: !fmt "#(data)"
         data:
           name: imm
-          kind: !uint 0..12
+          kind: !uint bits(0..8).rotate_right(bits(8..12) << 1)
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx1_xxxx:
         name: shift_reg
         description: Register shifted by register
@@ -240,14 +240,17 @@ types:
             format: !if
               cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
               then: !fmt (rm)
-              else: !fmt "(rm), (shift_op) #(imm)"
+              else: !if
+                cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, ror)
+                then: !fmt (rm), rrx
+                else: !fmt "(rm), (shift_op) #(imm)"
             fields:
             - name: rm
               kind: !type [reg, 0..4]
             - name: shift_op
               kind: !type [shift_op, 5..7]
             - name: imm
-              kind: !uint 7..12
+              kind: !uint bits(7..12)
 
 opcodes:
 - mnemonic: adc

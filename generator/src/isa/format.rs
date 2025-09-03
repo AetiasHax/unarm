@@ -6,7 +6,7 @@ use serde::Deserialize;
 use syn::{Ident, visit_mut::VisitMut};
 
 use crate::{
-    isa::{DataType, Isa},
+    isa::{DataType, Isa, SynExpr},
     util::str::snake_to_pascal_case,
 };
 
@@ -55,15 +55,15 @@ impl IfFormat {
     }
 }
 
-#[derive(Debug, Clone)]
-struct FormatCond(syn::Expr);
+#[derive(Deserialize, Debug, Clone)]
+struct FormatCond(SynExpr);
 
 impl FormatCond {
     fn as_tokens(&self) -> TokenStream {
         let mut replace = FormatCondReplace;
-        let mut expr = self.0.clone();
+        let mut expr = self.0.0.clone();
         replace.visit_expr_mut(&mut expr);
-        expr.to_token_stream()
+        expr.into_token_stream()
     }
 }
 
@@ -104,16 +104,6 @@ impl VisitMut for FormatCondReplace {
             }
         }
         syn::visit_mut::visit_expr_mut(self, node);
-    }
-}
-
-impl<'de> Deserialize<'de> for FormatCond {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        syn::parse_str(&s).map(FormatCond).map_err(serde::de::Error::custom)
     }
 }
 

@@ -162,7 +162,7 @@ impl From<u32> for ShiftOp {
 impl From<u32> for Op2 {
     fn from(value: u32) -> Self {
         if (value & 0x2000000) == 0x2000000 {
-            Self::Imm(value & 0xfff)
+            Self::Imm((value & 0xff).rotate_right(((value >> 8) & 0xf) << 1))
         } else if (value & 0x2000010) == 0x10 {
             Self::ShiftReg {
                 rm: Reg::from(value & 0xf),
@@ -191,7 +191,7 @@ impl Default for ShiftOp {
     }
 }
 impl Cond {
-    pub fn display(
+    pub fn fmt(
         &self,
         options: &Options,
         f: &mut core::fmt::Formatter<'_>,
@@ -245,7 +245,7 @@ impl Cond {
     }
 }
 impl Reg {
-    pub fn display(
+    pub fn fmt(
         &self,
         options: &Options,
         f: &mut core::fmt::Formatter<'_>,
@@ -372,7 +372,7 @@ impl Reg {
     }
 }
 impl ShiftOp {
-    pub fn display(
+    pub fn fmt(
         &self,
         options: &Options,
         f: &mut core::fmt::Formatter<'_>,
@@ -395,7 +395,7 @@ impl ShiftOp {
     }
 }
 impl Op2 {
-    pub fn display(
+    pub fn fmt(
         &self,
         options: &Options,
         f: &mut core::fmt::Formatter<'_>,
@@ -406,21 +406,26 @@ impl Op2 {
                 write!(f, "{:#x}", data)?;
             }
             Self::ShiftReg { rm, shift_op, rs } => {
-                rm.display(options, f)?;
+                rm.fmt(options, f)?;
                 f.write_str(", ")?;
-                shift_op.display(options, f)?;
+                shift_op.fmt(options, f)?;
                 f.write_str(" ")?;
-                rs.display(options, f)?;
+                rs.fmt(options, f)?;
             }
             Self::ShiftImm { rm, shift_op, imm } => {
                 if *imm == 0 && *shift_op == ShiftOp::Lsl {
-                    rm.display(options, f)?;
+                    rm.fmt(options, f)?;
                 } else {
-                    rm.display(options, f)?;
-                    f.write_str(", ")?;
-                    shift_op.display(options, f)?;
-                    f.write_str(" #")?;
-                    write!(f, "{:#x}", imm)?;
+                    if *imm == 0 && *shift_op == ShiftOp::Ror {
+                        rm.fmt(options, f)?;
+                        f.write_str(", rrx")?;
+                    } else {
+                        rm.fmt(options, f)?;
+                        f.write_str(", ")?;
+                        shift_op.fmt(options, f)?;
+                        f.write_str(" #")?;
+                        write!(f, "{:#x}", imm)?;
+                    }
                 }
             }
         }
@@ -429,9 +434,10 @@ impl Op2 {
 }
 pub enum Ins {
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Illegal,
 }
 impl Ins {
-    pub fn display(
+    pub fn fmt(
         &self,
         options: &Options,
         f: &mut core::fmt::Formatter,
@@ -443,30 +449,50 @@ impl Ins {
                     if *s {
                         f.write_str("s")?;
                     }
-                    cond.display(options, f)?;
+                    cond.fmt(options, f)?;
                     f.write_str(" ")?;
-                    rd.display(options, f)?;
+                    rd.fmt(options, f)?;
                     f.write_str(", ")?;
-                    rn.display(options, f)?;
+                    rn.fmt(options, f)?;
                     f.write_str(", ")?;
-                    op2.display(options, f)?;
+                    op2.fmt(options, f)?;
                 } else {
                     f.write_str("adc")?;
-                    cond.display(options, f)?;
+                    cond.fmt(options, f)?;
                     if *s {
                         f.write_str("s")?;
                     }
                     f.write_str(" ")?;
-                    rd.display(options, f)?;
+                    rd.fmt(options, f)?;
                     f.write_str(", ")?;
-                    rn.display(options, f)?;
+                    rn.fmt(options, f)?;
                     f.write_str(", ")?;
-                    op2.display(options, f)?;
+                    op2.fmt(options, f)?;
                 }
+            }
+            Ins::Illegal => {
+                f.write_str("<illegal>")?;
             }
         }
         Ok(())
     }
+}
+impl Ins {
+    pub fn display<'a>(&'a self, options: &'a Options) -> DisplayIns<'a> {
+        DisplayIns { ins: self, options }
+    }
+}
+pub struct DisplayIns<'a> {
+    ins: &'a Ins,
+    options: &'a Options,
+}
+impl<'a> core::fmt::Display for DisplayIns<'a> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.ins.fmt(self.options, f)
+    }
+}
+pub fn parse_arm(ins: u32) -> Ins {
+    if (ins & 0xde00000) == 0xa00000 { parse_arm_adc_0(ins) } else { Ins::Illegal }
 }
 fn parse_arm_adc_0(value: u32) -> Ins {
     let s = ((value >> 20) & 0x1) != 0;

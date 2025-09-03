@@ -9,10 +9,10 @@ use syn::Ident;
 
 use crate::{
     isa::{
-        BitRange, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName, Format,
+        Arch, BitRange, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName, Format,
         FormatParams, Isa, IsaVersionPattern, OpcodePattern,
     },
-    util::str::capitalize,
+    util::{hex_literal::HexLiteral, str::capitalize},
 };
 
 #[derive(Deserialize, Debug)]
@@ -27,7 +27,8 @@ impl Opcodes {
         let opcodes = self.iter().map(|o| o.ins_variant_tokens(isa));
         quote! {
             pub enum Ins {
-                #(#opcodes),*
+                #(#opcodes),*,
+                Illegal,
             }
         }
     }
@@ -37,15 +38,52 @@ impl Opcodes {
         quote!(#(#parse_fns)*)
     }
 
-    pub fn display_impl_tokens(&self, isa: &Isa) -> TokenStream {
+    pub fn fmt_impl_tokens(&self, isa: &Isa) -> TokenStream {
         let opcodes = self.0.iter().map(|o| o.display_variant_tokens(isa));
         quote! {
             impl Ins {
-                pub fn display(&self, options: &Options, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                pub fn fmt(&self, options: &Options, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                     match self {
                         #(#opcodes)*
+                        Ins::Illegal => {
+                            f.write_str("<illegal>")?;
+                        }
                     }
                     Ok(())
+                }
+            }
+        }
+    }
+
+    pub fn parse_arm_ifchain_fn_tokens(&self) -> TokenStream {
+        let opcodes = self.0.iter().map(|o| o.parse_arm_ifchain_tokens());
+        quote! {
+            pub fn parse_arm(ins: u32) -> Ins {
+                #(#opcodes)else*
+                else {
+                    Ins::Illegal
+                }
+            }
+        }
+    }
+
+    pub fn display_impl_tokens(&self) -> TokenStream {
+        quote! {
+            impl Ins {
+                pub fn display<'a>(&'a self, options: &'a Options) -> DisplayIns<'a> {
+                    DisplayIns {
+                        ins: self,
+                        options,
+                    }
+                }
+            }
+            pub struct DisplayIns<'a> {
+                ins: &'a Ins,
+                options: &'a Options
+            }
+            impl<'a> core::fmt::Display for DisplayIns<'a> {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    self.ins.fmt(self.options, f)
                 }
             }
         }
@@ -96,12 +134,19 @@ impl Opcode {
         quote!(#variant_ident { #(#params),* })
     }
 
+    fn parse_fn_name(&self, arch: Arch, index: usize) -> String {
+        match arch {
+            Arch::Arm => format!("parse_arm_{}_{}", self.mnemonic, index),
+            Arch::Thumb => format!("parse_thumb_{}_{}", self.mnemonic, index),
+        }
+    }
+
     fn parse_fns_tokens(&self, isa: &Isa) -> TokenStream {
         let arm_parse_fns = self.arm.iter().flatten().enumerate().map(|(i, encoding)| {
-            encoding.parse_fn_tokens(format!("parse_arm_{}_{}", self.mnemonic, i), self, isa)
+            encoding.parse_fn_tokens(self.parse_fn_name(Arch::Arm, i), self, isa)
         });
         let thumb_parse_fns = self.thumb.iter().flatten().enumerate().map(|(i, encoding)| {
-            encoding.parse_fn_tokens(format!("parse_thumb_{}_{}", self.mnemonic, i), self, isa)
+            encoding.parse_fn_tokens(self.parse_fn_name(Arch::Thumb, i), self, isa)
         });
         quote! {
             #(#arm_parse_fns)*
@@ -127,6 +172,14 @@ impl Opcode {
                 #display_expr
             }
         }
+    }
+
+    fn parse_arm_ifchain_tokens(&self) -> Option<TokenStream> {
+        let encodings = self.arm.as_ref()?.iter().enumerate().map(|(i, encoding)| {
+            let parse_fn_name = self.parse_fn_name(Arch::Arm, i);
+            encoding.parse_arm_ifchain_tokens(parse_fn_name)
+        });
+        Some(quote!(#(#encodings)else*))
     }
 }
 
@@ -171,6 +224,17 @@ impl OpcodeEncoding {
             fn #fn_ident(value: u32) -> Ins {
                 #(#params)*
                 Ins::#variant_ident { #(#param_names),* }
+            }
+        }
+    }
+
+    fn parse_arm_ifchain_tokens(&self, parse_fn_name: String) -> TokenStream {
+        let bitmask = HexLiteral(self.pattern.first().bitmask());
+        let pattern = HexLiteral(self.pattern.first().pattern());
+        let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
+        quote! {
+            if (ins & #bitmask) == #pattern {
+                #parse_fn_ident(ins)
             }
         }
     }

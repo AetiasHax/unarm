@@ -4,6 +4,7 @@ mod format;
 mod opcode;
 mod option;
 mod pattern;
+mod syn;
 mod version;
 
 use anyhow::Result;
@@ -15,6 +16,7 @@ pub use format::*;
 pub use opcode::*;
 pub use option::*;
 pub use pattern::*;
+pub use syn::*;
 pub use version::*;
 
 #[derive(Deserialize, Debug)]
@@ -49,4 +51,9 @@ impl Isa {
     pub fn opcodes(&self) -> &Opcodes {
         &self.opcodes
     }
+}
+
+pub enum Arch {
+    Arm,
+    Thumb,
 }
