@@ -272,6 +272,7 @@ opcodes:
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0001_01xx_xxxx
     params:
+      s: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]

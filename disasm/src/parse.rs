@@ -492,7 +492,14 @@ impl<'a> core::fmt::Display for DisplayIns<'a> {
     }
 }
 pub fn parse_arm(ins: u32) -> Ins {
-    if (ins & 0xde00000) == 0xa00000 { parse_arm_adc_0(ins) } else { Ins::Illegal }
+    if (ins & 0xde00000) == 0xa00000 {
+        parse_arm_adc_0(ins as u32)
+    } else {
+        Ins::Illegal
+    }
+}
+pub fn parse_thumb(ins: u16, next: Option<u16>) -> Ins {
+    if (ins & 0xffc0) == 0x4140 { parse_thumb_adc_0(ins as u32) } else { Ins::Illegal }
 }
 fn parse_arm_adc_0(value: u32) -> Ins {
     let s = ((value >> 20) & 0x1) != 0;
@@ -503,7 +510,7 @@ fn parse_arm_adc_0(value: u32) -> Ins {
     Ins::Adc { s, cond, rd, rn, op2 }
 }
 fn parse_thumb_adc_0(value: u32) -> Ins {
-    let s = false;
+    let s = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::from(value & 0x7);
     let rn = Reg::from(value & 0x7);

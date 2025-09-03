@@ -22,6 +22,7 @@ impl DisassemblerGenerator {
         let ins_fmt_impl = self.isa.opcodes().fmt_impl_tokens(&self.isa);
         let ins_display_impl = self.isa.opcodes().display_impl_tokens();
         let parse_arm_ifchain_fn = self.isa.opcodes().parse_arm_ifchain_fn_tokens();
+        let parse_thumb_ifchain_fn = self.isa.opcodes().parse_thumb_ifchain_fn_tokens();
         let opcode_parse_fns = self.isa.opcodes().parse_fns_tokens(&self.isa);
 
         quote! {
@@ -38,6 +39,7 @@ impl DisassemblerGenerator {
             #ins_fmt_impl
             #ins_display_impl
             #parse_arm_ifchain_fn
+            #parse_thumb_ifchain_fn
             #opcode_parse_fns
         }
     }
@@ -270,6 +272,18 @@ fn parse_arm_adc_0(ins: u32) -> Ins {
     let rn = Reg::from((ins >> 16) & 0xf);
     let op2 = Op2::from(ins);
     Ins::Adc { s, cond, rd, rn, op2 }
+}
+
+fn parse_thumb(ins: u16, next: Option<u16>) -> Ins {
+    if let Some(next) = next
+        && (ins & 0xf800) == 0xf000
+        && (next & 0xf800) == 0xe800
+    {
+        parse_arm_adc_0(((ins as u32) << 16) | (next as u32))
+        // parse_arm_adc_0(first)
+    } else {
+        Ins::Illegal
+    }
 }
 
 fn parse_thumb_adc_0(ins: u32) -> Ins {

@@ -67,6 +67,18 @@ impl Opcodes {
         }
     }
 
+    pub fn parse_thumb_ifchain_fn_tokens(&self) -> TokenStream {
+        let opcodes = self.0.iter().map(|o| o.parse_thumb_ifchain_tokens());
+        quote! {
+            pub fn parse_thumb(ins: u16, next: Option<u16>) -> Ins {
+                #(#opcodes)else*
+                else {
+                    Ins::Illegal
+                }
+            }
+        }
+    }
+
     pub fn display_impl_tokens(&self) -> TokenStream {
         quote! {
             impl Ins {
@@ -177,7 +189,15 @@ impl Opcode {
     fn parse_arm_ifchain_tokens(&self) -> Option<TokenStream> {
         let encodings = self.arm.as_ref()?.iter().enumerate().map(|(i, encoding)| {
             let parse_fn_name = self.parse_fn_name(Arch::Arm, i);
-            encoding.parse_arm_ifchain_tokens(parse_fn_name)
+            encoding.parse_ifchain_tokens(parse_fn_name)
+        });
+        Some(quote!(#(#encodings)else*))
+    }
+
+    fn parse_thumb_ifchain_tokens(&self) -> Option<TokenStream> {
+        let encodings = self.thumb.as_ref()?.iter().enumerate().map(|(i, encoding)| {
+            let parse_fn_name = self.parse_fn_name(Arch::Thumb, i);
+            encoding.parse_ifchain_tokens(parse_fn_name)
         });
         Some(quote!(#(#encodings)else*))
     }
@@ -228,13 +248,27 @@ impl OpcodeEncoding {
         }
     }
 
-    fn parse_arm_ifchain_tokens(&self, parse_fn_name: String) -> TokenStream {
-        let bitmask = HexLiteral(self.pattern.first().bitmask());
-        let pattern = HexLiteral(self.pattern.first().pattern());
+    fn parse_ifchain_tokens(&self, parse_fn_name: String) -> TokenStream {
         let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
-        quote! {
-            if (ins & #bitmask) == #pattern {
-                #parse_fn_ident(ins)
+
+        let first_bitmask = HexLiteral(self.pattern.first().bitmask());
+        let first_pattern = HexLiteral(self.pattern.first().pattern());
+        if let Some(second) = self.pattern.second() {
+            let second_bitmask = HexLiteral(second.bitmask());
+            let second_pattern = HexLiteral(second.pattern());
+            quote! {
+                if let Some(next) = next
+                    && (ins & #first_bitmask) == #first_pattern
+                    && (next & #second_bitmask) == #second_pattern
+                {
+                    #parse_fn_ident(((ins as u32) << 16) | (next as u32));
+                }
+            }
+        } else {
+            quote! {
+                if (ins & #first_bitmask) == #first_pattern {
+                    #parse_fn_ident(ins as u32)
+                }
             }
         }
     }
