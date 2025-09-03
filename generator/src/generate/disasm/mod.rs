@@ -19,6 +19,7 @@ impl DisassemblerGenerator {
         let data_display_impls = self.isa.types().display_impls_tokens(&self.isa);
 
         let ins_enum = self.isa.opcodes().ins_enum_tokens(&self.isa);
+        let ins_display_impl = self.isa.opcodes().display_impl_tokens(&self.isa);
         let opcode_parse_fns = self.isa.opcodes().parse_fns_tokens(&self.isa);
 
         quote! {
@@ -32,6 +33,7 @@ impl DisassemblerGenerator {
             #data_display_impls
 
             #ins_enum
+            #ins_display_impl
             #opcode_parse_fns
         }
     }

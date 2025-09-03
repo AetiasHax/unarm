@@ -401,9 +401,9 @@ impl Op2 {
         f: &mut core::fmt::Formatter<'_>,
     ) -> core::fmt::Result {
         match self {
-            Self::Imm(imm) => {
+            Self::Imm(data) => {
                 f.write_str("#")?;
-                write!(f, "{:#x}", imm)?;
+                write!(f, "{:#x}", data)?;
             }
             Self::ShiftReg { rm, shift_op, rs } => {
                 rm.display(options, f)?;
@@ -429,6 +429,44 @@ impl Op2 {
 }
 pub enum Ins {
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+}
+impl Ins {
+    pub fn display(
+        &self,
+        options: &Options,
+        f: &mut core::fmt::Formatter,
+    ) -> core::fmt::Result {
+        match self {
+            Ins::Adc { s, cond, rd, rn, op2 } => {
+                if options.ual {
+                    f.write_str("adc")?;
+                    if *s {
+                        f.write_str("s")?;
+                    }
+                    cond.display(options, f)?;
+                    f.write_str(" ")?;
+                    rd.display(options, f)?;
+                    f.write_str(", ")?;
+                    rn.display(options, f)?;
+                    f.write_str(", ")?;
+                    op2.display(options, f)?;
+                } else {
+                    f.write_str("adc")?;
+                    cond.display(options, f)?;
+                    if *s {
+                        f.write_str("s")?;
+                    }
+                    f.write_str(" ")?;
+                    rd.display(options, f)?;
+                    f.write_str(", ")?;
+                    rn.display(options, f)?;
+                    f.write_str(", ")?;
+                    op2.display(options, f)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 fn parse_arm_adc_0(value: u32) -> Ins {
     let s = ((value >> 20) & 0x1) != 0;

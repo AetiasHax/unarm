@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
@@ -9,8 +9,8 @@ use syn::Ident;
 
 use crate::{
     isa::{
-        BitRange, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName, Format, Isa,
-        IsaVersionPattern, OpcodePattern,
+        BitRange, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName, Format,
+        FormatParams, Isa, IsaVersionPattern, OpcodePattern,
     },
     util::str::capitalize,
 };
@@ -35,6 +35,20 @@ impl Opcodes {
     pub fn parse_fns_tokens(&self, isa: &Isa) -> TokenStream {
         let parse_fns = self.iter().map(|o| o.parse_fns_tokens(isa));
         quote!(#(#parse_fns)*)
+    }
+
+    pub fn display_impl_tokens(&self, isa: &Isa) -> TokenStream {
+        let opcodes = self.0.iter().map(|o| o.display_variant_tokens(isa));
+        quote! {
+            impl Ins {
+                pub fn display(&self, options: &Options, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                    match self {
+                        #(#opcodes)*
+                    }
+                    Ok(())
+                }
+            }
+        }
     }
 }
 
@@ -92,6 +106,26 @@ impl Opcode {
         quote! {
             #(#arm_parse_fns)*
             #(#thumb_parse_fns)*
+        }
+    }
+
+    fn display_variant_tokens(&self, isa: &Isa) -> TokenStream {
+        let variant_ident = Ident::new(&capitalize(&self.mnemonic), Span::call_site());
+        let param_names = self.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
+
+        let mut params: FormatParams = HashMap::new();
+        for (param_name, type_name) in &self.params {
+            let Some(data_type) = isa.types().get(type_name) else {
+                panic!();
+            };
+            params.insert(param_name.0.clone(), data_type.clone());
+        }
+
+        let display_expr = self.format.display_expr_tokens(isa, &params);
+        quote! {
+            Ins::#variant_ident { #(#param_names),* } => {
+                #display_expr
+            }
         }
     }
 }

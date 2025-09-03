@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{ToTokens, quote};
 use serde::Deserialize;
 use syn::Ident;
 
@@ -214,29 +214,17 @@ impl DataType {
         })
     }
 
-    pub fn display_expr_tokens(&self, isa: &Isa) -> TokenStream {
+    pub fn display_impl_body_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
-            DataTypeKind::Bool(_) => {
-                let name = &self.name.0;
-                let name_ident = Ident::new(name, Span::call_site());
-                quote! {
-                    if *#name_ident {
-                        f.write_str(#name)?;
-                    }
-                }
+            DataTypeKind::Bool(_) => None,
+            DataTypeKind::UInt(_) => None,
+            DataTypeKind::Enum(data_type_enum) => {
+                Some(data_type_enum.display_impl_body_tokens(isa))
             }
-            DataTypeKind::UInt(_) => {
-                let name_ident = Ident::new(&self.name.0, Span::call_site());
-                quote!(write!(f, "{:#x}", #name_ident)?;)
-            }
-            DataTypeKind::Enum(data_type_enum) => data_type_enum.display_impl_body_tokens(isa),
             DataTypeKind::Struct(data_type_struct) => {
-                data_type_struct.display_impl_body_tokens(isa)
+                Some(data_type_struct.display_impl_body_tokens(isa))
             }
-            DataTypeKind::Type(_, _) => {
-                let name_ident = Ident::new(&self.name.0, Span::call_site());
-                quote!(#name_ident.display(options, f)?;)
-            }
+            DataTypeKind::Type(_, _) => None,
         }
     }
 
@@ -248,7 +236,7 @@ impl DataType {
             DataTypeKind::Struct(_) => {}
             DataTypeKind::Type(_, _) => return None,
         };
-        let display_expr = self.display_expr_tokens(isa);
+        let display_expr = self.display_impl_body_tokens(isa);
         let name_ident = Ident::new(&snake_to_pascal_case(&self.name.0), Span::call_site());
         Some(quote! {
             impl #name_ident {
@@ -257,6 +245,31 @@ impl DataType {
                 }
             }
         })
+    }
+
+    pub fn display_expr_tokens(&self, isa: &Isa, value: TokenStream) -> TokenStream {
+        match &self.kind {
+            DataTypeKind::Bool(_) => {
+                let name = &self.name.0;
+                quote! {
+                    if *#value {
+                        f.write_str(#name)?;
+                    }
+                }
+            }
+            DataTypeKind::UInt(_) => {
+                quote!(write!(f, "{:#x}", #value)?;)
+            }
+            DataTypeKind::Enum(_) => {
+                quote!(#value.display(options, f)?;)
+            }
+            DataTypeKind::Struct(data_type_struct) => {
+                data_type_struct.display_impl_body_tokens(isa)
+            }
+            DataTypeKind::Type(_, _) => {
+                quote!(#value.display(options, f)?;)
+            }
+        }
     }
 }
 
@@ -480,8 +493,7 @@ impl DataTypeEnumVariant {
                 let field_names = data_type_struct.fields.iter().map(|f| f.name.as_ident());
                 quote!(Self::#variant_ident { #(#field_names),* })
             } else {
-                let data_ident = data.name.as_ident();
-                quote!(Self::#variant_ident(#data_ident))
+                quote!(Self::#variant_ident(data))
             }
         } else {
             quote!(Self::#variant_ident)
@@ -496,7 +508,8 @@ impl DataTypeEnumVariant {
         let display_expr = if let Some(format) = &self.format {
             format.display_expr_tokens(isa, &params)
         } else if let Some(data) = &self.data {
-            data.display_expr_tokens(isa)
+            let value = Ident::new(&data.name.0, Span::call_site()).into_token_stream();
+            data.display_expr_tokens(isa, value)
         } else {
             let variant_name = &self.name.0;
             quote!(f.write_str(#variant_name)?;)

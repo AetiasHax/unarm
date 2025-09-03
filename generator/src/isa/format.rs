@@ -143,7 +143,8 @@ impl FormatFragment {
                 let Some(param) = params.get(param_name) else {
                     panic!();
                 };
-                param.display_expr_tokens(isa)
+                let param_ident = Ident::new(param_name, Span::call_site());
+                param.display_expr_tokens(isa, quote!(#param_ident))
             }
         }
     }
