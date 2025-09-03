@@ -35,4 +35,14 @@ mod tests {
     fn test_adc() {
         assert_asm!(0x4157, "adcs r7, r7, r2");
     }
+
+    #[test]
+    fn test_add() {
+        assert_asm!(0x1cca, "adds r2, r1, #0x3");
+        assert_asm!(0x3642, "adds r6, r6, #0x42");
+        assert_asm!(0x1853, "adds r3, r2, r1");
+        assert_asm!(0x44de, "add lr, lr, r11");
+        assert_asm!(0xacff, "add r4, sp, #0x3fc");
+        assert_asm!(0xb03a, "add sp, sp, #0xe8");
+    }
 }

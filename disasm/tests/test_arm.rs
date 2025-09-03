@@ -29,4 +29,16 @@ mod tests {
         assert_asm!(0xb0a87060, "adclt r7, r8, r0, rrx");
         assert_asm!(0xe0b52153, "adcs r2, r5, r3, asr r1");
     }
+
+    #[test]
+    fn test_add() {
+        assert_asm!(0xe0812003, "add r2, r1, r3");
+        assert_asm!(0xe2845e23, "add r5, r4, #0x230");
+        assert_asm!(0x108b960a, "addne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x4085f238, "addmi pc, r5, r8, lsr r2");
+        assert_asm!(0x7082046e, "addvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb0887060, "addlt r7, r8, r0, rrx");
+        assert_asm!(0xe0952153, "adds r2, r5, r3, asr r1");
+        assert_asm!(0xe28f41a5, "add r4, pc, #0x40000029");
+    }
 }

@@ -1,9 +1,10 @@
 use std::{ops::Range, str::FromStr};
 
 use anyhow::Context;
-use proc_macro2::{Literal, TokenStream};
+use proc_macro2::{Literal, Span, TokenStream};
 use quote::quote;
 use serde::{Deserialize, de::Visitor};
+use syn::Ident;
 
 use crate::util::hex_literal::HexLiteral;
 
@@ -15,17 +16,18 @@ impl BitRange {
         1u64.unbounded_shl(self.0.len() as u32).wrapping_sub(1)
     }
 
-    pub fn shift_mask_tokens(&self) -> TokenStream {
+    pub fn shift_mask_tokens(&self, value: Option<Ident>) -> TokenStream {
+        let value = value.unwrap_or_else(|| Ident::new("value", Span::call_site()));
         let mask = HexLiteral(self.mask());
         if self.0.start == 0 {
             if self.0.end == 32 {
-                quote!(value)
+                quote!(#value)
             } else {
-                quote!(value & #mask)
+                quote!((#value) & #mask)
             }
         } else {
             let shift = Literal::u8_unsuffixed(self.0.start);
-            quote!((value >> #shift) & #mask)
+            quote!(((#value) >> #shift) & #mask)
         }
     }
 }

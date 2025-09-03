@@ -162,18 +162,18 @@ impl From<u32> for ShiftOp {
 impl From<u32> for Op2 {
     fn from(value: u32) -> Self {
         if (value & 0x2000000) == 0x2000000 {
-            Self::Imm((value & 0xff).rotate_right(((value >> 8) & 0xf) << 1))
+            Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1))
         } else if (value & 0x2000010) == 0x10 {
             Self::ShiftReg {
-                rm: Reg::from(value & 0xf),
-                shift_op: ShiftOp::from((value >> 5) & 0x3),
-                rs: Reg::from((value >> 8) & 0xf),
+                rm: Reg::from((value) & 0xf),
+                shift_op: ShiftOp::from(((value) >> 5) & 0x3),
+                rs: Reg::from(((value) >> 8) & 0xf),
             }
         } else if (value & 0x2000010) == 0x0 {
             Self::ShiftImm {
-                rm: Reg::from(value & 0xf),
-                shift_op: ShiftOp::from((value >> 5) & 0x3),
-                imm: (value >> 7) & 0x1f,
+                rm: Reg::from((value) & 0xf),
+                shift_op: ShiftOp::from(((value) >> 5) & 0x3),
+                imm: (((value) >> 7) & 0x1f),
             }
         } else {
             panic!();
@@ -434,6 +434,7 @@ impl Op2 {
 }
 pub enum Ins {
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Add { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     Illegal,
 }
 impl Ins {
@@ -470,6 +471,33 @@ impl Ins {
                     op2.fmt(options, f)?;
                 }
             }
+            Ins::Add { s, cond, rd, rn, op2 } => {
+                if options.ual {
+                    f.write_str("add")?;
+                    if *s {
+                        f.write_str("s")?;
+                    }
+                    cond.fmt(options, f)?;
+                    f.write_str(" ")?;
+                    rd.fmt(options, f)?;
+                    f.write_str(", ")?;
+                    rn.fmt(options, f)?;
+                    f.write_str(", ")?;
+                    op2.fmt(options, f)?;
+                } else {
+                    f.write_str("add")?;
+                    cond.fmt(options, f)?;
+                    if *s {
+                        f.write_str("s")?;
+                    }
+                    f.write_str(" ")?;
+                    rd.fmt(options, f)?;
+                    f.write_str(", ")?;
+                    rn.fmt(options, f)?;
+                    f.write_str(", ")?;
+                    op2.fmt(options, f)?;
+                }
+            }
             Ins::Illegal => {
                 f.write_str("<illegal>")?;
             }
@@ -494,30 +522,150 @@ impl<'a> core::fmt::Display for DisplayIns<'a> {
 pub fn parse_arm(ins: u32) -> Ins {
     if (ins & 0xde00000) == 0xa00000 {
         parse_arm_adc_0(ins as u32)
+    } else if (ins & 0xde00000) == 0x800000 {
+        parse_arm_add_0(ins as u32)
     } else {
         Ins::Illegal
     }
 }
 pub fn parse_thumb(ins: u16, next: Option<u16>) -> Ins {
-    if (ins & 0xffc0) == 0x4140 { parse_thumb_adc_0(ins as u32) } else { Ins::Illegal }
+    if (ins & 0xffc0) == 0x4140 {
+        parse_thumb_adc_0(ins as u32)
+    } else if (ins & 0xfe00) == 0x1c00 {
+        parse_thumb_add_0(ins as u32)
+    } else if (ins & 0xf800) == 0x3000 {
+        parse_thumb_add_1(ins as u32)
+    } else if (ins & 0xfe00) == 0x1800 {
+        parse_thumb_add_2(ins as u32)
+    } else if (ins & 0xff00) == 0x4400 {
+        parse_thumb_add_3(ins as u32)
+    } else if (ins & 0xf800) == 0xa800 {
+        parse_thumb_add_4(ins as u32)
+    } else if (ins & 0xff80) == 0xb000 {
+        parse_thumb_add_5(ins as u32)
+    } else if (ins & 0xff78) == 0x4468 {
+        parse_thumb_add_6(ins as u32)
+    } else if (ins & 0xff87) == 0x4485 {
+        parse_thumb_add_7(ins as u32)
+    } else if (ins & 0xf800) == 0xa000 {
+        parse_thumb_add_8(ins as u32)
+    } else {
+        Ins::Illegal
+    }
 }
 fn parse_arm_adc_0(value: u32) -> Ins {
-    let s = ((value >> 20) & 0x1) != 0;
-    let cond = Cond::from((value >> 28) & 0xf);
-    let rd = Reg::from((value >> 12) & 0xf);
-    let rn = Reg::from((value >> 16) & 0xf);
+    let s = (((value) >> 20) & 0x1) != 0;
+    let cond = Cond::from(((value) >> 28) & 0xf);
+    let rd = Reg::from(((value) >> 12) & 0xf);
+    let rn = Reg::from(((value) >> 16) & 0xf);
     let op2 = Op2::from(value);
     Ins::Adc { s, cond, rd, rn, op2 }
 }
 fn parse_thumb_adc_0(value: u32) -> Ins {
     let s = (1) != 0;
     let cond = Cond::default();
-    let rd = Reg::from(value & 0x7);
-    let rn = Reg::from(value & 0x7);
+    let rd = Reg::from((value) & 0x7);
+    let rn = Reg::from((value) & 0x7);
     let op2 = Op2::ShiftImm {
-        rm: Reg::from((value >> 3) & 0x7),
+        rm: Reg::from(((value) >> 3) & 0x7),
         shift_op: ShiftOp::default(),
         imm: 0,
     };
     Ins::Adc { s, cond, rd, rn, op2 }
+}
+fn parse_arm_add_0(value: u32) -> Ins {
+    let s = (((value) >> 20) & 0x1) != 0;
+    let cond = Cond::from(((value) >> 28) & 0xf);
+    let rd = Reg::from(((value) >> 12) & 0xf);
+    let rn = Reg::from(((value) >> 16) & 0xf);
+    let op2 = Op2::from(value);
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_0(value: u32) -> Ins {
+    let s = (1) != 0;
+    let cond = Cond::default();
+    let rd = Reg::from((value) & 0x7);
+    let rn = Reg::from(((value) >> 3) & 0x7);
+    let op2 = Op2::Imm(((value) >> 6) & 0x7);
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_1(value: u32) -> Ins {
+    let s = (1) != 0;
+    let cond = Cond::default();
+    let rd = Reg::from(((value) >> 8) & 0x7);
+    let rn = Reg::from(((value) >> 8) & 0x7);
+    let op2 = Op2::Imm((value) & 0xff);
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_2(value: u32) -> Ins {
+    let s = (1) != 0;
+    let cond = Cond::default();
+    let rd = Reg::from((value) & 0x7);
+    let rn = Reg::from(((value) >> 3) & 0x7);
+    let op2 = Op2::ShiftImm {
+        rm: Reg::from(((value) >> 6) & 0x7),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    };
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_3(value: u32) -> Ins {
+    let s = false;
+    let cond = Cond::default();
+    let rd = Reg::from(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7));
+    let rn = Reg::from(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7));
+    let op2 = Op2::ShiftImm {
+        rm: Reg::from(((value) >> 3) & 0xf),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    };
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_4(value: u32) -> Ins {
+    let s = false;
+    let cond = Cond::default();
+    let rd = Reg::from(((value) >> 8) & 0x7);
+    let rn = Reg::from(13);
+    let op2 = Op2::Imm(((value) & 0xff) << 2);
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_5(value: u32) -> Ins {
+    let s = false;
+    let cond = Cond::default();
+    let rd = Reg::from(13);
+    let rn = Reg::from(13);
+    let op2 = Op2::Imm(((value) & 0x7f) << 2);
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_6(value: u32) -> Ins {
+    let s = false;
+    let cond = Cond::default();
+    let rd = Reg::from(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7));
+    let rn = Reg::from(13);
+    let op2 = Op2::ShiftImm {
+        rm: Reg::from(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7)),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    };
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_7(value: u32) -> Ins {
+    let s = false;
+    let cond = Cond::default();
+    let rd = Reg::from(13);
+    let rn = Reg::from(13);
+    let op2 = Op2::ShiftImm {
+        rm: Reg::from(((value) >> 3) & 0xf),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    };
+    Ins::Add { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_add_8(value: u32) -> Ins {
+    let s = false;
+    let cond = Cond::default();
+    let rd = Reg::from(((value) >> 8) & 0x7);
+    let rn = Reg::from(15);
+    let op2 = Op2::Imm((value) & 0xff);
+    Ins::Add { s, cond, rd, rn, op2 }
 }

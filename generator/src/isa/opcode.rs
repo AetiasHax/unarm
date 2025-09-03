@@ -9,8 +9,8 @@ use syn::Ident;
 
 use crate::{
     isa::{
-        Arch, BitRange, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName, Format,
-        FormatParams, Isa, IsaVersionPattern, OpcodePattern,
+        Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
+        Format, FormatParams, Isa, IsaVersionPattern, OpcodePattern,
     },
     util::{hex_literal::HexLiteral, str::capitalize},
 };
@@ -280,6 +280,8 @@ pub enum OpcodeParamValue {
     Bits(BitRange),
     #[serde(rename = "const")]
     Const(u32),
+    #[serde(rename = "expr")]
+    Expr(DataExpr),
     #[serde(rename = "enum")]
     Enum(DataTypeEnumVariantName, Box<OpcodeParamValue>),
     #[serde(rename = "struct")]
@@ -289,11 +291,15 @@ impl OpcodeParamValue {
     pub fn parse_expr_tokens(&self, data_type: &DataType) -> TokenStream {
         match self {
             OpcodeParamValue::Bits(bit_range) => {
-                data_type.parse_expr_tokens(Some(bit_range.shift_mask_tokens()))
+                data_type.parse_expr_tokens(Some(bit_range.shift_mask_tokens(None)))
             }
             OpcodeParamValue::Const(value) => {
                 let literal = Literal::u32_unsuffixed(*value).into_token_stream();
                 data_type.parse_expr_tokens(Some(literal))
+            }
+            OpcodeParamValue::Expr(expr) => {
+                let expr = expr.as_tokens(Ident::new("value", Span::call_site()));
+                data_type.parse_expr_tokens(Some(expr))
             }
             OpcodeParamValue::Enum(variant, value) => {
                 let DataTypeKind::Enum(data_type_enum) = data_type.kind() else {

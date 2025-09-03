@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Literal, Span, TokenStream};
 use quote::{ToTokens, quote};
 use serde::Deserialize;
 use syn::{Ident, visit_mut::VisitMut};
@@ -161,7 +161,7 @@ impl DataType {
     pub fn parse_expr_tokens(&self, value: Option<TokenStream>) -> TokenStream {
         match &self.kind {
             DataTypeKind::Bool(bit_range) => {
-                let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens());
+                let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens(None));
                 quote!((#value) != 0)
             }
             DataTypeKind::UInt(data_expr) => {
@@ -176,7 +176,7 @@ impl DataType {
             DataTypeKind::Type(data_type_name, bit_range) => {
                 let type_ident =
                     Ident::new(&snake_to_pascal_case(&data_type_name.0), Span::call_site());
-                let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens());
+                let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens(None));
                 quote!(#type_ident::from(#value))
             }
         }
@@ -345,7 +345,7 @@ impl DataTypeEnum {
 
     fn parse_expr_tokens(&self, name: &DataTypeName, value: Option<TokenStream>) -> TokenStream {
         let name_ident = Ident::new(&snake_to_pascal_case(&name.0), Span::call_site());
-        let value = value.unwrap_or_else(|| self.bits.shift_mask_tokens());
+        let value = value.unwrap_or_else(|| self.bits.shift_mask_tokens(None));
         quote!(#name_ident::from(#value))
     }
 
@@ -464,20 +464,34 @@ impl DataTypeEnumVariant {
     pub fn param_expr_tokens(
         &self,
         enum_name: &DataTypeName,
-        params: &OpcodeParamValue,
+        value: &OpcodeParamValue,
     ) -> TokenStream {
         let enum_ident = Ident::new(&snake_to_pascal_case(&enum_name.0), Span::call_site());
         let variant_ident = self.as_ident();
         if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
-                let OpcodeParamValue::Struct(struct_params) = params else {
+                let OpcodeParamValue::Struct(struct_params) = value else {
                     panic!();
                 };
                 let record = data_type_struct.param_record_tokens(struct_params);
                 quote!(#enum_ident::#variant_ident #record)
             } else {
-                let default_expr = data.default_expr_tokens();
-                quote!(#enum_ident::#variant_ident(#default_expr))
+                let value_tokens = match value {
+                    OpcodeParamValue::Bits(bit_range) => bit_range.shift_mask_tokens(None),
+                    OpcodeParamValue::Const(imm) => {
+                        let lit = Literal::u32_unsuffixed(*imm);
+                        quote!(#lit)
+                    }
+                    OpcodeParamValue::Expr(data_expr) => {
+                        data_expr.as_tokens(Ident::new("value", Span::call_site()))
+                    }
+                    OpcodeParamValue::Enum(data_type_enum_variant_name, opcode_param_value) => {
+                        panic!()
+                    }
+                    OpcodeParamValue::Struct(index_map) => panic!(),
+                };
+                let parse_expr = data.parse_expr_tokens(Some(value_tokens));
+                quote!(#enum_ident::#variant_ident(#parse_expr))
             }
         } else {
             quote!(#enum_ident::#variant_ident)
@@ -633,7 +647,7 @@ impl DataTypeStruct {
 pub struct DataExpr(SynExpr);
 
 impl DataExpr {
-    fn as_tokens(&self, input_ident: Ident) -> TokenStream {
+    pub fn as_tokens(&self, input_ident: Ident) -> TokenStream {
         let mut replace = DataExprReplace { input_ident };
         let mut expr = self.0.0.clone();
         replace.visit_expr_mut(&mut expr);
@@ -667,9 +681,20 @@ impl VisitMut for DataExprReplace {
                     let start: u8 = start.to_token_stream().to_string().parse().unwrap();
                     let end: u8 = end.to_token_stream().to_string().parse().unwrap();
                     let range = BitRange(start..end);
-                    *node = syn::parse2(range.shift_mask_tokens()).unwrap();
+                    let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
+                    *node = syn::parse2(quote!((#result))).unwrap();
                 }
-                _ => panic!("Unknown format condition function {fn_name}"),
+                "bit" => {
+                    if call.args.len() != 1 {
+                        panic!("bit function takes one argument");
+                    }
+                    let arg = &call.args[0];
+                    let bit: u8 = arg.to_token_stream().to_string().parse().unwrap();
+                    let range = BitRange(bit..bit + 1);
+                    let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
+                    *node = syn::parse2(quote!((#result))).unwrap();
+                }
+                _ => panic!("Unknown data expression function {fn_name}"),
             }
         }
         syn::visit_mut::visit_expr_mut(self, node);

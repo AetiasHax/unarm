@@ -276,3 +276,77 @@ opcodes:
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: add
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format: !if
+    cond: option(ual)
+    then: !fmt add(s)(cond) (rd), (rn), (op2)
+    else: !fmt add(cond)(s) (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_100x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_110x_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !bits 6..9]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0011_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 8..11
+      rn: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_100x_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [shift_imm, !struct { rm: !bits 6..9 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0100_xxxx_xxxx
+    params:
+      rd: !expr (bit(7) << 3) | bits(0..3)
+      rn: !expr (bit(7) << 3) | bits(0..3)
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1010_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      rn: !const 13 # sp
+      op2: !enum [imm, !expr bits(0..8) << 2]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_0000_0xxx_xxxx
+    params:
+      rd: !const 13 # sp
+      rn: !const 13 # sp
+      op2: !enum [imm, !expr bits(0..7) << 2]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0100_x110_1xxx
+    params:
+      rd: !expr (bit(7) << 3) | bits(0..3)
+      rn: !const 13 # sp
+      op2: !enum [shift_imm, !struct { rm: !expr (bit(7) << 3) | bits(0..3) }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0100_1xxx_x101
+    params:
+      rd: !const 13 # sp
+      rn: !const 13 # sp
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1010_0xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      rn: !const 15 # pc
+      op2: !enum [imm, !bits 0..8]
