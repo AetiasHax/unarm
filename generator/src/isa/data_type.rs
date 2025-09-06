@@ -188,7 +188,7 @@ impl DataType {
                 let type_ident =
                     Ident::new(&snake_to_pascal_case(&data_type_name.0), Span::call_site());
                 let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens(None));
-                quote!(#type_ident::from(#value))
+                quote!(#type_ident::parse(#value, pc))
             }
         }
     }
@@ -374,8 +374,8 @@ impl DataTypeEnum {
         };
 
         quote! {
-            impl From<u32> for #name_ident {
-                fn from(value: u32) -> Self {
+            impl #name_ident {
+                fn parse(value: u32, pc: u32) -> Self {
                     #fn_body
                 }
             }
@@ -385,7 +385,7 @@ impl DataTypeEnum {
     fn parse_expr_tokens(&self, name: &DataTypeName, value: Option<TokenStream>) -> TokenStream {
         let name_ident = Ident::new(&snake_to_pascal_case(&name.0), Span::call_site());
         let value = value.unwrap_or_else(|| self.bits.shift_mask_tokens(None));
-        quote!(#name_ident::from(#value))
+        quote!(#name_ident::parse(#value, pc))
     }
 
     fn default_impl_body_tokens(&self) -> Option<TokenStream> {
@@ -604,8 +604,8 @@ impl DataTypeStruct {
         let name_ident = Ident::new(&snake_to_pascal_case(&name.0), Span::call_site());
         let record = self.parse_record_tokens();
         quote! {
-            impl From<u32> for #name_ident {
-                fn from(value: u32) -> Self {
+            impl #name_ident {
+                fn parse(value: u32, pc: u32) -> Self {
                     Self #record
                 }
             }
@@ -624,7 +624,7 @@ impl DataTypeStruct {
     fn parse_expr_tokens(&self, name: &DataTypeName, value: Option<TokenStream>) -> TokenStream {
         let name_ident = Ident::new(&snake_to_pascal_case(&name.0), Span::call_site());
         let value = value.unwrap_or_else(|| quote!(value));
-        quote!(#name_ident::from(#value))
+        quote!(#name_ident::parse(#value, pc))
     }
 
     fn default_record_tokens(&self) -> TokenStream {

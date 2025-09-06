@@ -18,13 +18,13 @@ mod tests {
 
     macro_rules! assert_asm {
         ($code:literal, $disasm:literal) => {{
-            let ins = parse_thumb($code, None);
+            let ins = parse_thumb($code, None, 0);
             let options = options!();
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};
         ($code:literal, $next:literal, $disasm:literal) => {{
-            let ins = parse_thumb($code, Some($next));
+            let ins = parse_thumb($code, Some($next), 0);
             let options = options!();
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
@@ -57,7 +57,7 @@ mod tests {
         assert_asm!(0xd042, "beq #0x88");
         assert_asm!(0xd942, "bls #0x88");
         assert_asm!(0xdc42, "bgt #0x88");
-        assert_asm!(0xdbf3, "blt #-0x16");
-        assert_asm!(0xe5ee, "b #-0x420");
+        assert_asm!(0xdbf3, "blt #0xffffffea");
+        assert_asm!(0xe5ee, "b #0xfffffbe0");
     }
 }

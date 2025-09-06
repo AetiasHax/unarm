@@ -32,7 +32,7 @@ pub enum R9Use {
     Tr,
 }
 pub struct BranchTarget {
-    pub addr: i32,
+    pub addr: u32,
 }
 #[derive(PartialEq, Eq)]
 pub enum Cond {

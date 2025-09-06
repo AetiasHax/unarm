@@ -7,11 +7,7 @@ impl BranchTarget {
     ) -> core::fmt::Result {
         let Self { addr } = self;
         f.write_str("#")?;
-        if *addr < 0 {
-            write!(f, "-{:#x}", - addr)?;
-        } else {
-            write!(f, "{:#x}", addr)?;
-        }
+        write!(f, "{:#x}", addr)?;
         Ok(())
     }
 }

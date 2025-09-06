@@ -39,15 +39,15 @@ types:
 - name: s
   kind: !bool 0
 - name: uimm
-  kind: !uint 0..32
+  kind: !uint bits(0..32)
 - name: simm
-  kind: !int 0..32
+  kind: !int bits(0..32)
 - name: branch_target
   kind: !struct
     format: !fmt "#(addr)"
     fields:
     - name: addr
-      kind: !int bits(0..32)
+      kind: !uint pc + bits(0..32)
 - name: cond
   kind: !enum
     bits: 0..4
@@ -393,17 +393,14 @@ opcodes:
     pattern: xxxx_1010_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       cond: !bits 28..32
-      target: !struct
-        addr: !expr (bits(0..24) << 2).sign_extend(6) + 8
+      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: 1101_xxxx_xxxx_xxxx
     params:
       cond: !bits 8..12
-      target: !struct
-        addr: !expr (bits(0..8) << 1).sign_extend(23) + 4
+      target: !expr (bits(0..8) << 1).sign_extend(23) + 4
   - version: [v4t, v5t*, v6*]
     pattern: 1110_0xxx_xxxx_xxxx
     params:
-      target: !struct
-        addr: !expr (bits(0..11) << 1).sign_extend(20) + 4
+      target: !expr (bits(0..11) << 1).sign_extend(20) + 4

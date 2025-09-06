@@ -4,7 +4,7 @@ mod tests {
 
     macro_rules! assert_asm {
         ($code:literal, $disasm:literal) => {{
-            let ins = parse_arm($code);
+            let ins = parse_arm($code, 0);
             let options = Options {
                 version: unarm::Version::V6K,
                 av: false,
@@ -59,6 +59,6 @@ mod tests {
         assert_asm!(0x0a012345, "beq #0x48d1c");
         assert_asm!(0x1affffff, "bne #0x4");
         assert_asm!(0x2afffffe, "bhs #0x0");
-        assert_asm!(0x3afffffd, "blo #-0x4");
+        assert_asm!(0x3afffffd, "blo #0xfffffffc");
     }
 }

@@ -58,7 +58,7 @@ impl Opcodes {
     pub fn parse_arm_ifchain_fn_tokens(&self) -> TokenStream {
         let opcodes = self.0.iter().map(|o| o.parse_arm_ifchain_tokens());
         quote! {
-            pub fn parse_arm(ins: u32) -> Ins {
+            pub fn parse_arm(ins: u32, pc: u32) -> Ins {
                 #(#opcodes)else*
                 else {
                     Ins::Illegal
@@ -70,7 +70,7 @@ impl Opcodes {
     pub fn parse_thumb_ifchain_fn_tokens(&self) -> TokenStream {
         let opcodes = self.0.iter().map(|o| o.parse_thumb_ifchain_tokens());
         quote! {
-            pub fn parse_thumb(ins: u16, next: Option<u16>) -> Ins {
+            pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
                 #(#opcodes)else*
                 else {
                     Ins::Illegal
@@ -241,7 +241,7 @@ impl OpcodeEncoding {
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
 
         quote! {
-            fn #fn_ident(value: u32) -> Ins {
+            fn #fn_ident(value: u32, pc: u32) -> Ins {
                 #(#params)*
                 Ins::#variant_ident { #(#param_names),* }
             }
@@ -261,13 +261,13 @@ impl OpcodeEncoding {
                     && (ins & #first_bitmask) == #first_pattern
                     && (next & #second_bitmask) == #second_pattern
                 {
-                    #parse_fn_ident(((ins as u32) << 16) | (next as u32));
+                    #parse_fn_ident(((ins as u32) << 16) | (next as u32), pc);
                 }
             }
         } else {
             quote! {
                 if (ins & #first_bitmask) == #first_pattern {
-                    #parse_fn_ident(ins as u32)
+                    #parse_fn_ident(ins as u32, pc)
                 }
             }
         }
