@@ -38,6 +38,16 @@ versions:
 types:
 - name: s
   kind: !bool 0
+- name: uimm
+  kind: !uint 0..32
+- name: simm
+  kind: !int 0..32
+- name: branch_target
+  kind: !struct
+    format: !fmt "#(addr)"
+    fields:
+    - name: addr
+      kind: !int bits(0..32)
 - name: cond
   kind: !enum
     bits: 0..4
@@ -349,4 +359,51 @@ opcodes:
     params:
       rd: !bits 8..11
       rn: !const 15 # pc
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !expr bits(0..8) << 2]
+
+- mnemonic: and
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format: !if
+    cond: option(ual)
+    then: !fmt and(s)(cond) (rd), (rn), (op2)
+    else: !fmt and(cond)(s) (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_000x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_00xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: b
+  params: { cond: cond, target: branch_target }
+  format: !fmt "b(cond) (target)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1010_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      target: !struct
+        addr: !expr (bits(0..24) << 2).sign_extend(6) + 8
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1101_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 8..12
+      target: !struct
+        addr: !expr (bits(0..8) << 1).sign_extend(23) + 4
+  - version: [v4t, v5t*, v6*]
+    pattern: 1110_0xxx_xxxx_xxxx
+    params:
+      target: !struct
+        addr: !expr (bits(0..11) << 1).sign_extend(20) + 4

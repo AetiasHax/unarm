@@ -178,7 +178,7 @@ impl Opcode {
             params.insert(param_name.0.clone(), data_type.clone());
         }
 
-        let display_expr = self.format.display_expr_tokens(isa, &params);
+        let display_expr = self.format.fmt_expr_tokens(isa, &params);
         quote! {
             Ins::#variant_ident { #(#param_names),* } => {
                 #display_expr

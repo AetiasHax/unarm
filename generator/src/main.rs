@@ -1,8 +1,9 @@
 use std::fs::{self, File};
 
 use anyhow::Context;
+use proc_macro2::TokenStream;
 
-use crate::{generate::DisassemblerGenerator, isa::Isa};
+use crate::isa::Isa;
 
 mod generate;
 mod isa;
@@ -14,13 +15,16 @@ fn main() -> anyhow::Result<()> {
     isa.validate()?;
     // println!("{:#?}", isa);
 
-    let generator = DisassemblerGenerator { isa };
-    let tokens = generator.generate();
-    // println!("{tokens}");
-    let file =
-        syn::parse2(tokens).context("Failed to parse generated disassembler token stream")?;
-    let formatted = prettyplease::unparse(&file);
-    fs::write("disasm/src/parse.rs", formatted)?;
+    generate_file("disasm/src/types.rs", isa.generate_types())?;
+    generate_file("disasm/src/parse.rs", isa.generate_parser())?;
+    generate_file("disasm/src/display.rs", isa.generate_display())?;
 
+    Ok(())
+}
+
+fn generate_file(path: &str, tokens: TokenStream) -> anyhow::Result<()> {
+    let file = syn::parse2(tokens).context("Failed to parse generated token stream")?;
+    let formatted = prettyplease::unparse(&file);
+    fs::write(path, formatted)?;
     Ok(())
 }

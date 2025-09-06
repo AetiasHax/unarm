@@ -44,5 +44,20 @@ mod tests {
         assert_asm!(0x44de, "add lr, lr, r11");
         assert_asm!(0xacff, "add r4, sp, #0x3fc");
         assert_asm!(0xb03a, "add sp, sp, #0xe8");
+        assert_asm!(0xa413, "add r4, pc, #0x4c");
+    }
+
+    #[test]
+    fn test_and() {
+        assert_asm!(0x4017, "ands r7, r7, r2");
+    }
+
+    #[test]
+    fn test_b() {
+        assert_asm!(0xd042, "beq #0x88");
+        assert_asm!(0xd942, "bls #0x88");
+        assert_asm!(0xdc42, "bgt #0x88");
+        assert_asm!(0xdbf3, "blt #-0x16");
+        assert_asm!(0xe5ee, "b #-0x420");
     }
 }

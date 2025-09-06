@@ -76,6 +76,8 @@ pub enum DataTypeKind {
     Bool(BitRange),
     #[serde(rename = "uint")]
     UInt(DataExpr),
+    #[serde(rename = "int")]
+    Int(DataExpr),
     #[serde(rename = "enum")]
     Enum(DataTypeEnum),
     #[serde(rename = "struct")]
@@ -97,6 +99,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_bit_range) => Ok(()),
             DataTypeKind::UInt(_bit_range) => Ok(()),
+            DataTypeKind::Int(_bit_range) => Ok(()),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.validate(&self.name),
             DataTypeKind::Struct(_data_type_struct) => Ok(()),
             DataTypeKind::Type(_data_type_name, _bit_range) => Ok(()),
@@ -107,6 +110,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_) => None,
             DataTypeKind::UInt(_) => None,
+            DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.enum_tokens(&self.name)),
             DataTypeKind::Struct(data_type_struct) => {
                 Some(data_type_struct.struct_tokens(&self.name))
@@ -119,6 +123,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_) => None,
             DataTypeKind::UInt(_) => None,
+            DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => {
                 Some(data_type_enum.parse_impl_tokens(&self.name))
             }
@@ -133,6 +138,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_) => quote!(bool),
             DataTypeKind::UInt(_) => quote!(u32),
+            DataTypeKind::Int(_) => quote!(i32),
             DataTypeKind::Enum(_) => {
                 let name_ident = Ident::new(&snake_to_pascal_case(&self.name.0), Span::call_site());
                 quote!(#name_ident)
@@ -167,6 +173,11 @@ impl DataType {
             DataTypeKind::UInt(data_expr) => {
                 value.unwrap_or_else(|| data_expr.as_tokens(Ident::new("value", Span::call_site())))
             }
+            DataTypeKind::Int(data_expr) => {
+                let expr = value
+                    .unwrap_or_else(|| data_expr.as_tokens(Ident::new("value", Span::call_site())));
+                quote!((#expr) as i32)
+            }
             DataTypeKind::Enum(data_type_enum) => {
                 data_type_enum.parse_expr_tokens(&self.name, value)
             }
@@ -186,6 +197,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_) => quote!(false),
             DataTypeKind::UInt(_) => quote!(0),
+            DataTypeKind::Int(_) => quote!(0),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_expr_tokens(&self.name),
             DataTypeKind::Struct(data_type_struct) => {
                 data_type_struct.default_expr_tokens(&self.name)
@@ -202,6 +214,7 @@ impl DataType {
         let default_expr = match &self.kind {
             DataTypeKind::Bool(_) => return None,
             DataTypeKind::UInt(_) => return None,
+            DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_impl_body_tokens()?,
             DataTypeKind::Struct(data_type_struct) => data_type_struct.default_impl_body_tokens(),
             DataTypeKind::Type(_, _) => return None,
@@ -220,6 +233,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_) => None,
             DataTypeKind::UInt(_) => None,
+            DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.fmt_impl_body_tokens(isa)),
             DataTypeKind::Struct(data_type_struct) => {
                 Some(data_type_struct.fmt_impl_body_tokens(isa))
@@ -232,6 +246,7 @@ impl DataType {
         match &self.kind {
             DataTypeKind::Bool(_) => return None,
             DataTypeKind::UInt(_) => return None,
+            DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(_) => {}
             DataTypeKind::Struct(_) => {}
             DataTypeKind::Type(_, _) => return None,
@@ -242,12 +257,13 @@ impl DataType {
             impl #name_ident {
                 pub fn fmt(&self, options: &Options, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                     #display_expr
+                    Ok(())
                 }
             }
         })
     }
 
-    pub fn display_expr_tokens(&self, isa: &Isa, value: TokenStream) -> TokenStream {
+    pub fn fmt_expr_tokens(&self, isa: &Isa, value: TokenStream) -> TokenStream {
         match &self.kind {
             DataTypeKind::Bool(_) => {
                 let name = &self.name.0;
@@ -260,13 +276,36 @@ impl DataType {
             DataTypeKind::UInt(_) => {
                 quote!(write!(f, "{:#x}", #value)?;)
             }
+            DataTypeKind::Int(_) => {
+                quote! {
+                    if *#value < 0 {
+                        write!(f, "-{:#x}", -#value)?;
+                    } else {
+                        write!(f, "{:#x}", #value)?;
+                    }
+                }
+            }
             DataTypeKind::Enum(_) => {
                 quote!(#value.fmt(options, f)?;)
             }
-            DataTypeKind::Struct(data_type_struct) => data_type_struct.fmt_impl_body_tokens(isa),
+            DataTypeKind::Struct(_) => {
+                quote!(#value.fmt(options, f)?;)
+            }
             DataTypeKind::Type(_, _) => {
                 quote!(#value.fmt(options, f)?;)
             }
+        }
+    }
+
+    pub fn display_expr_in_enum_variant_tokens(
+        &self,
+        isa: &Isa,
+        value: TokenStream,
+    ) -> TokenStream {
+        if let DataTypeKind::Struct(data_type_struct) = &self.kind {
+            data_type_struct.fmt_expr_tokens(isa)
+        } else {
+            self.fmt_expr_tokens(isa, value)
         }
     }
 }
@@ -368,7 +407,6 @@ impl DataTypeEnum {
             match self {
                 #(#variants),*
             }
-            Ok(())
         }
     }
 }
@@ -518,10 +556,10 @@ impl DataTypeEnumVariant {
             params.insert("data".into(), data.clone());
         };
         let display_expr = if let Some(format) = &self.format {
-            format.display_expr_tokens(isa, &params)
+            format.fmt_expr_tokens(isa, &params)
         } else if let Some(data) = &self.data {
             let value = Ident::new(&data.name.0, Span::call_site()).into_token_stream();
-            data.display_expr_tokens(isa, value)
+            data.display_expr_in_enum_variant_tokens(isa, value)
         } else {
             let variant_name = &self.name.0;
             quote!(f.write_str(#variant_name)?;)
@@ -635,11 +673,20 @@ impl DataTypeStruct {
     }
 
     fn fmt_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
+        let fields = self.fields.iter().map(|f| f.name.as_ident());
+        let fmt_expr = self.fmt_expr_tokens(isa);
+        quote! {
+            let Self { #(#fields),* } = self;
+            #fmt_expr
+        }
+    }
+
+    fn fmt_expr_tokens(&self, isa: &Isa) -> TokenStream {
         let mut params: FormatParams = HashMap::new();
         for field in &self.fields {
             params.insert(field.name.0.clone(), field.clone());
         }
-        self.format.display_expr_tokens(isa, &params)
+        self.format.fmt_expr_tokens(isa, &params)
     }
 }
 
@@ -661,41 +708,79 @@ struct DataExprReplace {
 
 impl VisitMut for DataExprReplace {
     fn visit_expr_mut(&mut self, node: &mut syn::Expr) {
-        if let syn::Expr::Call(call) = node {
-            let fn_name = call.func.to_token_stream().to_string();
-            match fn_name.as_str() {
-                "bits" => {
-                    if call.args.len() != 1 {
-                        panic!("bits function takes one argument");
+        match node {
+            syn::Expr::Call(call) => {
+                let fn_name = call.func.to_token_stream().to_string();
+                match fn_name.as_str() {
+                    "bits" => {
+                        if call.args.len() != 1 {
+                            panic!("bits function takes one argument");
+                        }
+                        let arg = &call.args[0];
+                        let syn::Expr::Range(range) = arg else {
+                            panic!("bits argument must be a range");
+                        };
+                        let Some(start) = &range.start else {
+                            panic!("bits range must have a start");
+                        };
+                        let Some(end) = &range.end else {
+                            panic!("bits range must have a start");
+                        };
+                        let start: u8 = start.to_token_stream().to_string().parse().unwrap();
+                        let end: u8 = end.to_token_stream().to_string().parse().unwrap();
+                        let range = BitRange(start..end);
+                        let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
+                        *node = syn::parse2(quote!((#result))).unwrap();
                     }
-                    let arg = &call.args[0];
-                    let syn::Expr::Range(range) = arg else {
-                        panic!("bits argument must be a range");
-                    };
-                    let Some(start) = &range.start else {
-                        panic!("bits range must have a start");
-                    };
-                    let Some(end) = &range.end else {
-                        panic!("bits range must have a start");
-                    };
-                    let start: u8 = start.to_token_stream().to_string().parse().unwrap();
-                    let end: u8 = end.to_token_stream().to_string().parse().unwrap();
-                    let range = BitRange(start..end);
-                    let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
-                    *node = syn::parse2(quote!((#result))).unwrap();
-                }
-                "bit" => {
-                    if call.args.len() != 1 {
-                        panic!("bit function takes one argument");
+                    "bit" => {
+                        if call.args.len() != 1 {
+                            panic!("bit function takes one argument");
+                        }
+                        let arg = &call.args[0];
+                        let bit: u8 = arg.to_token_stream().to_string().parse().unwrap();
+                        let range = BitRange(bit..bit + 1);
+                        let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
+                        *node = syn::parse2(quote!((#result))).unwrap();
                     }
-                    let arg = &call.args[0];
-                    let bit: u8 = arg.to_token_stream().to_string().parse().unwrap();
-                    let range = BitRange(bit..bit + 1);
-                    let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
-                    *node = syn::parse2(quote!((#result))).unwrap();
+                    _ => panic!("Unknown data expression function {fn_name}"),
                 }
-                _ => panic!("Unknown data expression function {fn_name}"),
             }
+            syn::Expr::MethodCall(call) => {
+                let fn_name = call.method.to_string();
+                match fn_name.as_str() {
+                    // These already exist in Rust
+                    "rotate_right" | "wrapping_add" | "wrapping_sub" => {}
+
+                    "sign_extend" => {
+                        if call.args.len() != 1 {
+                            panic!("sign_extend function takes one argument");
+                        }
+                        let arg = &call.args[0];
+                        let bits: u32 = arg.to_token_stream().to_string().parse().unwrap();
+                        let bits = Literal::u32_unsuffixed(bits);
+                        let receiver = &call.receiver;
+                        let result = quote!(((#receiver as i32) << #bits >> #bits) as u32);
+                        *node = syn::parse2(quote!((#result))).unwrap();
+                    }
+                    _ => panic!("Unknown data expression method {fn_name}"),
+                }
+            }
+            syn::Expr::Binary(binary) => {
+                let left = &binary.left;
+                let right = &binary.right;
+                match binary.op {
+                    syn::BinOp::Add(_) => {
+                        let result = quote!(#left.wrapping_add(#right));
+                        *node = syn::parse2(result).unwrap();
+                    }
+                    syn::BinOp::Sub(_) => {
+                        let result = quote!(#left.wrapping_sub(#right));
+                        *node = syn::parse2(result).unwrap();
+                    }
+                    _ => {}
+                }
+            }
+            _ => (),
         }
         syn::visit_mut::visit_expr_mut(self, node);
     }

@@ -21,12 +21,10 @@ pub enum Format {
 pub type FormatParams = HashMap<String, DataType>;
 
 impl Format {
-    pub fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+    pub fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
         match self {
-            Format::If(if_format) => if_format.display_expr_tokens(isa, params),
-            Format::Fragments(fragments_format) => {
-                fragments_format.display_expr_tokens(isa, params)
-            }
+            Format::If(if_format) => if_format.fmt_expr_tokens(isa, params),
+            Format::Fragments(fragments_format) => fragments_format.fmt_expr_tokens(isa, params),
         }
     }
 }
@@ -41,15 +39,15 @@ pub struct IfFormat {
 }
 
 impl IfFormat {
-    fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+    fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
         let condition = self.cond.as_tokens();
-        let display_true = self.if_true.display_expr_tokens(isa, params);
-        let display_false = self.if_false.display_expr_tokens(isa, params);
+        let fmt_true = self.if_true.fmt_expr_tokens(isa, params);
+        let fmt_false = self.if_false.fmt_expr_tokens(isa, params);
         quote! {
             if #condition {
-                #display_true
+                #fmt_true
             } else {
-                #display_false
+                #fmt_false
             }
         }
     }
@@ -113,8 +111,8 @@ pub struct FragmentsFormat {
 }
 
 impl FragmentsFormat {
-    fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
-        let fragments = self.fragments.iter().map(|f| f.display_expr_tokens(isa, params));
+    fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+        let fragments = self.fragments.iter().map(|f| f.fmt_expr_tokens(isa, params));
         quote!(#(#fragments)*)
     }
 }
@@ -126,7 +124,7 @@ enum FormatFragment {
 }
 
 impl FormatFragment {
-    fn display_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+    fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
         match self {
             FormatFragment::Text(text) => quote!(f.write_str(#text)?;),
             FormatFragment::Param(param_name) => {
@@ -134,7 +132,7 @@ impl FormatFragment {
                     panic!();
                 };
                 let param_ident = Ident::new(param_name, Span::call_site());
-                param.display_expr_tokens(isa, quote!(#param_ident))
+                param.fmt_expr_tokens(isa, quote!(#param_ident))
             }
         }
     }
