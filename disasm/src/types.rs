@@ -20,6 +20,7 @@ pub enum Version {
     V5,
     V5T,
     V5Te,
+    V5Tej,
     V6K,
 }
 #[derive(PartialEq, Eq)]
@@ -31,9 +32,16 @@ pub enum R9Use {
     ///TLS register (TR), used for thread-local storage
     Tr,
 }
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct BranchTarget {
     pub addr: u32,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum BlxTarget {
+    ///Direct target
+    Direct(BranchTarget),
+    ///Indirect target
+    Indirect(Reg),
 }
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Cond {
@@ -112,5 +120,11 @@ pub enum Ins {
     Add { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     And { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     B { cond: Cond, target: BranchTarget },
+    Bic { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Bkpt { imm: u32 },
+    Bl { cond: Cond, target: BranchTarget },
+    Blx { cond: Cond, target: BlxTarget },
+    Bx { cond: Cond, rm: Reg },
+    Bxj { cond: Cond, rm: Reg },
     Illegal,
 }

@@ -33,6 +33,7 @@ versions:
 - v5
 - v5t
 - v5te
+- v5tej
 - v6k
 
 types:
@@ -48,6 +49,22 @@ types:
     fields:
     - name: addr
       kind: !uint pc + bits(0..32)
+- name: blx_target
+  kind: !enum
+    bits: 0..28
+    variants:
+      1011_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: direct
+        description: Direct target
+        data:
+          name: target
+          kind: !type [branch_target, ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
+      0001_0010_1111_1111_1111_0011_xxxx:
+        name: indirect
+        description: Indirect target
+        data:
+          name: rm
+          kind: !type [reg, bits(0..4)]
 - name: cond
   kind: !enum
     bits: 0..4
@@ -223,7 +240,7 @@ types:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
         description: Immediate
-        format: !fmt "#(data)"
+        format: !fmt "#(imm)"
         data:
           name: imm
           kind: !uint bits(0..8).rotate_right(bits(8..12) << 1)
@@ -412,3 +429,116 @@ opcodes:
     pattern: 1110_0xxx_xxxx_xxxx
     params:
       target: !expr (bits(0..11) << 1).sign_extend(20) + 4
+
+- mnemonic: bic
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt bic(s)(cond)
+      else: !fmt bic(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_110x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0011_10xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: bkpt
+  params: { imm: uimm }
+  format:
+    opcode: !fmt bkpt
+    params: !fmt "#(imm)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1110_0001_0010_xxxx_xxxx_xxxx_0111_xxxx
+    params:
+      imm: !expr (bits(8..20) << 4) | bits(0..4)
+  thumb:
+  - version: [v5t*, v6*]
+    pattern: 1011_1110_xxxx_xxxx
+    params:
+      imm: !bits 0..8
+
+- mnemonic: bl
+  params: { cond: cond, target: branch_target }
+  format:
+    opcode: !fmt bl(cond)
+    params: !fmt (target)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1011_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: [1111_0xxx_xxxx_xxxx, 11x1_xxxx_xxxx_xxxx]
+    params:
+      target: !expr ((bits(16..27) << 12) | (bits(0..11) << 1)).sign_extend(9) + 4
+
+- mnemonic: blx
+  params: { cond: cond, target: blx_target }
+  format:
+    opcode: !fmt blx(cond)
+    params: !fmt (target)
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      target: !enum [direct, !expr ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
+  - version: [v5t*, v6*]
+    pattern: xxxx_0001_0010_1111_1111_1111_0011_xxxx
+    params:
+      cond: !bits 28..32
+      target: !enum [indirect, !bits 0..4]
+  thumb:
+  - version: [v5t*, v6*]
+    pattern: [1111_0xxx_xxxx_xxxx, 11x0_xxxx_xxxx_xxxx]
+    params:
+      target: !enum [direct, !expr ((bits(16..27) << 12) | (bits(1..11) << 2)).sign_extend(9) + 4]
+  - version: [v5t*, v6*]
+    pattern: 0100_0111_1xxx_x000
+    params:
+      target: !enum [indirect, !bits 3..7]
+
+- mnemonic: bx
+  params: { cond: cond, rm: reg }
+  format:
+    opcode: !fmt bx(cond)
+    params: !fmt (rm)
+  arm:
+  - version: [v4t, v5t*, v6*]
+    pattern: xxxx_0001_0010_1111_1111_1111_0001_xxxx
+    params:
+      cond: !bits 28..32
+      rm: !bits 0..4
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0111_0xxx_x000
+    params:
+      rm: !bits 3..7
+
+- mnemonic: bxj
+  params: { cond: cond, rm: reg }
+  format:
+    opcode: !fmt bxj(cond)
+    params: !fmt (rm)
+  arm:
+  - version: [v5tej, v6*]
+    pattern: xxxx_0001_0010_1111_1111_1111_0010_xxxx
+    params:
+      cond: !bits 28..32
+      rm: !bits 0..4

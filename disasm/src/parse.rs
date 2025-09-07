@@ -6,6 +6,24 @@ impl BranchTarget {
         }
     }
 }
+impl BlxTarget {
+    fn parse(value: u32, pc: u32) -> Self {
+        if (value & 0xf000000) == 0xb000000 {
+            Self::Direct(
+                BranchTarget::parse(
+                    (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1))
+                        as i32) << 6 >> 6) as u32)
+                        .wrapping_add(8),
+                    pc,
+                ),
+            )
+        } else if (value & 0xffffff0) == 0x12fff30 {
+            Self::Indirect(Reg::parse(((value) & 0xf), pc))
+        } else {
+            panic!();
+        }
+    }
+}
 impl Cond {
     fn parse(value: u32, pc: u32) -> Self {
         match value {
@@ -99,45 +117,75 @@ impl Default for ShiftOp {
     }
 }
 pub fn parse_arm(ins: u32, pc: u32) -> Ins {
-    if (ins & 0xde00000) == 0xa00000 {
+    if (ins & 0xffffff0) == 0x12fff30 {
+        parse_arm_blx_1(ins as u32, pc)
+    } else if (ins & 0xffffff0) == 0x12fff10 {
+        parse_arm_bx_0(ins as u32, pc)
+    } else if (ins & 0xffffff0) == 0x12fff20 {
+        parse_arm_bxj_0(ins as u32, pc)
+    } else if (ins & 0xfff000f0) == 0xe1200070 {
+        parse_arm_bkpt_0(ins as u32, pc)
+    } else if (ins & 0xfe000000) == 0xfa000000 {
+        parse_arm_blx_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0xa00000 {
         parse_arm_adc_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x800000 {
         parse_arm_add_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x0 {
         parse_arm_and_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x1c00000 {
+        parse_arm_bic_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xa000000 {
         parse_arm_b_0(ins as u32, pc)
+    } else if (ins & 0xf000000) == 0xb000000 {
+        parse_arm_bl_0(ins as u32, pc)
     } else {
         Ins::Illegal
     }
 }
 pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
-    if (ins & 0xffc0) == 0x4140 {
-        parse_thumb_adc_0(ins as u32, pc)
-    } else if (ins & 0xfe00) == 0x1c00 {
-        parse_thumb_add_0(ins as u32, pc)
-    } else if (ins & 0xf800) == 0x3000 {
-        parse_thumb_add_1(ins as u32, pc)
-    } else if (ins & 0xfe00) == 0x1800 {
-        parse_thumb_add_2(ins as u32, pc)
-    } else if (ins & 0xff00) == 0x4400 {
-        parse_thumb_add_3(ins as u32, pc)
-    } else if (ins & 0xf800) == 0xa800 {
-        parse_thumb_add_4(ins as u32, pc)
-    } else if (ins & 0xff80) == 0xb000 {
-        parse_thumb_add_5(ins as u32, pc)
-    } else if (ins & 0xff78) == 0x4468 {
+    if (ins & 0xff78) == 0x4468 {
         parse_thumb_add_6(ins as u32, pc)
     } else if (ins & 0xff87) == 0x4485 {
         parse_thumb_add_7(ins as u32, pc)
-    } else if (ins & 0xf800) == 0xa000 {
-        parse_thumb_add_8(ins as u32, pc)
+    } else if (ins & 0xff87) == 0x4780 {
+        parse_thumb_blx_1(ins as u32, pc)
+    } else if (ins & 0xff87) == 0x4700 {
+        parse_thumb_bx_0(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0x4140 {
+        parse_thumb_adc_0(ins as u32, pc)
     } else if (ins & 0xffc0) == 0x4000 {
         parse_thumb_and_0(ins as u32, pc)
-    } else if (ins & 0xf000) == 0xd000 {
-        parse_thumb_b_0(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0x4380 {
+        parse_thumb_bic_0(ins as u32, pc)
+    } else if (ins & 0xff80) == 0xb000 {
+        parse_thumb_add_5(ins as u32, pc)
+    } else if (ins & 0xff00) == 0x4400 {
+        parse_thumb_add_3(ins as u32, pc)
+    } else if (ins & 0xff00) == 0xbe00 {
+        parse_thumb_bkpt_0(ins as u32, pc)
+    } else if let Some(next) = next && (ins & 0xf800) == 0xf000
+        && (next & 0xd000) == 0xd000
+    {
+        parse_thumb_bl_0(((ins as u32) << 16) | (next as u32), pc)
+    } else if let Some(next) = next && (ins & 0xf800) == 0xf000
+        && (next & 0xd000) == 0xc000
+    {
+        parse_thumb_blx_0(((ins as u32) << 16) | (next as u32), pc)
+    } else if (ins & 0xfe00) == 0x1c00 {
+        parse_thumb_add_0(ins as u32, pc)
+    } else if (ins & 0xfe00) == 0x1800 {
+        parse_thumb_add_2(ins as u32, pc)
+    } else if (ins & 0xf800) == 0x3000 {
+        parse_thumb_add_1(ins as u32, pc)
+    } else if (ins & 0xf800) == 0xa800 {
+        parse_thumb_add_4(ins as u32, pc)
+    } else if (ins & 0xf800) == 0xa000 {
+        parse_thumb_add_8(ins as u32, pc)
     } else if (ins & 0xf800) == 0xe000 {
         parse_thumb_b_1(ins as u32, pc)
+    } else if (ins & 0xf000) == 0xd000 {
+        parse_thumb_b_0(ins as u32, pc)
     } else {
         Ins::Illegal
     }
@@ -301,4 +349,99 @@ fn parse_thumb_b_1(value: u32, pc: u32) -> Ins {
         pc,
     );
     Ins::B { cond, target }
+}
+fn parse_arm_bic_0(value: u32, pc: u32) -> Ins {
+    let s = (((value) >> 20) & 0x1) != 0;
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let op2 = Op2::parse(value, pc);
+    Ins::Bic { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_bic_0(value: u32, pc: u32) -> Ins {
+    let s = (1) != 0;
+    let cond = Cond::default();
+    let rd = Reg::parse((value) & 0x7, pc);
+    let rn = Reg::parse((value) & 0x7, pc);
+    let op2 = Op2::ShiftImm {
+        rm: Reg::parse(((value) >> 3) & 0x7, pc),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    };
+    Ins::Bic { s, cond, rd, rn, op2 }
+}
+fn parse_arm_bkpt_0(value: u32, pc: u32) -> Ins {
+    let imm = ((((value) >> 8) & 0xfff) << 4) | ((value) & 0xf);
+    Ins::Bkpt { imm }
+}
+fn parse_thumb_bkpt_0(value: u32, pc: u32) -> Ins {
+    let imm = (value) & 0xff;
+    Ins::Bkpt { imm }
+}
+fn parse_arm_bl_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let target = BranchTarget::parse(
+        ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+        pc,
+    );
+    Ins::Bl { cond, target }
+}
+fn parse_thumb_bl_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let target = BranchTarget::parse(
+        ((((((((value) >> 16) & 0x7ff) << 12) | (((value) & 0x7ff) << 1)) as i32) << 9
+            >> 9) as u32)
+            .wrapping_add(4),
+        pc,
+    );
+    Ins::Bl { cond, target }
+}
+fn parse_arm_blx_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let target = BlxTarget::Direct(
+        BranchTarget::parse(
+            (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1)) as i32)
+                << 6 >> 6) as u32)
+                .wrapping_add(8),
+            pc,
+        ),
+    );
+    Ins::Blx { cond, target }
+}
+fn parse_arm_blx_1(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let target = BlxTarget::Indirect(Reg::parse((value) & 0xf, pc));
+    Ins::Blx { cond, target }
+}
+fn parse_thumb_blx_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let target = BlxTarget::Direct(
+        BranchTarget::parse(
+            ((((((((value) >> 16) & 0x7ff) << 12) | ((((value) >> 1) & 0x3ff) << 2))
+                as i32) << 9 >> 9) as u32)
+                .wrapping_add(4),
+            pc,
+        ),
+    );
+    Ins::Blx { cond, target }
+}
+fn parse_thumb_blx_1(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let target = BlxTarget::Indirect(Reg::parse(((value) >> 3) & 0xf, pc));
+    Ins::Blx { cond, target }
+}
+fn parse_arm_bx_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Ins::Bx { cond, rm }
+}
+fn parse_thumb_bx_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let rm = Reg::parse(((value) >> 3) & 0xf, pc);
+    Ins::Bx { cond, rm }
+}
+fn parse_arm_bxj_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Ins::Bxj { cond, rm }
 }

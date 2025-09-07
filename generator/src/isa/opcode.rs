@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{cmp::Reverse, collections::HashMap, fmt::Display};
 
 use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
@@ -75,10 +75,17 @@ impl Opcodes {
     }
 
     pub fn parse_arm_ifchain_fn_tokens(&self) -> TokenStream {
-        let opcodes = self.0.iter().map(|o| o.parse_arm_ifchain_tokens());
+        let mut encodings = self
+            .0
+            .iter()
+            .flat_map(|o| o.parse_arm_ifchain_tokens())
+            .map(Reverse)
+            .collect::<Vec<_>>();
+        encodings.sort_unstable();
+        let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
         quote! {
             pub fn parse_arm(ins: u32, pc: u32) -> Ins {
-                #(#opcodes)else*
+                #(#encodings_tokens)else*
                 else {
                     Ins::Illegal
                 }
@@ -87,10 +94,17 @@ impl Opcodes {
     }
 
     pub fn parse_thumb_ifchain_fn_tokens(&self) -> TokenStream {
-        let opcodes = self.0.iter().map(|o| o.parse_thumb_ifchain_tokens());
+        let mut encodings = self
+            .0
+            .iter()
+            .flat_map(|o| o.parse_thumb_ifchain_tokens())
+            .map(Reverse)
+            .collect::<Vec<_>>();
+        encodings.sort_unstable();
+        let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
         quote! {
             pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
-                #(#opcodes)else*
+                #(#encodings_tokens)else*
                 else {
                     Ins::Illegal
                 }
@@ -199,20 +213,18 @@ impl Opcode {
         }
     }
 
-    fn parse_arm_ifchain_tokens(&self) -> Option<TokenStream> {
-        let encodings = self.arm.as_ref()?.iter().enumerate().map(|(i, encoding)| {
+    fn parse_arm_ifchain_tokens(&self) -> impl Iterator<Item = ParseOpcodeEncoding> {
+        self.arm.iter().flatten().enumerate().map(|(i, encoding)| {
             let parse_fn_name = self.parse_fn_name(Arch::Arm, i);
-            encoding.parse_ifchain_tokens(parse_fn_name)
-        });
-        Some(quote!(#(#encodings)else*))
+            encoding.as_parse_encoding(parse_fn_name)
+        })
     }
 
-    fn parse_thumb_ifchain_tokens(&self) -> Option<TokenStream> {
-        let encodings = self.thumb.as_ref()?.iter().enumerate().map(|(i, encoding)| {
+    fn parse_thumb_ifchain_tokens(&self) -> impl Iterator<Item = ParseOpcodeEncoding> {
+        self.thumb.iter().flatten().enumerate().map(|(i, encoding)| {
             let parse_fn_name = self.parse_fn_name(Arch::Thumb, i);
-            encoding.parse_ifchain_tokens(parse_fn_name)
-        });
-        Some(quote!(#(#encodings)else*))
+            encoding.as_parse_encoding(parse_fn_name)
+        })
     }
 }
 
@@ -267,8 +279,32 @@ impl OpcodeEncoding {
         }
     }
 
-    fn parse_ifchain_tokens(&self, parse_fn_name: String) -> TokenStream {
-        let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
+    fn as_parse_encoding(&self, parse_fn_name: String) -> ParseOpcodeEncoding {
+        ParseOpcodeEncoding { pattern: self.pattern.clone(), parse_fn_name }
+    }
+}
+
+#[derive(PartialEq, Eq)]
+struct ParseOpcodeEncoding {
+    pattern: OpcodePattern,
+    parse_fn_name: String,
+}
+
+impl PartialOrd for ParseOpcodeEncoding {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ParseOpcodeEncoding {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.pattern.num_bits().cmp(&other.pattern.num_bits())
+    }
+}
+
+impl ParseOpcodeEncoding {
+    fn parse_ifchain_tokens(&self) -> TokenStream {
+        let parse_fn_ident = Ident::new(&self.parse_fn_name, Span::call_site());
 
         let first_bitmask = HexLiteral(self.pattern.first().bitmask());
         let first_pattern = HexLiteral(self.pattern.first().pattern());
@@ -280,7 +316,7 @@ impl OpcodeEncoding {
                     && (ins & #first_bitmask) == #first_pattern
                     && (next & #second_bitmask) == #second_pattern
                 {
-                    #parse_fn_ident(((ins as u32) << 16) | (next as u32), pc);
+                    #parse_fn_ident(((ins as u32) << 16) | (next as u32), pc)
                 }
             }
         } else {

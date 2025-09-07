@@ -60,4 +60,34 @@ mod tests {
         assert_asm!(0xdbf3, "blt #0xffffffea");
         assert_asm!(0xe5ee, "b #0xfffffbe0");
     }
+
+    #[test]
+    fn test_bic() {
+        assert_asm!(0x4397, "bics r7, r7, r2");
+    }
+
+    #[test]
+    fn test_bkpt() {
+        assert_asm!(0xbe42, "bkpt #0x42");
+    }
+
+    #[test]
+    fn test_bl() {
+        assert_asm!(0xf099, 0xf866, "bl #0x990d0");
+        assert_asm!(0xf799, 0xf866, "bl #0xfff990d0");
+    }
+
+    #[test]
+    fn test_blx() {
+        assert_asm!(0xf099, 0xe866, "blx #0x990d0");
+        assert_asm!(0xf799, 0xe866, "blx #0xfff990d0");
+        assert_asm!(0xf000, 0xe800, "blx #0x4");
+        assert_asm!(0xf000, 0xe801, "blx #0x4");
+        assert_asm!(0x47d0, "blx r10");
+    }
+
+    #[test]
+    fn test_bx() {
+        assert_asm!(0x4750, "bx r10");
+    }
 }

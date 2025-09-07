@@ -63,7 +63,7 @@ impl<'de> Deserialize<'de> for Pattern {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpcodePattern {
     first: Pattern,
     second: Option<Pattern>,
@@ -76,6 +76,11 @@ impl OpcodePattern {
 
     pub fn second(&self) -> Option<&Pattern> {
         self.second.as_ref()
+    }
+
+    pub fn num_bits(&self) -> u32 {
+        self.first.bitmask.count_ones()
+            + self.second.as_ref().map(|s| s.bitmask.count_ones()).unwrap_or(0)
     }
 }
 

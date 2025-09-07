@@ -596,7 +596,8 @@ impl DataTypeEnumVariant {
                 let field_names = data_type_struct.fields.iter().map(|f| f.name.as_ident());
                 quote!(Self::#variant_ident { #(#field_names),* })
             } else {
-                quote!(Self::#variant_ident(data))
+                let data_ident = data.name.as_ident();
+                quote!(Self::#variant_ident(#data_ident))
             }
         } else {
             quote!(Self::#variant_ident)
@@ -606,7 +607,7 @@ impl DataTypeEnumVariant {
     fn write_expr_tokens(&self, isa: &Isa) -> TokenStream {
         let mut params: FormatParams = HashMap::new();
         if let Some(data) = &self.data {
-            params.insert("data".into(), data.clone());
+            params.insert(data.name.0.clone(), data.clone());
         };
         let fmt_expr = if let Some(format) = &self.format {
             format.fmt_expr_tokens(isa, &params)
@@ -629,6 +630,12 @@ impl DataTypeEnumVariant {
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct DataTypeEnumVariantName(pub String);
 
+impl DataTypeEnumVariantName {
+    fn as_ident(&self) -> Ident {
+        Ident::new(&self.0, Span::call_site())
+    }
+}
+
 impl Display for DataTypeEnumVariantName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
@@ -646,7 +653,7 @@ impl DataTypeStruct {
         let name_ident = name.as_pascal_ident();
         let record = self.record_tokens(true);
         quote! {
-            #[derive(Clone, Copy)]
+            #[derive(PartialEq, Eq, Clone, Copy)]
             pub struct #name_ident #record
         }
     }

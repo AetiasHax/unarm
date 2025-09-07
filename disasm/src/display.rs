@@ -29,6 +29,10 @@ pub trait Write: core::fmt::Write {
         branch_target.write(self)?;
         Ok(())
     }
+    fn write_blx_target(&mut self, blx_target: BlxTarget) -> core::fmt::Result {
+        blx_target.write(self)?;
+        Ok(())
+    }
     fn write_cond(&mut self, cond: Cond) -> core::fmt::Result {
         cond.write(self)?;
         Ok(())
@@ -61,6 +65,23 @@ impl BranchTarget {
         let Self { addr } = self;
         f.write_str("#")?;
         f.write_uimm(*addr)?;
+        Ok(())
+    }
+}
+impl BlxTarget {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
+        match self {
+            Self::Direct(target) => {
+                f.write_branch_target(*target)?;
+            }
+            Self::Indirect(rm) => {
+                f.write_reg(*rm)?;
+            }
+        }
         Ok(())
     }
 }
@@ -275,9 +296,9 @@ impl Op2 {
     {
         let options = f.options();
         match self {
-            Self::Imm(data) => {
+            Self::Imm(imm) => {
                 f.write_str("#")?;
-                f.write_uimm(*data)?;
+                f.write_uimm(*imm)?;
             }
             Self::ShiftReg { rm, shift_op, rs } => {
                 f.write_reg(*rm)?;
@@ -352,6 +373,36 @@ impl Ins {
                 f.write_str("b")?;
                 f.write_cond(*cond)?;
             }
+            Ins::Bic { s, cond, rd, rn, op2 } => {
+                if options.ual {
+                    f.write_str("bic")?;
+                    f.write_s(*s)?;
+                    f.write_cond(*cond)?;
+                } else {
+                    f.write_str("bic")?;
+                    f.write_cond(*cond)?;
+                    f.write_s(*s)?;
+                }
+            }
+            Ins::Bkpt { imm } => {
+                f.write_str("bkpt")?;
+            }
+            Ins::Bl { cond, target } => {
+                f.write_str("bl")?;
+                f.write_cond(*cond)?;
+            }
+            Ins::Blx { cond, target } => {
+                f.write_str("blx")?;
+                f.write_cond(*cond)?;
+            }
+            Ins::Bx { cond, rm } => {
+                f.write_str("bx")?;
+                f.write_cond(*cond)?;
+            }
+            Ins::Bxj { cond, rm } => {
+                f.write_str("bxj")?;
+                f.write_cond(*cond)?;
+            }
             Ins::Illegal => {
                 f.write_str("<illegal>")?;
             }
@@ -387,6 +438,29 @@ impl Ins {
             }
             Ins::B { cond, target } => {
                 f.write_branch_target(*target)?;
+            }
+            Ins::Bic { s, cond, rd, rn, op2 } => {
+                f.write_reg(*rd)?;
+                f.write_separator()?;
+                f.write_reg(*rn)?;
+                f.write_separator()?;
+                f.write_op2(*op2)?;
+            }
+            Ins::Bkpt { imm } => {
+                f.write_str("#")?;
+                f.write_uimm(*imm)?;
+            }
+            Ins::Bl { cond, target } => {
+                f.write_branch_target(*target)?;
+            }
+            Ins::Blx { cond, target } => {
+                f.write_blx_target(*target)?;
+            }
+            Ins::Bx { cond, rm } => {
+                f.write_reg(*rm)?;
+            }
+            Ins::Bxj { cond, rm } => {
+                f.write_reg(*rm)?;
             }
             Ins::Illegal => {
                 f.write_str("<illegal>")?;

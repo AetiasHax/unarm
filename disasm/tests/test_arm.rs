@@ -61,4 +61,54 @@ mod tests {
         assert_asm!(0x2afffffe, "bhs #0x0");
         assert_asm!(0x3afffffd, "blo #0xfffffffc");
     }
+
+    #[test]
+    fn test_bic() {
+        assert_asm!(0xe1c12003, "bic r2, r1, r3");
+        assert_asm!(0xe3c45e23, "bic r5, r4, #0x230");
+        assert_asm!(0x11cb960a, "bicne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x41c5f238, "bicmi pc, r5, r8, lsr r2");
+        assert_asm!(0x71c2046e, "bicvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb1c87060, "biclt r7, r8, r0, rrx");
+        assert_asm!(0xe1d52153, "bics r2, r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_bkpt() {
+        assert_asm!(0xe1200070, "bkpt #0x0");
+        assert_asm!(0xe1243271, "bkpt #0x4321");
+    }
+
+    #[test]
+    fn test_bl() {
+        assert_asm!(0xeb000000, "bl #0x8");
+        assert_asm!(0x0b012345, "bleq #0x48d1c");
+        assert_asm!(0x1bffffff, "blne #0x4");
+        assert_asm!(0x2bfffffe, "blhs #0x0");
+        assert_asm!(0x3bfffffd, "bllo #0xfffffffc");
+    }
+
+    #[test]
+    fn test_blx() {
+        assert_asm!(0xfa000000, "blx #0x8");
+        assert_asm!(0xfa012345, "blx #0x48d1c");
+        assert_asm!(0xfaffffff, "blx #0x4");
+        assert_asm!(0xfafffffe, "blx #0x0");
+        assert_asm!(0xfafffffd, "blx #0xfffffffc");
+        assert_asm!(0xe12fff30, "blx r0");
+        assert_asm!(0x512fff35, "blxpl r5");
+        assert_asm!(0xfb000000, "blx #0xa");
+    }
+
+    #[test]
+    fn test_bx() {
+        assert_asm!(0xe12fff10, "bx r0");
+        assert_asm!(0x512fff15, "bxpl r5");
+    }
+
+    #[test]
+    fn test_bxj() {
+        assert_asm!(0xe12fff20, "bxj r0");
+        assert_asm!(0x512fff25, "bxjpl r5");
+    }
 }
