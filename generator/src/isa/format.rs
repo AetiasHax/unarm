@@ -27,6 +27,13 @@ impl Format {
             Format::Fragments(fragments_format) => fragments_format.fmt_expr_tokens(params),
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Format::If(_) => false,
+            Format::Fragments(fragments_format) => fragments_format.is_empty(),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -114,6 +121,10 @@ impl FragmentsFormat {
     fn fmt_expr_tokens(&self, params: &FormatParams) -> TokenStream {
         let fragments = self.fragments.iter().map(|f| f.fmt_expr_tokens(params));
         quote!(#(#fragments)*)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.fragments.is_empty()
     }
 }
 

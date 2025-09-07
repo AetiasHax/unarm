@@ -66,7 +66,6 @@ impl DataTypes {
 
                 fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
                     ins.write_opcode(self)?;
-                    self.write_str(" ")?;
                     ins.write_params(self)?;
                     Ok(())
                 }

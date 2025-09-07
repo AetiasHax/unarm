@@ -107,6 +107,44 @@ pub enum ShiftOp {
     Ror,
 }
 #[derive(PartialEq, Eq, Clone, Copy)]
+pub enum Coproc {
+    P0,
+    P1,
+    P2,
+    P3,
+    P4,
+    P5,
+    P6,
+    P7,
+    P8,
+    P9,
+    P10,
+    P11,
+    P12,
+    P13,
+    P14,
+    P15,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum CoReg {
+    C0,
+    C1,
+    C2,
+    C3,
+    C4,
+    C5,
+    C6,
+    C7,
+    C8,
+    C9,
+    C10,
+    C11,
+    C12,
+    C13,
+    C14,
+    C15,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Op2 {
     ///Immediate
     Imm(u32),
@@ -126,5 +164,16 @@ pub enum Ins {
     Blx { cond: Cond, target: BlxTarget },
     Bx { cond: Cond, rm: Reg },
     Bxj { cond: Cond, rm: Reg },
+    Cdp {
+        cond: Cond,
+        coproc: Coproc,
+        opc1: u32,
+        crd: CoReg,
+        crn: CoReg,
+        crm: CoReg,
+        opc2: u32,
+    },
+    Cdp2 { coproc: Coproc, opc1: u32, crd: CoReg, crn: CoReg, crm: CoReg, opc2: u32 },
+    Clrex {},
     Illegal,
 }

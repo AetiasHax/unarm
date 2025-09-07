@@ -189,16 +189,22 @@ impl Opcode {
     }
 
     fn write_opcode_tokens(&self, isa: &Isa) -> TokenStream {
-        self.write_format_tokens(isa, &self.format.opcode)
+        let params = self.format_params(isa);
+        let display_expr = self.format.opcode.fmt_expr_tokens(isa, &params);
+        self.write_variant_tokens(display_expr)
     }
 
     fn write_params_tokens(&self, isa: &Isa) -> TokenStream {
-        self.write_format_tokens(isa, &self.format.params)
-    }
-
-    fn write_format_tokens(&self, isa: &Isa, format: &Format) -> TokenStream {
         let params = self.format_params(isa);
-        let display_expr = format.fmt_expr_tokens(isa, &params);
+        let display_expr = if !self.format.params.is_empty() {
+            let display_expr = self.format.params.fmt_expr_tokens(isa, &params);
+            quote! {
+                f.write_space()?;
+                #display_expr
+            }
+        } else {
+            quote!()
+        };
         self.write_variant_tokens(display_expr)
     }
 

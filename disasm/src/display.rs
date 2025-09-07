@@ -45,13 +45,20 @@ pub trait Write: core::fmt::Write {
         shift_op.write(self)?;
         Ok(())
     }
+    fn write_coproc(&mut self, coproc: Coproc) -> core::fmt::Result {
+        coproc.write(self)?;
+        Ok(())
+    }
+    fn write_co_reg(&mut self, co_reg: CoReg) -> core::fmt::Result {
+        co_reg.write(self)?;
+        Ok(())
+    }
     fn write_op2(&mut self, op2: Op2) -> core::fmt::Result {
         op2.write(self)?;
         Ok(())
     }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
         ins.write_opcode(self)?;
-        self.write_str(" ")?;
         ins.write_params(self)?;
         Ok(())
     }
@@ -289,6 +296,124 @@ impl ShiftOp {
         Ok(())
     }
 }
+impl Coproc {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
+        match self {
+            Self::P0 => {
+                f.write_str("p0")?;
+            }
+            Self::P1 => {
+                f.write_str("p1")?;
+            }
+            Self::P2 => {
+                f.write_str("p2")?;
+            }
+            Self::P3 => {
+                f.write_str("p3")?;
+            }
+            Self::P4 => {
+                f.write_str("p4")?;
+            }
+            Self::P5 => {
+                f.write_str("p5")?;
+            }
+            Self::P6 => {
+                f.write_str("p6")?;
+            }
+            Self::P7 => {
+                f.write_str("p7")?;
+            }
+            Self::P8 => {
+                f.write_str("p8")?;
+            }
+            Self::P9 => {
+                f.write_str("p9")?;
+            }
+            Self::P10 => {
+                f.write_str("p10")?;
+            }
+            Self::P11 => {
+                f.write_str("p11")?;
+            }
+            Self::P12 => {
+                f.write_str("p12")?;
+            }
+            Self::P13 => {
+                f.write_str("p13")?;
+            }
+            Self::P14 => {
+                f.write_str("p14")?;
+            }
+            Self::P15 => {
+                f.write_str("p15")?;
+            }
+        }
+        Ok(())
+    }
+}
+impl CoReg {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
+        match self {
+            Self::C0 => {
+                f.write_str("c0")?;
+            }
+            Self::C1 => {
+                f.write_str("c1")?;
+            }
+            Self::C2 => {
+                f.write_str("c2")?;
+            }
+            Self::C3 => {
+                f.write_str("c3")?;
+            }
+            Self::C4 => {
+                f.write_str("c4")?;
+            }
+            Self::C5 => {
+                f.write_str("c5")?;
+            }
+            Self::C6 => {
+                f.write_str("c6")?;
+            }
+            Self::C7 => {
+                f.write_str("c7")?;
+            }
+            Self::C8 => {
+                f.write_str("c8")?;
+            }
+            Self::C9 => {
+                f.write_str("c9")?;
+            }
+            Self::C10 => {
+                f.write_str("c10")?;
+            }
+            Self::C11 => {
+                f.write_str("c11")?;
+            }
+            Self::C12 => {
+                f.write_str("c12")?;
+            }
+            Self::C13 => {
+                f.write_str("c13")?;
+            }
+            Self::C14 => {
+                f.write_str("c14")?;
+            }
+            Self::C15 => {
+                f.write_str("c15")?;
+            }
+        }
+        Ok(())
+    }
+}
 impl Op2 {
     pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
     where
@@ -403,6 +528,16 @@ impl Ins {
                 f.write_str("bxj")?;
                 f.write_cond(*cond)?;
             }
+            Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
+                f.write_str("cdp")?;
+                f.write_cond(*cond)?;
+            }
+            Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
+                f.write_str("cdp2")?;
+            }
+            Ins::Clrex {} => {
+                f.write_str("clrex")?;
+            }
             Ins::Illegal => {
                 f.write_str("<illegal>")?;
             }
@@ -416,6 +551,7 @@ impl Ins {
         let options = f.options();
         match self {
             Ins::Adc { s, cond, rd, rn, op2 } => {
+                f.write_space()?;
                 f.write_reg(*rd)?;
                 f.write_separator()?;
                 f.write_reg(*rn)?;
@@ -423,6 +559,7 @@ impl Ins {
                 f.write_op2(*op2)?;
             }
             Ins::Add { s, cond, rd, rn, op2 } => {
+                f.write_space()?;
                 f.write_reg(*rd)?;
                 f.write_separator()?;
                 f.write_reg(*rn)?;
@@ -430,6 +567,7 @@ impl Ins {
                 f.write_op2(*op2)?;
             }
             Ins::And { s, cond, rd, rn, op2 } => {
+                f.write_space()?;
                 f.write_reg(*rd)?;
                 f.write_separator()?;
                 f.write_reg(*rn)?;
@@ -437,9 +575,11 @@ impl Ins {
                 f.write_op2(*op2)?;
             }
             Ins::B { cond, target } => {
+                f.write_space()?;
                 f.write_branch_target(*target)?;
             }
             Ins::Bic { s, cond, rd, rn, op2 } => {
+                f.write_space()?;
                 f.write_reg(*rd)?;
                 f.write_separator()?;
                 f.write_reg(*rn)?;
@@ -447,21 +587,59 @@ impl Ins {
                 f.write_op2(*op2)?;
             }
             Ins::Bkpt { imm } => {
+                f.write_space()?;
                 f.write_str("#")?;
                 f.write_uimm(*imm)?;
             }
             Ins::Bl { cond, target } => {
+                f.write_space()?;
                 f.write_branch_target(*target)?;
             }
             Ins::Blx { cond, target } => {
+                f.write_space()?;
                 f.write_blx_target(*target)?;
             }
             Ins::Bx { cond, rm } => {
+                f.write_space()?;
                 f.write_reg(*rm)?;
             }
             Ins::Bxj { cond, rm } => {
+                f.write_space()?;
                 f.write_reg(*rm)?;
             }
+            Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
+                f.write_space()?;
+                f.write_coproc(*coproc)?;
+                f.write_separator()?;
+                f.write_str("#")?;
+                f.write_uimm(*opc1)?;
+                f.write_separator()?;
+                f.write_co_reg(*crd)?;
+                f.write_separator()?;
+                f.write_co_reg(*crn)?;
+                f.write_separator()?;
+                f.write_co_reg(*crm)?;
+                f.write_separator()?;
+                f.write_str("#")?;
+                f.write_uimm(*opc2)?;
+            }
+            Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
+                f.write_space()?;
+                f.write_coproc(*coproc)?;
+                f.write_separator()?;
+                f.write_str("#")?;
+                f.write_uimm(*opc1)?;
+                f.write_separator()?;
+                f.write_co_reg(*crd)?;
+                f.write_separator()?;
+                f.write_co_reg(*crn)?;
+                f.write_separator()?;
+                f.write_co_reg(*crm)?;
+                f.write_separator()?;
+                f.write_str("#")?;
+                f.write_uimm(*opc2)?;
+            }
+            Ins::Clrex {} => {}
             Ins::Illegal => {
                 f.write_str("<illegal>")?;
             }

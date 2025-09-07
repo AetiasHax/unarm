@@ -111,4 +111,21 @@ mod tests {
         assert_asm!(0xe12fff20, "bxj r0");
         assert_asm!(0x512fff25, "bxjpl r5");
     }
+
+    #[test]
+    fn test_cdp() {
+        assert_asm!(0xee1234a6, "cdp p4, #0x1, c3, c2, c6, #0x5");
+        assert_asm!(0xae654341, "cdpge p3, #0x6, c4, c5, c1, #0x2");
+    }
+
+    #[test]
+    fn test_cdp2() {
+        assert_asm!(0xfe1234a6, "cdp2 p4, #0x1, c3, c2, c6, #0x5");
+        assert_asm!(0xfe654341, "cdp2 p3, #0x6, c4, c5, c1, #0x2");
+    }
+
+    #[test]
+    fn test_clrex() {
+        assert_asm!(0xf57ff01f, "clrex");
+    }
 }

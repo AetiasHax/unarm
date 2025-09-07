@@ -80,6 +80,52 @@ impl ShiftOp {
         }
     }
 }
+impl Coproc {
+    fn parse(value: u32, pc: u32) -> Self {
+        match value {
+            0x0 => Self::P0,
+            0x1 => Self::P1,
+            0x2 => Self::P2,
+            0x3 => Self::P3,
+            0x4 => Self::P4,
+            0x5 => Self::P5,
+            0x6 => Self::P6,
+            0x7 => Self::P7,
+            0x8 => Self::P8,
+            0x9 => Self::P9,
+            0xa => Self::P10,
+            0xb => Self::P11,
+            0xc => Self::P12,
+            0xd => Self::P13,
+            0xe => Self::P14,
+            0xf => Self::P15,
+            _ => panic!(),
+        }
+    }
+}
+impl CoReg {
+    fn parse(value: u32, pc: u32) -> Self {
+        match value {
+            0x0 => Self::C0,
+            0x1 => Self::C1,
+            0x2 => Self::C2,
+            0x3 => Self::C3,
+            0x4 => Self::C4,
+            0x5 => Self::C5,
+            0x6 => Self::C6,
+            0x7 => Self::C7,
+            0x8 => Self::C8,
+            0x9 => Self::C9,
+            0xa => Self::C10,
+            0xb => Self::C11,
+            0xc => Self::C12,
+            0xd => Self::C13,
+            0xe => Self::C14,
+            0xf => Self::C15,
+            _ => panic!(),
+        }
+    }
+}
 impl Op2 {
     fn parse(value: u32, pc: u32) -> Self {
         if (value & 0x2000000) == 0x2000000 {
@@ -117,7 +163,9 @@ impl Default for ShiftOp {
     }
 }
 pub fn parse_arm(ins: u32, pc: u32) -> Ins {
-    if (ins & 0xffffff0) == 0x12fff30 {
+    if (ins & 0xffffffff) == 0xf57ff01f {
+        parse_arm_clrex_0(ins as u32, pc)
+    } else if (ins & 0xffffff0) == 0x12fff30 {
         parse_arm_blx_1(ins as u32, pc)
     } else if (ins & 0xffffff0) == 0x12fff10 {
         parse_arm_bx_0(ins as u32, pc)
@@ -125,6 +173,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_bxj_0(ins as u32, pc)
     } else if (ins & 0xfff000f0) == 0xe1200070 {
         parse_arm_bkpt_0(ins as u32, pc)
+    } else if (ins & 0xff000010) == 0xfe000000 {
+        parse_arm_cdp2_0(ins as u32, pc)
     } else if (ins & 0xfe000000) == 0xfa000000 {
         parse_arm_blx_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0xa00000 {
@@ -135,6 +185,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_and_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1c00000 {
         parse_arm_bic_0(ins as u32, pc)
+    } else if (ins & 0xf000010) == 0xe000000 {
+        parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xa000000 {
         parse_arm_b_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xb000000 {
@@ -444,4 +496,41 @@ fn parse_arm_bxj_0(value: u32, pc: u32) -> Ins {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rm = Reg::parse((value) & 0xf, pc);
     Ins::Bxj { cond, rm }
+}
+fn parse_arm_cdp_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let opc1 = ((value) >> 20) & 0xf;
+    let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
+    let crn = CoReg::parse(((value) >> 16) & 0xf, pc);
+    let crm = CoReg::parse((value) & 0xf, pc);
+    let opc2 = ((value) >> 5) & 0x7;
+    Ins::Cdp {
+        cond,
+        coproc,
+        opc1,
+        crd,
+        crn,
+        crm,
+        opc2,
+    }
+}
+fn parse_arm_cdp2_0(value: u32, pc: u32) -> Ins {
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let opc1 = ((value) >> 20) & 0xf;
+    let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
+    let crn = CoReg::parse(((value) >> 16) & 0xf, pc);
+    let crm = CoReg::parse((value) & 0xf, pc);
+    let opc2 = ((value) >> 5) & 0x7;
+    Ins::Cdp2 {
+        coproc,
+        opc1,
+        crd,
+        crn,
+        crm,
+        opc2,
+    }
+}
+fn parse_arm_clrex_0(value: u32, pc: u32) -> Ins {
+    Ins::Clrex {}
 }

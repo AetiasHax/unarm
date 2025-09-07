@@ -233,6 +233,78 @@ types:
       11:
         name: ror
         description: Rotate right
+- name: coproc
+  kind: !enum
+    bits: 0..4
+    variants:
+      0000:
+        name: p0
+      0001:
+        name: p1
+      0010:
+        name: p2
+      0011:
+        name: p3
+      0100:
+        name: p4
+      0101:
+        name: p5
+      0110:
+        name: p6
+      0111:
+        name: p7
+      1000:
+        name: p8
+      1001:
+        name: p9
+      1010:
+        name: p10
+      1011:
+        name: p11
+      1100:
+        name: p12
+      1101:
+        name: p13
+      1110:
+        name: p14
+      1111:
+        name: p15
+- name: co_reg
+  kind: !enum
+    bits: 0..4
+    variants:
+      0000:
+        name: c0
+      0001:
+        name: c1
+      0010:
+        name: c2
+      0011:
+        name: c3
+      0100:
+        name: c4
+      0101:
+        name: c5
+      0110:
+        name: c6
+      0111:
+        name: c7
+      1000:
+        name: c8
+      1001:
+        name: c9
+      1010:
+        name: c10
+      1011:
+        name: c11
+      1100:
+        name: c12
+      1101:
+        name: c13
+      1110:
+        name: c14
+      1111:
+        name: c15
 - name: op2
   kind: !enum
     bits: 0..32
@@ -542,3 +614,47 @@ opcodes:
     params:
       cond: !bits 28..32
       rm: !bits 0..4
+
+- mnemonic: cdp
+  params: { cond: cond, coproc: coproc, opc1: uimm, crd: co_reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt cdp(cond)
+    params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 20..24
+      crd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: cdp2
+  params: { coproc: coproc, opc1: uimm, crd: co_reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt cdp2
+    params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: 1111_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 20..24
+      crd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: clrex
+  params: {}
+  format:
+    opcode: !fmt clrex
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: 1111_0101_0111_1111_1111_0000_0001_1111
+    params: {}
