@@ -377,6 +377,7 @@ types:
 
 opcodes:
 - mnemonic: adc
+  description: Add with Carry
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -403,6 +404,7 @@ opcodes:
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
 - mnemonic: add
+  description: Add
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -479,6 +481,7 @@ opcodes:
       op2: !enum [imm, !expr bits(0..8) << 2]
 
 - mnemonic: and
+  description: Bitwise AND
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -505,6 +508,7 @@ opcodes:
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
 - mnemonic: b
+  description: Branch
   params: { cond: cond, target: branch_target }
   format:
     opcode: !fmt b(cond)
@@ -527,6 +531,7 @@ opcodes:
       target: !expr (bits(0..11) << 1).sign_extend(20) + 4
 
 - mnemonic: bic
+  description: Bit Clear
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -553,6 +558,7 @@ opcodes:
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
 - mnemonic: bkpt
+  description: Breakpoint
   params: { imm: uimm }
   format:
     opcode: !fmt bkpt
@@ -569,6 +575,7 @@ opcodes:
       imm: !bits 0..8
 
 - mnemonic: bl
+  description: Branch with Link
   params: { cond: cond, target: branch_target }
   format:
     opcode: !fmt bl(cond)
@@ -586,6 +593,7 @@ opcodes:
       target: !expr ((bits(16..27) << 12) | (bits(0..11) << 1)).sign_extend(9) + 4
 
 - mnemonic: blx
+  description: Branch with Link and Exchange
   params: { cond: cond, target: blx_target }
   format:
     opcode: !fmt blx(cond)
@@ -611,6 +619,7 @@ opcodes:
       target: !enum [indirect, !bits 3..7]
 
 - mnemonic: bx
+  description: Branch and Exchange
   params: { cond: cond, rm: reg }
   format:
     opcode: !fmt bx(cond)
@@ -628,6 +637,7 @@ opcodes:
       rm: !bits 3..7
 
 - mnemonic: bxj
+  description: Branch and Exchange Jazelle
   params: { cond: cond, rm: reg }
   format:
     opcode: !fmt bxj(cond)
@@ -640,6 +650,7 @@ opcodes:
       rm: !bits 0..4
 
 - mnemonic: cdp
+  description: Coprocessor Data Processing
   params: { cond: cond, coproc: coproc, opc1: uimm, crd: co_reg, crn: co_reg, crm: co_reg, opc2: uimm }
   format:
     opcode: !fmt cdp(cond)
@@ -657,6 +668,7 @@ opcodes:
       opc2: !bits 5..8
 
 - mnemonic: cdp2
+  description: Coprocessor Data Processing (extended)
   params: { coproc: coproc, opc1: uimm, crd: co_reg, crn: co_reg, crm: co_reg, opc2: uimm }
   format:
     opcode: !fmt cdp2
@@ -674,6 +686,7 @@ opcodes:
       opc2: !bits 5..8
 
 - mnemonic: clrex
+  description: Clear Exclusive
   params: {}
   format:
     opcode: !fmt clrex
@@ -684,6 +697,7 @@ opcodes:
     params: {}
 
 - mnemonic: clz
+  description: Count Leading Zeros
   params: { cond: cond, rd: reg, rm: reg }
   format:
     opcode: !fmt clz(cond)
@@ -697,6 +711,7 @@ opcodes:
       rm: !bits 0..4
 
 - mnemonic: cmn
+  description: Compare Negative
   params: { cond: cond, rn: reg, op2: op2 }
   format:
     opcode: !fmt cmn(cond)
@@ -716,6 +731,7 @@ opcodes:
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
 - mnemonic: cmp
+  description: Compare
   params: { cond: cond, rn: reg, op2: op2 }
   format:
     opcode: !fmt cmp(cond)
@@ -745,6 +761,7 @@ opcodes:
       op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
 
 - mnemonic: cps
+  description: Change Processor State
   params: { effect: cps_effect, aif: aif_flags, mode: uimm }
   format:
     opcode: !fmt cps(effect)

@@ -169,16 +169,27 @@ pub struct AifFlags {
     pub f: bool,
 }
 pub enum Ins {
+    ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Add
     Add { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Bitwise AND
     And { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Branch
     B { cond: Cond, target: BranchTarget },
+    ///Bit Clear
     Bic { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Breakpoint
     Bkpt { imm: u32 },
+    ///Branch with Link
     Bl { cond: Cond, target: BranchTarget },
+    ///Branch with Link and Exchange
     Blx { cond: Cond, target: BlxTarget },
+    ///Branch and Exchange
     Bx { cond: Cond, rm: Reg },
+    ///Branch and Exchange Jazelle
     Bxj { cond: Cond, rm: Reg },
+    ///Coprocessor Data Processing
     Cdp {
         cond: Cond,
         coproc: Coproc,
@@ -188,11 +199,17 @@ pub enum Ins {
         crm: CoReg,
         opc2: u32,
     },
+    ///Coprocessor Data Processing (extended)
     Cdp2 { coproc: Coproc, opc1: u32, crd: CoReg, crn: CoReg, crm: CoReg, opc2: u32 },
+    ///Clear Exclusive
     Clrex {},
+    ///Count Leading Zeros
     Clz { cond: Cond, rd: Reg, rm: Reg },
+    ///Compare Negative
     Cmn { cond: Cond, rn: Reg, op2: Op2 },
+    ///Compare
     Cmp { cond: Cond, rn: Reg, op2: Op2 },
+    ///Change Processor State
     Cps { effect: CpsEffect, aif: AifFlags, mode: u32 },
     Illegal,
 }

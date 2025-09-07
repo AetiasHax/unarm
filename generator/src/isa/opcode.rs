@@ -116,6 +116,7 @@ impl Opcodes {
 #[derive(Deserialize, Debug)]
 pub struct Opcode {
     mnemonic: String,
+    description: String,
     params: IndexMap<OpcodeParamName, DataTypeName>,
     format: OpcodeFormat,
     arm: Option<Vec<OpcodeEncoding>>,
@@ -154,7 +155,11 @@ impl Opcode {
             let type_ident = data_type.type_tokens();
             quote!(#name_ident: #type_ident)
         });
-        quote!(#variant_ident { #(#params),* })
+        let description = &self.description;
+        quote! {
+            #[doc = #description]
+            #variant_ident { #(#params),* }
+        }
     }
 
     fn parse_fn_name(&self, arch: Arch, index: usize) -> String {
