@@ -24,7 +24,7 @@ impl Format {
     pub fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
         match self {
             Format::If(if_format) => if_format.fmt_expr_tokens(isa, params),
-            Format::Fragments(fragments_format) => fragments_format.fmt_expr_tokens(isa, params),
+            Format::Fragments(fragments_format) => fragments_format.fmt_expr_tokens(params),
         }
     }
 }
@@ -111,8 +111,8 @@ pub struct FragmentsFormat {
 }
 
 impl FragmentsFormat {
-    fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
-        let fragments = self.fragments.iter().map(|f| f.fmt_expr_tokens(isa, params));
+    fn fmt_expr_tokens(&self, params: &FormatParams) -> TokenStream {
+        let fragments = self.fragments.iter().map(|f| f.fmt_expr_tokens(params));
         quote!(#(#fragments)*)
     }
 }
@@ -120,19 +120,23 @@ impl FragmentsFormat {
 #[derive(Debug, Clone)]
 enum FormatFragment {
     Text(String),
+    Space,
+    Separator,
     Param(String),
 }
 
 impl FormatFragment {
-    fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+    fn fmt_expr_tokens(&self, params: &FormatParams) -> TokenStream {
         match self {
             FormatFragment::Text(text) => quote!(f.write_str(#text)?;),
+            FormatFragment::Space => quote!(f.write_space()?;),
+            FormatFragment::Separator => quote!(f.write_separator()?;),
             FormatFragment::Param(param_name) => {
                 let Some(param) = params.get(param_name) else {
                     panic!();
                 };
                 let param_ident = Ident::new(param_name, Span::call_site());
-                param.fmt_expr_tokens(isa, quote!(#param_ident))
+                param.fmt_expr_tokens(quote!(#param_ident))
             }
         }
     }
@@ -145,11 +149,28 @@ impl FromStr for FragmentsFormat {
         let mut fragments = Vec::new();
         let mut token = String::new();
         let mut parsing_param = false;
+
+        fn push_str_fragments(fragments: &mut Vec<FormatFragment>, mut s: &str) {
+            while !s.is_empty() {
+                let (fragment, rest) = {
+                    if let Some(rest) = s.strip_prefix(" ") {
+                        (FormatFragment::Space, rest)
+                    } else if let Some(rest) = s.strip_prefix(", ") {
+                        (FormatFragment::Separator, rest)
+                    } else {
+                        (FormatFragment::Text(s.to_string()), "")
+                    }
+                };
+                fragments.push(fragment);
+                s = rest;
+            }
+        }
+
         for ch in s.chars() {
             match ch {
                 '(' => {
                     if !token.is_empty() {
-                        fragments.push(FormatFragment::Text(token));
+                        push_str_fragments(&mut fragments, &token);
                         token = String::new();
                     }
                     parsing_param = true;
@@ -172,7 +193,7 @@ impl FromStr for FragmentsFormat {
             if parsing_param {
                 fragments.push(FormatFragment::Param(token));
             } else {
-                fragments.push(FormatFragment::Text(token));
+                push_str_fragments(&mut fragments, &token);
             }
         }
         Ok(Self { fragments })

@@ -42,7 +42,11 @@ impl Opcodes {
         let opcodes = self.0.iter().map(|o| o.display_variant_tokens(isa));
         quote! {
             impl Ins {
-                pub fn fmt(&self, options: &Options, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+                where
+                    F: Write + ?Sized
+                {
+                    let options = f.options();
                     match self {
                         #(#opcodes)*
                         Ins::Illegal => {
@@ -74,28 +78,6 @@ impl Opcodes {
                 #(#opcodes)else*
                 else {
                     Ins::Illegal
-                }
-            }
-        }
-    }
-
-    pub fn display_impl_tokens(&self) -> TokenStream {
-        quote! {
-            impl Ins {
-                pub fn display<'a>(&'a self, options: &'a Options) -> DisplayIns<'a> {
-                    DisplayIns {
-                        ins: self,
-                        options,
-                    }
-                }
-            }
-            pub struct DisplayIns<'a> {
-                ins: &'a Ins,
-                options: &'a Options
-            }
-            impl<'a> core::fmt::Display for DisplayIns<'a> {
-                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                    self.ins.fmt(self.options, f)
                 }
             }
         }

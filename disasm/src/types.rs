@@ -31,10 +31,11 @@ pub enum R9Use {
     ///TLS register (TR), used for thread-local storage
     Tr,
 }
+#[derive(Clone, Copy)]
 pub struct BranchTarget {
     pub addr: u32,
 }
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Cond {
     ///Equal
     Eq,
@@ -67,7 +68,7 @@ pub enum Cond {
     ///Always
     Al,
 }
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Reg {
     R0,
     R1,
@@ -86,7 +87,7 @@ pub enum Reg {
     Lr,
     Pc,
 }
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum ShiftOp {
     ///Logical shift left
     Lsl,
@@ -97,7 +98,7 @@ pub enum ShiftOp {
     ///Rotate right
     Ror,
 }
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Op2 {
     ///Immediate
     Imm(u32),

@@ -44,18 +44,20 @@ impl Isa {
     }
 
     pub fn generate_display(&self) -> TokenStream {
+        let write_trait = self.types().write_trait_tokens();
+
         let data_fmt_impls = self.types().fmt_impls_tokens(self);
 
         let ins_fmt_impl = self.opcodes().fmt_impl_tokens(self);
-        let ins_display_impl = self.opcodes().display_impl_tokens();
 
         quote! {
             use crate::*;
 
+            #write_trait
+
             #data_fmt_impls
 
             #ins_fmt_impl
-            #ins_display_impl
         }
     }
 }

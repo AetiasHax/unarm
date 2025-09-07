@@ -236,11 +236,11 @@ types:
             format: !fmt (rm), (shift_op) (rs)
             fields:
             - name: rm
-              kind: !type [reg, 0..4]
+              kind: !type [reg, bits(0..4)]
             - name: shift_op
-              kind: !type [shift_op, 5..7]
+              kind: !type [shift_op, bits(5..7)]
             - name: rs
-              kind: !type [reg, 8..12]
+              kind: !type [reg, bits(8..12)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: shift_imm
         description: Register shifted by immediate
@@ -256,9 +256,9 @@ types:
                 else: !fmt "(rm), (shift_op) #(imm)"
             fields:
             - name: rm
-              kind: !type [reg, 0..4]
+              kind: !type [reg, bits(0..4)]
             - name: shift_op
-              kind: !type [shift_op, 5..7]
+              kind: !type [shift_op, bits(5..7)]
             - name: imm
               kind: !uint bits(7..12)
 

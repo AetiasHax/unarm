@@ -1,22 +1,75 @@
 use crate::*;
+pub trait Write: core::fmt::Write {
+    fn options(&self) -> &Options;
+    fn write_opcode(&mut self, opcode: &str) -> core::fmt::Result {
+        self.write_str(opcode)
+    }
+    fn write_space(&mut self) -> core::fmt::Result {
+        self.write_str(" ")
+    }
+    fn write_separator(&mut self) -> core::fmt::Result {
+        self.write_str(", ")
+    }
+    fn write_s(&mut self, s: bool) -> core::fmt::Result {
+        if s {
+            self.write_str("s")?;
+        }
+        Ok(())
+    }
+    fn write_uimm(&mut self, uimm: u32) -> core::fmt::Result {
+        write!(self, "{:#x}", uimm)?;
+        Ok(())
+    }
+    fn write_simm(&mut self, simm: i32) -> core::fmt::Result {
+        if simm < 0 {
+            write!(self, "-{:#x}", - simm)?;
+        } else {
+            write!(self, "{:#x}", simm)?;
+        }
+        Ok(())
+    }
+    fn write_branch_target(&mut self, branch_target: BranchTarget) -> core::fmt::Result {
+        branch_target.write(self)?;
+        Ok(())
+    }
+    fn write_cond(&mut self, cond: Cond) -> core::fmt::Result {
+        cond.write(self)?;
+        Ok(())
+    }
+    fn write_reg(&mut self, reg: Reg) -> core::fmt::Result {
+        reg.write(self)?;
+        Ok(())
+    }
+    fn write_shift_op(&mut self, shift_op: ShiftOp) -> core::fmt::Result {
+        shift_op.write(self)?;
+        Ok(())
+    }
+    fn write_op2(&mut self, op2: Op2) -> core::fmt::Result {
+        op2.write(self)?;
+        Ok(())
+    }
+    fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
+        ins.write(self)
+    }
+}
 impl BranchTarget {
-    pub fn fmt(
-        &self,
-        options: &Options,
-        f: &mut core::fmt::Formatter<'_>,
-    ) -> core::fmt::Result {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
         let Self { addr } = self;
         f.write_str("#")?;
-        write!(f, "{:#x}", addr)?;
+        f.write_uimm(*addr)?;
         Ok(())
     }
 }
 impl Cond {
-    pub fn fmt(
-        &self,
-        options: &Options,
-        f: &mut core::fmt::Formatter<'_>,
-    ) -> core::fmt::Result {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
         match self {
             Self::Eq => {
                 f.write_str("eq")?;
@@ -66,11 +119,11 @@ impl Cond {
     }
 }
 impl Reg {
-    pub fn fmt(
-        &self,
-        options: &Options,
-        f: &mut core::fmt::Formatter<'_>,
-    ) -> core::fmt::Result {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
         match self {
             Self::R0 => {
                 if options.av {
@@ -193,11 +246,11 @@ impl Reg {
     }
 }
 impl ShiftOp {
-    pub fn fmt(
-        &self,
-        options: &Options,
-        f: &mut core::fmt::Formatter<'_>,
-    ) -> core::fmt::Result {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
         match self {
             Self::Lsl => {
                 f.write_str("lsl")?;
@@ -216,36 +269,38 @@ impl ShiftOp {
     }
 }
 impl Op2 {
-    pub fn fmt(
-        &self,
-        options: &Options,
-        f: &mut core::fmt::Formatter<'_>,
-    ) -> core::fmt::Result {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
         match self {
             Self::Imm(data) => {
                 f.write_str("#")?;
-                write!(f, "{:#x}", data)?;
+                f.write_uimm(*data)?;
             }
             Self::ShiftReg { rm, shift_op, rs } => {
-                rm.fmt(options, f)?;
-                f.write_str(", ")?;
-                shift_op.fmt(options, f)?;
-                f.write_str(" ")?;
-                rs.fmt(options, f)?;
+                f.write_reg(*rm)?;
+                f.write_separator()?;
+                f.write_shift_op(*shift_op)?;
+                f.write_space()?;
+                f.write_reg(*rs)?;
             }
             Self::ShiftImm { rm, shift_op, imm } => {
                 if *imm == 0 && *shift_op == ShiftOp::Lsl {
-                    rm.fmt(options, f)?;
+                    f.write_reg(*rm)?;
                 } else {
                     if *imm == 0 && *shift_op == ShiftOp::Ror {
-                        rm.fmt(options, f)?;
-                        f.write_str(", rrx")?;
+                        f.write_reg(*rm)?;
+                        f.write_separator()?;
+                        f.write_str("rrx")?;
                     } else {
-                        rm.fmt(options, f)?;
-                        f.write_str(", ")?;
-                        shift_op.fmt(options, f)?;
-                        f.write_str(" #")?;
-                        write!(f, "{:#x}", imm)?;
+                        f.write_reg(*rm)?;
+                        f.write_separator()?;
+                        f.write_shift_op(*shift_op)?;
+                        f.write_space()?;
+                        f.write_str("#")?;
+                        f.write_uimm(*imm)?;
                     }
                 }
             }
@@ -254,117 +309,91 @@ impl Op2 {
     }
 }
 impl Ins {
-    pub fn fmt(
-        &self,
-        options: &Options,
-        f: &mut core::fmt::Formatter,
-    ) -> core::fmt::Result {
+    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
         match self {
             Ins::Adc { s, cond, rd, rn, op2 } => {
                 if options.ual {
                     f.write_str("adc")?;
-                    if *s {
-                        f.write_str("s")?;
-                    }
-                    cond.fmt(options, f)?;
-                    f.write_str(" ")?;
-                    rd.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    rn.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    op2.fmt(options, f)?;
+                    f.write_s(*s)?;
+                    f.write_cond(*cond)?;
+                    f.write_space()?;
+                    f.write_reg(*rd)?;
+                    f.write_separator()?;
+                    f.write_reg(*rn)?;
+                    f.write_separator()?;
+                    f.write_op2(*op2)?;
                 } else {
                     f.write_str("adc")?;
-                    cond.fmt(options, f)?;
-                    if *s {
-                        f.write_str("s")?;
-                    }
-                    f.write_str(" ")?;
-                    rd.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    rn.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    op2.fmt(options, f)?;
+                    f.write_cond(*cond)?;
+                    f.write_s(*s)?;
+                    f.write_space()?;
+                    f.write_reg(*rd)?;
+                    f.write_separator()?;
+                    f.write_reg(*rn)?;
+                    f.write_separator()?;
+                    f.write_op2(*op2)?;
                 }
             }
             Ins::Add { s, cond, rd, rn, op2 } => {
                 if options.ual {
                     f.write_str("add")?;
-                    if *s {
-                        f.write_str("s")?;
-                    }
-                    cond.fmt(options, f)?;
-                    f.write_str(" ")?;
-                    rd.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    rn.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    op2.fmt(options, f)?;
+                    f.write_s(*s)?;
+                    f.write_cond(*cond)?;
+                    f.write_space()?;
+                    f.write_reg(*rd)?;
+                    f.write_separator()?;
+                    f.write_reg(*rn)?;
+                    f.write_separator()?;
+                    f.write_op2(*op2)?;
                 } else {
                     f.write_str("add")?;
-                    cond.fmt(options, f)?;
-                    if *s {
-                        f.write_str("s")?;
-                    }
-                    f.write_str(" ")?;
-                    rd.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    rn.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    op2.fmt(options, f)?;
+                    f.write_cond(*cond)?;
+                    f.write_s(*s)?;
+                    f.write_space()?;
+                    f.write_reg(*rd)?;
+                    f.write_separator()?;
+                    f.write_reg(*rn)?;
+                    f.write_separator()?;
+                    f.write_op2(*op2)?;
                 }
             }
             Ins::And { s, cond, rd, rn, op2 } => {
                 if options.ual {
                     f.write_str("and")?;
-                    if *s {
-                        f.write_str("s")?;
-                    }
-                    cond.fmt(options, f)?;
-                    f.write_str(" ")?;
-                    rd.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    rn.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    op2.fmt(options, f)?;
+                    f.write_s(*s)?;
+                    f.write_cond(*cond)?;
+                    f.write_space()?;
+                    f.write_reg(*rd)?;
+                    f.write_separator()?;
+                    f.write_reg(*rn)?;
+                    f.write_separator()?;
+                    f.write_op2(*op2)?;
                 } else {
                     f.write_str("and")?;
-                    cond.fmt(options, f)?;
-                    if *s {
-                        f.write_str("s")?;
-                    }
-                    f.write_str(" ")?;
-                    rd.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    rn.fmt(options, f)?;
-                    f.write_str(", ")?;
-                    op2.fmt(options, f)?;
+                    f.write_cond(*cond)?;
+                    f.write_s(*s)?;
+                    f.write_space()?;
+                    f.write_reg(*rd)?;
+                    f.write_separator()?;
+                    f.write_reg(*rn)?;
+                    f.write_separator()?;
+                    f.write_op2(*op2)?;
                 }
             }
             Ins::B { cond, target } => {
                 f.write_str("b")?;
-                cond.fmt(options, f)?;
-                f.write_str(" ")?;
-                target.fmt(options, f)?;
+                f.write_cond(*cond)?;
+                f.write_space()?;
+                f.write_branch_target(*target)?;
             }
             Ins::Illegal => {
                 f.write_str("<illegal>")?;
             }
         }
         Ok(())
-    }
-}
-impl Ins {
-    pub fn display<'a>(&'a self, options: &'a Options) -> DisplayIns<'a> {
-        DisplayIns { ins: self, options }
-    }
-}
-pub struct DisplayIns<'a> {
-    ins: &'a Ins,
-    options: &'a Options,
-}
-impl<'a> core::fmt::Display for DisplayIns<'a> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.ins.fmt(self.options, f)
     }
 }

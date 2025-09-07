@@ -68,14 +68,14 @@ impl Op2 {
             Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1))
         } else if (value & 0x2000010) == 0x10 {
             Self::ShiftReg {
-                rm: Reg::parse((value) & 0xf, pc),
-                shift_op: ShiftOp::parse(((value) >> 5) & 0x3, pc),
-                rs: Reg::parse(((value) >> 8) & 0xf, pc),
+                rm: Reg::parse(((value) & 0xf), pc),
+                shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
+                rs: Reg::parse((((value) >> 8) & 0xf), pc),
             }
         } else if (value & 0x2000010) == 0x0 {
             Self::ShiftImm {
-                rm: Reg::parse((value) & 0xf, pc),
-                shift_op: ShiftOp::parse(((value) >> 5) & 0x3, pc),
+                rm: Reg::parse(((value) & 0xf), pc),
+                shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
                 imm: (((value) >> 7) & 0x1f),
             }
         } else {
