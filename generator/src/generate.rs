@@ -48,7 +48,7 @@ impl Isa {
 
         let data_fmt_impls = self.types().fmt_impls_tokens(self);
 
-        let ins_fmt_impl = self.opcodes().fmt_impl_tokens(self);
+        let ins_fmt_impl = self.opcodes().write_impl_tokens(self);
 
         quote! {
             use crate::*;

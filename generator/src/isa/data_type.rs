@@ -54,10 +54,6 @@ impl DataTypes {
             pub trait Write: core::fmt::Write {
                 fn options(&self) -> &Options;
 
-                fn write_opcode(&mut self, opcode: &str) -> core::fmt::Result {
-                    self.write_str(opcode)
-                }
-
                 fn write_space(&mut self) -> core::fmt::Result {
                     self.write_str(" ")
                 }
@@ -69,7 +65,10 @@ impl DataTypes {
                 #(#data_types)*
 
                 fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
-                    ins.write(self)
+                    ins.write_opcode(self)?;
+                    self.write_str(" ")?;
+                    ins.write_params(self)?;
+                    Ok(())
                 }
             }
         }

@@ -1,9 +1,6 @@
 use crate::*;
 pub trait Write: core::fmt::Write {
     fn options(&self) -> &Options;
-    fn write_opcode(&mut self, opcode: &str) -> core::fmt::Result {
-        self.write_str(opcode)
-    }
     fn write_space(&mut self) -> core::fmt::Result {
         self.write_str(" ")
     }
@@ -49,7 +46,10 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
-        ins.write(self)
+        ins.write_opcode(self)?;
+        self.write_str(" ")?;
+        ins.write_params(self)?;
+        Ok(())
     }
 }
 impl BranchTarget {
@@ -309,7 +309,7 @@ impl Op2 {
     }
 }
 impl Ins {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write_opcode<F>(&self, f: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
@@ -320,22 +320,10 @@ impl Ins {
                     f.write_str("adc")?;
                     f.write_s(*s)?;
                     f.write_cond(*cond)?;
-                    f.write_space()?;
-                    f.write_reg(*rd)?;
-                    f.write_separator()?;
-                    f.write_reg(*rn)?;
-                    f.write_separator()?;
-                    f.write_op2(*op2)?;
                 } else {
                     f.write_str("adc")?;
                     f.write_cond(*cond)?;
                     f.write_s(*s)?;
-                    f.write_space()?;
-                    f.write_reg(*rd)?;
-                    f.write_separator()?;
-                    f.write_reg(*rn)?;
-                    f.write_separator()?;
-                    f.write_op2(*op2)?;
                 }
             }
             Ins::Add { s, cond, rd, rn, op2 } => {
@@ -343,22 +331,10 @@ impl Ins {
                     f.write_str("add")?;
                     f.write_s(*s)?;
                     f.write_cond(*cond)?;
-                    f.write_space()?;
-                    f.write_reg(*rd)?;
-                    f.write_separator()?;
-                    f.write_reg(*rn)?;
-                    f.write_separator()?;
-                    f.write_op2(*op2)?;
                 } else {
                     f.write_str("add")?;
                     f.write_cond(*cond)?;
                     f.write_s(*s)?;
-                    f.write_space()?;
-                    f.write_reg(*rd)?;
-                    f.write_separator()?;
-                    f.write_reg(*rn)?;
-                    f.write_separator()?;
-                    f.write_op2(*op2)?;
                 }
             }
             Ins::And { s, cond, rd, rn, op2 } => {
@@ -366,28 +342,50 @@ impl Ins {
                     f.write_str("and")?;
                     f.write_s(*s)?;
                     f.write_cond(*cond)?;
-                    f.write_space()?;
-                    f.write_reg(*rd)?;
-                    f.write_separator()?;
-                    f.write_reg(*rn)?;
-                    f.write_separator()?;
-                    f.write_op2(*op2)?;
                 } else {
                     f.write_str("and")?;
                     f.write_cond(*cond)?;
                     f.write_s(*s)?;
-                    f.write_space()?;
-                    f.write_reg(*rd)?;
-                    f.write_separator()?;
-                    f.write_reg(*rn)?;
-                    f.write_separator()?;
-                    f.write_op2(*op2)?;
                 }
             }
             Ins::B { cond, target } => {
                 f.write_str("b")?;
                 f.write_cond(*cond)?;
-                f.write_space()?;
+            }
+            Ins::Illegal => {
+                f.write_str("<illegal>")?;
+            }
+        }
+        Ok(())
+    }
+    pub fn write_params<F>(&self, f: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = f.options();
+        match self {
+            Ins::Adc { s, cond, rd, rn, op2 } => {
+                f.write_reg(*rd)?;
+                f.write_separator()?;
+                f.write_reg(*rn)?;
+                f.write_separator()?;
+                f.write_op2(*op2)?;
+            }
+            Ins::Add { s, cond, rd, rn, op2 } => {
+                f.write_reg(*rd)?;
+                f.write_separator()?;
+                f.write_reg(*rn)?;
+                f.write_separator()?;
+                f.write_op2(*op2)?;
+            }
+            Ins::And { s, cond, rd, rn, op2 } => {
+                f.write_reg(*rd)?;
+                f.write_separator()?;
+                f.write_reg(*rn)?;
+                f.write_separator()?;
+                f.write_op2(*op2)?;
+            }
+            Ins::B { cond, target } => {
                 f.write_branch_target(*target)?;
             }
             Ins::Illegal => {

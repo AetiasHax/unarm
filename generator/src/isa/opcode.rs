@@ -38,17 +38,32 @@ impl Opcodes {
         quote!(#(#parse_fns)*)
     }
 
-    pub fn fmt_impl_tokens(&self, isa: &Isa) -> TokenStream {
-        let opcodes = self.0.iter().map(|o| o.display_variant_tokens(isa));
+    pub fn write_impl_tokens(&self, isa: &Isa) -> TokenStream {
+        let opcodes = self.0.iter().map(|o| o.write_opcode_tokens(isa));
+        let params = self.0.iter().map(|o| o.write_params_tokens(isa));
         quote! {
             impl Ins {
-                pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+                pub fn write_opcode<F>(&self, f: &mut F) -> core::fmt::Result
                 where
                     F: Write + ?Sized
                 {
                     let options = f.options();
                     match self {
                         #(#opcodes)*
+                        Ins::Illegal => {
+                            f.write_str("<illegal>")?;
+                        }
+                    }
+                    Ok(())
+                }
+
+                pub fn write_params<F>(&self, f: &mut F) -> core::fmt::Result
+                where
+                    F: Write + ?Sized
+                {
+                    let options = f.options();
+                    match self {
+                        #(#params)*
                         Ins::Illegal => {
                             f.write_str("<illegal>")?;
                         }
@@ -88,7 +103,7 @@ impl Opcodes {
 pub struct Opcode {
     mnemonic: String,
     params: IndexMap<OpcodeParamName, DataTypeName>,
-    format: Format,
+    format: OpcodeFormat,
     arm: Option<Vec<OpcodeEncoding>>,
     thumb: Option<Vec<OpcodeEncoding>>,
     // a64: Option<OpcodeEncodingArm>, // TODO: AArch64 support
@@ -148,10 +163,7 @@ impl Opcode {
         }
     }
 
-    fn display_variant_tokens(&self, isa: &Isa) -> TokenStream {
-        let variant_ident = Ident::new(&capitalize(&self.mnemonic), Span::call_site());
-        let param_names = self.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
-
+    fn format_params(&self, isa: &Isa) -> FormatParams {
         let mut params: FormatParams = HashMap::new();
         for (param_name, type_name) in &self.params {
             let Some(data_type) = isa.types().get(type_name) else {
@@ -159,11 +171,30 @@ impl Opcode {
             };
             params.insert(param_name.0.clone(), data_type.clone());
         }
+        params
+    }
 
-        let display_expr = self.format.fmt_expr_tokens(isa, &params);
+    fn write_opcode_tokens(&self, isa: &Isa) -> TokenStream {
+        self.write_format_tokens(isa, &self.format.opcode)
+    }
+
+    fn write_params_tokens(&self, isa: &Isa) -> TokenStream {
+        self.write_format_tokens(isa, &self.format.params)
+    }
+
+    fn write_format_tokens(&self, isa: &Isa, format: &Format) -> TokenStream {
+        let params = self.format_params(isa);
+        let display_expr = format.fmt_expr_tokens(isa, &params);
+        self.write_variant_tokens(display_expr)
+    }
+
+    fn write_variant_tokens(&self, expr: TokenStream) -> TokenStream {
+        let variant_ident = Ident::new(&capitalize(&self.mnemonic), Span::call_site());
+        let param_names = self.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
+
         quote! {
             Ins::#variant_ident { #(#param_names),* } => {
-                #display_expr
+                #expr
             }
         }
     }
@@ -192,6 +223,12 @@ impl Display for OpcodeParamName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
     }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct OpcodeFormat {
+    opcode: Format,
+    params: Format,
 }
 
 #[derive(Deserialize, Debug)]

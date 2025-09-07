@@ -265,10 +265,12 @@ types:
 opcodes:
 - mnemonic: adc
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
-  format: !if
-    cond: option(ual)
-    then: !fmt adc(s)(cond) (rd), (rn), (op2)
-    else: !fmt adc(cond)(s) (rd), (rn), (op2)
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt adc(s)(cond)
+      else: !fmt adc(cond)(s)
+    params: !fmt (rd), (rn), (op2)
   arm:
   - version: [v4*, v5*, v6*, v7]
     pattern: xxxx_00x0_101x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -289,10 +291,12 @@ opcodes:
 
 - mnemonic: add
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
-  format: !if
-    cond: option(ual)
-    then: !fmt add(s)(cond) (rd), (rn), (op2)
-    else: !fmt add(cond)(s) (rd), (rn), (op2)
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt add(s)(cond)
+      else: !fmt add(cond)(s)
+    params: !fmt (rd), (rn), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_100x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -363,10 +367,12 @@ opcodes:
 
 - mnemonic: and
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
-  format: !if
-    cond: option(ual)
-    then: !fmt and(s)(cond) (rd), (rn), (op2)
-    else: !fmt and(cond)(s) (rd), (rn), (op2)
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt and(s)(cond)
+      else: !fmt and(cond)(s)
+    params: !fmt (rd), (rn), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_000x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -387,7 +393,9 @@ opcodes:
 
 - mnemonic: b
   params: { cond: cond, target: branch_target }
-  format: !fmt "b(cond) (target)"
+  format:
+    opcode: !fmt b(cond)
+    params: !fmt (target)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1010_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
