@@ -350,6 +350,30 @@ types:
               kind: !type [shift_op, bits(5..7)]
             - name: imm
               kind: !uint bits(7..12)
+- name: cps_effect
+  kind: !enum
+    bits: 0..20
+    variants:
+      00:
+        name: set_mode
+        description: Set mode
+        format: !fmt ""
+      10:
+        name: ie
+        description: Interrupt enable
+      11:
+        name: id
+        description: Interrupt disable
+- name: aif_flags
+  kind: !struct
+    format: !fmt (a)(i)(f)
+    fields:
+    - name: a
+      kind: !bool 2
+    - name: i
+      kind: !bool 1
+    - name: f
+      kind: !bool 0
 
 opcodes:
 - mnemonic: adc
@@ -658,3 +682,89 @@ opcodes:
   - version: [v6k]
     pattern: 1111_0101_0111_1111_1111_0000_0001_1111
     params: {}
+
+- mnemonic: clz
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt clz(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v5t*, v6*]
+    pattern: xxxx_0001_0110_1111_xxxx_1111_0001_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+
+- mnemonic: cmn
+  params: { cond: cond, rn: reg, op2: op2 }
+  format:
+    opcode: !fmt cmn(cond)
+    params: !fmt (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0111_xxxx_0000_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_11xx_xxxx
+    params:
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: cmp
+  params: { cond: cond, rn: reg, op2: op2 }
+  format:
+    opcode: !fmt cmp(cond)
+    params: !fmt (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0101_xxxx_0000_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0010_1xxx_xxxx_xxxx
+    params:
+      rn: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_10xx_xxxx
+    params:
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0101_xxxx_xxxx
+    params:
+      rn: !expr (bit(7) << 3) | bits(0..3)
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+
+- mnemonic: cps
+  params: { effect: cps_effect, aif: aif_flags, mode: uimm }
+  format:
+    opcode: !fmt cps(effect)
+    params: !if
+      cond: field(effect) == enum_variant(cps_effect, set_mode)
+      then: !fmt "#(mode)"
+      else: !if
+        cond: field(mode) == 0
+        then: !fmt (aif)
+        else: !fmt "(aif), #(mode)"
+  arm:
+  - version: [v6*]
+    pattern: 1111_0001_0000_xxx0_0000_000x_xx0x_xxxx
+    params:
+      effect: !bits 18..20
+      aif: !bits 6..9
+      mode: !bits 0..5
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0110_011x_0xxx
+    params:
+      effect: !bits 4..6
+      aif: !bits 0..3

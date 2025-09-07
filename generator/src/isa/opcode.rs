@@ -43,29 +43,29 @@ impl Opcodes {
         let params = self.0.iter().map(|o| o.write_params_tokens(isa));
         quote! {
             impl Ins {
-                pub fn write_opcode<F>(&self, f: &mut F) -> core::fmt::Result
+                pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
                     F: Write + ?Sized
                 {
-                    let options = f.options();
+                    let options = formatter.options();
                     match self {
                         #(#opcodes)*
                         Ins::Illegal => {
-                            f.write_str("<illegal>")?;
+                            formatter.write_str("<illegal>")?;
                         }
                     }
                     Ok(())
                 }
 
-                pub fn write_params<F>(&self, f: &mut F) -> core::fmt::Result
+                pub fn write_params<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
                     F: Write + ?Sized
                 {
-                    let options = f.options();
+                    let options = formatter.options();
                     match self {
                         #(#params)*
                         Ins::Illegal => {
-                            f.write_str("<illegal>")?;
+                            formatter.write_str("<illegal>")?;
                         }
                     }
                     Ok(())
@@ -199,7 +199,7 @@ impl Opcode {
         let display_expr = if !self.format.params.is_empty() {
             let display_expr = self.format.params.fmt_expr_tokens(isa, &params);
             quote! {
-                f.write_space()?;
+                formatter.write_space()?;
                 #display_expr
             }
         } else {

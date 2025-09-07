@@ -139,9 +139,9 @@ enum FormatFragment {
 impl FormatFragment {
     fn fmt_expr_tokens(&self, params: &FormatParams) -> TokenStream {
         match self {
-            FormatFragment::Text(text) => quote!(f.write_str(#text)?;),
-            FormatFragment::Space => quote!(f.write_space()?;),
-            FormatFragment::Separator => quote!(f.write_separator()?;),
+            FormatFragment::Text(text) => quote!(formatter.write_str(#text)?;),
+            FormatFragment::Space => quote!(formatter.write_space()?;),
+            FormatFragment::Separator => quote!(formatter.write_separator()?;),
             FormatFragment::Param(param_name) => {
                 let Some(param) = params.get(param_name) else {
                     panic!();

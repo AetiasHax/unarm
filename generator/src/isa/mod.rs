@@ -7,6 +7,8 @@ mod pattern;
 mod syn;
 mod version;
 
+use std::io::Read;
+
 use anyhow::Result;
 use serde::Deserialize;
 
@@ -28,6 +30,15 @@ pub struct Isa {
 }
 
 impl Isa {
+    pub fn parse<R>(r: R) -> Result<Self>
+    where
+        R: Read,
+    {
+        let mut isa: Self = serde_yaml::from_reader(r)?;
+        isa.types.post_process();
+        Ok(isa)
+    }
+
     pub fn validate(&self) -> Result<()> {
         self.types.validate()?;
         for opcode in self.opcodes.iter() {

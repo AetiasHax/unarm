@@ -57,6 +57,14 @@ pub trait Write: core::fmt::Write {
         op2.write(self)?;
         Ok(())
     }
+    fn write_cps_effect(&mut self, cps_effect: CpsEffect) -> core::fmt::Result {
+        cps_effect.write(self)?;
+        Ok(())
+    }
+    fn write_aif_flags(&mut self, aif_flags: AifFlags) -> core::fmt::Result {
+        aif_flags.write(self)?;
+        Ok(())
+    }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
         ins.write_opcode(self)?;
         ins.write_params(self)?;
@@ -64,82 +72,82 @@ pub trait Write: core::fmt::Write {
     }
 }
 impl BranchTarget {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         let Self { addr } = self;
-        f.write_str("#")?;
-        f.write_uimm(*addr)?;
+        formatter.write_str("#")?;
+        formatter.write_uimm(*addr)?;
         Ok(())
     }
 }
 impl BlxTarget {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::Direct(target) => {
-                f.write_branch_target(*target)?;
+                formatter.write_branch_target(*target)?;
             }
             Self::Indirect(rm) => {
-                f.write_reg(*rm)?;
+                formatter.write_reg(*rm)?;
             }
         }
         Ok(())
     }
 }
 impl Cond {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::Eq => {
-                f.write_str("eq")?;
+                formatter.write_str("eq")?;
             }
             Self::Ne => {
-                f.write_str("ne")?;
+                formatter.write_str("ne")?;
             }
             Self::Hs => {
-                f.write_str("hs")?;
+                formatter.write_str("hs")?;
             }
             Self::Lo => {
-                f.write_str("lo")?;
+                formatter.write_str("lo")?;
             }
             Self::Mi => {
-                f.write_str("mi")?;
+                formatter.write_str("mi")?;
             }
             Self::Pl => {
-                f.write_str("pl")?;
+                formatter.write_str("pl")?;
             }
             Self::Vs => {
-                f.write_str("vs")?;
+                formatter.write_str("vs")?;
             }
             Self::Vc => {
-                f.write_str("vc")?;
+                formatter.write_str("vc")?;
             }
             Self::Hi => {
-                f.write_str("hi")?;
+                formatter.write_str("hi")?;
             }
             Self::Ls => {
-                f.write_str("ls")?;
+                formatter.write_str("ls")?;
             }
             Self::Ge => {
-                f.write_str("ge")?;
+                formatter.write_str("ge")?;
             }
             Self::Lt => {
-                f.write_str("lt")?;
+                formatter.write_str("lt")?;
             }
             Self::Gt => {
-                f.write_str("gt")?;
+                formatter.write_str("gt")?;
             }
             Self::Le => {
-                f.write_str("le")?;
+                formatter.write_str("le")?;
             }
             Self::Al => {}
         }
@@ -147,306 +155,306 @@ impl Cond {
     }
 }
 impl Reg {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::R0 => {
                 if options.av {
-                    f.write_str("a1")?;
+                    formatter.write_str("a1")?;
                 } else {
-                    f.write_str("r0")?;
+                    formatter.write_str("r0")?;
                 }
             }
             Self::R1 => {
                 if options.av {
-                    f.write_str("a2")?;
+                    formatter.write_str("a2")?;
                 } else {
-                    f.write_str("r1")?;
+                    formatter.write_str("r1")?;
                 }
             }
             Self::R2 => {
                 if options.av {
-                    f.write_str("a3")?;
+                    formatter.write_str("a3")?;
                 } else {
-                    f.write_str("r2")?;
+                    formatter.write_str("r2")?;
                 }
             }
             Self::R3 => {
                 if options.av {
-                    f.write_str("a4")?;
+                    formatter.write_str("a4")?;
                 } else {
-                    f.write_str("r3")?;
+                    formatter.write_str("r3")?;
                 }
             }
             Self::R4 => {
                 if options.av {
-                    f.write_str("v1")?;
+                    formatter.write_str("v1")?;
                 } else {
-                    f.write_str("r4")?;
+                    formatter.write_str("r4")?;
                 }
             }
             Self::R5 => {
                 if options.av {
-                    f.write_str("v2")?;
+                    formatter.write_str("v2")?;
                 } else {
-                    f.write_str("r5")?;
+                    formatter.write_str("r5")?;
                 }
             }
             Self::R6 => {
                 if options.av {
-                    f.write_str("v3")?;
+                    formatter.write_str("v3")?;
                 } else {
-                    f.write_str("r6")?;
+                    formatter.write_str("r6")?;
                 }
             }
             Self::R7 => {
                 if options.av {
-                    f.write_str("v4")?;
+                    formatter.write_str("v4")?;
                 } else {
-                    f.write_str("r7")?;
+                    formatter.write_str("r7")?;
                 }
             }
             Self::R8 => {
                 if options.av {
-                    f.write_str("v5")?;
+                    formatter.write_str("v5")?;
                 } else {
-                    f.write_str("r8")?;
+                    formatter.write_str("r8")?;
                 }
             }
             Self::R9 => {
                 if options.r9_use == R9Use::R9 {
                     if options.av {
-                        f.write_str("v6")?;
+                        formatter.write_str("v6")?;
                     } else {
-                        f.write_str("r9")?;
+                        formatter.write_str("r9")?;
                     }
                 } else {
                     if options.r9_use == R9Use::Sb {
-                        f.write_str("sb")?;
+                        formatter.write_str("sb")?;
                     } else {
-                        f.write_str("tr")?;
+                        formatter.write_str("tr")?;
                     }
                 }
             }
             Self::R10 => {
                 if options.sl {
-                    f.write_str("sl")?;
+                    formatter.write_str("sl")?;
                 } else {
                     if options.av {
-                        f.write_str("v7")?;
+                        formatter.write_str("v7")?;
                     } else {
-                        f.write_str("r10")?;
+                        formatter.write_str("r10")?;
                     }
                 }
             }
             Self::R11 => {
                 if options.fp {
-                    f.write_str("fp")?;
+                    formatter.write_str("fp")?;
                 } else {
                     if options.av {
-                        f.write_str("v8")?;
+                        formatter.write_str("v8")?;
                     } else {
-                        f.write_str("r11")?;
+                        formatter.write_str("r11")?;
                     }
                 }
             }
             Self::R12 => {
                 if options.ip {
-                    f.write_str("ip")?;
+                    formatter.write_str("ip")?;
                 } else {
-                    f.write_str("r12")?;
+                    formatter.write_str("r12")?;
                 }
             }
             Self::Sp => {
-                f.write_str("sp")?;
+                formatter.write_str("sp")?;
             }
             Self::Lr => {
-                f.write_str("lr")?;
+                formatter.write_str("lr")?;
             }
             Self::Pc => {
-                f.write_str("pc")?;
+                formatter.write_str("pc")?;
             }
         }
         Ok(())
     }
 }
 impl ShiftOp {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::Lsl => {
-                f.write_str("lsl")?;
+                formatter.write_str("lsl")?;
             }
             Self::Lsr => {
-                f.write_str("lsr")?;
+                formatter.write_str("lsr")?;
             }
             Self::Asr => {
-                f.write_str("asr")?;
+                formatter.write_str("asr")?;
             }
             Self::Ror => {
-                f.write_str("ror")?;
+                formatter.write_str("ror")?;
             }
         }
         Ok(())
     }
 }
 impl Coproc {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::P0 => {
-                f.write_str("p0")?;
+                formatter.write_str("p0")?;
             }
             Self::P1 => {
-                f.write_str("p1")?;
+                formatter.write_str("p1")?;
             }
             Self::P2 => {
-                f.write_str("p2")?;
+                formatter.write_str("p2")?;
             }
             Self::P3 => {
-                f.write_str("p3")?;
+                formatter.write_str("p3")?;
             }
             Self::P4 => {
-                f.write_str("p4")?;
+                formatter.write_str("p4")?;
             }
             Self::P5 => {
-                f.write_str("p5")?;
+                formatter.write_str("p5")?;
             }
             Self::P6 => {
-                f.write_str("p6")?;
+                formatter.write_str("p6")?;
             }
             Self::P7 => {
-                f.write_str("p7")?;
+                formatter.write_str("p7")?;
             }
             Self::P8 => {
-                f.write_str("p8")?;
+                formatter.write_str("p8")?;
             }
             Self::P9 => {
-                f.write_str("p9")?;
+                formatter.write_str("p9")?;
             }
             Self::P10 => {
-                f.write_str("p10")?;
+                formatter.write_str("p10")?;
             }
             Self::P11 => {
-                f.write_str("p11")?;
+                formatter.write_str("p11")?;
             }
             Self::P12 => {
-                f.write_str("p12")?;
+                formatter.write_str("p12")?;
             }
             Self::P13 => {
-                f.write_str("p13")?;
+                formatter.write_str("p13")?;
             }
             Self::P14 => {
-                f.write_str("p14")?;
+                formatter.write_str("p14")?;
             }
             Self::P15 => {
-                f.write_str("p15")?;
+                formatter.write_str("p15")?;
             }
         }
         Ok(())
     }
 }
 impl CoReg {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::C0 => {
-                f.write_str("c0")?;
+                formatter.write_str("c0")?;
             }
             Self::C1 => {
-                f.write_str("c1")?;
+                formatter.write_str("c1")?;
             }
             Self::C2 => {
-                f.write_str("c2")?;
+                formatter.write_str("c2")?;
             }
             Self::C3 => {
-                f.write_str("c3")?;
+                formatter.write_str("c3")?;
             }
             Self::C4 => {
-                f.write_str("c4")?;
+                formatter.write_str("c4")?;
             }
             Self::C5 => {
-                f.write_str("c5")?;
+                formatter.write_str("c5")?;
             }
             Self::C6 => {
-                f.write_str("c6")?;
+                formatter.write_str("c6")?;
             }
             Self::C7 => {
-                f.write_str("c7")?;
+                formatter.write_str("c7")?;
             }
             Self::C8 => {
-                f.write_str("c8")?;
+                formatter.write_str("c8")?;
             }
             Self::C9 => {
-                f.write_str("c9")?;
+                formatter.write_str("c9")?;
             }
             Self::C10 => {
-                f.write_str("c10")?;
+                formatter.write_str("c10")?;
             }
             Self::C11 => {
-                f.write_str("c11")?;
+                formatter.write_str("c11")?;
             }
             Self::C12 => {
-                f.write_str("c12")?;
+                formatter.write_str("c12")?;
             }
             Self::C13 => {
-                f.write_str("c13")?;
+                formatter.write_str("c13")?;
             }
             Self::C14 => {
-                f.write_str("c14")?;
+                formatter.write_str("c14")?;
             }
             Self::C15 => {
-                f.write_str("c15")?;
+                formatter.write_str("c15")?;
             }
         }
         Ok(())
     }
 }
 impl Op2 {
-    pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
             Self::Imm(imm) => {
-                f.write_str("#")?;
-                f.write_uimm(*imm)?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
             }
             Self::ShiftReg { rm, shift_op, rs } => {
-                f.write_reg(*rm)?;
-                f.write_separator()?;
-                f.write_shift_op(*shift_op)?;
-                f.write_space()?;
-                f.write_reg(*rs)?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_shift_op(*shift_op)?;
+                formatter.write_space()?;
+                formatter.write_reg(*rs)?;
             }
             Self::ShiftImm { rm, shift_op, imm } => {
                 if *imm == 0 && *shift_op == ShiftOp::Lsl {
-                    f.write_reg(*rm)?;
+                    formatter.write_reg(*rm)?;
                 } else {
                     if *imm == 0 && *shift_op == ShiftOp::Ror {
-                        f.write_reg(*rm)?;
-                        f.write_separator()?;
-                        f.write_str("rrx")?;
+                        formatter.write_reg(*rm)?;
+                        formatter.write_separator()?;
+                        formatter.write_str("rrx")?;
                     } else {
-                        f.write_reg(*rm)?;
-                        f.write_separator()?;
-                        f.write_shift_op(*shift_op)?;
-                        f.write_space()?;
-                        f.write_str("#")?;
-                        f.write_uimm(*imm)?;
+                        formatter.write_reg(*rm)?;
+                        formatter.write_separator()?;
+                        formatter.write_shift_op(*shift_op)?;
+                        formatter.write_space()?;
+                        formatter.write_str("#")?;
+                        formatter.write_uimm(*imm)?;
                     }
                 }
             }
@@ -454,194 +462,281 @@ impl Op2 {
         Ok(())
     }
 }
-impl Ins {
-    pub fn write_opcode<F>(&self, f: &mut F) -> core::fmt::Result
+impl CpsEffect {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
         match self {
-            Ins::Adc { s, cond, rd, rn, op2 } => {
-                if options.ual {
-                    f.write_str("adc")?;
-                    f.write_s(*s)?;
-                    f.write_cond(*cond)?;
-                } else {
-                    f.write_str("adc")?;
-                    f.write_cond(*cond)?;
-                    f.write_s(*s)?;
-                }
+            Self::SetMode => {}
+            Self::Ie => {
+                formatter.write_str("ie")?;
             }
-            Ins::Add { s, cond, rd, rn, op2 } => {
-                if options.ual {
-                    f.write_str("add")?;
-                    f.write_s(*s)?;
-                    f.write_cond(*cond)?;
-                } else {
-                    f.write_str("add")?;
-                    f.write_cond(*cond)?;
-                    f.write_s(*s)?;
-                }
-            }
-            Ins::And { s, cond, rd, rn, op2 } => {
-                if options.ual {
-                    f.write_str("and")?;
-                    f.write_s(*s)?;
-                    f.write_cond(*cond)?;
-                } else {
-                    f.write_str("and")?;
-                    f.write_cond(*cond)?;
-                    f.write_s(*s)?;
-                }
-            }
-            Ins::B { cond, target } => {
-                f.write_str("b")?;
-                f.write_cond(*cond)?;
-            }
-            Ins::Bic { s, cond, rd, rn, op2 } => {
-                if options.ual {
-                    f.write_str("bic")?;
-                    f.write_s(*s)?;
-                    f.write_cond(*cond)?;
-                } else {
-                    f.write_str("bic")?;
-                    f.write_cond(*cond)?;
-                    f.write_s(*s)?;
-                }
-            }
-            Ins::Bkpt { imm } => {
-                f.write_str("bkpt")?;
-            }
-            Ins::Bl { cond, target } => {
-                f.write_str("bl")?;
-                f.write_cond(*cond)?;
-            }
-            Ins::Blx { cond, target } => {
-                f.write_str("blx")?;
-                f.write_cond(*cond)?;
-            }
-            Ins::Bx { cond, rm } => {
-                f.write_str("bx")?;
-                f.write_cond(*cond)?;
-            }
-            Ins::Bxj { cond, rm } => {
-                f.write_str("bxj")?;
-                f.write_cond(*cond)?;
-            }
-            Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
-                f.write_str("cdp")?;
-                f.write_cond(*cond)?;
-            }
-            Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
-                f.write_str("cdp2")?;
-            }
-            Ins::Clrex {} => {
-                f.write_str("clrex")?;
-            }
-            Ins::Illegal => {
-                f.write_str("<illegal>")?;
+            Self::Id => {
+                formatter.write_str("id")?;
             }
         }
         Ok(())
     }
-    pub fn write_params<F>(&self, f: &mut F) -> core::fmt::Result
+}
+impl AifFlags {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: Write + ?Sized,
     {
-        let options = f.options();
+        let options = formatter.options();
+        let Self { a, i, f } = self;
+        if *a {
+            formatter.write_str("a")?;
+        }
+        if *i {
+            formatter.write_str("i")?;
+        }
+        if *f {
+            formatter.write_str("f")?;
+        }
+        Ok(())
+    }
+}
+impl Ins {
+    pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = formatter.options();
         match self {
             Ins::Adc { s, cond, rd, rn, op2 } => {
-                f.write_space()?;
-                f.write_reg(*rd)?;
-                f.write_separator()?;
-                f.write_reg(*rn)?;
-                f.write_separator()?;
-                f.write_op2(*op2)?;
+                if options.ual {
+                    formatter.write_str("adc")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("adc")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
             }
             Ins::Add { s, cond, rd, rn, op2 } => {
-                f.write_space()?;
-                f.write_reg(*rd)?;
-                f.write_separator()?;
-                f.write_reg(*rn)?;
-                f.write_separator()?;
-                f.write_op2(*op2)?;
+                if options.ual {
+                    formatter.write_str("add")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("add")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
             }
             Ins::And { s, cond, rd, rn, op2 } => {
-                f.write_space()?;
-                f.write_reg(*rd)?;
-                f.write_separator()?;
-                f.write_reg(*rn)?;
-                f.write_separator()?;
-                f.write_op2(*op2)?;
+                if options.ual {
+                    formatter.write_str("and")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("and")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
             }
             Ins::B { cond, target } => {
-                f.write_space()?;
-                f.write_branch_target(*target)?;
+                formatter.write_str("b")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Bic { s, cond, rd, rn, op2 } => {
-                f.write_space()?;
-                f.write_reg(*rd)?;
-                f.write_separator()?;
-                f.write_reg(*rn)?;
-                f.write_separator()?;
-                f.write_op2(*op2)?;
+                if options.ual {
+                    formatter.write_str("bic")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("bic")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
             }
             Ins::Bkpt { imm } => {
-                f.write_space()?;
-                f.write_str("#")?;
-                f.write_uimm(*imm)?;
+                formatter.write_str("bkpt")?;
             }
             Ins::Bl { cond, target } => {
-                f.write_space()?;
-                f.write_branch_target(*target)?;
+                formatter.write_str("bl")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Blx { cond, target } => {
-                f.write_space()?;
-                f.write_blx_target(*target)?;
+                formatter.write_str("blx")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Bx { cond, rm } => {
-                f.write_space()?;
-                f.write_reg(*rm)?;
+                formatter.write_str("bx")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Bxj { cond, rm } => {
-                f.write_space()?;
-                f.write_reg(*rm)?;
+                formatter.write_str("bxj")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
-                f.write_space()?;
-                f.write_coproc(*coproc)?;
-                f.write_separator()?;
-                f.write_str("#")?;
-                f.write_uimm(*opc1)?;
-                f.write_separator()?;
-                f.write_co_reg(*crd)?;
-                f.write_separator()?;
-                f.write_co_reg(*crn)?;
-                f.write_separator()?;
-                f.write_co_reg(*crm)?;
-                f.write_separator()?;
-                f.write_str("#")?;
-                f.write_uimm(*opc2)?;
+                formatter.write_str("cdp")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
-                f.write_space()?;
-                f.write_coproc(*coproc)?;
-                f.write_separator()?;
-                f.write_str("#")?;
-                f.write_uimm(*opc1)?;
-                f.write_separator()?;
-                f.write_co_reg(*crd)?;
-                f.write_separator()?;
-                f.write_co_reg(*crn)?;
-                f.write_separator()?;
-                f.write_co_reg(*crm)?;
-                f.write_separator()?;
-                f.write_str("#")?;
-                f.write_uimm(*opc2)?;
+                formatter.write_str("cdp2")?;
+            }
+            Ins::Clrex {} => {
+                formatter.write_str("clrex")?;
+            }
+            Ins::Clz { cond, rd, rm } => {
+                formatter.write_str("clz")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Cmn { cond, rn, op2 } => {
+                formatter.write_str("cmn")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Cmp { cond, rn, op2 } => {
+                formatter.write_str("cmp")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Cps { effect, aif, mode } => {
+                formatter.write_str("cps")?;
+                formatter.write_cps_effect(*effect)?;
+            }
+            Ins::Illegal => {
+                formatter.write_str("<illegal>")?;
+            }
+        }
+        Ok(())
+    }
+    pub fn write_params<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = formatter.options();
+        match self {
+            Ins::Adc { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Add { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::And { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::B { cond, target } => {
+                formatter.write_space()?;
+                formatter.write_branch_target(*target)?;
+            }
+            Ins::Bic { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Bkpt { imm } => {
+                formatter.write_space()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+            }
+            Ins::Bl { cond, target } => {
+                formatter.write_space()?;
+                formatter.write_branch_target(*target)?;
+            }
+            Ins::Blx { cond, target } => {
+                formatter.write_space()?;
+                formatter.write_blx_target(*target)?;
+            }
+            Ins::Bx { cond, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Bxj { cond, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc1)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crd)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crn)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crm)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc2)?;
+            }
+            Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc1)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crd)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crn)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crm)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc2)?;
             }
             Ins::Clrex {} => {}
+            Ins::Clz { cond, rd, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Cmn { cond, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Cmp { cond, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Cps { effect, aif, mode } => {
+                formatter.write_space()?;
+                if *effect == CpsEffect::SetMode {
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*mode)?;
+                } else {
+                    if *mode == 0 {
+                        formatter.write_aif_flags(*aif)?;
+                    } else {
+                        formatter.write_aif_flags(*aif)?;
+                        formatter.write_separator()?;
+                        formatter.write_str("#")?;
+                        formatter.write_uimm(*mode)?;
+                    }
+                }
+            }
             Ins::Illegal => {
-                f.write_str("<illegal>")?;
+                formatter.write_str("<illegal>")?;
             }
         }
         Ok(())

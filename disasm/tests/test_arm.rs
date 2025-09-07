@@ -128,4 +128,38 @@ mod tests {
     fn test_clrex() {
         assert_asm!(0xf57ff01f, "clrex");
     }
+
+    #[test]
+    fn test_clz() {
+        assert_asm!(0xe16f5f1f, "clz r5, pc");
+        assert_asm!(0xd16fef15, "clzle lr, r5");
+    }
+
+    #[test]
+    fn test_cmn() {
+        assert_asm!(0xe1710003, "cmn r1, r3");
+        assert_asm!(0xe3740e23, "cmn r4, #0x230");
+        assert_asm!(0x117b060a, "cmnne r11, r10, lsl #0xc");
+        assert_asm!(0x41750238, "cmnmi r5, r8, lsr r2");
+        assert_asm!(0x7172046e, "cmnvc r2, lr, ror #0x8");
+        assert_asm!(0xb1780060, "cmnlt r8, r0, rrx");
+        assert_asm!(0xe1750153, "cmn r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_cmp() {
+        assert_asm!(0xe1510003, "cmp r1, r3");
+        assert_asm!(0xe3540e23, "cmp r4, #0x230");
+        assert_asm!(0x115b060a, "cmpne r11, r10, lsl #0xc");
+        assert_asm!(0x41550238, "cmpmi r5, r8, lsr r2");
+        assert_asm!(0x7152046e, "cmpvc r2, lr, ror #0x8");
+        assert_asm!(0xb1580060, "cmplt r8, r0, rrx");
+        assert_asm!(0xe1550153, "cmp r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_cps() {
+        assert_asm!(0xf102001a, "cps #0x1a");
+        assert_asm!(0xf10a01df, "cpsie aif, #0x1f");
+    }
 }

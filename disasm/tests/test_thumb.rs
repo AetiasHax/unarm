@@ -90,4 +90,22 @@ mod tests {
     fn test_bx() {
         assert_asm!(0x4750, "bx r10");
     }
+
+    #[test]
+    fn test_cmn() {
+        assert_asm!(0x42d7, "cmn r7, r2");
+    }
+
+    #[test]
+    fn test_cmp() {
+        assert_asm!(0x2942, "cmp r1, #0x42");
+        assert_asm!(0x4297, "cmp r7, r2");
+        assert_asm!(0x45de, "cmp lr, r11");
+    }
+
+    #[test]
+    fn test_cps() {
+        assert_asm!(0xb677, "cpsid aif");
+        assert_asm!(0xb667, "cpsie aif");
+    }
 }

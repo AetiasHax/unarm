@@ -11,7 +11,7 @@ mod util;
 
 fn main() -> anyhow::Result<()> {
     let file = File::open("generator/assets/isa.yaml")?;
-    let isa: Isa = serde_yaml::from_reader(file)?;
+    let isa = Isa::parse(file)?;
     isa.validate()?;
     // println!("{:#?}", isa);
 

@@ -153,6 +153,21 @@ pub enum Op2 {
     ///Register shifted by immediate
     ShiftImm { rm: Reg, shift_op: ShiftOp, imm: u32 },
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum CpsEffect {
+    ///Set mode
+    SetMode,
+    ///Interrupt enable
+    Ie,
+    ///Interrupt disable
+    Id,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct AifFlags {
+    pub a: bool,
+    pub i: bool,
+    pub f: bool,
+}
 pub enum Ins {
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     Add { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -175,5 +190,9 @@ pub enum Ins {
     },
     Cdp2 { coproc: Coproc, opc1: u32, crd: CoReg, crn: CoReg, crm: CoReg, opc2: u32 },
     Clrex {},
+    Clz { cond: Cond, rd: Reg, rm: Reg },
+    Cmn { cond: Cond, rn: Reg, op2: Op2 },
+    Cmp { cond: Cond, rn: Reg, op2: Op2 },
+    Cps { effect: CpsEffect, aif: AifFlags, mode: u32 },
     Illegal,
 }

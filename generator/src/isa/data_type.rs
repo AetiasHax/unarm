@@ -20,6 +20,12 @@ impl DataTypes {
         self.0.iter().find(|dt| &dt.name == name)
     }
 
+    pub fn post_process(&mut self) {
+        for data_type in self.0.iter_mut() {
+            data_type.top_level = true;
+        }
+    }
+
     pub fn validate(&self) -> Result<()> {
         for data_type in self.0.iter() {
             data_type.validate()?;
@@ -98,6 +104,8 @@ impl Display for DataTypeName {
 pub struct DataType {
     name: DataTypeName,
     kind: DataTypeKind,
+    #[serde(skip)]
+    top_level: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -284,11 +292,11 @@ impl DataType {
         let name_ident = self.name().as_pascal_ident();
         Some(quote! {
             impl #name_ident {
-                pub fn write<F>(&self, f: &mut F) -> core::fmt::Result
+                pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
                     F: Write + ?Sized
                 {
-                    let options = f.options();
+                    let options = formatter.options();
                     #display_expr
                     Ok(())
                 }
@@ -297,8 +305,15 @@ impl DataType {
     }
 
     pub fn fmt_expr_tokens(&self, value: TokenStream) -> TokenStream {
-        let write_fn_ident = self.trait_write_fn_ident();
-        quote!(f.#write_fn_ident(*#value)?;)
+        match &self.kind {
+            DataTypeKind::Bool(_) if !self.top_level => {
+                self.write_expr_tokens(quote!(*#value), quote!(formatter))
+            }
+            _ => {
+                let write_fn_ident = self.trait_write_fn_ident();
+                quote!(formatter.#write_fn_ident(*#value)?;)
+            }
+        }
     }
 
     pub fn fmt_expr_in_enum_variant_tokens(&self, isa: &Isa, value: TokenStream) -> TokenStream {
@@ -322,36 +337,40 @@ impl DataType {
         Ident::new(&fn_name, Span::call_site())
     }
 
+    fn write_expr_tokens(&self, value: TokenStream, formatter: TokenStream) -> TokenStream {
+        match &self.kind {
+            DataTypeKind::Bool(_) => {
+                let name = &self.name.0;
+                quote! {
+                    if #value {
+                        #formatter.write_str(#name)?;
+                    }
+                }
+            }
+            DataTypeKind::UInt(_) => {
+                quote!(write!(#formatter, "{:#x}", #value)?;)
+            }
+            DataTypeKind::Int(_) => {
+                quote! {
+                    if #value < 0 {
+                        write!(#formatter, "-{:#x}", -#value)?;
+                    } else {
+                        write!(#formatter, "{:#x}", #value)?;
+                    }
+                }
+            }
+            DataTypeKind::Enum(_) => quote!(#value.write(#formatter)?;),
+            DataTypeKind::Struct(_) => quote!(#value.write(#formatter)?;),
+            DataTypeKind::Type(_, _) => quote!(#value.write(#formatter)?;),
+        }
+    }
+
     fn trait_write_fn_tokens(&self) -> TokenStream {
         let fn_ident = self.trait_write_fn_ident();
         let value = self.name.as_ident();
         let type_tokens = self.type_tokens();
 
-        let write_expr = match &self.kind {
-            DataTypeKind::Bool(_) => {
-                let name = &self.name.0;
-                quote! {
-                    if #value {
-                        self.write_str(#name)?;
-                    }
-                }
-            }
-            DataTypeKind::UInt(_) => {
-                quote!(write!(self, "{:#x}", #value)?;)
-            }
-            DataTypeKind::Int(_) => {
-                quote! {
-                    if #value < 0 {
-                        write!(self, "-{:#x}", -#value)?;
-                    } else {
-                        write!(self, "{:#x}", #value)?;
-                    }
-                }
-            }
-            DataTypeKind::Enum(_) => quote!(#value.write(self)?;),
-            DataTypeKind::Struct(_) => quote!(#value.write(self)?;),
-            DataTypeKind::Type(_, _) => quote!(#value.write(self)?;),
-        };
+        let write_expr = self.write_expr_tokens(value.to_token_stream(), quote!(self));
 
         quote! {
             fn #fn_ident(&mut self, #value: #type_tokens) -> core::fmt::Result {
@@ -615,7 +634,7 @@ impl DataTypeEnumVariant {
             data.fmt_expr_in_enum_variant_tokens(isa, value)
         } else {
             let variant_name = &self.name.0;
-            quote!(f.write_str(#variant_name)?;)
+            quote!(formatter.write_str(#variant_name)?;)
         };
         let case_pattern = self.pattern_destructure_tokens();
         quote! {
