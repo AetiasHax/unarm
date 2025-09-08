@@ -13,6 +13,18 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
+    fn write_l(&mut self, l: bool) -> core::fmt::Result {
+        if l {
+            self.write_str("l")?;
+        }
+        Ok(())
+    }
+    fn write_wb(&mut self, wb: bool) -> core::fmt::Result {
+        if wb {
+            self.write_str("!")?;
+        }
+        Ok(())
+    }
     fn write_uimm(&mut self, uimm: u32) -> core::fmt::Result {
         write!(self, "{:#x}", uimm)?;
         Ok(())
@@ -63,6 +75,10 @@ pub trait Write: core::fmt::Write {
     }
     fn write_aif_flags(&mut self, aif_flags: AifFlags) -> core::fmt::Result {
         aif_flags.write(self)?;
+        Ok(())
+    }
+    fn write_addr_ldc_stc(&mut self, addr_ldc_stc: AddrLdcStc) -> core::fmt::Result {
+        addr_ldc_stc.write(self)?;
         Ok(())
     }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
@@ -499,6 +515,39 @@ impl AifFlags {
         Ok(())
     }
 }
+impl AddrLdcStc {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = formatter.options();
+        match self {
+            Self::Pre { rn, offset, writeback } => {
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_simm(*offset)?;
+                formatter.write_str("]")?;
+                formatter.write_wb(*writeback)?;
+            }
+            Self::Post { rn, offset } => {
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("], #")?;
+                formatter.write_simm(*offset)?;
+            }
+            Self::Unidx { rn, option } => {
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("], {")?;
+                formatter.write_uimm(*option)?;
+                formatter.write_str("}")?;
+            }
+        }
+        Ok(())
+    }
+}
 impl Ins {
     pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -598,6 +647,36 @@ impl Ins {
             Ins::Cps { effect, aif, mode } => {
                 formatter.write_str("cps")?;
                 formatter.write_cps_effect(*effect)?;
+            }
+            Ins::Csdb { cond } => {
+                formatter.write_str("csdb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Eor { s, cond, rd, rn, op2 } => {
+                if options.ual {
+                    formatter.write_str("eor")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("eor")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Ldc { l, cond, coproc, crd, dest } => {
+                if options.ual {
+                    formatter.write_str("ldc")?;
+                    formatter.write_l(*l)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldc")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_l(*l)?;
+                }
+            }
+            Ins::Ldc2 { l, coproc, crd, dest } => {
+                formatter.write_str("ldc2")?;
+                formatter.write_l(*l)?;
             }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;
@@ -734,6 +813,31 @@ impl Ins {
                         formatter.write_uimm(*mode)?;
                     }
                 }
+            }
+            Ins::Csdb { cond } => {}
+            Ins::Eor { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Ldc { l, cond, coproc, crd, dest } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldc_stc(*dest)?;
+            }
+            Ins::Ldc2 { l, coproc, crd, dest } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldc_stc(*dest)?;
             }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;

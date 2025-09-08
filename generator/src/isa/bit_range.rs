@@ -32,6 +32,12 @@ impl BitRange {
     }
 }
 
+impl Default for BitRange {
+    fn default() -> Self {
+        Self(0..1)
+    }
+}
+
 impl FromStr for BitRange {
     type Err = anyhow::Error;
 

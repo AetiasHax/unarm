@@ -108,4 +108,9 @@ mod tests {
         assert_asm!(0xb677, "cpsid aif");
         assert_asm!(0xb667, "cpsie aif");
     }
+
+    #[test]
+    fn test_eor() {
+        assert_asm!(0x4057, "eors r7, r7, r2");
+    }
 }

@@ -169,6 +169,37 @@ impl AifFlags {
         }
     }
 }
+impl AddrLdcStc {
+    fn parse(value: u32, pc: u32) -> Self {
+        if (value & 0x1000000) == 0x1000000 {
+            Self::Pre {
+                rn: Reg::parse((((value) >> 16) & 0xf), pc),
+                offset: ((if (((value) >> 23) & 0x1) == 0 {
+                    -((((value) & 0xff) << 2) as i32)
+                } else {
+                    (((value) & 0xff) << 2) as i32
+                })) as i32,
+                writeback: ((((value) >> 21) & 0x1)) != 0,
+            }
+        } else if (value & 0x1200000) == 0x200000 {
+            Self::Post {
+                rn: Reg::parse((((value) >> 16) & 0xf), pc),
+                offset: ((if (((value) >> 23) & 0x1) == 0 {
+                    -((((value) & 0xff) << 2) as i32)
+                } else {
+                    (((value) & 0xff) << 2) as i32
+                })) as i32,
+            }
+        } else if (value & 0x1a00000) == 0x800000 {
+            Self::Unidx {
+                rn: Reg::parse((((value) >> 16) & 0xf), pc),
+                option: ((value) & 0xff),
+            }
+        } else {
+            panic!();
+        }
+    }
+}
 impl Default for BranchTarget {
     fn default() -> Self {
         Self { addr: 0 }
@@ -196,6 +227,8 @@ impl Default for AifFlags {
 pub fn parse_arm(ins: u32, pc: u32) -> Ins {
     if (ins & 0xffffffff) == 0xf57ff01f {
         parse_arm_clrex_0(ins as u32, pc)
+    } else if (ins & 0xfffffff) == 0x320f014 {
+        parse_arm_csdb_0(ins as u32, pc)
     } else if (ins & 0xffffff0) == 0x12fff30 {
         parse_arm_blx_1(ins as u32, pc)
     } else if (ins & 0xffffff0) == 0x12fff10 {
@@ -214,6 +247,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_cmp_0(ins as u32, pc)
     } else if (ins & 0xff000010) == 0xfe000000 {
         parse_arm_cdp2_0(ins as u32, pc)
+    } else if (ins & 0xfe100000) == 0xfc100000 {
+        parse_arm_ldc2_0(ins as u32, pc)
     } else if (ins & 0xfe000000) == 0xfa000000 {
         parse_arm_blx_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0xa00000 {
@@ -224,12 +259,16 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_and_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1c00000 {
         parse_arm_bic_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x200000 {
+        parse_arm_eor_0(ins as u32, pc)
     } else if (ins & 0xf000010) == 0xe000000 {
         parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xa000000 {
         parse_arm_b_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xb000000 {
         parse_arm_bl_0(ins as u32, pc)
+    } else if (ins & 0xe100000) == 0xc100000 {
+        parse_arm_ldc_0(ins as u32, pc)
     } else {
         Ins::Illegal
     }
@@ -255,6 +294,8 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
         parse_thumb_cmn_0(ins as u32, pc)
     } else if (ins & 0xffc0) == 0x4280 {
         parse_thumb_cmp_1(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0x4040 {
+        parse_thumb_eor_0(ins as u32, pc)
     } else if (ins & 0xff80) == 0xb000 {
         parse_thumb_add_5(ins as u32, pc)
     } else if (ins & 0xff00) == 0x4400 {
@@ -648,4 +689,49 @@ fn parse_thumb_cps_0(value: u32, pc: u32) -> Ins {
     let aif = AifFlags::parse((value) & 0x7, pc);
     let mode = 0;
     Ins::Cps { effect, aif, mode }
+}
+fn parse_arm_csdb_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    Ins::Csdb { cond }
+}
+fn parse_arm_eor_0(value: u32, pc: u32) -> Ins {
+    let s = (((value) >> 20) & 0x1) != 0;
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let op2 = Op2::parse(value, pc);
+    Ins::Eor { s, cond, rd, rn, op2 }
+}
+fn parse_thumb_eor_0(value: u32, pc: u32) -> Ins {
+    let s = (1) != 0;
+    let cond = Cond::default();
+    let rd = Reg::parse((value) & 0x7, pc);
+    let rn = Reg::parse((value) & 0x7, pc);
+    let op2 = Op2::ShiftImm {
+        rm: Reg::parse(((value) >> 3) & 0x7, pc),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    };
+    Ins::Eor { s, cond, rd, rn, op2 }
+}
+fn parse_arm_ldc_0(value: u32, pc: u32) -> Ins {
+    let l = (((value) >> 22) & 0x1) != 0;
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
+    let dest = AddrLdcStc::parse(value, pc);
+    Ins::Ldc {
+        l,
+        cond,
+        coproc,
+        crd,
+        dest,
+    }
+}
+fn parse_arm_ldc2_0(value: u32, pc: u32) -> Ins {
+    let l = (((value) >> 22) & 0x1) != 0;
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
+    let dest = AddrLdcStc::parse(value, pc);
+    Ins::Ldc2 { l, coproc, crd, dest }
 }

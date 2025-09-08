@@ -168,6 +168,15 @@ pub struct AifFlags {
     pub i: bool,
     pub f: bool,
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum AddrLdcStc {
+    ///Pre-indexed
+    Pre { rn: Reg, offset: i32, writeback: bool },
+    ///Post-indexed
+    Post { rn: Reg, offset: i32 },
+    ///Unindexed
+    Unidx { rn: Reg, option: u32 },
+}
 pub enum Ins {
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -211,5 +220,13 @@ pub enum Ins {
     Cmp { cond: Cond, rn: Reg, op2: Op2 },
     ///Change Processor State
     Cps { effect: CpsEffect, aif: AifFlags, mode: u32 },
+    ///Consume of Speculative Data Barrier
+    Csdb { cond: Cond },
+    ///Bitwise Exclusive OR
+    Eor { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Load Coprocessor
+    Ldc { l: bool, cond: Cond, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
+    ///Load Coprocessor (extended)
+    Ldc2 { l: bool, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
     Illegal,
 }

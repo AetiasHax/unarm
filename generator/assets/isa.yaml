@@ -38,7 +38,12 @@ versions:
 
 types:
 - name: s
-  kind: !bool 0
+  kind: !bool
+- name: l
+  kind: !bool
+- name: wb
+  kind: !bool
+    write: "!"
 - name: uimm
   kind: !uint bits(0..32)
 - name: simm
@@ -369,11 +374,56 @@ types:
     format: !fmt (a)(i)(f)
     fields:
     - name: a
-      kind: !bool 2
+      kind: !bool
+        bits: 2
     - name: i
-      kind: !bool 1
+      kind: !bool
+        bits: 1
     - name: f
-      kind: !bool 0
+      kind: !bool
+        bits: 0
+- name: addr_ldc_stc
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: pre
+        description: Pre-indexed
+        data:
+          name: addr_ldc_stc_pre
+          kind: !struct
+            format: !fmt "[(rn), #(offset)](writeback)"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !int (bits(0..8) << 2).negate_if(bit(23) == 0)
+            - name: writeback
+              kind: !type [wb, bit(21)]
+      xxxx_xxx0_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: post
+        description: Post-indexed
+        data:
+          name: addr_ldc_stc_post
+          kind: !struct
+            format: !fmt "[(rn)], #(offset)"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !int (bits(0..8) << 2).negate_if(bit(23) == 0)
+      xxxx_xxx0_1x0x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: unidx
+        description: Unindexed
+        data:
+          name: addr_ldc_stc_unidx
+          kind: !struct
+            format: !fmt "[(rn)], {(option)}"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: option
+              kind: !uint bits(0..8)
 
 opcodes:
 - mnemonic: adc
@@ -785,3 +835,76 @@ opcodes:
     params:
       effect: !bits 4..6
       aif: !bits 0..3
+
+- mnemonic: csdb
+  description: Consume of Speculative Data Barrier
+  params: { cond: cond }
+  format:
+    opcode: !fmt csdb(cond)
+    params: !fmt ""
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0011_0010_0000_1111_0000_0001_0100
+    params:
+      cond: !bits 28..32
+
+- mnemonic: eor
+  description: Bitwise Exclusive OR
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt eor(s)(cond)
+      else: !fmt eor(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_001x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_01xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: ldc
+  description: Load Coprocessor
+  params: { l: l, cond: cond, coproc: coproc, crd: co_reg, dest: addr_ldc_stc }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldc(l)(cond)
+      else: !fmt ldc(cond)(l)
+    params: !fmt (coproc), (crd), (dest)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      l: !bits 22
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      crd: !bits 12..16
+      dest: !bits 0..32
+
+- mnemonic: ldc2
+  description: Load Coprocessor (extended)
+  params: { l: l, coproc: coproc, crd: co_reg, dest: addr_ldc_stc }
+  format:
+    opcode: !fmt ldc2(l)
+    params: !fmt (coproc), (crd), (dest)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: 1111_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      l: !bits 22
+      coproc: !bits 8..12
+      crd: !bits 12..16
+      dest: !bits 0..32

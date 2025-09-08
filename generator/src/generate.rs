@@ -9,7 +9,7 @@ impl Isa {
         let version_enum = self.versions().enum_tokens();
         let internal_option_types = self.options().internal_types_tokens();
 
-        let data_types = self.types().types_tokens();
+        let data_types = self.types().types_tokens(self);
 
         let ins_enum = self.opcodes().ins_enum_tokens(self);
 
@@ -25,7 +25,7 @@ impl Isa {
     }
 
     pub fn generate_parser(&self) -> TokenStream {
-        let data_parse_impls = self.types().parse_impls_tokens();
+        let data_parse_impls = self.types().parse_impls_tokens(self);
         let data_default_impls = self.types().default_impls_tokens();
         let parse_arm_ifchain_fn = self.opcodes().parse_arm_ifchain_fn_tokens();
         let parse_thumb_ifchain_fn = self.opcodes().parse_thumb_ifchain_fn_tokens();
@@ -44,7 +44,7 @@ impl Isa {
     }
 
     pub fn generate_display(&self) -> TokenStream {
-        let write_trait = self.types().write_trait_tokens();
+        let write_trait = self.types().write_trait_tokens(self);
 
         let data_fmt_impls = self.types().fmt_impls_tokens(self);
 

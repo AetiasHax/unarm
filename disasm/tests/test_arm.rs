@@ -162,4 +162,39 @@ mod tests {
         assert_asm!(0xf102001a, "cps #0x1a");
         assert_asm!(0xf10a01df, "cpsie aif, #0x1f");
     }
+
+    #[test]
+    fn test_csdb() {
+        assert_asm!(0xe320f014, "csdb");
+        assert_asm!(0xa320f014, "csdbge");
+    }
+
+    #[test]
+    fn test_eor() {
+        assert_asm!(0xe0212003, "eor r2, r1, r3");
+        assert_asm!(0xe2245e23, "eor r5, r4, #0x230");
+        assert_asm!(0x102b960a, "eorne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x4025f238, "eormi pc, r5, r8, lsr r2");
+        assert_asm!(0x7022046e, "eorvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb0287060, "eorlt r7, r8, r0, rrx");
+        assert_asm!(0xe0352153, "eors r2, r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_ldc() {
+        assert_asm!(0xed132169, "ldc p1, c2, [r3, #-0x1a4]");
+        assert_asm!(0x4d332169, "ldcmi p1, c2, [r3, #-0x1a4]!");
+        assert_asm!(0x6c332169, "ldcvs p1, c2, [r3], #-0x1a4");
+        assert_asm!(0x3db32169, "ldclo p1, c2, [r3, #0x1a4]!");
+        assert_asm!(0x5c932169, "ldcpl p1, c2, [r3], {0x69}");
+    }
+
+    #[test]
+    fn test_ldc2() {
+        assert_asm!(0xfd132169, "ldc2 p1, c2, [r3, #-0x1a4]");
+        assert_asm!(0xfd332169, "ldc2 p1, c2, [r3, #-0x1a4]!");
+        assert_asm!(0xfc332169, "ldc2 p1, c2, [r3], #-0x1a4");
+        assert_asm!(0xfdb32169, "ldc2 p1, c2, [r3, #0x1a4]!");
+        assert_asm!(0xfc932169, "ldc2 p1, c2, [r3], {0x69}");
+    }
 }

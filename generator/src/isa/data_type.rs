@@ -33,13 +33,13 @@ impl DataTypes {
         Ok(())
     }
 
-    pub fn types_tokens(&self) -> TokenStream {
-        let types = self.0.iter().filter_map(|dt| dt.type_decl_tokens());
+    pub fn types_tokens(&self, isa: &Isa) -> TokenStream {
+        let types = self.0.iter().filter_map(|dt| dt.type_decl_tokens(isa));
         quote!(#(#types)*)
     }
 
-    pub fn parse_impls_tokens(&self) -> TokenStream {
-        let parse_impls = self.0.iter().filter_map(|dt| dt.parse_impl_tokens());
+    pub fn parse_impls_tokens(&self, isa: &Isa) -> TokenStream {
+        let parse_impls = self.0.iter().filter_map(|dt| dt.parse_impl_tokens(isa));
         quote!(#(#parse_impls)*)
     }
 
@@ -53,8 +53,8 @@ impl DataTypes {
         quote!(#(#fmt_impls)*)
     }
 
-    pub fn write_trait_tokens(&self) -> TokenStream {
-        let data_types = self.0.iter().map(|dt| dt.trait_write_fn_tokens());
+    pub fn write_trait_tokens(&self, isa: &Isa) -> TokenStream {
+        let data_types = self.0.iter().map(|dt| dt.trait_write_fn_tokens(isa));
 
         quote! {
             pub trait Write: core::fmt::Write {
@@ -111,7 +111,11 @@ pub struct DataType {
 #[derive(Deserialize, Debug, Clone)]
 pub enum DataTypeKind {
     #[serde(rename = "bool")]
-    Bool(BitRange),
+    Bool {
+        #[serde(default)]
+        bits: BitRange,
+        write: Option<String>,
+    },
     #[serde(rename = "uint")]
     UInt(DataExpr),
     #[serde(rename = "int")]
@@ -135,46 +139,46 @@ impl DataType {
 
     pub fn validate(&self) -> Result<()> {
         match &self.kind {
-            DataTypeKind::Bool(_bit_range) => Ok(()),
-            DataTypeKind::UInt(_bit_range) => Ok(()),
-            DataTypeKind::Int(_bit_range) => Ok(()),
+            DataTypeKind::Bool { .. } => Ok(()),
+            DataTypeKind::UInt(_) => Ok(()),
+            DataTypeKind::Int(_) => Ok(()),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.validate(&self.name),
-            DataTypeKind::Struct(_data_type_struct) => Ok(()),
-            DataTypeKind::Type(_data_type_name, _bit_range) => Ok(()),
+            DataTypeKind::Struct(_) => Ok(()),
+            DataTypeKind::Type(_, _) => Ok(()),
         }
     }
 
-    fn type_decl_tokens(&self) -> Option<TokenStream> {
+    fn type_decl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
-            DataTypeKind::Bool(_) => None,
+            DataTypeKind::Bool { .. } => None,
             DataTypeKind::UInt(_) => None,
             DataTypeKind::Int(_) => None,
-            DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.enum_tokens(&self.name)),
+            DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.enum_tokens(isa, &self.name)),
             DataTypeKind::Struct(data_type_struct) => {
-                Some(data_type_struct.struct_tokens(&self.name))
+                Some(data_type_struct.struct_tokens(isa, &self.name))
             }
             DataTypeKind::Type(_, _) => None,
         }
     }
 
-    fn parse_impl_tokens(&self) -> Option<TokenStream> {
+    fn parse_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
-            DataTypeKind::Bool(_) => None,
+            DataTypeKind::Bool { .. } => None,
             DataTypeKind::UInt(_) => None,
             DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => {
-                Some(data_type_enum.parse_impl_tokens(&self.name))
+                Some(data_type_enum.parse_impl_tokens(isa, &self.name))
             }
             DataTypeKind::Struct(data_type_struct) => {
-                Some(data_type_struct.parse_impl_tokens(&self.name))
+                Some(data_type_struct.parse_impl_tokens(isa, &self.name))
             }
             DataTypeKind::Type(_, _) => None,
         }
     }
 
-    pub fn type_tokens(&self) -> TokenStream {
+    pub fn type_tokens(&self, isa: &Isa) -> TokenStream {
         match &self.kind {
-            DataTypeKind::Bool(_) => quote!(bool),
+            DataTypeKind::Bool { .. } => quote!(bool),
             DataTypeKind::UInt(_) => quote!(u32),
             DataTypeKind::Int(_) => quote!(i32),
             DataTypeKind::Enum(_) => {
@@ -186,15 +190,17 @@ impl DataType {
                 quote!(#name_ident)
             }
             DataTypeKind::Type(name, _) => {
-                let name_ident = name.as_pascal_ident();
-                quote!(#name_ident)
+                let Some(inner_type) = isa.types().get(name) else {
+                    panic!();
+                };
+                inner_type.type_tokens(isa)
             }
         }
     }
 
-    fn field_tokens(&self, is_pub: bool) -> TokenStream {
+    fn field_tokens(&self, isa: &Isa, is_pub: bool) -> TokenStream {
         let name_ident = Ident::new(&self.name.0, Span::call_site());
-        let type_tokens = self.type_tokens();
+        let type_tokens = self.type_tokens(isa);
         if is_pub {
             quote!(pub #name_ident: #type_tokens)
         } else {
@@ -202,10 +208,10 @@ impl DataType {
         }
     }
 
-    pub fn parse_expr_tokens(&self, value: Option<TokenStream>) -> TokenStream {
+    pub fn parse_expr_tokens(&self, isa: &Isa, value: Option<TokenStream>) -> TokenStream {
         match &self.kind {
-            DataTypeKind::Bool(bit_range) => {
-                let value = value.unwrap_or_else(|| bit_range.shift_mask_tokens(None));
+            DataTypeKind::Bool { bits, .. } => {
+                let value = value.unwrap_or_else(|| bits.shift_mask_tokens(None));
                 quote!((#value) != 0)
             }
             DataTypeKind::UInt(data_expr) => {
@@ -223,17 +229,19 @@ impl DataType {
                 data_type_struct.parse_expr_tokens(&self.name, value)
             }
             DataTypeKind::Type(data_type_name, data_expr) => {
-                let type_ident = data_type_name.as_pascal_ident();
+                let Some(inner_type) = isa.types().get(data_type_name) else {
+                    panic!();
+                };
                 let value = value
                     .unwrap_or_else(|| data_expr.as_tokens(Ident::new("value", Span::call_site())));
-                quote!(#type_ident::parse(#value, pc))
+                inner_type.parse_expr_tokens(isa, Some(value))
             }
         }
     }
 
     pub fn default_expr_tokens(&self) -> TokenStream {
         match &self.kind {
-            DataTypeKind::Bool(_) => quote!(false),
+            DataTypeKind::Bool { .. } => quote!(false),
             DataTypeKind::UInt(_) => quote!(0),
             DataTypeKind::Int(_) => quote!(0),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_expr_tokens(&self.name),
@@ -249,7 +257,7 @@ impl DataType {
 
     fn default_impl_tokens(&self) -> Option<TokenStream> {
         let default_expr = match &self.kind {
-            DataTypeKind::Bool(_) => return None,
+            DataTypeKind::Bool { .. } => return None,
             DataTypeKind::UInt(_) => return None,
             DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_impl_body_tokens()?,
@@ -268,7 +276,7 @@ impl DataType {
 
     pub fn write_impl_body_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
-            DataTypeKind::Bool(_) => None,
+            DataTypeKind::Bool { .. } => None,
             DataTypeKind::UInt(_) => None,
             DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.write_impl_body_tokens(isa)),
@@ -281,7 +289,7 @@ impl DataType {
 
     fn write_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
-            DataTypeKind::Bool(_) => return None,
+            DataTypeKind::Bool { .. } => return None,
             DataTypeKind::UInt(_) => return None,
             DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(_) => {}
@@ -306,7 +314,7 @@ impl DataType {
 
     pub fn fmt_expr_tokens(&self, value: TokenStream) -> TokenStream {
         match &self.kind {
-            DataTypeKind::Bool(_) if !self.top_level => {
+            DataTypeKind::Bool { .. } if !self.top_level => {
                 self.write_expr_tokens(quote!(*#value), quote!(formatter))
             }
             _ => {
@@ -326,7 +334,7 @@ impl DataType {
 
     fn trait_write_fn_ident(&self) -> Ident {
         let base_name = match &self.kind {
-            DataTypeKind::Bool(_) => &self.name.0,
+            DataTypeKind::Bool { .. } => &self.name.0,
             DataTypeKind::UInt(_) => "uimm",
             DataTypeKind::Int(_) => "simm",
             DataTypeKind::Enum(_) => &self.name.0,
@@ -339,11 +347,11 @@ impl DataType {
 
     fn write_expr_tokens(&self, value: TokenStream, formatter: TokenStream) -> TokenStream {
         match &self.kind {
-            DataTypeKind::Bool(_) => {
-                let name = &self.name.0;
+            DataTypeKind::Bool { write, .. } => {
+                let write = write.as_ref().unwrap_or(&self.name.0);
                 quote! {
                     if #value {
-                        #formatter.write_str(#name)?;
+                        #formatter.write_str(#write)?;
                     }
                 }
             }
@@ -365,10 +373,10 @@ impl DataType {
         }
     }
 
-    fn trait_write_fn_tokens(&self) -> TokenStream {
+    fn trait_write_fn_tokens(&self, isa: &Isa) -> TokenStream {
         let fn_ident = self.trait_write_fn_ident();
         let value = self.name.as_ident();
-        let type_tokens = self.type_tokens();
+        let type_tokens = self.type_tokens(isa);
 
         let write_expr = self.write_expr_tokens(value.to_token_stream(), quote!(self));
 
@@ -404,9 +412,9 @@ impl DataTypeEnum {
         Ok(())
     }
 
-    fn enum_tokens(&self, name: &DataTypeName) -> TokenStream {
+    fn enum_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
-        let variants = self.variants.values().map(|v| v.variant_tokens());
+        let variants = self.variants.values().map(|v| v.variant_tokens(isa));
         quote! {
             #[derive(PartialEq, Eq, Clone, Copy)]
             pub enum #name_ident {
@@ -421,12 +429,14 @@ impl DataTypeEnum {
         self.variants.keys().any(|pattern| pattern.bitmask() != expected_bitmask)
     }
 
-    fn parse_impl_tokens(&self, name: &DataTypeName) -> TokenStream {
+    fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
 
         let fn_body = if self.has_optional_bits() {
-            let variants =
-                self.variants.iter().map(|(pattern, variant)| variant.parse_if_tokens(pattern));
+            let variants = self
+                .variants
+                .iter()
+                .map(|(pattern, variant)| variant.parse_if_tokens(isa, pattern));
             quote! {
                 #(#variants)else*
                 else {
@@ -434,8 +444,10 @@ impl DataTypeEnum {
                 }
             }
         } else {
-            let variants =
-                self.variants.iter().map(|(pattern, variant)| variant.parse_match_tokens(pattern));
+            let variants = self
+                .variants
+                .iter()
+                .map(|(pattern, variant)| variant.parse_match_tokens(isa, pattern));
             quote! {
                 match value {
                     #(#variants),*,
@@ -499,14 +511,14 @@ impl DataTypeEnumVariant {
         Ident::new(&snake_to_pascal_case(&self.name.0), Span::call_site())
     }
 
-    fn variant_tokens(&self) -> TokenStream {
+    fn variant_tokens(&self, isa: &Isa) -> TokenStream {
         let variant_ident = self.as_ident();
         let variant = if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
-                let record = data_type_struct.record_tokens(false);
+                let record = data_type_struct.record_tokens(isa, false);
                 quote!(#variant_ident #record)
             } else {
-                let variant_data = data.type_tokens();
+                let variant_data = data.type_tokens(isa);
                 quote!(#variant_ident(#variant_data))
             }
         } else {
@@ -523,16 +535,16 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_match_tokens(&self, pattern: &Pattern) -> TokenStream {
+    fn parse_match_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens();
+        let parse_expr = self.parse_expr_tokens(isa);
         quote!(#pattern => #parse_expr)
     }
 
-    fn parse_if_tokens(&self, pattern: &Pattern) -> TokenStream {
+    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
         let bitmask = HexLiteral(pattern.bitmask());
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens();
+        let parse_expr = self.parse_expr_tokens(isa);
         quote! {
             if (value & #bitmask) == #pattern {
                 #parse_expr
@@ -540,14 +552,14 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_expr_tokens(&self) -> TokenStream {
+    fn parse_expr_tokens(&self, isa: &Isa) -> TokenStream {
         let variant_ident = self.as_ident();
         if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
-                let record = data_type_struct.parse_record_tokens();
+                let record = data_type_struct.parse_record_tokens(isa);
                 quote!(Self::#variant_ident #record)
             } else {
-                let parse_expr = data.parse_expr_tokens(None);
+                let parse_expr = data.parse_expr_tokens(isa, None);
                 quote!(Self::#variant_ident(#parse_expr))
             }
         } else {
@@ -572,6 +584,7 @@ impl DataTypeEnumVariant {
 
     pub fn param_expr_tokens(
         &self,
+        isa: &Isa,
         enum_name: &DataTypeName,
         value: &OpcodeParamValue,
     ) -> TokenStream {
@@ -582,7 +595,7 @@ impl DataTypeEnumVariant {
                 let OpcodeParamValue::Struct(struct_params) = value else {
                     panic!();
                 };
-                let record = data_type_struct.param_record_tokens(struct_params);
+                let record = data_type_struct.param_record_tokens(isa, struct_params);
                 quote!(#enum_ident::#variant_ident #record)
             } else {
                 let value_tokens = match value {
@@ -599,7 +612,7 @@ impl DataTypeEnumVariant {
                     }
                     OpcodeParamValue::Struct(_) => panic!(),
                 };
-                let parse_expr = data.parse_expr_tokens(Some(value_tokens));
+                let parse_expr = data.parse_expr_tokens(isa, Some(value_tokens));
                 quote!(#enum_ident::#variant_ident(#parse_expr))
             }
         } else {
@@ -667,23 +680,23 @@ pub struct DataTypeStruct {
 }
 
 impl DataTypeStruct {
-    fn struct_tokens(&self, name: &DataTypeName) -> TokenStream {
+    fn struct_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
-        let record = self.record_tokens(true);
+        let record = self.record_tokens(isa, true);
         quote! {
             #[derive(PartialEq, Eq, Clone, Copy)]
             pub struct #name_ident #record
         }
     }
 
-    fn record_tokens(&self, is_pub: bool) -> TokenStream {
-        let fields = self.fields.iter().map(|field| field.field_tokens(is_pub));
+    fn record_tokens(&self, isa: &Isa, is_pub: bool) -> TokenStream {
+        let fields = self.fields.iter().map(|field| field.field_tokens(isa, is_pub));
         quote!({ #(#fields),* })
     }
 
-    fn parse_impl_tokens(&self, name: &DataTypeName) -> TokenStream {
+    fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
-        let record = self.parse_record_tokens();
+        let record = self.parse_record_tokens(isa);
         quote! {
             impl #name_ident {
                 fn parse(value: u32, pc: u32) -> Self {
@@ -693,10 +706,10 @@ impl DataTypeStruct {
         }
     }
 
-    fn parse_record_tokens(&self) -> TokenStream {
+    fn parse_record_tokens(&self, isa: &Isa) -> TokenStream {
         let fields = self.fields.iter().map(|field| {
             let field_ident = Ident::new(&field.name.0, Span::call_site());
-            let parse_expr = field.parse_expr_tokens(None);
+            let parse_expr = field.parse_expr_tokens(isa, None);
             quote!(#field_ident: #parse_expr)
         });
         quote!({ #(#fields),* })
@@ -727,12 +740,16 @@ impl DataTypeStruct {
         quote!(Self #record)
     }
 
-    fn param_record_tokens(&self, params: &IndexMap<String, OpcodeParamValue>) -> TokenStream {
+    fn param_record_tokens(
+        &self,
+        isa: &Isa,
+        params: &IndexMap<String, OpcodeParamValue>,
+    ) -> TokenStream {
         let fields = self.fields.iter().map(|field| {
             let name = &field.name.0;
             let field_ident = Ident::new(name, Span::call_site());
             let param_expr = if let Some(value) = params.get(name) {
-                value.parse_expr_tokens(field)
+                value.parse_expr_tokens(isa, field)
             } else {
                 field.default_expr_tokens()
             };
@@ -743,11 +760,12 @@ impl DataTypeStruct {
 
     pub fn param_tokens(
         &self,
+        isa: &Isa,
         type_name: &DataTypeName,
         params: &IndexMap<String, OpcodeParamValue>,
     ) -> TokenStream {
         let type_name_ident = type_name.as_pascal_ident();
-        let record = self.param_record_tokens(params);
+        let record = self.param_record_tokens(isa, params);
         quote! {
             #type_name_ident #record
         }
@@ -843,6 +861,23 @@ impl VisitMut for DataExprReplace {
                         let result = quote!(((#receiver as i32) << #bits >> #bits) as u32);
                         *node = syn::parse2(quote!((#result))).unwrap();
                     }
+
+                    "negate_if" => {
+                        if call.args.len() != 1 {
+                            panic!("negate_if function takes one argument");
+                        }
+                        let arg = &call.args[0];
+                        let receiver = &call.receiver;
+                        let result = quote! {
+                            if #arg {
+                                -(#receiver as i32)
+                            } else {
+                                #receiver as i32
+                            }
+                        };
+                        *node = syn::parse2(quote!((#result))).unwrap();
+                    }
+
                     _ => panic!("Unknown data expression method {fn_name}"),
                 }
             }
