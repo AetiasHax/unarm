@@ -189,6 +189,20 @@ pub enum LdmStmMode {
     ///Increment Before
     Ib,
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum AddrLdrStr {
+    ///Pre-indexed
+    Pre { rn: Reg, offset: LdrStrOffset, writeback: bool },
+    ///Post-indexed
+    Post { rn: Reg, offset: LdrStrOffset },
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum LdrStrOffset {
+    ///Immediate offset
+    Imm(i32),
+    ///Register offset
+    Reg { subtract: bool, rm: Reg, shift_op: ShiftOp, imm: u32 },
+}
 pub enum Ins {
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -249,5 +263,7 @@ pub enum Ins {
         regs: RegList,
         user_mode: bool,
     },
+    ///Load Register
+    Ldr { cond: Cond, rd: Reg, addr: AddrLdrStr },
     Illegal,
 }

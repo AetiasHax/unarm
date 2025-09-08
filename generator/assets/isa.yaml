@@ -46,7 +46,10 @@ types:
     write: "!"
 - name: user_mode
   kind: !bool
-    write: "^"
+    write: ^
+- name: subtract
+  kind: !bool
+    write: "-"
 - name: uimm
   kind: !uint bits(0..32)
 - name: simm
@@ -450,6 +453,70 @@ types:
       11:
         name: ib
         description: Increment Before
+- name: addr_ldr_str
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: pre
+        description: Pre-indexed
+        data:
+          name: addr_ldr_str_pre
+          kind: !struct
+            format: !fmt "[(rn), (offset)](writeback)"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [ldr_str_offset, bits(0..32)]
+            - name: writeback
+              kind: !type [wb, bit(21)]
+      xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: post
+        description: Post-indexed
+        data:
+          name: addr_ldr_str_pre
+          kind: !struct
+            format: !fmt "[(rn)], (offset)"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [ldr_str_offset, bits(0..32)]
+- name: ldr_str_offset
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: imm
+        description: Immediate offset
+        format: !fmt "#(offset)"
+        data:
+          name: offset
+          kind: !int bits(0..12).negate_if(bit(23) == 0)
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: reg
+        description: Register offset
+        data:
+          name: ldr_str_offset_reg
+          kind: !struct
+            format: !if
+              cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
+              then: !fmt (subtract)(rm)
+              else: !if
+                cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, ror)
+                then: !fmt (subtract)(rm), rrx
+                else: !fmt "(subtract)(rm), (shift_op) #(imm)"
+            fields:
+            - name: subtract
+              kind: !type [subtract, bit(23) ^ 1]
+            - name: rm
+              kind: !type [reg, bits(0..4)]
+            - name: shift_op
+              kind: !type [shift_op, bits(5..7)]
+            - name: imm
+              kind: !uint if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }
+            
 
 opcodes:
 - mnemonic: adc
@@ -980,3 +1047,38 @@ opcodes:
       writeback: !expr (!bits(0..8) >> bits(8..11)) & 1
       regs: !bits 0..8
       user_mode: !const 0
+
+- mnemonic: ldr
+  description: Load Register
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !fmt ldr(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01xx_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0110_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1001_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      addr: !enum [pre, !struct { rn: !const 13, offset: !enum [imm, !expr bits(0..8) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      addr: !enum [pre, !struct { rn: !const 15, offset: !enum [imm, !expr bits(0..8) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_100x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]

@@ -28,7 +28,7 @@ impl Isa {
 
     pub fn generate_parser(&self) -> TokenStream {
         let data_parse_impls = self.types().parse_impls_tokens(self);
-        let data_default_impls = self.types().default_impls_tokens();
+        let data_default_impls = self.types().default_impls_tokens(self);
         let parse_arm_ifchain_fn = self.opcodes().parse_arm_ifchain_fn_tokens();
         let parse_thumb_ifchain_fn = self.opcodes().parse_thumb_ifchain_fn_tokens();
         let opcode_parse_fns = self.opcodes().parse_fns_tokens(self);

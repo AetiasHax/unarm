@@ -119,4 +119,12 @@ mod tests {
         assert_asm!(0xc955, "ldm r1!, {r0, r2, r4, r6}");
         assert_asm!(0xc9aa, "ldm r1, {r1, r3, r5, r7}");
     }
+
+    #[test]
+    fn test_ldr() {
+        assert_asm!(0x6c22, "ldr r2, [r4, #0x40]");
+        assert_asm!(0x5822, "ldr r2, [r4, r0]");
+        assert_asm!(0x4f42, "ldr r7, [pc, #0x108]");
+        assert_asm!(0x9f42, "ldr r7, [sp, #0x108]");
+    }
 }

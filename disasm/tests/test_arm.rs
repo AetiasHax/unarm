@@ -212,4 +212,17 @@ mod tests {
             "ldmib r1!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, sp, lr, pc}^"
         );
     }
+
+    #[test]
+    fn test_ldr() {
+        assert_asm!(0xe5912fff, "ldr r2, [r1, #0xfff]");
+        assert_asm!(0xe7112003, "ldr r2, [r1, -r3]");
+        assert_asm!(0xe79120e3, "ldr r2, [r1, r3, ror #0x1]");
+        assert_asm!(0xe5312fff, "ldr r2, [r1, #-0xfff]!");
+        assert_asm!(0xe7b12003, "ldr r2, [r1, r3]!");
+        assert_asm!(0xe7312063, "ldr r2, [r1, -r3, rrx]!");
+        assert_asm!(0xe4912fff, "ldr r2, [r1], #0xfff");
+        assert_asm!(0xe6112003, "ldr r2, [r1], -r3");
+        assert_asm!(0xe6912023, "ldr r2, [r1], r3, lsr #0x20");
+    }
 }

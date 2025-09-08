@@ -31,6 +31,12 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
+    fn write_subtract(&mut self, subtract: bool) -> core::fmt::Result {
+        if subtract {
+            self.write_str("-")?;
+        }
+        Ok(())
+    }
     fn write_uimm(&mut self, uimm: u32) -> core::fmt::Result {
         write!(self, "{:#x}", uimm)?;
         Ok(())
@@ -93,6 +99,17 @@ pub trait Write: core::fmt::Write {
     }
     fn write_ldm_stm_mode(&mut self, ldm_stm_mode: LdmStmMode) -> core::fmt::Result {
         ldm_stm_mode.write(self)?;
+        Ok(())
+    }
+    fn write_addr_ldr_str(&mut self, addr_ldr_str: AddrLdrStr) -> core::fmt::Result {
+        addr_ldr_str.write(self)?;
+        Ok(())
+    }
+    fn write_ldr_str_offset(
+        &mut self,
+        ldr_str_offset: LdrStrOffset,
+    ) -> core::fmt::Result {
+        ldr_str_offset.write(self)?;
         Ok(())
     }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
@@ -587,6 +604,67 @@ impl LdmStmMode {
         Ok(())
     }
 }
+impl AddrLdrStr {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = formatter.options();
+        match self {
+            Self::Pre { rn, offset, writeback } => {
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_ldr_str_offset(*offset)?;
+                formatter.write_str("]")?;
+                formatter.write_wb(*writeback)?;
+            }
+            Self::Post { rn, offset } => {
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("], ")?;
+                formatter.write_ldr_str_offset(*offset)?;
+            }
+        }
+        Ok(())
+    }
+}
+impl LdrStrOffset {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = formatter.options();
+        match self {
+            Self::Imm(offset) => {
+                formatter.write_str("#")?;
+                formatter.write_simm(*offset)?;
+            }
+            Self::Reg { subtract, rm, shift_op, imm } => {
+                if *imm == 0 && *shift_op == ShiftOp::Lsl {
+                    formatter.write_subtract(*subtract)?;
+                    formatter.write_reg(*rm)?;
+                } else {
+                    if *imm == 0 && *shift_op == ShiftOp::Ror {
+                        formatter.write_subtract(*subtract)?;
+                        formatter.write_reg(*rm)?;
+                        formatter.write_separator()?;
+                        formatter.write_str("rrx")?;
+                    } else {
+                        formatter.write_subtract(*subtract)?;
+                        formatter.write_reg(*rm)?;
+                        formatter.write_separator()?;
+                        formatter.write_shift_op(*shift_op)?;
+                        formatter.write_space()?;
+                        formatter.write_str("#")?;
+                        formatter.write_uimm(*imm)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
 impl Ins {
     pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -727,6 +805,10 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                     formatter.write_ldm_stm_mode(*mode)?;
                 }
+            }
+            Ins::Ldr { cond, rd, addr } => {
+                formatter.write_str("ldr")?;
+                formatter.write_cond(*cond)?;
             }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;
@@ -896,6 +978,12 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg_list(*regs)?;
                 formatter.write_user_mode(*user_mode)?;
+            }
+            Ins::Ldr { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
             }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;

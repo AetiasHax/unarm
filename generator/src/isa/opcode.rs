@@ -273,7 +273,7 @@ impl OpcodeEncoding {
             let parse_expr = if let Some(value) = self.get_param(name) {
                 value.parse_expr_tokens(isa, data_type)
             } else {
-                data_type.default_expr_tokens()
+                data_type.default_expr_tokens(isa)
             };
 
             let name_ident = Ident::new(&name.0, Span::call_site());
@@ -368,13 +368,22 @@ impl OpcodeParamValue {
                 data_type.parse_expr_tokens(isa, Some(expr))
             }
             OpcodeParamValue::Enum(variant, value) => {
-                let DataTypeKind::Enum(data_type_enum) = data_type.kind() else {
-                    panic!();
+                let inner_type = match data_type.kind() {
+                    DataTypeKind::Type(data_type_name, _) => {
+                        let Some(inner_type) = isa.types().get(data_type_name) else {
+                            panic!();
+                        };
+                        inner_type
+                    }
+                    _ => data_type,
+                };
+                let DataTypeKind::Enum(data_type_enum) = inner_type.kind() else {
+                    panic!("Data type '{}' is not an enum", data_type.name().0);
                 };
                 let Some((_, variant)) = data_type_enum.get_variant(variant) else {
                     panic!();
                 };
-                variant.param_expr_tokens(isa, data_type.name(), value)
+                variant.param_expr_tokens(isa, inner_type.name(), value)
             }
             OpcodeParamValue::Struct(params) => {
                 let DataTypeKind::Struct(data_type_struct) = data_type.kind() else {
