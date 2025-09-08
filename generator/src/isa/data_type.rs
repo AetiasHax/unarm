@@ -126,6 +126,8 @@ pub enum DataTypeKind {
     Struct(DataTypeStruct),
     #[serde(rename = "type")]
     Type(DataTypeName, DataExpr),
+    #[serde(rename = "custom")]
+    Custom,
 }
 
 impl DataType {
@@ -145,6 +147,7 @@ impl DataType {
             DataTypeKind::Enum(data_type_enum) => data_type_enum.validate(&self.name),
             DataTypeKind::Struct(_) => Ok(()),
             DataTypeKind::Type(_, _) => Ok(()),
+            DataTypeKind::Custom => Ok(()),
         }
     }
 
@@ -158,6 +161,7 @@ impl DataType {
                 Some(data_type_struct.struct_tokens(isa, &self.name))
             }
             DataTypeKind::Type(_, _) => None,
+            DataTypeKind::Custom => None,
         }
     }
 
@@ -173,6 +177,7 @@ impl DataType {
                 Some(data_type_struct.parse_impl_tokens(isa, &self.name))
             }
             DataTypeKind::Type(_, _) => None,
+            DataTypeKind::Custom => None,
         }
     }
 
@@ -194,6 +199,10 @@ impl DataType {
                     panic!();
                 };
                 inner_type.type_tokens(isa)
+            }
+            DataTypeKind::Custom => {
+                let name_ident = self.name.as_pascal_ident();
+                quote!(#name_ident)
             }
         }
     }
@@ -236,6 +245,11 @@ impl DataType {
                     .unwrap_or_else(|| data_expr.as_tokens(Ident::new("value", Span::call_site())));
                 inner_type.parse_expr_tokens(isa, Some(value))
             }
+            DataTypeKind::Custom => {
+                let name_ident = self.name.as_pascal_ident();
+                let value = value.unwrap_or_else(|| quote!(value));
+                quote!(#name_ident::parse(#value))
+            }
         }
     }
 
@@ -252,6 +266,10 @@ impl DataType {
                 let type_ident = data_type_name.as_pascal_ident();
                 quote!(#type_ident::default())
             }
+            DataTypeKind::Custom => {
+                let type_ident = self.name.as_pascal_ident();
+                quote!(#type_ident::default())
+            }
         }
     }
 
@@ -263,6 +281,7 @@ impl DataType {
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_impl_body_tokens()?,
             DataTypeKind::Struct(data_type_struct) => data_type_struct.default_impl_body_tokens(),
             DataTypeKind::Type(_, _) => return None,
+            DataTypeKind::Custom => return None,
         };
         let name_ident = self.name.as_pascal_ident();
         Some(quote! {
@@ -284,6 +303,7 @@ impl DataType {
                 Some(data_type_struct.write_impl_body_tokens(isa))
             }
             DataTypeKind::Type(_, _) => None,
+            DataTypeKind::Custom => None,
         }
     }
 
@@ -295,6 +315,7 @@ impl DataType {
             DataTypeKind::Enum(_) => {}
             DataTypeKind::Struct(_) => {}
             DataTypeKind::Type(_, _) => return None,
+            DataTypeKind::Custom => return None,
         };
         let display_expr = self.write_impl_body_tokens(isa);
         let name_ident = self.name().as_pascal_ident();
@@ -340,6 +361,7 @@ impl DataType {
             DataTypeKind::Enum(_) => &self.name.0,
             DataTypeKind::Struct(_) => &self.name.0,
             DataTypeKind::Type(name, _) => &name.0,
+            DataTypeKind::Custom => &self.name.0,
         };
         let fn_name = format!("write_{}", base_name);
         Ident::new(&fn_name, Span::call_site())
@@ -370,6 +392,7 @@ impl DataType {
             DataTypeKind::Enum(_) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Struct(_) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Type(_, _) => quote!(#value.write(#formatter)?;),
+            DataTypeKind::Custom => quote!(#value.write(#formatter)?;),
         }
     }
 
@@ -458,7 +481,7 @@ impl DataTypeEnum {
 
         quote! {
             impl #name_ident {
-                fn parse(value: u32, pc: u32) -> Self {
+                pub(crate) fn parse(value: u32, pc: u32) -> Self {
                     #fn_body
                 }
             }
@@ -699,7 +722,7 @@ impl DataTypeStruct {
         let record = self.parse_record_tokens(isa);
         quote! {
             impl #name_ident {
-                fn parse(value: u32, pc: u32) -> Self {
+                pub(crate) fn parse(value: u32, pc: u32) -> Self {
                     Self #record
                 }
             }

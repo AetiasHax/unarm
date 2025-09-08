@@ -1,13 +1,15 @@
+#![allow(clippy::eq_op)]
+#![allow(unused_parens)]
 use crate::*;
 impl BranchTarget {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         Self {
             addr: pc.wrapping_add((value)),
         }
     }
 }
 impl BlxTarget {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         if (value & 0xf000000) == 0xb000000 {
             Self::Direct(
                 BranchTarget::parse(
@@ -25,7 +27,7 @@ impl BlxTarget {
     }
 }
 impl Cond {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         match value {
             0x0 => Self::Eq,
             0x1 => Self::Ne,
@@ -47,7 +49,7 @@ impl Cond {
     }
 }
 impl Reg {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         match value {
             0x0 => Self::R0,
             0x1 => Self::R1,
@@ -70,7 +72,7 @@ impl Reg {
     }
 }
 impl ShiftOp {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         match value {
             0x0 => Self::Lsl,
             0x1 => Self::Lsr,
@@ -81,7 +83,7 @@ impl ShiftOp {
     }
 }
 impl Coproc {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         match value {
             0x0 => Self::P0,
             0x1 => Self::P1,
@@ -104,7 +106,7 @@ impl Coproc {
     }
 }
 impl CoReg {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         match value {
             0x0 => Self::C0,
             0x1 => Self::C1,
@@ -127,7 +129,7 @@ impl CoReg {
     }
 }
 impl Op2 {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         if (value & 0x2000000) == 0x2000000 {
             Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1))
         } else if (value & 0x2000010) == 0x10 {
@@ -148,7 +150,7 @@ impl Op2 {
     }
 }
 impl CpsEffect {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         if (value & 0x3) == 0x0 {
             Self::SetMode
         } else if (value & 0x3) == 0x2 {
@@ -161,7 +163,7 @@ impl CpsEffect {
     }
 }
 impl AifFlags {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         Self {
             a: (((value) >> 2) & 0x1) != 0,
             i: (((value) >> 1) & 0x1) != 0,
@@ -170,7 +172,7 @@ impl AifFlags {
     }
 }
 impl AddrLdcStc {
-    fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         if (value & 0x1000000) == 0x1000000 {
             Self::Pre {
                 rn: Reg::parse((((value) >> 16) & 0xf), pc),
@@ -200,6 +202,17 @@ impl AddrLdcStc {
         }
     }
 }
+impl LdmStmMode {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        match value {
+            0x0 => Self::Da,
+            0x1 => Self::Ia,
+            0x2 => Self::Db,
+            0x3 => Self::Ib,
+            _ => panic!(),
+        }
+    }
+}
 impl Default for BranchTarget {
     fn default() -> Self {
         Self { addr: 0 }
@@ -222,6 +235,11 @@ impl Default for AifFlags {
             i: false,
             f: false,
         }
+    }
+}
+impl Default for LdmStmMode {
+    fn default() -> Self {
+        Self::Ia
     }
 }
 pub fn parse_arm(ins: u32, pc: u32) -> Ins {
@@ -251,6 +269,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_ldc2_0(ins as u32, pc)
     } else if (ins & 0xfe000000) == 0xfa000000 {
         parse_arm_blx_0(ins as u32, pc)
+    } else if (ins & 0xe708000) == 0x8500000 {
+        parse_arm_ldm_1(ins as u32, pc)
     } else if (ins & 0xde00000) == 0xa00000 {
         parse_arm_adc_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x800000 {
@@ -261,8 +281,12 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_bic_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x200000 {
         parse_arm_eor_0(ins as u32, pc)
+    } else if (ins & 0xe508000) == 0x8508000 {
+        parse_arm_ldm_2(ins as u32, pc)
     } else if (ins & 0xf000010) == 0xe000000 {
         parse_arm_cdp_0(ins as u32, pc)
+    } else if (ins & 0xe500000) == 0x8100000 {
+        parse_arm_ldm_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xa000000 {
         parse_arm_b_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xb000000 {
@@ -326,6 +350,8 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
         parse_thumb_b_1(ins as u32, pc)
     } else if (ins & 0xf800) == 0x2800 {
         parse_thumb_cmp_0(ins as u32, pc)
+    } else if (ins & 0xf800) == 0xc800 {
+        parse_thumb_ldm_0(ins as u32, pc)
     } else if (ins & 0xf000) == 0xd000 {
         parse_thumb_b_0(ins as u32, pc)
     } else {
@@ -734,4 +760,68 @@ fn parse_arm_ldc2_0(value: u32, pc: u32) -> Ins {
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
     let dest = AddrLdcStc::parse(value, pc);
     Ins::Ldc2 { l, coproc, crd, dest }
+}
+fn parse_arm_ldm_0(value: u32, pc: u32) -> Ins {
+    let mode = LdmStmMode::parse(((value) >> 23) & 0x3, pc);
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let writeback = (((value) >> 21) & 0x1) != 0;
+    let regs = RegList::parse((value) & 0xffff);
+    let user_mode = (0) != 0;
+    Ins::Ldm {
+        mode,
+        cond,
+        rn,
+        writeback,
+        regs,
+        user_mode,
+    }
+}
+fn parse_arm_ldm_1(value: u32, pc: u32) -> Ins {
+    let mode = LdmStmMode::parse(((value) >> 23) & 0x3, pc);
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let writeback = (0) != 0;
+    let regs = RegList::parse((value) & 0x7fff);
+    let user_mode = (1) != 0;
+    Ins::Ldm {
+        mode,
+        cond,
+        rn,
+        writeback,
+        regs,
+        user_mode,
+    }
+}
+fn parse_arm_ldm_2(value: u32, pc: u32) -> Ins {
+    let mode = LdmStmMode::parse(((value) >> 23) & 0x3, pc);
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let writeback = (((value) >> 21) & 0x1) != 0;
+    let regs = RegList::parse((value) & 0xffff);
+    let user_mode = (1) != 0;
+    Ins::Ldm {
+        mode,
+        cond,
+        rn,
+        writeback,
+        regs,
+        user_mode,
+    }
+}
+fn parse_thumb_ldm_0(value: u32, pc: u32) -> Ins {
+    let mode = LdmStmMode::default();
+    let cond = Cond::default();
+    let rn = Reg::parse(((value) >> 8) & 0x7, pc);
+    let writeback = ((!((value) & 0xff) >> (((value) >> 8) & 0x7)) & 1) != 0;
+    let regs = RegList::parse((value) & 0xff);
+    let user_mode = (0) != 0;
+    Ins::Ldm {
+        mode,
+        cond,
+        rn,
+        writeback,
+        regs,
+        user_mode,
+    }
 }

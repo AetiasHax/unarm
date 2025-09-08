@@ -113,4 +113,10 @@ mod tests {
     fn test_eor() {
         assert_asm!(0x4057, "eors r7, r7, r2");
     }
+
+    #[test]
+    fn test_ldm() {
+        assert_asm!(0xc955, "ldm r1!, {r0, r2, r4, r6}");
+        assert_asm!(0xc9aa, "ldm r1, {r1, r3, r5, r7}");
+    }
 }

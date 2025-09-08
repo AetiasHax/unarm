@@ -197,4 +197,19 @@ mod tests {
         assert_asm!(0xfdb32169, "ldc2 p1, c2, [r3, #0x1a4]!");
         assert_asm!(0xfc932169, "ldc2 p1, c2, [r3], {0x69}");
     }
+
+    #[test]
+    fn test_ldm() {
+        assert_asm!(0xe831aaaa, "ldmda r1!, {r1, r3, r5, r7, r9, r11, sp, pc}");
+        assert_asm!(0xb8b25555, "ldmlt r2!, {r0, r2, r4, r6, r8, r10, r12, lr}");
+        assert_asm!(0xd913cccc, "ldmdble r3, {r2, r3, r6, r7, r10, r11, lr, pc}");
+        assert_asm!(0xc9943333, "ldmibgt r4, {r0, r1, r4, r5, r8, r9, r12, sp}");
+        assert_asm!(0xe8550003, "ldmda r5, {r0, r1}^");
+        assert_asm!(0xe8568003, "ldmda r6, {r0, r1, pc}^");
+        assert_asm!(0xe8778003, "ldmda r7!, {r0, r1, pc}^");
+        assert_asm!(
+            0xe9f1ffff,
+            "ldmib r1!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, sp, lr, pc}^"
+        );
+    }
 }

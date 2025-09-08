@@ -25,6 +25,12 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
+    fn write_user_mode(&mut self, user_mode: bool) -> core::fmt::Result {
+        if user_mode {
+            self.write_str("^")?;
+        }
+        Ok(())
+    }
     fn write_uimm(&mut self, uimm: u32) -> core::fmt::Result {
         write!(self, "{:#x}", uimm)?;
         Ok(())
@@ -53,6 +59,10 @@ pub trait Write: core::fmt::Write {
         reg.write(self)?;
         Ok(())
     }
+    fn write_reg_list(&mut self, reg_list: RegList) -> core::fmt::Result {
+        reg_list.write(self)?;
+        Ok(())
+    }
     fn write_shift_op(&mut self, shift_op: ShiftOp) -> core::fmt::Result {
         shift_op.write(self)?;
         Ok(())
@@ -79,6 +89,10 @@ pub trait Write: core::fmt::Write {
     }
     fn write_addr_ldc_stc(&mut self, addr_ldc_stc: AddrLdcStc) -> core::fmt::Result {
         addr_ldc_stc.write(self)?;
+        Ok(())
+    }
+    fn write_ldm_stm_mode(&mut self, ldm_stm_mode: LdmStmMode) -> core::fmt::Result {
+        ldm_stm_mode.write(self)?;
         Ok(())
     }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
@@ -548,6 +562,31 @@ impl AddrLdcStc {
         Ok(())
     }
 }
+impl LdmStmMode {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let options = formatter.options();
+        match self {
+            Self::Da => {
+                formatter.write_str("da")?;
+            }
+            Self::Ia => {
+                if options.ual {} else {
+                    formatter.write_str("ia")?;
+                }
+            }
+            Self::Db => {
+                formatter.write_str("db")?;
+            }
+            Self::Ib => {
+                formatter.write_str("ib")?;
+            }
+        }
+        Ok(())
+    }
+}
 impl Ins {
     pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -677,6 +716,17 @@ impl Ins {
             Ins::Ldc2 { l, coproc, crd, dest } => {
                 formatter.write_str("ldc2")?;
                 formatter.write_l(*l)?;
+            }
+            Ins::Ldm { mode, cond, rn, writeback, regs, user_mode } => {
+                if options.ual {
+                    formatter.write_str("ldm")?;
+                    formatter.write_ldm_stm_mode(*mode)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldm")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_ldm_stm_mode(*mode)?;
+                }
             }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;
@@ -838,6 +888,14 @@ impl Ins {
                 formatter.write_co_reg(*crd)?;
                 formatter.write_separator()?;
                 formatter.write_addr_ldc_stc(*dest)?;
+            }
+            Ins::Ldm { mode, cond, rn, writeback, regs, user_mode } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_wb(*writeback)?;
+                formatter.write_separator()?;
+                formatter.write_reg_list(*regs)?;
+                formatter.write_user_mode(*user_mode)?;
             }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;

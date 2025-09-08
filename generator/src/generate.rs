@@ -14,6 +14,8 @@ impl Isa {
         let ins_enum = self.opcodes().ins_enum_tokens(self);
 
         quote! {
+            use crate::*;
+
             #options_struct
             #version_enum
             #internal_option_types
@@ -32,6 +34,9 @@ impl Isa {
         let opcode_parse_fns = self.opcodes().parse_fns_tokens(self);
 
         quote! {
+            #![allow(clippy::eq_op)]
+            #![allow(unused_parens)]
+
             use crate::*;
 
             #data_parse_impls

@@ -44,6 +44,9 @@ types:
 - name: wb
   kind: !bool
     write: "!"
+- name: user_mode
+  kind: !bool
+    write: "^"
 - name: uimm
   kind: !uint bits(0..32)
 - name: simm
@@ -221,6 +224,8 @@ types:
         name: lr
       1111:
         name: pc
+- name: reg_list
+  kind: !custom
 - name: shift_op
   kind: !enum
     bits: 0..2
@@ -424,6 +429,27 @@ types:
               kind: !type [reg, bits(16..20)]
             - name: option
               kind: !uint bits(0..8)
+- name: ldm_stm_mode
+  kind: !enum
+    bits: 0..2
+    default: ia
+    variants:
+      00:
+        name: da
+        description: Decrement After
+      01:
+        name: ia
+        description: Increment After
+        format: !if
+          cond: option(ual)
+          then: !fmt ""
+          else: !fmt ia
+      10:
+        name: db
+        description: Decrement Before
+      11:
+        name: ib
+        description: Increment Before
 
 opcodes:
 - mnemonic: adc
@@ -908,3 +934,49 @@ opcodes:
       coproc: !bits 8..12
       crd: !bits 12..16
       dest: !bits 0..32
+
+- mnemonic: ldm
+  description: Load Multiple
+  params: { mode: ldm_stm_mode, cond: cond, rn: reg, writeback: wb, regs: reg_list, user_mode: user_mode }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldm(mode)(cond)
+      else: !fmt ldm(cond)(mode)
+    params: !fmt (rn)(writeback), (regs)(user_mode)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..16
+      user_mode: !const 0
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_x101_xxxx_0xxx_xxxx_xxxx_xxxx
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !const 0
+      regs: !bits 0..15
+      user_mode: !const 1
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_x1x1_xxxx_1xxx_xxxx_xxxx_xxxx
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..16
+      user_mode: !const 1
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1100_1xxx_xxxx_xxxx
+    params:
+      rn: !bits 8..11
+      writeback: !expr (!bits(0..8) >> bits(8..11)) & 1
+      regs: !bits 0..8
+      user_mode: !const 0

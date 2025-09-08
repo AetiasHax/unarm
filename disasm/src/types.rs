@@ -1,3 +1,4 @@
+use crate::*;
 pub struct Options {
     ///The version of ARM to use
     pub version: Version,
@@ -177,6 +178,17 @@ pub enum AddrLdcStc {
     ///Unindexed
     Unidx { rn: Reg, option: u32 },
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum LdmStmMode {
+    ///Decrement After
+    Da,
+    ///Increment After
+    Ia,
+    ///Decrement Before
+    Db,
+    ///Increment Before
+    Ib,
+}
 pub enum Ins {
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -228,5 +240,14 @@ pub enum Ins {
     Ldc { l: bool, cond: Cond, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
     ///Load Coprocessor (extended)
     Ldc2 { l: bool, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
+    ///Load Multiple
+    Ldm {
+        mode: LdmStmMode,
+        cond: Cond,
+        rn: Reg,
+        writeback: bool,
+        regs: RegList,
+        user_mode: bool,
+    },
     Illegal,
 }
