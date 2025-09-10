@@ -516,7 +516,59 @@ types:
               kind: !type [shift_op, bits(5..7)]
             - name: imm
               kind: !uint if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }
-            
+- name: addr_misc_load
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_0001_x1xx_xxxx_xxxx_xxxx_1xx1_xxxx:
+        name: pre
+        description: Pre-indexed
+        data:
+          name: addr_misc_load_pre
+          kind: !struct
+            format: !fmt "[(rn), (offset)](writeback)"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [misc_load_offset, bits(0..32)]
+            - name: writeback
+              kind: !type [wb, bit(21)]
+      xxxx_0000_x10x_xxxx_xxxx_xxxx_1xx1_xxxx:
+        name: post
+        desctiption: Post-indexed
+        data:
+          name: addr_misc_load_post
+          kind: !struct
+            format: !fmt "[(rn)], (offset)"
+            fields:
+            - name: rn
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [misc_load_offset, bits(0..32)]
+- name: misc_load_offset
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_000x_x1xx_xxxx_xxxx_xxxx_1xx1_xxxx:
+        name: imm
+        description: Immediate offset
+        format: !fmt "#(offset)"
+        data: 
+          name: offset
+          kind: !int ((bits(8..12) << 4) | bits(0..4)).negate_if(bit(23) == 0)
+      xxxx_000x_x0xx_xxxx_xxxx_0000_1xx1_xxxx:
+        name: reg
+        description: Register offset
+        data:
+          name: misc_load_offset_reg
+          kind: !struct
+            format: !fmt (subtract)(rm) 
+            fields:
+            - name: rm
+              kind: !type [reg, bits(0..4)]
+            - name: subtract
+              kind: !type [subtract, bit(23) ^ 1]
 
 opcodes:
 - mnemonic: adc
@@ -1120,4 +1172,22 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
+      addr: !bits 0..32
+
+- mnemonic: ldrd
+  description: Load Register Dual
+  params: { cond: cond, rd: reg, rd2: reg, addr: addr_misc_load }
+  format:
+    opcode: !fmt ldrd(cond)
+    params: !if
+      cond: option(ual)
+      then: !fmt (rd), (rd2), (addr)
+      else: !fmt (rd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_000x_xxx0_xxxx_xxx0_xxxx_1101_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
       addr: !bits 0..32
