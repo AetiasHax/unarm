@@ -90,7 +90,7 @@ fn generate_args_enum(isa_args: &IsaArgs, max_args: usize) -> Result<TokenStream
     let max_args = Literal::usize_suffixed(max_args);
     let args_enum = quote! {
         pub type Arguments = [Argument; #max_args];
-        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Debug)]
         pub enum Argument {
             #[default]
             None,
@@ -153,7 +153,7 @@ fn generate_enum(values: &[EnumValue], ident: Ident) -> TokenStream {
     };
 
     quote! {
-        #[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
         #[repr(u8)]
         pub enum #ident {
             #[default]
@@ -198,7 +198,7 @@ fn generate_struct(
         })
         .collect::<Result<Vec<_>>>()?;
     Ok(quote! {
-        #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Debug)]
         pub struct #ident {
             #(#members),*
         }
