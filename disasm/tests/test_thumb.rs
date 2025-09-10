@@ -127,4 +127,10 @@ mod tests {
         assert_asm!(0x4f42, "ldr r7, [pc, #0x108]");
         assert_asm!(0x9f42, "ldr r7, [sp, #0x108]");
     }
+
+    #[test]
+    fn test_ldrb() {
+        assert_asm!(0x7c22, "ldrb r2, [r4, #0x10]");
+        assert_asm!(0x5c22, "ldrb r2, [r4, r0]");
+    }
 }

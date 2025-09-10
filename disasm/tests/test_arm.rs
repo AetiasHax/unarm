@@ -225,4 +225,17 @@ mod tests {
         assert_asm!(0xe6112003, "ldr r2, [r1], -r3");
         assert_asm!(0xe6912023, "ldr r2, [r1], r3, lsr #0x20");
     }
+
+    #[test]
+    fn test_ldrb() {
+        assert_asm!(0xe5d12fff, "ldrb r2, [r1, #0xfff]");
+        assert_asm!(0xe7512003, "ldrb r2, [r1, -r3]");
+        assert_asm!(0xe7d120e3, "ldrb r2, [r1, r3, ror #0x1]");
+        assert_asm!(0xe5712fff, "ldrb r2, [r1, #-0xfff]!");
+        assert_asm!(0xe7f12003, "ldrb r2, [r1, r3]!");
+        assert_asm!(0xe7712063, "ldrb r2, [r1, -r3, rrx]!");
+        assert_asm!(0xe4d12fff, "ldrb r2, [r1], #0xfff");
+        assert_asm!(0xe6512003, "ldrb r2, [r1], -r3");
+        assert_asm!(0xe6d12023, "ldrb r2, [r1], r3, lsr #0x20");
+    }
 }

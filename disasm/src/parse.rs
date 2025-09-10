@@ -315,6 +315,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_blx_0(ins as u32, pc)
     } else if (ins & 0xe708000) == 0x8500000 {
         parse_arm_ldm_1(ins as u32, pc)
+    } else if (ins & 0xf700000) == 0x4700000 {
+        parse_arm_ldrbt_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0xa00000 {
         parse_arm_adc_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x800000 {
@@ -339,6 +341,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Ins {
         parse_arm_ldc_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4100000 {
         parse_arm_ldr_0(ins as u32, pc)
+    } else if (ins & 0xc500000) == 0x4500000 {
+        parse_arm_ldrb_0(ins as u32, pc)
     } else {
         Ins::Illegal
     }
@@ -388,6 +392,8 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
         parse_thumb_add_2(ins as u32, pc)
     } else if (ins & 0xfe00) == 0x5800 {
         parse_thumb_ldr_3(ins as u32, pc)
+    } else if (ins & 0xfe00) == 0x5c00 {
+        parse_thumb_ldrb_1(ins as u32, pc)
     } else if (ins & 0xf800) == 0x3000 {
         parse_thumb_add_1(ins as u32, pc)
     } else if (ins & 0xf800) == 0xa800 {
@@ -406,6 +412,8 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
         parse_thumb_ldr_1(ins as u32, pc)
     } else if (ins & 0xf800) == 0x4800 {
         parse_thumb_ldr_2(ins as u32, pc)
+    } else if (ins & 0xf800) == 0x7800 {
+        parse_thumb_ldrb_0(ins as u32, pc)
     } else if (ins & 0xf000) == 0xd000 {
         parse_thumb_b_0(ins as u32, pc)
     } else {
@@ -929,4 +937,41 @@ fn parse_thumb_ldr_3(value: u32, pc: u32) -> Ins {
         writeback: false,
     };
     Ins::Ldr { cond, rd, addr }
+}
+fn parse_arm_ldrb_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let addr = AddrLdrStr::parse(value, pc);
+    Ins::Ldrb { cond, rd, addr }
+}
+fn parse_thumb_ldrb_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let rd = Reg::parse((value) & 0x7, pc);
+    let addr = AddrLdrStr::Pre {
+        rn: Reg::parse(((value) >> 3) & 0x7, pc),
+        offset: LdrStrOffset::Imm(((((value) >> 6) & 0x1f)) as i32),
+        writeback: false,
+    };
+    Ins::Ldrb { cond, rd, addr }
+}
+fn parse_thumb_ldrb_1(value: u32, pc: u32) -> Ins {
+    let cond = Cond::default();
+    let rd = Reg::parse((value) & 0x7, pc);
+    let addr = AddrLdrStr::Pre {
+        rn: Reg::parse(((value) >> 3) & 0x7, pc),
+        offset: LdrStrOffset::Reg {
+            subtract: false,
+            rm: Reg::parse(((value) >> 6) & 0x7, pc),
+            shift_op: ShiftOp::default(),
+            imm: 0,
+        },
+        writeback: false,
+    };
+    Ins::Ldrb { cond, rd, addr }
+}
+fn parse_arm_ldrbt_0(value: u32, pc: u32) -> Ins {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let addr = AddrLdrStr::parse(value, pc);
+    Ins::Ldrbt { cond, rd, addr }
 }

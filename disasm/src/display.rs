@@ -810,6 +810,14 @@ impl Ins {
                 formatter.write_str("ldr")?;
                 formatter.write_cond(*cond)?;
             }
+            Ins::Ldrb { cond, rd, addr } => {
+                formatter.write_str("ldrb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Ldrbt { cond, rd, addr } => {
+                formatter.write_str("ldrbt")?;
+                formatter.write_cond(*cond)?;
+            }
             Ins::Illegal => {
                 formatter.write_str("<illegal>")?;
             }
@@ -980,6 +988,18 @@ impl Ins {
                 formatter.write_user_mode(*user_mode)?;
             }
             Ins::Ldr { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Ldrb { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Ldrbt { cond, rd, addr } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;

@@ -265,5 +265,9 @@ pub enum Ins {
     },
     ///Load Register
     Ldr { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Load Register Byte
+    Ldrb { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Load Register Byte with Translation
+    Ldrbt { cond: Cond, rd: Reg, addr: AddrLdrStr },
     Illegal,
 }

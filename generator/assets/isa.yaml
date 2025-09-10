@@ -1082,3 +1082,42 @@ opcodes:
     params:
       rd: !bits 0..3
       addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrb
+  description: Load Register Byte
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !fmt ldrb(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01xx_x1x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0111_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11)] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_110x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrbt
+  description: Load Register Byte with Translation
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !fmt ldrbt(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0100_x111_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
