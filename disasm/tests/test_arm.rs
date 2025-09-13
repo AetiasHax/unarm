@@ -340,4 +340,40 @@ mod tests {
         assert_asm!(0xe1a02003, "mov r2, r3");
         assert_asm!(0xe3a05e23, "mov r5, #0x230");
     }
+
+    #[test]
+    fn test_mrc() {
+        assert_asm!(0xee3234b6, "mrc p4, #0x1, r3, c2, c6, #0x5");
+        assert_asm!(0x3ed54351, "mrclo p3, #0x6, r4, c5, c1, #0x2");
+    }
+
+    #[test]
+    fn test_mrc2() {
+        assert_asm!(0xfe3234b6, "mrc2 p4, #0x1, r3, c2, c6, #0x5");
+        assert_asm!(0xfed54351, "mrc2 p3, #0x6, r4, c5, c1, #0x2");
+    }
+
+    #[test]
+    fn test_mrrc() {
+        assert_asm!(0xec512345, "mrrc p3, #0x4, r2, r1, c5");
+    }
+
+    #[test]
+    fn test_mrrc2() {
+        assert_asm!(0xfc512345, "mrrc2 p3, #0x4, r2, r1, c5");
+    }
+
+    #[test]
+    fn test_mrs() {
+        assert_asm!(0xe10f7000, "mrs r7, cpsr");
+        assert_asm!(0xe14f7000, "mrs r7, spsr");
+    }
+
+    #[test]
+    fn test_msr() {
+        assert_asm!(0xe36cf042, "msr spsr_fs, #0x42");
+        assert_asm!(0xe323f042, "msr cpsr_xc, #0x42");
+        assert_asm!(0xe165f001, "msr spsr_sc, r1");
+        assert_asm!(0xe12af001, "msr cpsr_fx, r1");
+    }
 }

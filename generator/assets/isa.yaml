@@ -229,6 +229,52 @@ types:
         name: pc
 - name: reg_list
   kind: !custom
+- name: status_reg
+  kind: !enum
+    bits: 0..1
+    variants:
+      0:
+        name: cpsr
+        description: Current program status register
+      1:
+        name: spsr
+        description: Saved program status register
+- name: status_fields
+  kind: !struct
+    format: !fmt (reg)_(f)(x)(s)(c)
+    fields:
+    - name: reg
+      kind: !type [status_reg, bit(22)]
+    - name: c
+      kind: !bool
+        bits: 16
+    - name: x
+      kind: !bool
+        bits: 17
+    - name: s
+      kind: !bool
+        bits: 18
+    - name: f
+      kind: !bool
+        bits: 19
+- name: msr_op2
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: imm
+        description: Immediate
+        format: !fmt "#(imm)"
+        data:
+          name: imm
+          kind: !uint bits(0..8).rotate_right(bits(8..12))
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0000_xxxx:
+        name: reg
+        description: Register
+        illegal: ins() & 0xf00 != 0
+        data:
+          name: reg
+          kind: !type [reg, bits(0..4)]
 - name: shift_op
   kind: !enum
     bits: 0..2
@@ -1561,14 +1607,6 @@ opcodes:
       else: !fmt mov(cond)(s)
     params: !fmt (rd), (op2)
   arm:
-  # - version: [v4*, v5t*, v6*]
-  #   pattern: xxxx_00x1_101x_xxxx_xxxx_xxxx_xxxx_xxxx
-  #   illegal: ins() & 0xf0000 != 0
-  #   params:
-  #     s: !bits 20
-  #     cond: !bits 28..32
-  #     rd: !bits 12..16
-  #     op2: !bits 0..32
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0011_101x_xxxx_xxxx_xxxx_xxxx_xxxx
     illegal: ins() & 0xf0000 != 0
@@ -1604,3 +1642,101 @@ opcodes:
       s: !const 1
       rd: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: mrc
+  description: Move to ARM Register from Coprocessor
+  params: { cond: cond, coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mrc(cond)
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1110_xxx1_xxxx_xxxx_xxxx_xxx1_xxxx
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mrc2
+  description: Move to ARM Register from Coprocessor (extended)
+  params: { coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mrc2
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_1110_xxx1_xxxx_xxxx_xxxx_xxx1_xxxx
+    params:
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mrrc
+  description: Move to two ARM Registers from Coprocessor
+  params: { cond: cond, coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mrrc(cond)
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc: !bits 4..8
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mrrc2
+  description: Move to two ARM Registers from Coprocessor (extended)
+  params: { coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mrrc2
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v5te*, v6*]
+    pattern: 1111_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      coproc: !bits 8..12
+      opc: !bits 4..8
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mrs
+  description: Move to Register from Status register
+  params: { cond: cond, rd: reg, status_reg: status_reg }
+  format:
+    opcode: !fmt mrs(cond)
+    params: !fmt (rd), (status_reg)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_0x00_xxxx_xxxx_xx0x_0000_xxxx
+    illegal: ins() & 0x000f0d0f != 0x000f0000
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      status_reg: !bits 22
+
+- mnemonic: msr
+  description: Move to Status register
+  params: { cond: cond, status_fields: status_fields, op2: msr_op2 }
+  format:
+    opcode: !fmt msr(cond)
+    params: !fmt (status_fields), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0x10_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xf000 != 0xf000
+    params:
+      cond: !bits 28..32
+      status_fields: !bits 0..32
+      op2: !bits 0..32

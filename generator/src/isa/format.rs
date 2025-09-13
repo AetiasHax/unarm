@@ -161,19 +161,17 @@ impl FromStr for FragmentsFormat {
         let mut token = String::new();
         let mut parsing_param = false;
 
-        fn push_str_fragments(fragments: &mut Vec<FormatFragment>, mut s: &str) {
-            while !s.is_empty() {
-                let (fragment, rest) = {
-                    if let Some(rest) = s.strip_prefix(" ") {
-                        (FormatFragment::Space, rest)
-                    } else if let Some(rest) = s.strip_prefix(", ") {
-                        (FormatFragment::Separator, rest)
-                    } else {
-                        (FormatFragment::Text(s.to_string()), "")
-                    }
-                };
-                fragments.push(fragment);
-                s = rest;
+        fn push_str_fragments(fragments: &mut Vec<FormatFragment>, s: &str) {
+            if let Some((left, right)) = s.split_once(", ") {
+                push_str_fragments(fragments, left);
+                fragments.push(FormatFragment::Separator);
+                push_str_fragments(fragments, right);
+            } else if let Some((left, right)) = s.split_once(" ") {
+                push_str_fragments(fragments, left);
+                fragments.push(FormatFragment::Space);
+                push_str_fragments(fragments, right);
+            } else if !s.is_empty() {
+                fragments.push(FormatFragment::Text(s.to_string()))
             }
         }
 

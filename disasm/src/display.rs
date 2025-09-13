@@ -1,3 +1,4 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(clippy::collapsible_else_if)]
 #![allow(unused_variables)]
 use crate::*;
@@ -69,6 +70,18 @@ pub trait Write: core::fmt::Write {
     }
     fn write_reg_list(&mut self, reg_list: RegList) -> core::fmt::Result {
         reg_list.write(self)?;
+        Ok(())
+    }
+    fn write_status_reg(&mut self, status_reg: StatusReg) -> core::fmt::Result {
+        status_reg.write(self)?;
+        Ok(())
+    }
+    fn write_status_fields(&mut self, status_fields: StatusFields) -> core::fmt::Result {
+        status_fields.write(self)?;
+        Ok(())
+    }
+    fn write_msr_op2(&mut self, msr_op2: MsrOp2) -> core::fmt::Result {
+        msr_op2.write(self)?;
         Ok(())
     }
     fn write_shift_op(&mut self, shift_op: ShiftOp) -> core::fmt::Result {
@@ -351,6 +364,62 @@ impl Reg {
         Ok(())
     }
 }
+impl StatusReg {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        match self {
+            Self::Cpsr => {
+                formatter.write_str("cpsr")?;
+            }
+            Self::Spsr => {
+                formatter.write_str("spsr")?;
+            }
+        }
+        Ok(())
+    }
+}
+impl StatusFields {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let Self { reg, c, x, s, f } = self;
+        formatter.write_status_reg(*reg)?;
+        formatter.write_str("_")?;
+        if *f {
+            formatter.write_str("f")?;
+        }
+        if *x {
+            formatter.write_str("x")?;
+        }
+        if *s {
+            formatter.write_str("s")?;
+        }
+        if *c {
+            formatter.write_str("c")?;
+        }
+        Ok(())
+    }
+}
+impl MsrOp2 {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        match self {
+            Self::Imm(imm) => {
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+            }
+            Self::Reg(reg) => {
+                formatter.write_reg(*reg)?;
+            }
+        }
+        Ok(())
+    }
+}
 impl ShiftOp {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -598,13 +667,17 @@ impl AddrLdcStc {
             Self::Post { rn, offset } => {
                 formatter.write_str("[")?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("], #")?;
+                formatter.write_str("]")?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
                 formatter.write_simm(*offset)?;
             }
             Self::Unidx { rn, option } => {
                 formatter.write_str("[")?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("], {")?;
+                formatter.write_str("]")?;
+                formatter.write_separator()?;
+                formatter.write_str("{")?;
                 formatter.write_uimm(*option)?;
                 formatter.write_str("}")?;
             }
@@ -665,7 +738,8 @@ impl AddrLdrStrPost {
         let Self { rn, offset } = self;
         formatter.write_str("[")?;
         formatter.write_reg(*rn)?;
-        formatter.write_str("], ")?;
+        formatter.write_str("]")?;
+        formatter.write_separator()?;
         formatter.write_ldr_str_offset(*offset)?;
         Ok(())
     }
@@ -722,7 +796,8 @@ impl AddrMiscLoad {
             Self::Post { rn, offset } => {
                 formatter.write_str("[")?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("], ")?;
+                formatter.write_str("]")?;
+                formatter.write_separator()?;
                 formatter.write_misc_load_offset(*offset)?;
             }
         }
@@ -985,6 +1060,28 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                     formatter.write_s(*s)?;
                 }
+            }
+            Ins::Mrc { cond, coproc, opc1, rd, crn, crm, opc2 } => {
+                formatter.write_str("mrc")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Mrc2 { coproc, opc1, rd, crn, crm, opc2 } => {
+                formatter.write_str("mrc2")?;
+            }
+            Ins::Mrrc { cond, coproc, opc, rd, rd2, crm } => {
+                formatter.write_str("mrrc")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Mrrc2 { coproc, opc, rd, rd2, crm } => {
+                formatter.write_str("mrrc2")?;
+            }
+            Ins::Mrs { cond, rd, status_reg } => {
+                formatter.write_str("mrs")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Msr { cond, status_fields, op2 } => {
+                formatter.write_str("msr")?;
+                formatter.write_cond(*cond)?;
             }
         }
         Ok(())
@@ -1338,6 +1435,76 @@ impl Ins {
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
+            }
+            Ins::Mrc { cond, coproc, opc1, rd, crn, crm, opc2 } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc1)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crn)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crm)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc2)?;
+            }
+            Ins::Mrc2 { coproc, opc1, rd, crn, crm, opc2 } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc1)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crn)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crm)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc2)?;
+            }
+            Ins::Mrrc { cond, coproc, opc, rd, rd2, crm } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd2)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crm)?;
+            }
+            Ins::Mrrc2 { coproc, opc, rd, rd2, crm } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*opc)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd2)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crm)?;
+            }
+            Ins::Mrs { cond, rd, status_reg } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_status_reg(*status_reg)?;
+            }
+            Ins::Msr { cond, status_fields, op2 } => {
+                formatter.write_space()?;
+                formatter.write_status_fields(*status_fields)?;
+                formatter.write_separator()?;
+                formatter.write_msr_op2(*op2)?;
             }
         }
         Ok(())

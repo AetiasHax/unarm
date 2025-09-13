@@ -1,3 +1,4 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
 use crate::*;
 pub struct Options {
     ///The version of ARM to use
@@ -95,6 +96,28 @@ pub enum Reg {
     Sp,
     Lr,
     Pc,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum StatusReg {
+    ///Current program status register
+    Cpsr,
+    ///Saved program status register
+    Spsr,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct StatusFields {
+    pub reg: StatusReg,
+    pub c: bool,
+    pub x: bool,
+    pub s: bool,
+    pub f: bool,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum MsrOp2 {
+    ///Immediate
+    Imm(u32),
+    ///Register
+    Reg(Reg),
 }
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum ShiftOp {
@@ -338,4 +361,24 @@ pub enum Ins {
     Mla { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
     ///Move
     Mov { s: bool, cond: Cond, rd: Reg, op2: Op2 },
+    ///Move to ARM Register from Coprocessor
+    Mrc {
+        cond: Cond,
+        coproc: Coproc,
+        opc1: u32,
+        rd: Reg,
+        crn: CoReg,
+        crm: CoReg,
+        opc2: u32,
+    },
+    ///Move to ARM Register from Coprocessor (extended)
+    Mrc2 { coproc: Coproc, opc1: u32, rd: Reg, crn: CoReg, crm: CoReg, opc2: u32 },
+    ///Move to two ARM Registers from Coprocessor
+    Mrrc { cond: Cond, coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
+    ///Move to two ARM Registers from Coprocessor (extended)
+    Mrrc2 { coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
+    ///Move to Register from Status register
+    Mrs { cond: Cond, rd: Reg, status_reg: StatusReg },
+    ///Move to Status register
+    Msr { cond: Cond, status_fields: StatusFields, op2: MsrOp2 },
 }

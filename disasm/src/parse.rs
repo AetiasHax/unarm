@@ -1,3 +1,4 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(clippy::eq_op)]
 #![allow(clippy::double_parens)]
 #![allow(clippy::unnecessary_cast)]
@@ -72,6 +73,40 @@ impl Reg {
             0xe => Self::Lr,
             0xf => Self::Pc,
             _ => panic!(),
+        }
+    }
+}
+impl StatusReg {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        match value {
+            0x0 => Self::Cpsr,
+            0x1 => Self::Spsr,
+            _ => panic!(),
+        }
+    }
+}
+impl StatusFields {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
+            reg: StatusReg::parse((((value) >> 22) & 0x1), pc),
+            c: (((value) >> 16) & 0x1) != 0,
+            x: (((value) >> 17) & 0x1) != 0,
+            s: (((value) >> 18) & 0x1) != 0,
+            f: (((value) >> 19) & 0x1) != 0,
+        }
+    }
+}
+impl MsrOp2 {
+    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+        if (value & 0x2000000) == 0x2000000 {
+            Some(Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf))))
+        } else if (value & 0x20000f0) == 0x0 {
+            if value & 0xf00 != 0 {
+                return None;
+            }
+            Some(Self::Reg(Reg::parse(((value) & 0xf), pc)))
+        } else {
+            panic!();
         }
     }
 }
@@ -372,6 +407,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_lsl_0(ins as u32, pc)
     } else if (ins & 0xfef0060) == 0x1a00020 {
         parse_arm_lsr_0(ins as u32, pc)
+    } else if (ins & 0xfb002f0) == 0x1000000 {
+        parse_arm_mrs_0(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1200030 {
         parse_arm_blx_1(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1200010 {
@@ -388,10 +425,14 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_ldrexh_0(ins as u32, pc)
     } else if (ins & 0xfff00000) == 0xfc400000 {
         parse_arm_mcrr2_0(ins as u32, pc)
+    } else if (ins & 0xfff00000) == 0xfc500000 {
+        parse_arm_mrrc2_0(ins as u32, pc)
     } else if (ins & 0xfe000f0) == 0x200090 {
         parse_arm_mla_0(ins as u32, pc)
     } else if (ins & 0xff100010) == 0xfe000010 {
         parse_arm_mcr2_0(ins as u32, pc)
+    } else if (ins & 0xff100010) == 0xfe100010 {
+        parse_arm_mrc2_0(ins as u32, pc)
     } else if (ins & 0xff000010) == 0xfe000000 {
         parse_arm_cdp2_0(ins as u32, pc)
     } else if (ins & 0xfe100000) == 0xfc100000 {
@@ -406,18 +447,20 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_ldrsh_0(ins as u32, pc)
     } else if (ins & 0xff00000) == 0xc400000 {
         parse_arm_mcrr_0(ins as u32, pc)
+    } else if (ins & 0xff00000) == 0xc500000 {
+        parse_arm_mrrc_0(ins as u32, pc)
     } else if (ins & 0xe708000) == 0x8500000 {
         parse_arm_ldm_1(ins as u32, pc)
-    } else if (ins & 0xfe000000) == 0xfa000000 {
-        parse_arm_blx_0(ins as u32, pc)
-    } else if (ins & 0xdf00000) == 0x1700000 {
-        parse_arm_cmn_0(ins as u32, pc)
     } else if (ins & 0xdf00000) == 0x1500000 {
         parse_arm_cmp_0(ins as u32, pc)
     } else if (ins & 0xfe00000) == 0x3a00000 {
         parse_arm_mov_0(ins as u32, pc)
     } else if (ins & 0xf700000) == 0x4700000 {
         parse_arm_ldrbt_0(ins as u32, pc)
+    } else if (ins & 0xfe000000) == 0xfa000000 {
+        parse_arm_blx_0(ins as u32, pc)
+    } else if (ins & 0xdf00000) == 0x1700000 {
+        parse_arm_cmn_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x800000 {
         parse_arm_add_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1c00000 {
@@ -434,20 +477,24 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_adc_0(ins as u32, pc)
     } else if (ins & 0xe508000) == 0x8508000 {
         parse_arm_ldm_2(ins as u32, pc)
+    } else if (ins & 0xf100010) == 0xe100010 {
+        parse_arm_mrc_0(ins as u32, pc)
+    } else if (ins & 0xdb00000) == 0x1200000 {
+        parse_arm_msr_0(ins as u32, pc)
     } else if (ins & 0xf000010) == 0xe000000 {
         parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xe500000) == 0x8100000 {
         parse_arm_ldm_0(ins as u32, pc)
-    } else if (ins & 0xf000000) == 0xb000000 {
-        parse_arm_bl_0(ins as u32, pc)
-    } else if (ins & 0xf000000) == 0xa000000 {
-        parse_arm_b_0(ins as u32, pc)
     } else if (ins & 0xe100000) == 0xc100000 {
         parse_arm_ldc_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4100000 {
         parse_arm_ldr_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4500000 {
         parse_arm_ldrb_0(ins as u32, pc)
+    } else if (ins & 0xf000000) == 0xb000000 {
+        parse_arm_bl_0(ins as u32, pc)
+    } else if (ins & 0xf000000) == 0xa000000 {
+        parse_arm_b_0(ins as u32, pc)
     } else {
         None
     }
@@ -1467,4 +1514,90 @@ fn parse_thumb_mov_2(value: u32, pc: u32) -> Option<Ins> {
         imm: 0,
     };
     Some(Ins::Mov { s, cond, rd, op2 })
+}
+fn parse_arm_mrc_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let opc1 = ((value) >> 21) & 0x7;
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let crn = CoReg::parse(((value) >> 16) & 0xf, pc);
+    let crm = CoReg::parse((value) & 0xf, pc);
+    let opc2 = ((value) >> 5) & 0x7;
+    Some(Ins::Mrc {
+        cond,
+        coproc,
+        opc1,
+        rd,
+        crn,
+        crm,
+        opc2,
+    })
+}
+fn parse_arm_mrc2_0(value: u32, pc: u32) -> Option<Ins> {
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let opc1 = ((value) >> 21) & 0x7;
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let crn = CoReg::parse(((value) >> 16) & 0xf, pc);
+    let crm = CoReg::parse((value) & 0xf, pc);
+    let opc2 = ((value) >> 5) & 0x7;
+    Some(Ins::Mrc2 {
+        coproc,
+        opc1,
+        rd,
+        crn,
+        crm,
+        opc2,
+    })
+}
+fn parse_arm_mrrc_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let opc = ((value) >> 4) & 0xf;
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rd2 = Reg::parse(((value) >> 16) & 0xf, pc);
+    let crm = CoReg::parse((value) & 0xf, pc);
+    Some(Ins::Mrrc {
+        cond,
+        coproc,
+        opc,
+        rd,
+        rd2,
+        crm,
+    })
+}
+fn parse_arm_mrrc2_0(value: u32, pc: u32) -> Option<Ins> {
+    let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
+    let opc = ((value) >> 4) & 0xf;
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rd2 = Reg::parse(((value) >> 16) & 0xf, pc);
+    let crm = CoReg::parse((value) & 0xf, pc);
+    Some(Ins::Mrrc2 {
+        coproc,
+        opc,
+        rd,
+        rd2,
+        crm,
+    })
+}
+fn parse_arm_mrs_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0x000f0d0f != 0x000f0000 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let status_reg = StatusReg::parse(((value) >> 22) & 0x1, pc);
+    Some(Ins::Mrs { cond, rd, status_reg })
+}
+fn parse_arm_msr_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf000 != 0xf000 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let status_fields = StatusFields::parse(value, pc);
+    let op2 = MsrOp2::parse(value, pc)?;
+    Some(Ins::Msr {
+        cond,
+        status_fields,
+        op2,
+    })
 }

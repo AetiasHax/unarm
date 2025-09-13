@@ -14,6 +14,8 @@ impl Isa {
         let ins_enum = self.opcodes().ins_enum_tokens(self);
 
         quote! {
+            #![cfg_attr(rustfmt, rustfmt_skip)]
+
             use crate::*;
 
             #options_struct
@@ -34,6 +36,8 @@ impl Isa {
         let opcode_parse_fns = self.opcodes().parse_fns_tokens(self);
 
         quote! {
+            #![cfg_attr(rustfmt, rustfmt_skip)]
+
             #![allow(clippy::eq_op)]
             #![allow(clippy::double_parens)]
             #![allow(clippy::unnecessary_cast)]
@@ -60,6 +64,8 @@ impl Isa {
         let ins_fmt_impl = self.opcodes().write_impl_tokens(self);
 
         quote! {
+            #![cfg_attr(rustfmt, rustfmt_skip)]
+
             #![allow(clippy::collapsible_else_if)]
             #![allow(unused_variables)]
 
