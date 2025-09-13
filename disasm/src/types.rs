@@ -389,4 +389,10 @@ pub enum Ins {
     Nop { cond: Cond },
     ///Bitwise OR
     Orr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Pack Halfword Bottom Top
+    Pkhbt { cond: Cond, rd: Reg, rn: Reg, rm: Reg, shift_op: ShiftOp, shift: u32 },
+    ///Pack Halfword Top Bottom
+    Pkhtb { cond: Cond, rd: Reg, rn: Reg, rm: Reg, shift_op: ShiftOp, shift: u32 },
+    ///Preload Data
+    Pld { addr: AddrLdrStr },
 }

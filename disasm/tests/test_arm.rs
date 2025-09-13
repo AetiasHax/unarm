@@ -410,4 +410,23 @@ mod tests {
         assert_asm!(0xb1887060, "orrlt r7, r8, r0, rrx");
         assert_asm!(0xe1952153, "orrs r2, r5, r3, asr r1");
     }
+
+    #[test]
+    fn test_pkhbt() {
+        assert_asm!(0xe6812893, "pkhbt r2, r1, r3, lsl #0x11");
+        assert_asm!(0x06812013, "pkhbteq r2, r1, r3");
+    }
+
+    #[test]
+    fn test_pkhtb() {
+        assert_asm!(0xe68128d3, "pkhtb r2, r1, r3, asr #0x11");
+        assert_asm!(0x06812053, "pkhtbeq r2, r1, r3, asr #0x20");
+    }
+
+    #[test]
+    fn test_pld() {
+        assert_asm!(0xf5d1ffff, "pld [r1, #0xfff]");
+        assert_asm!(0xf751f003, "pld [r1, -r3]");
+        assert_asm!(0xf7d1f0e3, "pld [r1, r3, ror #0x1]");
+    }
 }

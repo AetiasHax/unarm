@@ -3,6 +3,7 @@
 #![allow(clippy::double_parens)]
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::derivable_impls)]
+#![allow(clippy::needless_else)]
 #![allow(unused_parens)]
 #![allow(unused_variables)]
 use crate::*;
@@ -399,22 +400,24 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_mov_1(ins as u32, pc)
     } else if (ins & 0xfff10020) == 0xf1000000 {
         parse_arm_cps_0(ins as u32, pc)
-    } else if (ins & 0xff010f0) == 0x1b00090 {
-        parse_arm_ldrexd_0(ins as u32, pc)
     } else if (ins & 0xfef0060) == 0x1a00040 {
         parse_arm_asr_0(ins as u32, pc)
     } else if (ins & 0xe5f00f0) == 0x4f00d0 {
         parse_arm_ldrd_1(ins as u32, pc)
+    } else if (ins & 0xff010f0) == 0x1b00090 {
+        parse_arm_ldrexd_0(ins as u32, pc)
     } else if (ins & 0xfef0060) == 0x1a00000 {
         parse_arm_lsl_0(ins as u32, pc)
     } else if (ins & 0xfef0060) == 0x1a00020 {
         parse_arm_lsr_0(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1600010 {
-        parse_arm_clz_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1200030 {
+        parse_arm_blx_1(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1200010 {
         parse_arm_bx_0(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1200020 {
         parse_arm_bxj_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1600010 {
+        parse_arm_clz_0(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1900090 {
         parse_arm_ldrex_0(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1d00090 {
@@ -423,8 +426,6 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_ldrexh_0(ins as u32, pc)
     } else if (ins & 0xfff00000) == 0xfc400000 {
         parse_arm_mcrr2_0(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1200030 {
-        parse_arm_blx_1(ins as u32, pc)
     } else if (ins & 0xfff00000) == 0xfc500000 {
         parse_arm_mrrc2_0(ins as u32, pc)
     } else if (ins & 0xfb002f0) == 0x1000000 {
@@ -433,26 +434,32 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_mla_0(ins as u32, pc)
     } else if (ins & 0xfe000f0) == 0x90 {
         parse_arm_mul_0(ins as u32, pc)
-    } else if (ins & 0xff100010) == 0xfe000010 {
-        parse_arm_mcr2_0(ins as u32, pc)
+    } else if (ins & 0xff00070) == 0x6800010 {
+        parse_arm_pkhbt_0(ins as u32, pc)
+    } else if (ins & 0xff00070) == 0x6800050 {
+        parse_arm_pkhtb_0(ins as u32, pc)
     } else if (ins & 0xff100010) == 0xfe100010 {
         parse_arm_mrc2_0(ins as u32, pc)
+    } else if (ins & 0xfd700000) == 0xf5500000 {
+        parse_arm_pld_0(ins as u32, pc)
+    } else if (ins & 0xff100010) == 0xfe000010 {
+        parse_arm_mcr2_0(ins as u32, pc)
     } else if (ins & 0xff000010) == 0xfe000000 {
         parse_arm_cdp2_0(ins as u32, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins as u32, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins as u32, pc)
     } else if (ins & 0xe1000f0) == 0x1000b0 {
         parse_arm_ldrh_0(ins as u32, pc)
     } else if (ins & 0xe1000f0) == 0x1000d0 {
         parse_arm_ldrsb_0(ins as u32, pc)
-    } else if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins as u32, pc)
-    } else if (ins & 0xff00000) == 0xc400000 {
-        parse_arm_mcrr_0(ins as u32, pc)
     } else if (ins & 0xff00000) == 0xc500000 {
         parse_arm_mrrc_0(ins as u32, pc)
+    } else if (ins & 0xe1000f0) == 0x1000f0 {
+        parse_arm_ldrsh_0(ins as u32, pc)
+    } else if (ins & 0xe1000f0) == 0xd0 {
+        parse_arm_ldrd_0(ins as u32, pc)
+    } else if (ins & 0xff00000) == 0xc400000 {
+        parse_arm_mcrr_0(ins as u32, pc)
+    } else if (ins & 0xfe100000) == 0xfc100000 {
+        parse_arm_ldc2_0(ins as u32, pc)
     } else if (ins & 0xf700000) == 0x4700000 {
         parse_arm_ldrbt_0(ins as u32, pc)
     } else if (ins & 0xe708000) == 0x8500000 {
@@ -467,10 +474,6 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_cmp_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x800000 {
         parse_arm_add_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins as u32, pc)
     } else if (ins & 0xd700000) == 0x4300000 {
         parse_arm_ldrt_0(ins as u32, pc)
     } else if (ins & 0xf100010) == 0xe000010 {
@@ -489,12 +492,14 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_bic_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1800000 {
         parse_arm_orr_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x0 {
+        parse_arm_and_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x200000 {
+        parse_arm_eor_0(ins as u32, pc)
     } else if (ins & 0xf000010) == 0xe000000 {
         parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xe500000) == 0x8100000 {
         parse_arm_ldm_0(ins as u32, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4100000 {
         parse_arm_ldr_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4500000 {
@@ -503,6 +508,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_bl_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xa000000 {
         parse_arm_b_0(ins as u32, pc)
+    } else if (ins & 0xe100000) == 0xc100000 {
+        parse_arm_ldc_0(ins as u32, pc)
     } else {
         None
     }
@@ -1687,4 +1694,43 @@ fn parse_thumb_orr_0(value: u32, pc: u32) -> Option<Ins> {
         imm: 0,
     };
     Some(Ins::Orr { s, cond, rd, rn, op2 })
+}
+fn parse_arm_pkhbt_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    let shift_op = ShiftOp::parse(0, pc);
+    let shift = ((value) >> 7) & 0x1f;
+    Some(Ins::Pkhbt {
+        cond,
+        rd,
+        rn,
+        rm,
+        shift_op,
+        shift,
+    })
+}
+fn parse_arm_pkhtb_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    let shift_op = ShiftOp::parse(2, pc);
+    let shift = if (((value) >> 7) & 0x1f) != 0 { (((value) >> 7) & 0x1f) } else { 32 };
+    Some(Ins::Pkhtb {
+        cond,
+        rd,
+        rn,
+        rm,
+        shift_op,
+        shift,
+    })
+}
+fn parse_arm_pld_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf000 != 0xf000 {
+        return None;
+    }
+    let addr = AddrLdrStr::parse(value, pc);
+    Some(Ins::Pld { addr })
 }

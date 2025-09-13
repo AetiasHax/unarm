@@ -1120,6 +1120,17 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
+            Ins::Pkhbt { cond, rd, rn, rm, shift_op, shift } => {
+                formatter.write_str("pkhbt")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Pkhtb { cond, rd, rn, rm, shift_op, shift } => {
+                formatter.write_str("pkhtb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Pld { addr } => {
+                formatter.write_str("pld")?;
+            }
         }
         Ok(())
     }
@@ -1565,6 +1576,38 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
+            }
+            Ins::Pkhbt { cond, rd, rn, rm, shift_op, shift } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *shift != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_shift_op(*shift_op)?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*shift)?;
+                } else {}
+            }
+            Ins::Pkhtb { cond, rd, rn, rm, shift_op, shift } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_shift_op(*shift_op)?;
+                formatter.write_space()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*shift)?;
+            }
+            Ins::Pld { addr } => {
+                formatter.write_space()?;
+                formatter.write_addr_ldr_str(*addr)?;
             }
         }
         Ok(())

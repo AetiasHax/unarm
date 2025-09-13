@@ -42,6 +42,7 @@ impl Isa {
             #![allow(clippy::double_parens)]
             #![allow(clippy::unnecessary_cast)]
             #![allow(clippy::derivable_impls)]
+            #![allow(clippy::needless_else)]
             #![allow(unused_parens)]
             #![allow(unused_variables)]
 

@@ -1838,3 +1838,59 @@ opcodes:
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: pkhbt
+  description: Pack Halfword Bottom Top
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, shift_op: shift_op, shift: uimm }
+  format:
+    opcode: !fmt pkhbt(cond)
+    params: !seq
+    - !fmt "(rd), (rn), (rm)"
+    - !if
+      cond: field(shift) != 0
+      then: !fmt ", (shift_op) #(shift)"
+      else: !fmt ""
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x001_xxxx
+    params:
+      form: !bits 6
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      shift_op: !const 0 # lsl
+      shift: !bits 7..12
+
+- mnemonic: pkhtb
+  description: Pack Halfword Top Bottom
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, shift_op: shift_op, shift: uimm }
+  format:
+    opcode: !fmt pkhtb(cond)
+    params: !seq
+    - !fmt "(rd), (rn), (rm)"
+    - !fmt ", (shift_op) #(shift)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x101_xxxx
+    params:
+      form: !bits 6
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      shift_op: !const 2 # asr
+      shift: !expr if bits(7..12) != 0 { bits(7..12) } else { 32 }
+
+- mnemonic: pld
+  description: Preload Data
+  params: { addr: addr_ldr_str }
+  format:
+    opcode: !fmt pld
+    params: !fmt (addr)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: 1111_01x1_x101_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xf000 != 0xf000
+    params:
+      addr: !bits 0..32

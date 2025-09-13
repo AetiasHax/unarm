@@ -16,6 +16,8 @@ pub enum Format {
     If(IfFormat),
     #[serde(rename = "fmt")]
     Fragments(FragmentsFormat),
+    #[serde(rename = "seq")]
+    Sequence(Vec<Format>),
 }
 
 pub type FormatParams = HashMap<String, DataType>;
@@ -25,6 +27,9 @@ impl Format {
         match self {
             Format::If(if_format) => if_format.fmt_expr_tokens(isa, params),
             Format::Fragments(fragments_format) => fragments_format.fmt_expr_tokens(params),
+            Format::Sequence(formats) => {
+                formats.iter().map(|f| f.fmt_expr_tokens(isa, params)).collect()
+            }
         }
     }
 
@@ -32,6 +37,7 @@ impl Format {
         match self {
             Format::If(_) => false,
             Format::Fragments(fragments_format) => fragments_format.is_empty(),
+            Format::Sequence(formats) => formats.iter().all(|f| f.is_empty()),
         }
     }
 }
