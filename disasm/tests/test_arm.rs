@@ -429,4 +429,84 @@ mod tests {
         assert_asm!(0xf751f003, "pld [r1, -r3]");
         assert_asm!(0xf7d1f0e3, "pld [r1, r3, ror #0x1]");
     }
+
+    #[test]
+    fn test_pop() {
+        assert_asm!(0xe8bd0505, "pop {r0, r2, r8, r10}");
+        assert_asm!(0xa49d5004, "popge {r5}");
+    }
+
+    #[test]
+    fn test_push() {
+        assert_asm!(0xe92d0505, "push {r0, r2, r8, r10}");
+        assert_asm!(0xa52d5004, "pushge {r5}");
+    }
+
+    #[test]
+    fn test_qadd() {
+        assert_asm!(0xe1012053, "qadd r2, r3, r1");
+    }
+
+    #[test]
+    fn test_qadd16() {
+        assert_asm!(0xe6212f13, "qadd16 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_qadd8() {
+        assert_asm!(0xe6212f93, "qadd8 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_qasx() {
+        assert_asm!(0xe6212f33, "qasx r2, r1, r3");
+    }
+
+    #[test]
+    fn test_qdadd() {
+        assert_asm!(0xe1412053, "qdadd r2, r3, r1");
+    }
+
+    #[test]
+    fn test_qdsub() {
+        assert_asm!(0xe1612053, "qdsub r2, r3, r1");
+    }
+
+    #[test]
+    fn test_qsub() {
+        assert_asm!(0xe1212053, "qsub r2, r3, r1");
+    }
+
+    #[test]
+    fn test_qsub16() {
+        assert_asm!(0xe6212f73, "qsub16 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_qsub8() {
+        assert_asm!(0xe6212ff3, "qsub8 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_qsax() {
+        assert_asm!(0xe6212f53, "qsax r2, r1, r3");
+    }
+
+    #[test]
+    fn test_rev() {
+        assert_asm!(0xe6bf1f32, "rev r1, r2");
+        assert_asm!(0xa6bfff3e, "revge pc, lr");
+    }
+
+    #[test]
+    fn test_rev16() {
+        assert_asm!(0xe6bf1fb2, "rev16 r1, r2");
+        assert_asm!(0xa6bfffbe, "rev16ge pc, lr");
+    }
+
+    #[test]
+    fn test_revsh() {
+        assert_asm!(0xe6ff1fb2, "revsh r1, r2");
+        assert_asm!(0xa6ffffbe, "revshge pc, lr");
+    }
 }

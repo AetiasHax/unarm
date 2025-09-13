@@ -190,4 +190,29 @@ mod tests {
     fn test_orr() {
         assert_asm!(0x4317, "orrs r7, r7, r2");
     }
+
+    #[test]
+    fn test_pop() {
+        assert_asm!(0xbdff, "pop {r0, r1, r2, r3, r4, r5, r6, r7, pc}");
+    }
+
+    #[test]
+    fn test_push() {
+        assert_asm!(0xb5ff, "push {r0, r1, r2, r3, r4, r5, r6, r7, lr}");
+    }
+
+    #[test]
+    fn test_rev() {
+        assert_asm!(0xba0a, "rev r2, r1");
+    }
+
+    #[test]
+    fn test_rev16() {
+        assert_asm!(0xba4a, "rev16 r2, r1");
+    }
+
+    #[test]
+    fn test_revsh() {
+        assert_asm!(0xbaca, "revsh r2, r1");
+    }
 }

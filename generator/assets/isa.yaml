@@ -1172,6 +1172,7 @@ opcodes:
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xffff == 0 # empty register list
     params:
       mode: !bits 23..25
       cond: !bits 28..32
@@ -1181,6 +1182,7 @@ opcodes:
       user_mode: !const 0
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_100x_x101_xxxx_0xxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xffff == 0 # empty register list
     params:
       mode: !bits 23..25
       cond: !bits 28..32
@@ -1200,6 +1202,7 @@ opcodes:
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: 1100_1xxx_xxxx_xxxx
+    illegal: ins() & 0xff == 0 # empty register list
     params:
       rn: !bits 8..11
       writeback: !expr (!bits(0..8) >> bits(8..11)) & 1
@@ -1894,3 +1897,281 @@ opcodes:
     illegal: ins() & 0xf000 != 0xf000
     params:
       addr: !bits 0..32
+
+- mnemonic: pop
+  description: Pop multiple registers
+  params: { cond: cond, regs: reg_list }
+  format:
+    opcode: !fmt pop(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1000_1011_1101_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xffff == 0 # empty register list
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..16
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0100_1001_1101_xxxx_0000_0000_0100
+    params:
+      cond: !bits 28..32
+      regs: !expr 1 << bits(12..16)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_110x_xxxx_xxxx
+    illegal: ins() & 0x1ff == 0 # empty register list
+    params:
+      cond: !const 14 # al
+      regs: !expr (bit(8) << 15) | bits(0..8) # may include pc
+
+- mnemonic: push
+  description: Push multiple registers
+  params: { cond: cond, regs: reg_list }
+  format:
+    opcode: !fmt push(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1001_0010_1101_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xffff == 0 # empty register list
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..16
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0101_0010_1101_xxxx_0000_0000_0100
+    params:
+      cond: !bits 28..32
+      regs: !expr 1 << bits(12..16)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_010x_xxxx_xxxx
+    illegal: ins() & 0x1ff == 0 # empty register list
+    params:
+      cond: !const 14 # al
+      regs: !expr (bit(8) << 14) | bits(0..8) # may include lr
+
+- mnemonic: qadd
+  description: Saturating Add
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qadd(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_0101_xxxx
+    illegal: ins() & 0xf00 != 0
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qadd16
+  description: Saturating Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0001_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qadd8
+  description: Saturating Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_1001_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qasx
+  description: Saturating Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qasx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0011_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qdadd
+  description: Saturating Double and Add
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qdadd(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_0101_xxxx
+    illegal: ins() & 0xf00 != 0
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qdsub
+  description: Saturating Double and Subtract
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qdsub(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0101_xxxx
+    illegal: ins() & 0xf00 != 0
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsax
+  description: Saturating Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qsax(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0101_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsub
+  description: Saturating Subtract
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qsub(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0101_xxxx
+    illegal: ins() & 0xf00 != 0
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsub16
+  description: Saturating Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qsub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0111_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsub8
+  description: Saturating Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qsub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_1111_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: rev
+  description: Reverse bytes in word
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt rev(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_0011_xxxx
+    illegal: ins() & 0xf0f00 != 0xf0f00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+  thumb:
+  - version: [v6*]
+    pattern: 1011_1010_00xx_xxxx
+    params:
+      cond: !const 14 # al
+      rd: !bits 0..3
+      rm: !bits 3..6
+
+- mnemonic: rev16
+  description: Reverse bytes in packed halfwords
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt rev16(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_1011_xxxx
+    illegal: ins() & 0xf0f00 != 0xf0f00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+  thumb:
+  - version: [v6*]
+    pattern: 1011_1010_01xx_xxxx
+    params:
+      cond: !const 14 # al
+      rd: !bits 0..3
+      rm: !bits 3..6
+
+- mnemonic: revsh
+  description: Reverse bytes in signed halfword
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt revsh(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_1111_xxxx_xxxx_xxxx_1011_xxxx
+    illegal: ins() & 0xf0f00 != 0xf0f00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+  thumb:
+  - version: [v6*]
+    pattern: 1011_1010_11xx_xxxx
+    params:
+      cond: !const 14 # al
+      rd: !bits 0..3
+      rm: !bits 3..6

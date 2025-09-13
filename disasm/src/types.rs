@@ -395,4 +395,34 @@ pub enum Ins {
     Pkhtb { cond: Cond, rd: Reg, rn: Reg, rm: Reg, shift_op: ShiftOp, shift: u32 },
     ///Preload Data
     Pld { addr: AddrLdrStr },
+    ///Pop multiple registers
+    Pop { cond: Cond, regs: RegList },
+    ///Push multiple registers
+    Push { cond: Cond, regs: RegList },
+    ///Saturating Add
+    Qadd { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Saturating Add two 16-bit values
+    Qadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Saturating Add four 8-bit values
+    Qadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Saturating Add and Subtract with Exchange
+    Qasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Saturating Double and Add
+    Qdadd { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Saturating Double and Subtract
+    Qdsub { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Saturating Subtract and Add with Exchange
+    Qsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Saturating Subtract
+    Qsub { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Saturating Subtract two 16-bit values
+    Qsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Saturating Subtract four 8-bit values
+    Qsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Reverse bytes in word
+    Rev { cond: Cond, rd: Reg, rm: Reg },
+    ///Reverse bytes in packed halfwords
+    Rev16 { cond: Cond, rd: Reg, rm: Reg },
+    ///Reverse bytes in signed halfword
+    Revsh { cond: Cond, rd: Reg, rm: Reg },
 }

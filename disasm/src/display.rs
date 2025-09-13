@@ -1131,6 +1131,66 @@ impl Ins {
             Ins::Pld { addr } => {
                 formatter.write_str("pld")?;
             }
+            Ins::Pop { cond, regs } => {
+                formatter.write_str("pop")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Push { cond, regs } => {
+                formatter.write_str("push")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qadd { cond, rd, rm, rn } => {
+                formatter.write_str("qadd")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qadd16 { cond, rd, rn, rm } => {
+                formatter.write_str("qadd16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qadd8 { cond, rd, rn, rm } => {
+                formatter.write_str("qadd8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qasx { cond, rd, rn, rm } => {
+                formatter.write_str("qasx")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qdadd { cond, rd, rm, rn } => {
+                formatter.write_str("qdadd")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qdsub { cond, rd, rm, rn } => {
+                formatter.write_str("qdsub")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qsax { cond, rd, rn, rm } => {
+                formatter.write_str("qsax")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qsub { cond, rd, rm, rn } => {
+                formatter.write_str("qsub")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qsub16 { cond, rd, rn, rm } => {
+                formatter.write_str("qsub16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Qsub8 { cond, rd, rn, rm } => {
+                formatter.write_str("qsub8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Rev { cond, rd, rm } => {
+                formatter.write_str("rev")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Rev16 { cond, rd, rm } => {
+                formatter.write_str("rev16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Revsh { cond, rd, rm } => {
+                formatter.write_str("revsh")?;
+                formatter.write_cond(*cond)?;
+            }
         }
         Ok(())
     }
@@ -1608,6 +1668,112 @@ impl Ins {
             Ins::Pld { addr } => {
                 formatter.write_space()?;
                 formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Pop { cond, regs } => {
+                formatter.write_space()?;
+                formatter.write_reg_list(*regs)?;
+            }
+            Ins::Push { cond, regs } => {
+                formatter.write_space()?;
+                formatter.write_reg_list(*regs)?;
+            }
+            Ins::Qadd { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+            }
+            Ins::Qadd16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Qadd8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Qasx { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Qdadd { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+            }
+            Ins::Qdsub { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+            }
+            Ins::Qsax { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Qsub { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+            }
+            Ins::Qsub16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Qsub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Rev { cond, rd, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Rev16 { cond, rd, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Revsh { cond, rd, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
             }
         }
         Ok(())

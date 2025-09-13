@@ -388,7 +388,11 @@ impl Default for LdmStmMode {
     }
 }
 pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00ff) == 0x3200014 {
+    if (ins & 0xfff0fff) == 0x49d0004 {
+        parse_arm_pop_1(ins as u32, pc)
+    } else if (ins & 0xfff0fff) == 0x52d0004 {
+        parse_arm_push_1(ins as u32, pc)
+    } else if (ins & 0xfff00ff) == 0x3200014 {
         parse_arm_csdb_0(ins as u32, pc)
     } else if (ins & 0xfff00ff) == 0x3200000 {
         parse_arm_nop_0(ins as u32, pc)
@@ -410,26 +414,56 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_lsl_0(ins as u32, pc)
     } else if (ins & 0xfef0060) == 0x1a00020 {
         parse_arm_lsr_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6f000b0 {
+        parse_arm_revsh_0(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1200030 {
         parse_arm_blx_1(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1200010 {
-        parse_arm_bx_0(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1200020 {
-        parse_arm_bxj_0(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1600010 {
-        parse_arm_clz_0(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1900090 {
-        parse_arm_ldrex_0(ins as u32, pc)
-    } else if (ins & 0xff000f0) == 0x1d00090 {
-        parse_arm_ldrexb_0(ins as u32, pc)
     } else if (ins & 0xff000f0) == 0x1f00090 {
         parse_arm_ldrexh_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1600010 {
+        parse_arm_clz_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1200010 {
+        parse_arm_bx_0(ins as u32, pc)
     } else if (ins & 0xfff00000) == 0xfc400000 {
         parse_arm_mcrr2_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1200020 {
+        parse_arm_bxj_0(ins as u32, pc)
     } else if (ins & 0xfff00000) == 0xfc500000 {
         parse_arm_mrrc2_0(ins as u32, pc)
     } else if (ins & 0xfb002f0) == 0x1000000 {
         parse_arm_mrs_0(ins as u32, pc)
+    } else if (ins & 0xfff0000) == 0x8bd0000 {
+        parse_arm_pop_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1900090 {
+        parse_arm_ldrex_0(ins as u32, pc)
+    } else if (ins & 0xfff0000) == 0x92d0000 {
+        parse_arm_push_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1d00090 {
+        parse_arm_ldrexb_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1000050 {
+        parse_arm_qadd_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6200010 {
+        parse_arm_qadd16_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6200090 {
+        parse_arm_qadd8_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6200030 {
+        parse_arm_qasx_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1400050 {
+        parse_arm_qdadd_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1600050 {
+        parse_arm_qdsub_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6200050 {
+        parse_arm_qsax_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x1200050 {
+        parse_arm_qsub_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6200070 {
+        parse_arm_qsub16_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x62000f0 {
+        parse_arm_qsub8_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6b00030 {
+        parse_arm_rev_0(ins as u32, pc)
+    } else if (ins & 0xff000f0) == 0x6b000b0 {
+        parse_arm_rev16_0(ins as u32, pc)
     } else if (ins & 0xfe000f0) == 0x200090 {
         parse_arm_mla_0(ins as u32, pc)
     } else if (ins & 0xfe000f0) == 0x90 {
@@ -438,68 +472,68 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_pkhbt_0(ins as u32, pc)
     } else if (ins & 0xff00070) == 0x6800050 {
         parse_arm_pkhtb_0(ins as u32, pc)
+    } else if (ins & 0xff100010) == 0xfe000010 {
+        parse_arm_mcr2_0(ins as u32, pc)
     } else if (ins & 0xff100010) == 0xfe100010 {
         parse_arm_mrc2_0(ins as u32, pc)
     } else if (ins & 0xfd700000) == 0xf5500000 {
         parse_arm_pld_0(ins as u32, pc)
-    } else if (ins & 0xff100010) == 0xfe000010 {
-        parse_arm_mcr2_0(ins as u32, pc)
     } else if (ins & 0xff000010) == 0xfe000000 {
         parse_arm_cdp2_0(ins as u32, pc)
+    } else if (ins & 0xff00000) == 0xc400000 {
+        parse_arm_mcrr_0(ins as u32, pc)
+    } else if (ins & 0xff00000) == 0xc500000 {
+        parse_arm_mrrc_0(ins as u32, pc)
+    } else if (ins & 0xe1000f0) == 0xd0 {
+        parse_arm_ldrd_0(ins as u32, pc)
     } else if (ins & 0xe1000f0) == 0x1000b0 {
         parse_arm_ldrh_0(ins as u32, pc)
     } else if (ins & 0xe1000f0) == 0x1000d0 {
         parse_arm_ldrsb_0(ins as u32, pc)
-    } else if (ins & 0xff00000) == 0xc500000 {
-        parse_arm_mrrc_0(ins as u32, pc)
     } else if (ins & 0xe1000f0) == 0x1000f0 {
         parse_arm_ldrsh_0(ins as u32, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins as u32, pc)
-    } else if (ins & 0xff00000) == 0xc400000 {
-        parse_arm_mcrr_0(ins as u32, pc)
     } else if (ins & 0xfe100000) == 0xfc100000 {
         parse_arm_ldc2_0(ins as u32, pc)
-    } else if (ins & 0xf700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins as u32, pc)
     } else if (ins & 0xe708000) == 0x8500000 {
         parse_arm_ldm_1(ins as u32, pc)
-    } else if (ins & 0xfe00000) == 0x3a00000 {
-        parse_arm_mov_0(ins as u32, pc)
+    } else if (ins & 0xf700000) == 0x4700000 {
+        parse_arm_ldrbt_0(ins as u32, pc)
     } else if (ins & 0xfe000000) == 0xfa000000 {
         parse_arm_blx_0(ins as u32, pc)
     } else if (ins & 0xdf00000) == 0x1700000 {
         parse_arm_cmn_0(ins as u32, pc)
     } else if (ins & 0xdf00000) == 0x1500000 {
         parse_arm_cmp_0(ins as u32, pc)
+    } else if (ins & 0xfe00000) == 0x3a00000 {
+        parse_arm_mov_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x800000 {
         parse_arm_add_0(ins as u32, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins as u32, pc)
-    } else if (ins & 0xf100010) == 0xe000010 {
-        parse_arm_mcr_0(ins as u32, pc)
-    } else if (ins & 0xe508000) == 0x8508000 {
-        parse_arm_ldm_2(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins as u32, pc)
     } else if (ins & 0xf100010) == 0xe100010 {
         parse_arm_mrc_0(ins as u32, pc)
+    } else if (ins & 0xe508000) == 0x8508000 {
+        parse_arm_ldm_2(ins as u32, pc)
     } else if (ins & 0xdb00000) == 0x1200000 {
         parse_arm_msr_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1e00000 {
         parse_arm_mvn_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1800000 {
         parse_arm_orr_0(ins as u32, pc)
+    } else if (ins & 0xd700000) == 0x4300000 {
+        parse_arm_ldrt_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x1c00000 {
+        parse_arm_bic_0(ins as u32, pc)
+    } else if (ins & 0xf100010) == 0xe000010 {
+        parse_arm_mcr_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x0 {
         parse_arm_and_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0xa00000 {
+        parse_arm_adc_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x200000 {
         parse_arm_eor_0(ins as u32, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xe500000) == 0x8100000 {
         parse_arm_ldm_0(ins as u32, pc)
+    } else if (ins & 0xf000010) == 0xe000000 {
+        parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4100000 {
         parse_arm_ldr_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4500000 {
@@ -527,8 +561,8 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Option<Ins> {
         parse_thumb_bx_0(ins as u32, pc)
     } else if (ins & 0xffe8) == 0xb660 {
         parse_thumb_cps_0(ins as u32, pc)
-    } else if (ins & 0xffc0) == 0x4300 {
-        parse_thumb_orr_0(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0xbac0 {
+        parse_thumb_revsh_0(ins as u32, pc)
     } else if (ins & 0xffc0) == 0x4000 {
         parse_thumb_and_0(ins as u32, pc)
     } else if (ins & 0xffc0) == 0x4100 {
@@ -553,6 +587,12 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Option<Ins> {
         parse_thumb_mul_0(ins as u32, pc)
     } else if (ins & 0xffc0) == 0x43c0 {
         parse_thumb_mvn_0(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0x4300 {
+        parse_thumb_orr_0(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0xba00 {
+        parse_thumb_rev_0(ins as u32, pc)
+    } else if (ins & 0xffc0) == 0xba40 {
+        parse_thumb_rev16_0(ins as u32, pc)
     } else if (ins & 0xff80) == 0xb000 {
         parse_thumb_add_5(ins as u32, pc)
     } else if (ins & 0xff00) == 0x4500 {
@@ -585,12 +625,10 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Option<Ins> {
         parse_thumb_ldrsh_0(ins as u32, pc)
     } else if (ins & 0xfe00) == 0x1800 {
         parse_thumb_add_2(ins as u32, pc)
-    } else if (ins & 0xf800) == 0x2800 {
-        parse_thumb_cmp_0(ins as u32, pc)
-    } else if (ins & 0xf800) == 0x1000 {
-        parse_thumb_asr_0(ins as u32, pc)
-    } else if (ins & 0xf800) == 0x3000 {
-        parse_thumb_add_1(ins as u32, pc)
+    } else if (ins & 0xfe00) == 0xbc00 {
+        parse_thumb_pop_0(ins as u32, pc)
+    } else if (ins & 0xfe00) == 0xb400 {
+        parse_thumb_push_0(ins as u32, pc)
     } else if (ins & 0xf800) == 0xe000 {
         parse_thumb_b_1(ins as u32, pc)
     } else if (ins & 0xf800) == 0xc800 {
@@ -615,6 +653,12 @@ pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Option<Ins> {
         parse_thumb_add_8(ins as u32, pc)
     } else if (ins & 0xf800) == 0xa800 {
         parse_thumb_add_4(ins as u32, pc)
+    } else if (ins & 0xf800) == 0x2800 {
+        parse_thumb_cmp_0(ins as u32, pc)
+    } else if (ins & 0xf800) == 0x1000 {
+        parse_thumb_asr_0(ins as u32, pc)
+    } else if (ins & 0xf800) == 0x3000 {
+        parse_thumb_add_1(ins as u32, pc)
     } else if (ins & 0xf000) == 0xd000 {
         parse_thumb_b_0(ins as u32, pc)
     } else {
@@ -1078,6 +1122,9 @@ fn parse_arm_ldc2_0(value: u32, pc: u32) -> Option<Ins> {
     Some(Ins::Ldc2 { l, coproc, crd, dest })
 }
 fn parse_arm_ldm_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xffff == 0 {
+        return None;
+    }
     let mode = LdmStmMode::parse(((value) >> 23) & 0x3, pc);
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
@@ -1094,6 +1141,9 @@ fn parse_arm_ldm_0(value: u32, pc: u32) -> Option<Ins> {
     })
 }
 fn parse_arm_ldm_1(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xffff == 0 {
+        return None;
+    }
     let mode = LdmStmMode::parse(((value) >> 23) & 0x3, pc);
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
@@ -1126,6 +1176,9 @@ fn parse_arm_ldm_2(value: u32, pc: u32) -> Option<Ins> {
     })
 }
 fn parse_thumb_ldm_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xff == 0 {
+        return None;
+    }
     let mode = LdmStmMode::default();
     let cond = Cond::default();
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
@@ -1733,4 +1786,191 @@ fn parse_arm_pld_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let addr = AddrLdrStr::parse(value, pc);
     Some(Ins::Pld { addr })
+}
+fn parse_arm_pop_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xffff == 0 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let regs = RegList::parse((value) & 0xffff);
+    Some(Ins::Pop { cond, regs })
+}
+fn parse_arm_pop_1(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let regs = RegList::parse(1 << (((value) >> 12) & 0xf));
+    Some(Ins::Pop { cond, regs })
+}
+fn parse_thumb_pop_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0x1ff == 0 {
+        return None;
+    }
+    let cond = Cond::parse(14, pc);
+    let regs = RegList::parse(((((value) >> 8) & 0x1) << 15) | ((value) & 0xff));
+    Some(Ins::Pop { cond, regs })
+}
+fn parse_arm_push_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xffff == 0 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let regs = RegList::parse((value) & 0xffff);
+    Some(Ins::Push { cond, regs })
+}
+fn parse_arm_push_1(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let regs = RegList::parse(1 << (((value) >> 12) & 0xf));
+    Some(Ins::Push { cond, regs })
+}
+fn parse_thumb_push_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0x1ff == 0 {
+        return None;
+    }
+    let cond = Cond::parse(14, pc);
+    let regs = RegList::parse(((((value) >> 8) & 0x1) << 14) | ((value) & 0xff));
+    Some(Ins::Push { cond, regs })
+}
+fn parse_arm_qadd_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    Some(Ins::Qadd { cond, rd, rm, rn })
+}
+fn parse_arm_qadd16_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0xf00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Qadd16 { cond, rd, rn, rm })
+}
+fn parse_arm_qadd8_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0xf00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Qadd8 { cond, rd, rn, rm })
+}
+fn parse_arm_qasx_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0xf00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Qasx { cond, rd, rn, rm })
+}
+fn parse_arm_qdadd_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    Some(Ins::Qdadd { cond, rd, rm, rn })
+}
+fn parse_arm_qdsub_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    Some(Ins::Qdsub { cond, rd, rm, rn })
+}
+fn parse_arm_qsax_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0xf00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Qsax { cond, rd, rn, rm })
+}
+fn parse_arm_qsub_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    Some(Ins::Qsub { cond, rd, rm, rn })
+}
+fn parse_arm_qsub16_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0xf00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Qsub16 { cond, rd, rn, rm })
+}
+fn parse_arm_qsub8_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf00 != 0xf00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rn = Reg::parse(((value) >> 16) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Qsub8 { cond, rd, rn, rm })
+}
+fn parse_arm_rev_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf0f00 != 0xf0f00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Rev { cond, rd, rm })
+}
+fn parse_thumb_rev_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(14, pc);
+    let rd = Reg::parse((value) & 0x7, pc);
+    let rm = Reg::parse(((value) >> 3) & 0x7, pc);
+    Some(Ins::Rev { cond, rd, rm })
+}
+fn parse_arm_rev16_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf0f00 != 0xf0f00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Rev16 { cond, rd, rm })
+}
+fn parse_thumb_rev16_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(14, pc);
+    let rd = Reg::parse((value) & 0x7, pc);
+    let rm = Reg::parse(((value) >> 3) & 0x7, pc);
+    Some(Ins::Rev16 { cond, rd, rm })
+}
+fn parse_arm_revsh_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xf0f00 != 0xf0f00 {
+        return None;
+    }
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let rm = Reg::parse((value) & 0xf, pc);
+    Some(Ins::Revsh { cond, rd, rm })
+}
+fn parse_thumb_revsh_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(14, pc);
+    let rd = Reg::parse((value) & 0x7, pc);
+    let rm = Reg::parse(((value) >> 3) & 0x7, pc);
+    Some(Ins::Revsh { cond, rd, rm })
 }
