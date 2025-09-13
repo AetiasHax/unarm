@@ -54,6 +54,11 @@ mod tests {
     }
 
     #[test]
+    fn test_asr() {
+        assert_asm!(0xe1b02153, "asrs r2, r3, r1");
+    }
+
+    #[test]
     fn test_b() {
         assert_asm!(0xea000000, "b #0x8");
         assert_asm!(0x0a012345, "beq #0x48d1c");
@@ -247,5 +252,92 @@ mod tests {
         assert_asm!(0xe1a120d3, "ldrd r2, r3, [r1, r3]!");
         assert_asm!(0xe0c12fdf, "ldrd r2, r3, [r1], #0xff");
         assert_asm!(0xe00120d3, "ldrd r2, r3, [r1], -r3");
+    }
+
+    #[test]
+    fn test_ldrh() {
+        assert_asm!(0xe1d12fbf, "ldrh r2, [r1, #0xff]");
+        assert_asm!(0xe11120b3, "ldrh r2, [r1, -r3]");
+        assert_asm!(0xe1712fbf, "ldrh r2, [r1, #-0xff]!");
+        assert_asm!(0xe1b120b3, "ldrh r2, [r1, r3]!");
+        assert_asm!(0xe0d12fbf, "ldrh r2, [r1], #0xff");
+        assert_asm!(0xe01120b3, "ldrh r2, [r1], -r3");
+        assert_asm!(0xe15101b4, "ldrh r0, [r1, #-0x14]");
+        assert_asm!(0xe1f030b1, "ldrh r3, [r0, #0x1]!");
+    }
+
+    #[test]
+    fn test_ldrsb() {
+        assert_asm!(0xe1d12fdf, "ldrsb r2, [r1, #0xff]");
+        assert_asm!(0xe11120d3, "ldrsb r2, [r1, -r3]");
+        assert_asm!(0xe1712fdf, "ldrsb r2, [r1, #-0xff]!");
+        assert_asm!(0xe1b120d3, "ldrsb r2, [r1, r3]!");
+        assert_asm!(0xe0d12fdf, "ldrsb r2, [r1], #0xff");
+        assert_asm!(0xe01120d3, "ldrsb r2, [r1], -r3");
+        assert_asm!(0xe15101d4, "ldrsb r0, [r1, #-0x14]");
+        assert_asm!(0xe1f030d1, "ldrsb r3, [r0, #0x1]!");
+    }
+
+    #[test]
+    fn test_ldrsh() {
+        assert_asm!(0xe1d12fff, "ldrsh r2, [r1, #0xff]");
+        assert_asm!(0xe11120f3, "ldrsh r2, [r1, -r3]");
+        assert_asm!(0xe1712fff, "ldrsh r2, [r1, #-0xff]!");
+        assert_asm!(0xe1b120f3, "ldrsh r2, [r1, r3]!");
+        assert_asm!(0xe0d12fff, "ldrsh r2, [r1], #0xff");
+        assert_asm!(0xe01120f3, "ldrsh r2, [r1], -r3");
+        assert_asm!(0xe15101f4, "ldrsh r0, [r1, #-0x14]");
+        assert_asm!(0xe1f030f1, "ldrsh r3, [r0, #0x1]!");
+    }
+
+    #[test]
+    fn test_ldrt() {
+        assert_asm!(0xe4b12fff, "ldrt r2, [r1], #0xfff");
+        assert_asm!(0xe6312003, "ldrt r2, [r1], -r3");
+        assert_asm!(0xe6b12023, "ldrt r2, [r1], r3, lsr #0x20");
+    }
+
+    #[test]
+    fn test_lsl() {
+        assert_asm!(0x11a0960a, "lslne r9, r10, #0xc");
+    }
+
+    #[test]
+    fn test_lsr() {
+        assert_asm!(0x41a0f238, "lsrmi pc, r8, r2");
+    }
+
+    #[test]
+    fn test_mcr() {
+        assert_asm!(0xee2234b6, "mcr p4, #0x1, r3, c2, c6, #0x5");
+        assert_asm!(0x3ec54351, "mcrlo p3, #0x6, r4, c5, c1, #0x2");
+    }
+
+    #[test]
+    fn test_mcr2() {
+        assert_asm!(0xfe2234b6, "mcr2 p4, #0x1, r3, c2, c6, #0x5");
+        assert_asm!(0xfec54351, "mcr2 p3, #0x6, r4, c5, c1, #0x2");
+    }
+
+    #[test]
+    fn test_mcrr() {
+        assert_asm!(0xec412345, "mcrr p3, #0x4, r2, r1, c5");
+    }
+
+    #[test]
+    fn test_mcrr2() {
+        assert_asm!(0xfc412345, "mcrr2 p3, #0x4, r2, r1, c5");
+    }
+
+    #[test]
+    fn test_mla() {
+        assert_asm!(0xe0212394, "mla r1, r4, r3, r2");
+        assert_asm!(0xa0312394, "mlasge r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_mov() {
+        assert_asm!(0xe1a02003, "mov r2, r3");
+        assert_asm!(0xe3a05e23, "mov r5, #0x230");
     }
 }

@@ -35,7 +35,11 @@ impl Isa {
 
         quote! {
             #![allow(clippy::eq_op)]
+            #![allow(clippy::double_parens)]
+            #![allow(clippy::unnecessary_cast)]
+            #![allow(clippy::derivable_impls)]
             #![allow(unused_parens)]
+            #![allow(unused_variables)]
 
             use crate::*;
 
@@ -56,6 +60,9 @@ impl Isa {
         let ins_fmt_impl = self.opcodes().write_impl_tokens(self);
 
         quote! {
+            #![allow(clippy::collapsible_else_if)]
+            #![allow(unused_variables)]
+
             use crate::*;
 
             #write_trait

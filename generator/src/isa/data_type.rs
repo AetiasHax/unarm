@@ -253,14 +253,14 @@ impl DataType {
         }
     }
 
-    pub fn default_expr_tokens(&self, isa: &Isa) -> TokenStream {
+    pub fn default_expr_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
-            DataTypeKind::Bool { .. } => quote!(false),
-            DataTypeKind::UInt(_) => quote!(0),
-            DataTypeKind::Int(_) => quote!(0),
+            DataTypeKind::Bool { .. } => Some(quote!(false)),
+            DataTypeKind::UInt(_) => Some(quote!(0)),
+            DataTypeKind::Int(_) => Some(quote!(0)),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_expr_tokens(&self.name),
             DataTypeKind::Struct(data_type_struct) => {
-                data_type_struct.default_expr_tokens(&self.name)
+                data_type_struct.default_expr_tokens(isa, &self.name)
             }
             DataTypeKind::Type(data_type_name, _) => {
                 let Some(inner_type) = isa.types().get(data_type_name) else {
@@ -270,7 +270,7 @@ impl DataType {
             }
             DataTypeKind::Custom => {
                 let type_ident = self.name.as_pascal_ident();
-                quote!(#type_ident::default())
+                Some(quote!(#type_ident::default()))
             }
         }
     }
@@ -282,7 +282,7 @@ impl DataType {
             DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_impl_body_tokens(isa)?,
             DataTypeKind::Struct(data_type_struct) => {
-                data_type_struct.default_impl_body_tokens(isa)
+                data_type_struct.default_impl_body_tokens(isa)?
             }
             DataTypeKind::Type(_, _) => return None,
             DataTypeKind::Custom => return None,
@@ -329,7 +329,6 @@ impl DataType {
                 where
                     F: Write + ?Sized
                 {
-                    let options = formatter.options();
                     #display_expr
                     Ok(())
                 }
@@ -503,12 +502,16 @@ impl DataTypeEnum {
         let Some((_, default_variant)) = self.get_variant(default) else {
             panic!();
         };
-        Some(default_variant.default_expr_tokens(isa))
+        default_variant.default_expr_tokens(isa)
     }
 
-    fn default_expr_tokens(&self, name: &DataTypeName) -> TokenStream {
-        let name_ident = name.as_pascal_ident();
-        quote!(#name_ident::default())
+    fn default_expr_tokens(&self, name: &DataTypeName) -> Option<TokenStream> {
+        if self.default.is_some() {
+            let name_ident = name.as_pascal_ident();
+            Some(quote!(#name_ident::default()))
+        } else {
+            None
+        }
     }
 
     fn write_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
@@ -594,18 +597,18 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn default_expr_tokens(&self, isa: &Isa) -> TokenStream {
+    fn default_expr_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         let variant_ident = self.as_ident();
         if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
                 let record = data_type_struct.default_record_tokens(isa);
-                quote!(Self::#variant_ident #record)
+                record.map(|record| quote!(Self::#variant_ident #record))
             } else {
                 let default_expr = data.default_expr_tokens(isa);
-                quote!(Self::#variant_ident(#default_expr))
+                default_expr.as_ref().map(|expr| quote!(Self::#variant_ident(#expr)))
             }
         } else {
-            quote!(Self::#variant_ident)
+            Some(quote!(Self::#variant_ident))
         }
     }
 
@@ -620,9 +623,12 @@ impl DataTypeEnumVariant {
         if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
                 let OpcodeParamValue::Struct(struct_params) = value else {
-                    panic!();
+                    panic!(
+                        "Expected struct param for variant '{}' of enum '{}'",
+                        self.name.0, enum_name.0
+                    );
                 };
-                let record = data_type_struct.param_record_tokens(isa, struct_params);
+                let record = data_type_struct.param_record_tokens(isa, &data.name, struct_params);
                 quote!(#enum_ident::#variant_ident #record)
             } else {
                 let value_tokens = match value {
@@ -748,28 +754,46 @@ impl DataTypeStruct {
         quote!(#name_ident::parse(#value, pc))
     }
 
-    fn default_record_tokens(&self, isa: &Isa) -> TokenStream {
-        let fields = self.fields.iter().map(|field| {
-            let field_ident = Ident::new(&field.name.0, Span::call_site());
-            let default_expr = field.default_expr_tokens(isa);
-            quote!(#field_ident: #default_expr)
-        });
-        quote!({ #(#fields),* })
+    fn default_fields(&self, isa: &Isa) -> Option<Vec<TokenStream>> {
+        self.fields
+            .iter()
+            .map(|field| {
+                let field_ident = Ident::new(&field.name.0, Span::call_site());
+                let Some(default_expr) = field.default_expr_tokens(isa) else {
+                    return None;
+                };
+                Some(quote!(#field_ident: #default_expr))
+            })
+            .collect::<Option<Vec<_>>>()
     }
 
-    fn default_expr_tokens(&self, name: &DataTypeName) -> TokenStream {
-        let name_ident = name.as_pascal_ident();
-        quote!(#name_ident::default())
+    fn has_default(&self, isa: &Isa) -> bool {
+        self.default_fields(isa).is_some()
     }
 
-    fn default_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
+    fn default_record_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let fields = self.default_fields(isa);
+        fields.map(|fields| quote!({ #(#fields),* }))
+    }
+
+    fn default_expr_tokens(&self, isa: &Isa, name: &DataTypeName) -> Option<TokenStream> {
+        if self.has_default(isa) {
+            let name_ident = name.as_pascal_ident();
+            Some(quote!(#name_ident::default()))
+        } else {
+            None
+        }
+    }
+
+    fn default_impl_body_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         let record = self.default_record_tokens(isa);
-        quote!(Self #record)
+        record.map(|record| quote!(Self #record))
     }
 
     fn param_record_tokens(
         &self,
         isa: &Isa,
+        type_name: &DataTypeName,
         params: &IndexMap<String, OpcodeParamValue>,
     ) -> TokenStream {
         let fields = self.fields.iter().map(|field| {
@@ -778,7 +802,9 @@ impl DataTypeStruct {
             let param_expr = if let Some(value) = params.get(name) {
                 value.parse_expr_tokens(isa, field)
             } else {
-                field.default_expr_tokens(isa)
+                field.default_expr_tokens(isa).unwrap_or_else(|| {
+                    panic!("Field '{}' in struct '{}' has no default value", name, type_name.0)
+                })
             };
             quote!(#field_ident: #param_expr)
         });
@@ -792,7 +818,7 @@ impl DataTypeStruct {
         params: &IndexMap<String, OpcodeParamValue>,
     ) -> TokenStream {
         let type_name_ident = type_name.as_pascal_ident();
-        let record = self.param_record_tokens(isa, params);
+        let record = self.param_record_tokens(isa, type_name, params);
         quote! {
             #type_name_ident #record
         }

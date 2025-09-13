@@ -155,6 +155,13 @@ pub enum Op2 {
     ShiftImm { rm: Reg, shift_op: ShiftOp, imm: u32 },
 }
 #[derive(PartialEq, Eq, Clone, Copy)]
+pub enum Op2Shift {
+    ///Immediate
+    Imm(u32),
+    ///Register
+    Reg(Reg),
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum CpsEffect {
     ///Set mode
     SetMode,
@@ -194,7 +201,12 @@ pub enum AddrLdrStr {
     ///Pre-indexed
     Pre { rn: Reg, offset: LdrStrOffset, writeback: bool },
     ///Post-indexed
-    Post { rn: Reg, offset: LdrStrOffset },
+    Post(AddrLdrStrPost),
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct AddrLdrStrPost {
+    pub rn: Reg,
+    pub offset: LdrStrOffset,
 }
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum LdrStrOffset {
@@ -203,6 +215,19 @@ pub enum LdrStrOffset {
     ///Register offset
     Reg { subtract: bool, rm: Reg, shift_op: ShiftOp, imm: u32 },
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum AddrMiscLoad {
+    ///Pre-indexed
+    Pre { rn: Reg, offset: MiscLoadOffset, writeback: bool },
+    Post { rn: Reg, offset: MiscLoadOffset },
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum MiscLoadOffset {
+    ///Immediate offset
+    Imm(i32),
+    ///Register offset
+    Reg { rm: Reg, subtract: bool },
+}
 pub enum Ins {
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -210,6 +235,8 @@ pub enum Ins {
     Add { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Bitwise AND
     And { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Arithmetic Shift Right
+    Asr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Branch
     B { cond: Cond, target: BranchTarget },
     ///Bit Clear
@@ -269,5 +296,47 @@ pub enum Ins {
     Ldrb { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Load Register Byte with Translation
     Ldrbt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Load Register Dual
+    Ldrd { cond: Cond, rd: Reg, rd2: Reg, addr: AddrMiscLoad },
+    ///Load Register Exclusive
+    Ldrex { cond: Cond, rd: Reg, rn: Reg },
+    ///Load Register Exclusive Byte
+    Ldrexb { cond: Cond, rd: Reg, rn: Reg },
+    ///Load Register Exclusive Doubleword
+    Ldrexd { cond: Cond, rd: Reg, rd2: Reg, rn: Reg },
+    ///Load Register Exclusive Halfword
+    Ldrexh { cond: Cond, rd: Reg, rn: Reg },
+    ///Load Register Halfword
+    Ldrh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
+    ///Load Register Signed Byte
+    Ldrsb { cond: Cond, rd: Reg, addr: AddrMiscLoad },
+    ///Load Register Signed Halfword
+    Ldrsh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
+    ///Load Register with Translation
+    Ldrt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Logical Shift Left
+    Lsl { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    ///Logical Shift Right
+    Lsr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    ///Move to Coprocessor from ARM Register
+    Mcr {
+        cond: Cond,
+        coproc: Coproc,
+        opc1: u32,
+        rd: Reg,
+        crn: CoReg,
+        crm: CoReg,
+        opc2: u32,
+    },
+    ///Move to Coprocessor from ARM Register (extended)
+    Mcr2 { coproc: Coproc, opc1: u32, rd: Reg, crn: CoReg, crm: CoReg, opc2: u32 },
+    ///Move to Coprocessor from two ARM Registers
+    Mcrr { cond: Cond, coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
+    ///Move to Coprocessor from two ARM Registers (extended)
+    Mcrr2 { coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
+    ///Multiply Accumulate
+    Mla { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
+    ///Move
+    Mov { s: bool, cond: Cond, rd: Reg, op2: Op2 },
     Illegal,
 }

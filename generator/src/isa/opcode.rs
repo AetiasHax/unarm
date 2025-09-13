@@ -47,7 +47,6 @@ impl Opcodes {
                 where
                     F: Write + ?Sized
                 {
-                    let options = formatter.options();
                     match self {
                         #(#opcodes)*
                         Ins::Illegal => {
@@ -61,12 +60,9 @@ impl Opcodes {
                 where
                     F: Write + ?Sized
                 {
-                    let options = formatter.options();
                     match self {
                         #(#params)*
-                        Ins::Illegal => {
-                            formatter.write_str("<illegal>")?;
-                        }
+                        Ins::Illegal => {}
                     }
                     Ok(())
                 }
@@ -273,7 +269,12 @@ impl OpcodeEncoding {
             let parse_expr = if let Some(value) = self.get_param(name) {
                 value.parse_expr_tokens(isa, data_type)
             } else {
-                data_type.default_expr_tokens(isa)
+                data_type.default_expr_tokens(isa).unwrap_or_else(|| {
+                    panic!(
+                        "Param '{}' of type '{}' in opcode encoding '{}' has no default value",
+                        name.0, type_name.0, name
+                    )
+                })
             };
 
             let name_ident = Ident::new(&name.0, Span::call_site());

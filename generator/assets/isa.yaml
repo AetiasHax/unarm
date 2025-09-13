@@ -363,6 +363,23 @@ types:
               kind: !type [shift_op, bits(5..7)]
             - name: imm
               kind: !uint bits(7..12)
+- name: op2_shift
+  kind: !enum
+    bits: 0..32
+    variants:
+      xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
+        name: imm
+        description: Immediate
+        format: !fmt "#(imm)"
+        data:
+          name: imm
+          kind: !uint if bits(7..12) != 0 { bits(7..12) } else { 32 }
+      xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
+        name: reg
+        description: Register
+        data:
+          name: reg
+          kind: !type [reg, bits(8..12)]
 - name: cps_effect
   kind: !enum
     bits: 0..20
@@ -475,14 +492,16 @@ types:
         name: post
         description: Post-indexed
         data:
-          name: addr_ldr_str_pre
-          kind: !struct
-            format: !fmt "[(rn)], (offset)"
-            fields:
-            - name: rn
-              kind: !type [reg, bits(16..20)]
-            - name: offset
-              kind: !type [ldr_str_offset, bits(0..32)]
+          name: addr_ldr_str_post
+          kind: !type [addr_ldr_str_post, bits(0..32)]
+- name: addr_ldr_str_post
+  kind: !struct
+    format: !fmt "[(rn)], (offset)"
+    fields:
+    - name: rn
+      kind: !type [reg, bits(16..20)]
+    - name: offset
+      kind: !type [ldr_str_offset, bits(0..32)]
 - name: ldr_str_offset
   kind: !enum
     bits: 0..32
@@ -520,7 +539,7 @@ types:
   kind: !enum
     bits: 0..32
     variants:
-      xxxx_0001_x1xx_xxxx_xxxx_xxxx_1xx1_xxxx:
+      xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: pre
         description: Pre-indexed
         data:
@@ -534,7 +553,7 @@ types:
               kind: !type [misc_load_offset, bits(0..32)]
             - name: writeback
               kind: !type [wb, bit(21)]
-      xxxx_0000_x10x_xxxx_xxxx_xxxx_1xx1_xxxx:
+      xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
         desctiption: Post-indexed
         data:
@@ -701,6 +720,37 @@ opcodes:
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: asr
+  description: Arithmetic Shift Right
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !fmt asr(s)(cond)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x10x_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_00xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
 
 - mnemonic: b
   description: Branch
@@ -1191,3 +1241,333 @@ opcodes:
       rd: !bits 12..16
       rd2: !expr bits(12..16) + 1
       addr: !bits 0..32
+
+- mnemonic: ldrex
+  description: Load Register Exclusive
+  params: { cond: cond, rd: reg, rn: reg }
+  format:
+    opcode: !fmt ldrex(cond)
+    params: !fmt (rd), [(rn)]
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0001_1001_xxxx_xxxx_1111_1001_1111
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+
+- mnemonic: ldrexb
+  description: Load Register Exclusive Byte
+  params: { cond: cond, rd: reg, rn: reg }
+  format:
+    opcode: !fmt ldrexb(cond)
+    params: !fmt (rd), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1101_xxxx_xxxx_1111_1001_1111
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+
+- mnemonic: ldrexd
+  description: Load Register Exclusive Doubleword
+  params: { cond: cond, rd: reg, rd2: reg, rn: reg }
+  format:
+    opcode: !fmt ldrexd(cond)
+    params: !fmt (rd), (rd2), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1011_xxxx_xxx0_1111_1001_1111
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
+      rn: !bits 16..20
+
+- mnemonic: ldrexh
+  description: Load Register Exclusive Halfword
+  params: { cond: cond, rd: reg, rn: reg }
+  format:
+    opcode: !fmt ldrexh(cond)
+    params: !fmt (rd), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1111_xxxx_xxxx_1111_1001_1111
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+
+- mnemonic: ldrh
+  description: Load Register Halfword
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !fmt ldrh(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1011_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1000_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11) << 1] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_101x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrsb
+  description: Load Register Signed Byte
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !fmt ldrsb(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1101_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_011x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrsh
+  description: Load Register Signed Halfword
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !fmt ldrsh(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1111_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_111x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrt
+  description: Load Register with Translation
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !fmt ldrt(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01x0_x011_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !enum [post, !bits 0..32]
+
+- mnemonic: lsl
+  description: Logical Shift Left
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !fmt lsl(s)(cond)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x00x_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0000_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !bits 6..11]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_10xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: lsr
+  description: Logical Shift Right
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !fmt lsr(s)(cond)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x01x_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0000_1xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_11xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: mcr
+  description: Move to Coprocessor from ARM Register
+  params: { cond: cond, coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mcr(cond)
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1110_xxx0_xxxx_xxxx_xxxx_xxx1_xxxx
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mcr2
+  description: Move to Coprocessor from ARM Register (extended)
+  params: { coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mcr2
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_1110_xxx0_xxxx_xxxx_xxxx_xxx1_xxxx
+    params:
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mcrr
+  description: Move to Coprocessor from two ARM Registers
+  params: { cond: cond, coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mcrr(cond)
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc: !bits 20..24
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mcrr2
+  description: Move to Coprocessor from two ARM Registers (extended)
+  params: { coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mcrr2
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v5te*, v6*]
+    pattern: 1111_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      coproc: !bits 8..12
+      opc: !bits 20..24
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mla
+  description: Multiply Accumulate
+  params: { s: s, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt mla(s)(cond)
+      else: !fmt mla(cond)(s)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_001x_xxxx_xxxx_xxxx_1001_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      ra: !bits 12..16
+
+- mnemonic: mov
+  description: Move
+  params: { s: s, cond: cond, rd: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt mov(s)(cond)
+      else: !fmt mov(cond)(s)
+    params: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0011_101x_0000_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_0000_0000_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0010_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0110_xxxx_xxxx
+    params:
+      s: !const 0
+      rd: !expr (bit(7) << 3) | bits(0..3)
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0000_0000_00xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]

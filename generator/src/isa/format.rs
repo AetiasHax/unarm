@@ -84,7 +84,7 @@ impl VisitMut for FormatCondReplace {
                         panic!("option function takes one argument");
                     }
                     let option = &call.args[0];
-                    *node = syn::parse2(quote!(options.#option)).unwrap();
+                    *node = syn::parse2(quote!(formatter.options().#option)).unwrap();
                 }
                 "field" => {
                     if call.args.len() != 1 {

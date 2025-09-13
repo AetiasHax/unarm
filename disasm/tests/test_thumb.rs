@@ -53,6 +53,13 @@ mod tests {
     }
 
     #[test]
+    fn test_asr() {
+        assert_asm!(0x1023, "asrs r3, r4, #0x20");
+        assert_asm!(0x1163, "asrs r3, r4, #0x5");
+        assert_asm!(0x4117, "asrs r7, r7, r2");
+    }
+
+    #[test]
     fn test_b() {
         assert_asm!(0xd042, "beq #0x88");
         assert_asm!(0xd942, "bls #0x88");
@@ -132,5 +139,40 @@ mod tests {
     fn test_ldrb() {
         assert_asm!(0x7c22, "ldrb r2, [r4, #0x10]");
         assert_asm!(0x5c22, "ldrb r2, [r4, r0]");
+    }
+
+    #[test]
+    fn test_ldrh() {
+        assert_asm!(0x8c22, "ldrh r2, [r4, #0x20]");
+        assert_asm!(0x5a22, "ldrh r2, [r4, r0]");
+    }
+
+    #[test]
+    fn test_ldrsb() {
+        assert_asm!(0x5622, "ldrsb r2, [r4, r0]");
+    }
+
+    #[test]
+    fn test_ldrsh() {
+        assert_asm!(0x5e22, "ldrsh r2, [r4, r0]");
+    }
+
+    #[test]
+    fn test_lsl() {
+        assert_asm!(0x0163, "lsls r3, r4, #0x5");
+        assert_asm!(0x4097, "lsls r7, r7, r2");
+    }
+
+    #[test]
+    fn test_lsr() {
+        assert_asm!(0x0823, "lsrs r3, r4, #0x20");
+        assert_asm!(0x0963, "lsrs r3, r4, #0x5");
+        assert_asm!(0x40d7, "lsrs r7, r7, r2");
+    }
+
+    #[test]
+    fn test_mov() {
+        assert_asm!(0x2163, "movs r1, #0x63");
+        assert_asm!(0x0017, "movs r7, r2");
     }
 }
