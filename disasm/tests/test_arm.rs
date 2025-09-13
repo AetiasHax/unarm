@@ -4,7 +4,7 @@ mod tests {
 
     macro_rules! assert_asm {
         ($code:literal, $disasm:literal) => {{
-            let ins = parse_arm($code, 0);
+            let ins = parse_arm($code, 0).expect("Illegal instruction");
             let options = Options {
                 version: unarm::Version::V6K,
                 av: false,

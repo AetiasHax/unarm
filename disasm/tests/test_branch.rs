@@ -20,14 +20,14 @@ mod tests {
 
     macro_rules! assert_arm {
         ($code:literal, $pc:literal, $disasm:literal) => {{
-            let ins = parse_arm($code, $pc);
+            let ins = parse_arm($code, $pc).expect("Illegal instruction");
             assert_ins!(ins, $disasm)
         }};
     }
 
     macro_rules! assert_thumb {
         ($code:literal, $pc:literal, $disasm:literal) => {{
-            let ins = parse_thumb($code, None, $pc);
+            let ins = parse_thumb($code, None, $pc).expect("Illegal instruction");
             assert_ins!(ins, $disasm)
         }};
     }

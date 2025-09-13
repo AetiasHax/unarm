@@ -986,9 +986,6 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
-            Ins::Illegal => {
-                formatter.write_str("<illegal>")?;
-            }
         }
         Ok(())
     }
@@ -1342,7 +1339,6 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
             }
-            Ins::Illegal => {}
         }
         Ok(())
     }

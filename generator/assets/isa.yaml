@@ -576,9 +576,10 @@ types:
         data: 
           name: offset
           kind: !int ((bits(8..12) << 4) | bits(0..4)).negate_if(bit(23) == 0)
-      xxxx_000x_x0xx_xxxx_xxxx_0000_1xx1_xxxx:
+      xxxx_000x_x0xx_xxxx_xxxx_xxxx_1xx1_xxxx:
         name: reg
         description: Register offset
+        illegal: ins() & 0xf00 != 0
         data:
           name: misc_load_offset_reg
           kind: !struct
@@ -849,7 +850,8 @@ opcodes:
     params:
       target: !enum [direct, !expr ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
   - version: [v5t*, v6*]
-    pattern: xxxx_0001_0010_1111_1111_1111_0011_xxxx
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0011_xxxx
+    illegal: bits(8..20) != 0xfff
     params:
       cond: !bits 28..32
       target: !enum [indirect, !bits 0..4]
@@ -871,7 +873,8 @@ opcodes:
     params: !fmt (rm)
   arm:
   - version: [v4t, v5t*, v6*]
-    pattern: xxxx_0001_0010_1111_1111_1111_0001_xxxx
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0001_xxxx
+    illegal: bits(8..20) != 0xfff
     params:
       cond: !bits 28..32
       rm: !bits 0..4
@@ -889,7 +892,8 @@ opcodes:
     params: !fmt (rm)
   arm:
   - version: [v5tej, v6*]
-    pattern: xxxx_0001_0010_1111_1111_1111_0010_xxxx
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0010_xxxx
+    illegal: bits(8..20) != 0xfff
     params:
       cond: !bits 28..32
       rm: !bits 0..4
@@ -938,7 +942,8 @@ opcodes:
     params: !fmt ""
   arm:
   - version: [v6k]
-    pattern: 1111_0101_0111_1111_1111_0000_0001_1111
+    pattern: 1111_0101_0111_xxxx_xxxx_xxxx_0001_xxxx
+    illegal: ins() & 0xfff0f != 0xff00f
     params: {}
 
 - mnemonic: clz
@@ -949,7 +954,8 @@ opcodes:
     params: !fmt (rd), (rm)
   arm:
   - version: [v5t*, v6*]
-    pattern: xxxx_0001_0110_1111_xxxx_1111_0001_xxxx
+    pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0001_xxxx
+    illegal: ins() & 0xf0f00 != 0xf0f00
     params:
       cond: !bits 28..32
       rd: !bits 12..16
@@ -963,7 +969,8 @@ opcodes:
     params: !fmt (rn), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_00x1_0111_xxxx_0000_xxxx_xxxx_xxxx
+    pattern: xxxx_00x1_0111_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xf000 != 0
     params:
       cond: !bits 28..32
       rn: !bits 16..20
@@ -983,7 +990,8 @@ opcodes:
     params: !fmt (rn), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_00x1_0101_xxxx_0000_xxxx_xxxx_xxxx
+    pattern: xxxx_00x1_0101_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xf000 != 0
     params:
       cond: !bits 28..32
       rn: !bits 16..20
@@ -1019,7 +1027,8 @@ opcodes:
         else: !fmt "(aif), #(mode)"
   arm:
   - version: [v6*]
-    pattern: 1111_0001_0000_xxx0_0000_000x_xx0x_xxxx
+    pattern: 1111_0001_0000_xxx0_xxxx_xxxx_xx0x_xxxx
+    illegal: ins() & 0xfe00 != 0
     params:
       effect: !bits 18..20
       aif: !bits 6..9
@@ -1039,7 +1048,8 @@ opcodes:
     params: !fmt ""
   arm:
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_0011_0010_0000_1111_0000_0001_0100
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0001_0100
+    illegal: ins() & 0xff00 != 0xf000
     params:
       cond: !bits 28..32
 
@@ -1235,7 +1245,16 @@ opcodes:
       else: !fmt (rd), (addr)
   arm:
   - version: [v5te*, v6*]
-    pattern: xxxx_000x_xxx0_xxxx_xxx0_xxxx_1101_xxxx
+    pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1101_xxxx
+    illegal: ins() & 0x1000 != 0
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
+      addr: !bits 0..32
+  - version: [v5te*, v6*]
+    pattern: xxxx_000x_x1x0_1111_xxxx_xxxx_1101_xxxx
+    illegal: ins() & 0x01201000 != 0x01000000
     params:
       cond: !bits 28..32
       rd: !bits 12..16
@@ -1250,7 +1269,8 @@ opcodes:
     params: !fmt (rd), [(rn)]
   arm:
   - version: [v6*]
-    pattern: xxxx_0001_1001_xxxx_xxxx_1111_1001_1111
+    pattern: xxxx_0001_1001_xxxx_xxxx_xxxx_1001_xxxx
+    illegal: ins() & 0xf0f != 0xf0f
     params:
       cond: !bits 28..32
       rd: !bits 12..16
@@ -1264,7 +1284,8 @@ opcodes:
     params: !fmt (rd), [(rn)]
   arm:
   - version: [v6k]
-    pattern: xxxx_0001_1101_xxxx_xxxx_1111_1001_1111
+    pattern: xxxx_0001_1101_xxxx_xxxx_xxxx_1001_xxxx
+    illegal: ins() & 0xf0f != 0xf0f
     params:
       cond: !bits 28..32
       rd: !bits 12..16
@@ -1278,7 +1299,8 @@ opcodes:
     params: !fmt (rd), (rd2), [(rn)]
   arm:
   - version: [v6k]
-    pattern: xxxx_0001_1011_xxxx_xxx0_1111_1001_1111
+    pattern: xxxx_0001_1011_xxxx_xxx0_xxxx_1001_xxxx
+    illegal: ins() & 0xf0f != 0xf0f
     params:
       cond: !bits 28..32
       rd: !bits 12..16
@@ -1293,7 +1315,8 @@ opcodes:
     params: !fmt (rd), [(rn)]
   arm:
   - version: [v6k]
-    pattern: xxxx_0001_1111_xxxx_xxxx_1111_1001_1111
+    pattern: xxxx_0001_1111_xxxx_xxxx_xxxx_1001_xxxx
+    illegal: ins() & 0xf0f != 0xf0f
     params:
       cond: !bits 28..32
       rd: !bits 12..16
@@ -1538,15 +1561,25 @@ opcodes:
       else: !fmt mov(cond)(s)
     params: !fmt (rd), (op2)
   arm:
+  # - version: [v4*, v5t*, v6*]
+  #   pattern: xxxx_00x1_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+  #   illegal: ins() & 0xf0000 != 0
+  #   params:
+  #     s: !bits 20
+  #     cond: !bits 28..32
+  #     rd: !bits 12..16
+  #     op2: !bits 0..32
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_0011_101x_0000_xxxx_xxxx_xxxx_xxxx
+    pattern: xxxx_0011_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xf0000 != 0
     params:
       s: !bits 20
       cond: !bits 28..32
       rd: !bits 12..16
       op2: !bits 0..32
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_0001_101x_0000_xxxx_0000_0000_xxxx
+    pattern: xxxx_0001_101x_xxxx_xxxx_0000_0000_xxxx
+    illegal: ins() & 0xf0000 != 0
     params:
       s: !bits 20
       cond: !bits 28..32

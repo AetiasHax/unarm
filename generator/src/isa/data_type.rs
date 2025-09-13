@@ -232,10 +232,14 @@ impl DataType {
                 quote!((#expr) as i32)
             }
             DataTypeKind::Enum(data_type_enum) => {
-                data_type_enum.parse_expr_tokens(&self.name, value)
+                let expr = data_type_enum.parse_expr_tokens(&self.name, value);
+                let illegal_try = data_type_enum.can_be_illegal(isa).then(|| quote!(?));
+                quote!(#expr #illegal_try)
             }
             DataTypeKind::Struct(data_type_struct) => {
-                data_type_struct.parse_expr_tokens(&self.name, value)
+                let expr = data_type_struct.parse_expr_tokens(&self.name, value);
+                let illegal_try = data_type_struct.can_be_illegal(isa).then(|| quote!(?));
+                quote!(#expr #illegal_try)
             }
             DataTypeKind::Type(data_type_name, data_expr) => {
                 let Some(inner_type) = isa.types().get(data_type_name) else {
@@ -250,6 +254,20 @@ impl DataType {
                 let value = value.unwrap_or_else(|| quote!(value));
                 quote!(#name_ident::parse(#value))
             }
+        }
+    }
+
+    fn can_be_illegal(&self, isa: &Isa) -> bool {
+        match &self.kind {
+            DataTypeKind::Bool { .. } => false,
+            DataTypeKind::UInt(_) => false,
+            DataTypeKind::Int(_) => false,
+            DataTypeKind::Enum(data_type_enum) => data_type_enum.can_be_illegal(isa),
+            DataTypeKind::Struct(data_type_struct) => data_type_struct.can_be_illegal(isa),
+            DataTypeKind::Type(data_type_name, _) => {
+                isa.types().get(data_type_name).unwrap().can_be_illegal(isa)
+            }
+            DataTypeKind::Custom => false,
         }
     }
 
@@ -455,36 +473,47 @@ impl DataTypeEnum {
         self.variants.keys().any(|pattern| pattern.bitmask() != expected_bitmask)
     }
 
+    fn can_be_illegal(&self, isa: &Isa) -> bool {
+        self.variants.values().any(|variant| variant.can_be_illegal(isa))
+    }
+
     fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
 
-        let fn_body = if self.has_optional_bits() {
-            let variants = self
-                .variants
-                .iter()
-                .map(|(pattern, variant)| variant.parse_if_tokens(isa, pattern));
-            quote! {
-                #(#variants)else*
-                else {
-                    panic!();
+        let can_be_illegal = self.can_be_illegal(isa);
+
+        let fn_body =
+            if self.has_optional_bits() {
+                let variants = self.variants.iter().map(|(pattern, variant)| {
+                    variant.parse_if_tokens(isa, pattern, can_be_illegal)
+                });
+                quote! {
+                    #(#variants)else*
+                    else {
+                        panic!();
+                    }
                 }
-            }
+            } else {
+                let variants = self.variants.iter().map(|(pattern, variant)| {
+                    variant.parse_match_tokens(isa, pattern, can_be_illegal)
+                });
+                quote! {
+                    match value {
+                        #(#variants),*,
+                        _ => panic!(),
+                    }
+                }
+            };
+
+        let return_type = if can_be_illegal {
+            quote!(Option<Self>)
         } else {
-            let variants = self
-                .variants
-                .iter()
-                .map(|(pattern, variant)| variant.parse_match_tokens(isa, pattern));
-            quote! {
-                match value {
-                    #(#variants),*,
-                    _ => panic!(),
-                }
-            }
+            quote!(Self)
         };
 
         quote! {
             impl #name_ident {
-                pub(crate) fn parse(value: u32, pc: u32) -> Self {
+                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
                     #fn_body
                 }
             }
@@ -528,6 +557,7 @@ impl DataTypeEnum {
 pub struct DataTypeEnumVariant {
     name: DataTypeEnumVariantName,
     description: Option<String>,
+    illegal: Option<DataExpr>,
     format: Option<Format>,
     data: Option<DataType>,
 }
@@ -565,16 +595,21 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_match_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
+    fn parse_match_tokens(
+        &self,
+        isa: &Isa,
+        pattern: &Pattern,
+        can_be_illegal: bool,
+    ) -> TokenStream {
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens(isa);
-        quote!(#pattern => #parse_expr)
+        let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
+        quote!(#pattern => { #parse_expr })
     }
 
-    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
+    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern, can_be_illegal: bool) -> TokenStream {
         let bitmask = HexLiteral(pattern.bitmask());
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens(isa);
+        let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
         quote! {
             if (value & #bitmask) == #pattern {
                 #parse_expr
@@ -582,9 +617,9 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_expr_tokens(&self, isa: &Isa) -> TokenStream {
+    fn parse_expr_tokens(&self, isa: &Isa, can_be_illegal: bool) -> TokenStream {
         let variant_ident = self.as_ident();
-        if let Some(data) = &self.data {
+        let parse_expr = if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
                 let record = data_type_struct.parse_record_tokens(isa);
                 quote!(Self::#variant_ident #record)
@@ -594,6 +629,31 @@ impl DataTypeEnumVariant {
             }
         } else {
             quote!(Self::#variant_ident)
+        };
+
+        if let Some(illegal) = &self.illegal {
+            let ident = Ident::new("value", Span::call_site());
+            let illegal_expr = illegal.as_tokens(ident);
+            quote! {
+                if #illegal_expr {
+                    return None;
+                }
+                Some(#parse_expr)
+            }
+        } else if can_be_illegal {
+            quote!(Some(#parse_expr))
+        } else {
+            parse_expr
+        }
+    }
+
+    fn can_be_illegal(&self, isa: &Isa) -> bool {
+        if self.illegal.is_some() {
+            true
+        } else if let Some(data) = &self.data {
+            data.can_be_illegal(isa)
+        } else {
+            false
         }
     }
 
@@ -754,14 +814,16 @@ impl DataTypeStruct {
         quote!(#name_ident::parse(#value, pc))
     }
 
+    fn can_be_illegal(&self, isa: &Isa) -> bool {
+        self.fields.iter().any(|field| field.can_be_illegal(isa))
+    }
+
     fn default_fields(&self, isa: &Isa) -> Option<Vec<TokenStream>> {
         self.fields
             .iter()
             .map(|field| {
                 let field_ident = Ident::new(&field.name.0, Span::call_site());
-                let Some(default_expr) = field.default_expr_tokens(isa) else {
-                    return None;
-                };
+                let default_expr = field.default_expr_tokens(isa)?;
                 Some(quote!(#field_ident: #default_expr))
             })
             .collect::<Option<Vec<_>>>()
@@ -893,6 +955,12 @@ impl VisitMut for DataExprReplace {
                         let range = BitRange(bit..bit + 1);
                         let result = range.shift_mask_tokens(Some(self.input_ident.clone()));
                         *node = syn::parse2(quote!((#result))).unwrap();
+                    }
+                    "ins" => {
+                        if !call.args.is_empty() {
+                            panic!("ins function takes zero arguments");
+                        }
+                        *node = syn::parse2(self.input_ident.to_token_stream()).unwrap();
                     }
                     _ => panic!("Unknown data expression function {fn_name}"),
                 }

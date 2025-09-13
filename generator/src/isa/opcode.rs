@@ -28,7 +28,6 @@ impl Opcodes {
         quote! {
             pub enum Ins {
                 #(#opcodes),*,
-                Illegal,
             }
         }
     }
@@ -49,9 +48,6 @@ impl Opcodes {
                 {
                     match self {
                         #(#opcodes)*
-                        Ins::Illegal => {
-                            formatter.write_str("<illegal>")?;
-                        }
                     }
                     Ok(())
                 }
@@ -62,7 +58,6 @@ impl Opcodes {
                 {
                     match self {
                         #(#params)*
-                        Ins::Illegal => {}
                     }
                     Ok(())
                 }
@@ -80,10 +75,10 @@ impl Opcodes {
         encodings.sort_unstable();
         let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
         quote! {
-            pub fn parse_arm(ins: u32, pc: u32) -> Ins {
+            pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
                 #(#encodings_tokens)else*
                 else {
-                    Ins::Illegal
+                    None
                 }
             }
         }
@@ -99,10 +94,10 @@ impl Opcodes {
         encodings.sort_unstable();
         let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
         quote! {
-            pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Ins {
+            pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Option<Ins> {
                 #(#encodings_tokens)else*
                 else {
-                    Ins::Illegal
+                    None
                 }
             }
         }
@@ -254,6 +249,7 @@ pub struct OpcodeFormat {
 pub struct OpcodeEncoding {
     version: Vec<IsaVersionPattern>,
     pattern: OpcodePattern,
+    illegal: Option<DataExpr>,
     params: IndexMap<OpcodeParamName, OpcodeParamValue>,
 }
 impl OpcodeEncoding {
@@ -283,10 +279,21 @@ impl OpcodeEncoding {
         let variant_ident = Ident::new(&capitalize(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
 
+        let illegal_check = self.illegal.as_ref().map(|illegal| {
+            let ident = Ident::new("value", Span::call_site());
+            let illegal_expr = illegal.as_tokens(ident);
+            quote! {
+                if #illegal_expr {
+                    return None;
+                }
+            }
+        });
+
         quote! {
-            fn #fn_ident(value: u32, pc: u32) -> Ins {
+            fn #fn_ident(value: u32, pc: u32) -> Option<Ins> {
+                #illegal_check
                 #(#params)*
-                Ins::#variant_ident { #(#param_names),* }
+                Some(Ins::#variant_ident { #(#param_names),* })
             }
         }
     }

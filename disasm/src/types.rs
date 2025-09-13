@@ -338,5 +338,4 @@ pub enum Ins {
     Mla { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
     ///Move
     Mov { s: bool, cond: Cond, rd: Reg, op2: Op2 },
-    Illegal,
 }
