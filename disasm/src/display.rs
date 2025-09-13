@@ -1083,6 +1083,43 @@ impl Ins {
                 formatter.write_str("msr")?;
                 formatter.write_cond(*cond)?;
             }
+            Ins::Mul { s, cond, rd, rn, rm } => {
+                if formatter.options().ual {
+                    formatter.write_str("mul")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("mul")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Mvn { s, cond, rd, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("mvn")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("mvn")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Nop { cond } => {
+                formatter.write_str("nop")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Orr { s, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("orr")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("orr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
         }
         Ok(())
     }
@@ -1505,6 +1542,29 @@ impl Ins {
                 formatter.write_status_fields(*status_fields)?;
                 formatter.write_separator()?;
                 formatter.write_msr_op2(*op2)?;
+            }
+            Ins::Mul { s, cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Mvn { s, cond, rd, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Nop { cond } => {}
+            Ins::Orr { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
             }
         }
         Ok(())

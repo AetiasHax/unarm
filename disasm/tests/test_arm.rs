@@ -376,4 +376,38 @@ mod tests {
         assert_asm!(0xe165f001, "msr spsr_sc, r1");
         assert_asm!(0xe12af001, "msr cpsr_fx, r1");
     }
+
+    #[test]
+    fn test_mul() {
+        assert_asm!(0xe0010293, "mul r1, r3, r2");
+        assert_asm!(0x10110293, "mulsne r1, r3, r2");
+    }
+
+    #[test]
+    fn test_mvn() {
+        assert_asm!(0xe1e02003, "mvn r2, r3");
+        assert_asm!(0xe3e05e23, "mvn r5, #0x230");
+        assert_asm!(0x11e0960a, "mvnne r9, r10, lsl #0xc");
+        assert_asm!(0x41e0f238, "mvnmi pc, r8, lsr r2");
+        assert_asm!(0x71e0046e, "mvnvc r0, lr, ror #0x8");
+        assert_asm!(0xb1e07060, "mvnlt r7, r0, rrx");
+        assert_asm!(0xe1f02153, "mvns r2, r3, asr r1");
+    }
+
+    #[test]
+    fn test_nop() {
+        assert_asm!(0xe320f000, "nop");
+        assert_asm!(0x0320f000, "nopeq");
+    }
+
+    #[test]
+    fn test_orr() {
+        assert_asm!(0xe1812003, "orr r2, r1, r3");
+        assert_asm!(0xe3845e23, "orr r5, r4, #0x230");
+        assert_asm!(0x118b960a, "orrne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x4185f238, "orrmi pc, r5, r8, lsr r2");
+        assert_asm!(0x7182046e, "orrvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb1887060, "orrlt r7, r8, r0, rrx");
+        assert_asm!(0xe1952153, "orrs r2, r5, r3, asr r1");
+    }
 }

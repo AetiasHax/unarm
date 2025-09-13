@@ -381,4 +381,12 @@ pub enum Ins {
     Mrs { cond: Cond, rd: Reg, status_reg: StatusReg },
     ///Move to Status register
     Msr { cond: Cond, status_fields: StatusFields, op2: MsrOp2 },
+    ///Multiply
+    Mul { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Move Negative
+    Mvn { s: bool, cond: Cond, rd: Reg, op2: Op2 },
+    ///No Operation
+    Nop { cond: Cond },
+    ///Bitwise OR
+    Orr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
 }

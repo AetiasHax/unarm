@@ -175,4 +175,19 @@ mod tests {
         assert_asm!(0x2163, "movs r1, #0x63");
         assert_asm!(0x0017, "movs r7, r2");
     }
+
+    #[test]
+    fn test_mul() {
+        assert_asm!(0x4357, "muls r7, r2, r7");
+    }
+
+    #[test]
+    fn test_mvn() {
+        assert_asm!(0x43d7, "mvns r7, r2");
+    }
+
+    #[test]
+    fn test_orr() {
+        assert_asm!(0x4317, "orrs r7, r7, r2");
+    }
 }
