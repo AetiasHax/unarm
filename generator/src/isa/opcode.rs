@@ -12,7 +12,7 @@ use crate::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
         Format, FormatParams, Isa, IsaVersionPattern, OpcodePattern,
     },
-    util::{hex_literal::HexLiteral, str::capitalize},
+    util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
 
 #[derive(Deserialize, Debug)]
@@ -137,7 +137,7 @@ impl Opcode {
     }
 
     fn ins_variant_tokens(&self, isa: &Isa) -> TokenStream {
-        let variant_ident = Ident::new(&capitalize(&self.mnemonic), Span::call_site());
+        let variant_ident = Ident::new(&snake_to_pascal_case(&self.mnemonic), Span::call_site());
         let params = self.params.iter().map(|(name, type_name)| {
             let Some(data_type) = isa.types().get(type_name) else {
                 panic!();
@@ -205,7 +205,7 @@ impl Opcode {
     }
 
     fn write_variant_tokens(&self, expr: TokenStream) -> TokenStream {
-        let variant_ident = Ident::new(&capitalize(&self.mnemonic), Span::call_site());
+        let variant_ident = Ident::new(&snake_to_pascal_case(&self.mnemonic), Span::call_site());
         let param_names = self.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
 
         quote! {
@@ -276,7 +276,7 @@ impl OpcodeEncoding {
             let name_ident = Ident::new(&name.0, Span::call_site());
             quote!(let #name_ident = #parse_expr;)
         });
-        let variant_ident = Ident::new(&capitalize(opcode.mnemonic()), Span::call_site());
+        let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
 
         let illegal_check = self.illegal.as_ref().map(|illegal| {

@@ -68,6 +68,7 @@ impl Isa {
             #![cfg_attr(rustfmt, rustfmt_skip)]
 
             #![allow(clippy::collapsible_else_if)]
+            #![allow(clippy::needless_else)]
             #![allow(unused_variables)]
 
             use crate::*;

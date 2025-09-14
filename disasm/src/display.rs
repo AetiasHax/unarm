@@ -1,5 +1,6 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(clippy::collapsible_else_if)]
+#![allow(clippy::needless_else)]
 #![allow(unused_variables)]
 use crate::*;
 pub trait Write: core::fmt::Write {
@@ -1413,7 +1414,7 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
-            Ins::Smlal_half { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
+            Ins::SmlalHalf { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
                 formatter.write_str("smlal")?;
                 formatter.write_reg_side(*rn_side)?;
                 formatter.write_reg_side(*rm_side)?;
@@ -1490,8 +1491,291 @@ impl Ins {
                 formatter.write_str("srs")?;
                 formatter.write_srs_rfe_mode(*addr_mode)?;
             }
-            Ins::Ssat { cond, rd, sat_imm, op2 } => {
+            Ins::Ssat { cond, rd, imm, op2 } => {
                 formatter.write_str("ssat")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Ssat16 { cond, rd, imm, rn } => {
+                formatter.write_str("ssat16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Ssax { cond, rd, rn, rm } => {
+                formatter.write_str("ssax")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Ssub16 { cond, rd, rn, rm } => {
+                formatter.write_str("ssub16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Ssub8 { cond, rd, rn, rm } => {
+                formatter.write_str("ssub8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Stc { l, cond, coproc, crd, dest } => {
+                if formatter.options().ual {
+                    formatter.write_str("stc")?;
+                    formatter.write_l(*l)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("stc")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_l(*l)?;
+                }
+            }
+            Ins::Stc2 { l, coproc, crd, dest } => {
+                formatter.write_str("stc2")?;
+                formatter.write_l(*l)?;
+            }
+            Ins::Stm { mode, cond, rn, writeback, regs, user_mode } => {
+                if formatter.options().ual {
+                    formatter.write_str("stm")?;
+                    formatter.write_ldm_stm_mode(*mode)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldm")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_ldm_stm_mode(*mode)?;
+                }
+            }
+            Ins::Str { cond, rd, addr } => {
+                formatter.write_str("str")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strb { cond, rd, addr } => {
+                formatter.write_str("strb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strbt { cond, rd, addr } => {
+                formatter.write_str("strbt")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strd { cond, rd, rd2, addr } => {
+                formatter.write_str("strd")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strex { cond, rd, rm, rn } => {
+                formatter.write_str("strex")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strexb { cond, rd, rm, rn } => {
+                formatter.write_str("strexb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strexd { cond, rd, rm, rm2, rn } => {
+                formatter.write_str("strexd")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strexh { cond, rd, rm, rn } => {
+                formatter.write_str("strexh")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strh { cond, rd, addr } => {
+                formatter.write_str("strh")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Strt { cond, rd, addr } => {
+                formatter.write_str("strt")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sub { s, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("sub")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("sub")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Svc { cond, imm } => {
+                if formatter.options().ual {
+                    formatter.write_str("svc")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("swi")?;
+                    formatter.write_cond(*cond)?;
+                }
+            }
+            Ins::Swp { cond, rd, rd2, rn } => {
+                formatter.write_str("swp")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Swpb { cond, rd, rd2, rn } => {
+                formatter.write_str("swpb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sxtab { cond, rd, rn, rm, rotate } => {
+                formatter.write_str("sxtab")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sxtab16 { cond, rd, rn, rm, rotate } => {
+                formatter.write_str("sxtab16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sxtah { cond, rd, rn, rm, rotate } => {
+                formatter.write_str("sxtah")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sxtb { cond, rd, rm, rotate } => {
+                formatter.write_str("sxtb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sxtb16 { cond, rd, rm, rotate } => {
+                formatter.write_str("sxtb16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sxth { cond, rd, rm, rotate } => {
+                formatter.write_str("sxth")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Teq { cond, rn, op2 } => {
+                formatter.write_str("teq")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Tst { cond, rn, op2 } => {
+                formatter.write_str("tst")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uadd16 { cond, rd, rn, rm } => {
+                formatter.write_str("uadd16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uadd8 { cond, rd, rn, rm } => {
+                formatter.write_str("uadd8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uasx { cond, rd, rn, rm } => {
+                formatter.write_str("uasx")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Udf { imm } => {
+                formatter.write_str("udf")?;
+            }
+            Ins::Uhadd16 { cond, rd, rn, rm } => {
+                formatter.write_str("uhadd16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uhadd8 { cond, rd, rn, rm } => {
+                formatter.write_str("uhadd8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uhasx { cond, rd, rn, rm } => {
+                formatter.write_str("uhasx")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uhsax { cond, rd, rn, rm } => {
+                formatter.write_str("uhsax")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uhsub16 { cond, rd, rn, rm } => {
+                formatter.write_str("uhsub16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uhsub8 { cond, rd, rn, rm } => {
+                formatter.write_str("uhsub8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Umaal { cond, rd_lo, rd_hi, rn, rm } => {
+                formatter.write_str("umaal")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Umlal { s, cond, rd_lo, rd_hi, rn, rm } => {
+                if formatter.options().ual {
+                    formatter.write_str("umlal")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("umlal")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Umull { s, cond, rd_lo, rd_hi, rn, rm } => {
+                if formatter.options().ual {
+                    formatter.write_str("umull")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("umull")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Uqadd16 { cond, rd, rn, rm } => {
+                formatter.write_str("uqadd16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uqadd8 { cond, rd, rn, rm } => {
+                formatter.write_str("uqadd8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uqasx { cond, rd, rn, rm } => {
+                formatter.write_str("uqasx")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uqsax { cond, rd, rn, rm } => {
+                formatter.write_str("uqsax")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uqsub16 { cond, rd, rn, rm } => {
+                formatter.write_str("uqsub16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uqsub8 { cond, rd, rn, rm } => {
+                formatter.write_str("uqsub8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usad8 { cond, rd, rn, rm } => {
+                formatter.write_str("usad8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usada8 { cond, rd, rn, rm, ra } => {
+                formatter.write_str("usada8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usat { cond, rd, imm, op2 } => {
+                formatter.write_str("usat")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usat16 { cond, rd, imm, rn } => {
+                formatter.write_str("usat16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usax { cond, rd, rn, rm } => {
+                formatter.write_str("usax")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usub16 { cond, rd, rn, rm } => {
+                formatter.write_str("usub16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Usub8 { cond, rd, rn, rm } => {
+                formatter.write_str("usub8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uxtab { cond, rd, rn, rm, rotate } => {
+                formatter.write_str("uxtab")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uxtab16 { cond, rd, rn, rm, rotate } => {
+                formatter.write_str("uxtab16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uxtah { cond, rd, rn, rm, rotate } => {
+                formatter.write_str("uxtah")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uxtb { cond, rd, rm, rotate } => {
+                formatter.write_str("uxtb")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uxtb16 { cond, rd, rm, rotate } => {
+                formatter.write_str("uxtb16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Uxth { cond, rd, rm, rotate } => {
+                formatter.write_str("uxth")?;
                 formatter.write_cond(*cond)?;
             }
         }
@@ -2236,7 +2520,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            Ins::Smlal_half { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
+            Ins::SmlalHalf { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
                 formatter.write_separator()?;
@@ -2364,14 +2648,585 @@ impl Ins {
                 formatter.write_str("#")?;
                 formatter.write_uimm(*mode)?;
             }
-            Ins::Ssat { cond, rd, sat_imm, op2 } => {
+            Ins::Ssat { cond, rd, imm, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
                 formatter.write_str("#")?;
-                formatter.write_uimm(*sat_imm)?;
+                formatter.write_uimm(*imm)?;
                 formatter.write_separator()?;
                 formatter.write_shift_imm(*op2)?;
+            }
+            Ins::Ssat16 { cond, rd, imm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+            }
+            Ins::Ssax { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Ssub16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Ssub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Stc { l, cond, coproc, crd, dest } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldc_stc(*dest)?;
+            }
+            Ins::Stc2 { l, coproc, crd, dest } => {
+                formatter.write_space()?;
+                formatter.write_coproc(*coproc)?;
+                formatter.write_separator()?;
+                formatter.write_co_reg(*crd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldc_stc(*dest)?;
+            }
+            Ins::Stm { mode, cond, rn, writeback, regs, user_mode } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_wb(*writeback)?;
+                formatter.write_separator()?;
+                formatter.write_reg_list(*regs)?;
+                formatter.write_user_mode(*user_mode)?;
+            }
+            Ins::Str { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Strb { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Strbt { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Strd { cond, rd, rd2, addr } => {
+                formatter.write_space()?;
+                if formatter.options().ual {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rd2)?;
+                    formatter.write_separator()?;
+                    formatter.write_addr_misc_load(*addr)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_addr_misc_load(*addr)?;
+                }
+            }
+            Ins::Strex { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("]")?;
+            }
+            Ins::Strexb { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("]")?;
+            }
+            Ins::Strexd { cond, rd, rm, rm2, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm2)?;
+                formatter.write_separator()?;
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("]")?;
+            }
+            Ins::Strexh { cond, rd, rm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("]")?;
+            }
+            Ins::Strh { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_misc_load(*addr)?;
+            }
+            Ins::Strt { cond, rd, addr } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_addr_ldr_str(*addr)?;
+            }
+            Ins::Sub { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Svc { cond, imm } => {
+                formatter.write_space()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+            }
+            Ins::Swp { cond, rd, rd2, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd2)?;
+                formatter.write_separator()?;
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("]")?;
+            }
+            Ins::Swpb { cond, rd, rd2, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd2)?;
+                formatter.write_separator()?;
+                formatter.write_str("[")?;
+                formatter.write_reg(*rn)?;
+                formatter.write_str("]")?;
+            }
+            Ins::Sxtab { cond, rd, rn, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Sxtab16 { cond, rd, rn, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Sxtah { cond, rd, rn, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Sxtb { cond, rd, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Sxtb16 { cond, rd, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Sxth { cond, rd, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Teq { cond, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Tst { cond, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Uadd16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uadd8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uasx { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Udf { imm } => {
+                formatter.write_space()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+            }
+            Ins::Uhadd16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uhadd8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uhasx { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uhsax { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uhsub16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uhsub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Umaal { cond, rd_lo, rd_hi, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Umlal { s, cond, rd_lo, rd_hi, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Umull { s, cond, rd_lo, rd_hi, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uqadd16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uqadd8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uqasx { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uqsax { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uqsub16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uqsub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Usad8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Usada8 { cond, rd, rn, rm, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Usat { cond, rd, imm, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+                formatter.write_separator()?;
+                formatter.write_shift_imm(*op2)?;
+            }
+            Ins::Usat16 { cond, rd, imm, rn } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+            }
+            Ins::Usax { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Usub16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Usub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Uxtab { cond, rd, rn, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Uxtab16 { cond, rd, rn, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Uxtah { cond, rd, rn, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Uxtb { cond, rd, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Uxtb16 { cond, rd, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
+            }
+            Ins::Uxth { cond, rd, rm, rotate } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                if *rotate != 0 {
+                    formatter.write_separator()?;
+                    formatter.write_str("ror")?;
+                    formatter.write_space()?;
+                    formatter.write_str("#")?;
+                    formatter.write_uimm(*rotate)?;
+                } else {}
             }
         }
         Ok(())

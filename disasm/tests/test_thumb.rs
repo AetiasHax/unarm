@@ -236,4 +236,71 @@ mod tests {
         assert_asm!(0xb650, "setend le");
         assert_asm!(0xb658, "setend be");
     }
+
+    #[test]
+    fn test_stm() {
+        assert_asm!(0xc155, "stm r1!, {r0, r2, r4, r6}");
+    }
+
+    #[test]
+    fn test_str() {
+        assert_asm!(0x6422, "str r2, [r4, #0x40]");
+        assert_asm!(0x5022, "str r2, [r4, r0]");
+        assert_asm!(0x9742, "str r7, [sp, #0x108]");
+    }
+
+    #[test]
+    fn test_strb() {
+        assert_asm!(0x7422, "strb r2, [r4, #0x10]");
+        assert_asm!(0x5422, "strb r2, [r4, r0]");
+    }
+
+    #[test]
+    fn test_strh() {
+        assert_asm!(0x8422, "strh r2, [r4, #0x20]");
+        assert_asm!(0x5222, "strh r2, [r4, r0]");
+    }
+
+    #[test]
+    fn test_sub() {
+        assert_asm!(0x1eca, "subs r2, r1, #0x3");
+        assert_asm!(0x3e42, "subs r6, r6, #0x42");
+        assert_asm!(0x1a53, "subs r3, r2, r1");
+        assert_asm!(0xb0ff, "sub sp, sp, #0x1fc");
+    }
+
+    #[test]
+    fn test_svc() {
+        assert_asm!(0xdf42, "svc #0x42");
+    }
+
+    #[test]
+    fn test_sxtb() {
+        assert_asm!(0xb24a, "sxtb r2, r1");
+    }
+
+    #[test]
+    fn test_sxth() {
+        assert_asm!(0xb20a, "sxth r2, r1");
+    }
+
+    #[test]
+    fn test_tst() {
+        assert_asm!(0x4217, "tst r7, r2");
+    }
+
+    #[test]
+    fn test_udf() {
+        assert_asm!(0xde42, "udf #0x42");
+    }
+
+    #[test]
+    fn test_uxtb() {
+        assert_asm!(0xb2ca, "uxtb r2, r1");
+    }
+
+    #[test]
+    fn test_uxth() {
+        assert_asm!(0xb28a, "uxth r2, r1");
+    }
 }

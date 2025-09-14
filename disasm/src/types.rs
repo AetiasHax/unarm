@@ -23,6 +23,7 @@ pub enum Version {
     V5T,
     V5Te,
     V5Tej,
+    V6,
     V6K,
 }
 #[derive(PartialEq, Eq)]
@@ -513,7 +514,7 @@ pub enum Ins {
     ///Signed Multiply Accumulate Long
     Smlal { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
     ///Signed Multiply Accumulate Long halfwords
-    Smlal_half {
+    SmlalHalf {
         cond: Cond,
         rd_lo: Reg,
         rd_hi: Reg,
@@ -549,5 +550,134 @@ pub enum Ins {
     ///Store Return State
     Srs { addr_mode: SrsRfeMode, rn: Reg, writeback: bool, mode: u32 },
     ///Signed Saturate
-    Ssat { cond: Cond, rd: Reg, sat_imm: u32, op2: ShiftImm },
+    Ssat { cond: Cond, rd: Reg, imm: u32, op2: ShiftImm },
+    ///Signed Saturate two 16-bit values
+    Ssat16 { cond: Cond, rd: Reg, imm: u32, rn: Reg },
+    ///Signed Subtract and Add with Exchange
+    Ssax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Subtract two 16-bit values
+    Ssub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Subtract four 8-bit values
+    Ssub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Store Coprocessor
+    Stc { l: bool, cond: Cond, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
+    ///Store Coprocessor (extended)
+    Stc2 { l: bool, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
+    ///Store Multiple
+    Stm {
+        mode: LdmStmMode,
+        cond: Cond,
+        rn: Reg,
+        writeback: bool,
+        regs: RegList,
+        user_mode: bool,
+    },
+    ///Store Register
+    Str { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Store Register Byte
+    Strb { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Store Register Byte with Translation
+    Strbt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Store Register Dual
+    Strd { cond: Cond, rd: Reg, rd2: Reg, addr: AddrMiscLoad },
+    ///Store Register Exclusive
+    Strex { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Store Register Exclusive Byte
+    Strexb { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Store Register Exclusive Doubleword
+    Strexd { cond: Cond, rd: Reg, rm: Reg, rm2: Reg, rn: Reg },
+    ///Store Register Exclusive Halfword
+    Strexh { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
+    ///Store Register Halfword
+    Strh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
+    ///Store Register with Translation
+    Strt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    ///Subtract
+    Sub { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Supervisor Call
+    Svc { cond: Cond, imm: u32 },
+    ///Swap
+    Swp { cond: Cond, rd: Reg, rd2: Reg, rn: Reg },
+    ///Swap Byte
+    Swpb { cond: Cond, rd: Reg, rd2: Reg, rn: Reg },
+    ///Sign Extend and Add Byte
+    Sxtab { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
+    ///Sign Extend to 16 bits and Add Byte
+    Sxtab16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
+    ///Sign Extend and Add Halfword
+    Sxtah { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
+    ///Sign Extend Byte
+    Sxtb { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    ///Sign Extend Byte to 16 bits
+    Sxtb16 { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    ///Sign Extend Halfword
+    Sxth { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    ///Test Equivalence
+    Teq { cond: Cond, rn: Reg, op2: Op2 },
+    ///Test
+    Tst { cond: Cond, rn: Reg, op2: Op2 },
+    ///Unsigned Add two 16-bit values
+    Uadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Add four 8-bit values
+    Uadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Add and Subtract with Exchange
+    Uasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Undefined Permanently
+    Udf { imm: u32 },
+    ///Unsigned Halving Add two 16-bit values
+    Uhadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Halving Add four 8-bit values
+    Uhadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Halving Add and Subtract with Exchange
+    Uhasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Halving Subtract and Add with Exchange
+    Uhsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Halving Subtract two 16-bit values
+    Uhsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Halving Subtract four 8-bit values
+    Uhsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Multiply Accumulate Accumulate Long
+    Umaal { cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Multiply Accumulate Long
+    Umlal { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Multiply Long
+    Umull { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Saturating Add two 16-bit values
+    Uqadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Saturating Add four 8-bit values
+    Uqadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Saturating Add and Subtract with Exchange
+    Uqasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Saturating Subtract and Add with Exchange
+    Uqsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Saturating Subtract two 16-bit values
+    Uqsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Saturating Subtract four 8-bit values
+    Uqsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Sum of Absolute Differences for four 8-bit values
+    Usad8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Sum of Absolute Differences and Accumulate four 8-bit values
+    Usada8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
+    ///Unsigned Saturate
+    Usat { cond: Cond, rd: Reg, imm: u32, op2: ShiftImm },
+    ///Unsigned Saturate two 16-bit values
+    Usat16 { cond: Cond, rd: Reg, imm: u32, rn: Reg },
+    ///Unsigned Subtract and Add with Exchange
+    Usax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Subtract two 16-bit values
+    Usub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Subtract four 8-bit values
+    Usub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Unsigned Extend and Add Byte
+    Uxtab { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
+    ///Unsigned Extend to 16 bits and Add Byte
+    Uxtab16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
+    ///Unsigned Extend and Add Halfword
+    Uxtah { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
+    ///Unsigned Extend Byte
+    Uxtb { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    ///Unsigned Extend Byte to 16 bits
+    Uxtb16 { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    ///Unsigned Extend Halfword
+    Uxth { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
 }
