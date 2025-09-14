@@ -152,6 +152,14 @@ pub trait Write: core::fmt::Write {
         misc_load_offset.write(self)?;
         Ok(())
     }
+    fn write_srs_rfe_mode(&mut self, srs_rfe_mode: SrsRfeMode) -> core::fmt::Result {
+        srs_rfe_mode.write(self)?;
+        Ok(())
+    }
+    fn write_endianness(&mut self, endianness: Endianness) -> core::fmt::Result {
+        endianness.write(self)?;
+        Ok(())
+    }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
         ins.write_opcode(self)?;
         ins.write_params(self)?;
@@ -822,6 +830,44 @@ impl MiscLoadOffset {
         Ok(())
     }
 }
+impl SrsRfeMode {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        match self {
+            Self::Da => {
+                formatter.write_str("da")?;
+            }
+            Self::Ia => {
+                formatter.write_str("ia")?;
+            }
+            Self::Db => {
+                formatter.write_str("db")?;
+            }
+            Self::Ib => {
+                formatter.write_str("ib")?;
+            }
+        }
+        Ok(())
+    }
+}
+impl Endianness {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        match self {
+            Self::Le => {
+                formatter.write_str("le")?;
+            }
+            Self::Be => {
+                formatter.write_str("be")?;
+            }
+        }
+        Ok(())
+    }
+}
 impl Ins {
     pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -1189,6 +1235,100 @@ impl Ins {
             }
             Ins::Revsh { cond, rd, rm } => {
                 formatter.write_str("revsh")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Rfe { mode, rn, writeback } => {
+                formatter.write_str("rfe")?;
+                formatter.write_srs_rfe_mode(*mode)?;
+            }
+            Ins::Ror { s, cond, rd, rn, op2 } => {
+                formatter.write_str("ror")?;
+                formatter.write_s(*s)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Rrx { s, cond, rd, rm } => {
+                formatter.write_str("rrx")?;
+                formatter.write_s(*s)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Rsb { s, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("rsb")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("rsb")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Rsc { s, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("rsc")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("rsc")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Sadd16 { cond, rd, rn, rm } => {
+                formatter.write_str("sadd16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sadd8 { cond, rd, rn, rm } => {
+                formatter.write_str("sadd8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sasx { cond, rd, rn, rm } => {
+                formatter.write_str("sasx")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Sbc { s, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("sbc")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("sbc")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Sel { cond, rd, rn, rm } => {
+                formatter.write_str("sel")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Setend { endian } => {
+                formatter.write_str("setend")?;
+            }
+            Ins::Sev { cond } => {
+                formatter.write_str("sev")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Shadd16 { cond, rd, rn, rm } => {
+                formatter.write_str("shadd16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Shadd8 { cond, rd, rn, rm } => {
+                formatter.write_str("shadd8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Shasx { cond, rd, rn, rm } => {
+                formatter.write_str("shasx")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Shsax { cond, rd, rn, rm } => {
+                formatter.write_str("shsax")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Shsub16 { cond, rd, rn, rm } => {
+                formatter.write_str("shsub16")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Shsub8 { cond, rd, rn, rm } => {
+                formatter.write_str("shsub8")?;
                 formatter.write_cond(*cond)?;
             }
         }
@@ -1772,6 +1912,134 @@ impl Ins {
             Ins::Revsh { cond, rd, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Rfe { mode, rn, writeback } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_wb(*writeback)?;
+            }
+            Ins::Ror { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2_shift(*op2)?;
+            }
+            Ins::Rrx { s, cond, rd, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Rsb { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Rsc { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Sadd16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Sadd8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Sasx { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Sbc { s, cond, rd, rn, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Sel { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Setend { endian } => {
+                formatter.write_space()?;
+                formatter.write_endianness(*endian)?;
+            }
+            Ins::Sev { cond } => {}
+            Ins::Shadd16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Shadd8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Shasx { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Shsax { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Shsub16 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Shsub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }

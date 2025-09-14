@@ -509,4 +509,117 @@ mod tests {
         assert_asm!(0xe6ff1fb2, "revsh r1, r2");
         assert_asm!(0xa6ffffbe, "revshge pc, lr");
     }
+
+    #[test]
+    fn test_rfe() {
+        assert_asm!(0xf8170a00, "rfeda r7");
+        assert_asm!(0xf9370a00, "rfedb r7!");
+        assert_asm!(0xf8970a00, "rfeia r7");
+        assert_asm!(0xf9b70a00, "rfeib r7!");
+    }
+
+    #[test]
+    fn test_ror() {
+        assert_asm!(0x71a0046e, "rorvc r0, lr, #0x8");
+    }
+
+    #[test]
+    fn test_rrx() {
+        assert_asm!(0xb1a07060, "rrxlt r7, r0");
+    }
+
+    #[test]
+    fn test_rsb() {
+        assert_asm!(0xe0612003, "rsb r2, r1, r3");
+        assert_asm!(0xe2645e23, "rsb r5, r4, #0x230");
+        assert_asm!(0x106b960a, "rsbne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x4065f238, "rsbmi pc, r5, r8, lsr r2");
+        assert_asm!(0x7062046e, "rsbvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb0687060, "rsblt r7, r8, r0, rrx");
+        assert_asm!(0xe0752153, "rsbs r2, r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_rsc() {
+        assert_asm!(0xe0e12003, "rsc r2, r1, r3");
+        assert_asm!(0xe2e45e23, "rsc r5, r4, #0x230");
+        assert_asm!(0x10eb960a, "rscne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x40e5f238, "rscmi pc, r5, r8, lsr r2");
+        assert_asm!(0x70e2046e, "rscvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb0e87060, "rsclt r7, r8, r0, rrx");
+        assert_asm!(0xe0f52153, "rscs r2, r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_sadd16() {
+        assert_asm!(0xe6112f13, "sadd16 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_sadd8() {
+        assert_asm!(0xe6112f93, "sadd8 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_sasx() {
+        assert_asm!(0xe6112f33, "sasx r2, r1, r3");
+    }
+
+    #[test]
+    fn test_sbc() {
+        assert_asm!(0xe0c12003, "sbc r2, r1, r3");
+        assert_asm!(0xe2c45e23, "sbc r5, r4, #0x230");
+        assert_asm!(0x10cb960a, "sbcne r9, r11, r10, lsl #0xc");
+        assert_asm!(0x40c5f238, "sbcmi pc, r5, r8, lsr r2");
+        assert_asm!(0x70c2046e, "sbcvc r0, r2, lr, ror #0x8");
+        assert_asm!(0xb0c87060, "sbclt r7, r8, r0, rrx");
+        assert_asm!(0xe0d52153, "sbcs r2, r5, r3, asr r1");
+    }
+
+    #[test]
+    fn test_sel() {
+        assert_asm!(0xe6812fb3, "sel r2, r1, r3");
+    }
+
+    #[test]
+    fn test_setend() {
+        assert_asm!(0xf1010000, "setend le");
+        assert_asm!(0xf1010200, "setend be");
+    }
+
+    #[test]
+    fn test_sev() {
+        assert_asm!(0xe320f004, "sev");
+        assert_asm!(0x3320f004, "sevlo");
+    }
+
+    #[test]
+    fn test_shadd16() {
+        assert_asm!(0xe6312f13, "shadd16 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_shadd8() {
+        assert_asm!(0xe6312f93, "shadd8 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_shasx() {
+        assert_asm!(0xe6312f33, "shasx r2, r1, r3");
+    }
+
+    #[test]
+    fn test_shsax() {
+        assert_asm!(0xe6312f53, "shsax r2, r1, r3");
+    }
+
+    #[test]
+    fn test_shsub16() {
+        assert_asm!(0xe6312f73, "shsub16 r2, r1, r3");
+    }
+
+    #[test]
+    fn test_shsub8() {
+        assert_asm!(0xe6312ff3, "shsub8 r2, r1, r3");
+    }
 }

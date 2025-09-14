@@ -215,4 +215,25 @@ mod tests {
     fn test_revsh() {
         assert_asm!(0xbaca, "revsh r2, r1");
     }
+
+    #[test]
+    fn test_ror() {
+        assert_asm!(0x41d7, "rors r7, r7, r2");
+    }
+
+    #[test]
+    fn test_rsb() {
+        assert_asm!(0x4257, "rsbs r7, r2, #0x0");
+    }
+
+    #[test]
+    fn test_sbc() {
+        assert_asm!(0x4197, "sbcs r7, r7, r2");
+    }
+
+    #[test]
+    fn test_setend() {
+        assert_asm!(0xb650, "setend le");
+        assert_asm!(0xb658, "setend be");
+    }
 }

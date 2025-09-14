@@ -150,7 +150,7 @@ impl FormatFragment {
             FormatFragment::Separator => quote!(formatter.write_separator()?;),
             FormatFragment::Param(param_name) => {
                 let Some(param) = params.get(param_name) else {
-                    panic!();
+                    panic!("Parameter {param_name} in format does not exist");
                 };
                 let param_ident = Ident::new(param_name, Span::call_site());
                 param.fmt_expr_tokens(quote!(#param_ident))

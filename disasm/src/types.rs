@@ -251,6 +251,24 @@ pub enum MiscLoadOffset {
     ///Register offset
     Reg { rm: Reg, subtract: bool },
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum SrsRfeMode {
+    ///Decrement After
+    Da,
+    ///Increment After
+    Ia,
+    ///Decrement Before
+    Db,
+    ///Increment Before
+    Ib,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum Endianness {
+    ///Little-endian
+    Le,
+    ///Big-endian
+    Be,
+}
 pub enum Ins {
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -425,4 +443,40 @@ pub enum Ins {
     Rev16 { cond: Cond, rd: Reg, rm: Reg },
     ///Reverse bytes in signed halfword
     Revsh { cond: Cond, rd: Reg, rm: Reg },
+    ///Return From Exception
+    Rfe { mode: SrsRfeMode, rn: Reg, writeback: bool },
+    ///Rotate Right
+    Ror { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    ///Rotate Right with Extend
+    Rrx { s: bool, cond: Cond, rd: Reg, rm: Reg },
+    ///Reverse Subtract
+    Rsb { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Reverse Subtract with Carry
+    Rsc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Signed Add two 16-bit values
+    Sadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Add four 8-bit values
+    Sadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Add and Subtract with Exchange
+    Sasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Subtract with Carry
+    Sbc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    ///Select
+    Sel { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Set Endianness
+    Setend { endian: Endianness },
+    ///Send Event
+    Sev { cond: Cond },
+    ///Signed Halving Add two 16-bit values
+    Shadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Halving Add four 8-bit values
+    Shadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Halving Add and Subtract with Exchange
+    Shasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Halving Subtract and Add with Exchange
+    Shsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Halving Subtract two 16-bit values
+    Shsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Halving Subtract four 8-bit values
+    Shsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
 }

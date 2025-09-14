@@ -635,6 +635,33 @@ types:
               kind: !type [reg, bits(0..4)]
             - name: subtract
               kind: !type [subtract, bit(23) ^ 1]
+- name: srs_rfe_mode
+  kind: !enum
+    bits: 0..2
+    default: ia
+    variants:
+      00:
+        name: da
+        description: Decrement After
+      01:
+        name: ia
+        description: Increment After
+      10:
+        name: db
+        description: Decrement Before
+      11:
+        name: ib
+        description: Increment Before
+- name: endianness
+  kind: !enum
+    bits: 0..1
+    variants:
+      0:
+        name: le
+        description: Little-endian
+      1:
+        name: be
+        description: Big-endian
 
 opcodes:
 - mnemonic: adc
@@ -2175,3 +2202,323 @@ opcodes:
       cond: !const 14 # al
       rd: !bits 0..3
       rm: !bits 3..6
+
+- mnemonic: rfe
+  description: Return From Exception
+  params: { mode: srs_rfe_mode, rn: reg, writeback: wb }
+  format:
+    opcode: !fmt rfe(mode)
+    params: !fmt (rn)(writeback)
+  arm:
+  - version: [v6*]
+    pattern: 1111_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xffff != 0x0a00
+    params:
+      mode: !bits 23..25
+      rn: !bits 16..20
+      writeback: !bits 21
+
+- mnemonic: ror
+  description: Rotate Right
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !fmt ror(s)(cond)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x11x_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_11xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: rrx
+  description: Rotate Right with Extend
+  params: { s: s, cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt rrx(s)(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_xxxx_xxxx_0000_0110_xxxx
+    illegal: ins() & 0xf0000 != 0
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+
+- mnemonic: rsb
+  description: Reverse Subtract
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt rsb(s)(cond)
+      else: !fmt rsb(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_011x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_01xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !const 0]
+
+- mnemonic: rsc
+  description: Reverse Subtract with Carry
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt rsc(s)(cond)
+      else: !fmt rsc(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_111x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+
+- mnemonic: sadd16
+  description: Signed Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0001_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sadd8
+  description: Signed Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_1001_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sasx
+  description: Signed Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sasx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0011_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sbc
+  description: Subtract with Carry
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt sbc(s)(cond)
+      else: !fmt sbc(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_110x_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_10xx_xxxx
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: sel
+  description: Select
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sel(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_1011_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+
+- mnemonic: setend
+  description: Set Endianness
+  params: { endian: endianness }
+  format:
+    opcode: !fmt setend
+    params: !fmt (endian)
+  arm:
+  - version: [v6*]
+    pattern: 1111_0001_0000_xxx1_xxxx_xxxx_0000_xxxx
+    illegal: ins() & 0xefd0f != 0
+    params:
+      endian: !bits 9
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0110_010x_xxxx
+    illegal: ins() & 0x17 != 0x10
+    params:
+      endian: !bits 3
+
+- mnemonic: sev
+  description: Send Event
+  params: { cond: cond }
+  format:
+    opcode: !fmt sev(cond)
+    params: !fmt ""
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0100
+    illegal: ins() & 0xff00 != 0xf000
+    params:
+      cond: !bits 28..32
+
+- mnemonic: shadd16
+  description: Signed Halving Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0001_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shadd8
+  description: Signed Halving Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_1001_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shasx
+  description: Signed Halving Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shasx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0011_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shsax
+  description: Signed Halving Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shsax(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0101_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shsub16
+  description: Signed Halving Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shsub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0111_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shsub8
+  description: Signed Halving Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shsub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_1111_xxxx
+    illegal: ins() & 0xf00 != 0xf00
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
