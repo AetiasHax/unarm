@@ -269,6 +269,13 @@ pub enum Endianness {
     ///Big-endian
     Be,
 }
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum RegSide {
+    ///Bottom halfword
+    Bottom,
+    ///Top halfword
+    Top,
+}
 pub enum Ins {
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
@@ -479,4 +486,52 @@ pub enum Ins {
     Shsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     ///Signed Halving Subtract four 8-bit values
     Shsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Multiply Accumulate halfwords
+    Smla {
+        cond: Cond,
+        rd: Reg,
+        rn: Reg,
+        rn_side: RegSide,
+        rm: Reg,
+        rm_side: RegSide,
+        ra: Reg,
+    },
+    ///Signed Multiply Accumulate Dual
+    Smlad { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool, ra: Reg },
+    ///Signed Multiply Accumulate Long
+    Smlal { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    ///Signed Multiply Accumulate Long halfwords
+    Smlal_half {
+        cond: Cond,
+        rd_lo: Reg,
+        rd_hi: Reg,
+        rn: Reg,
+        rn_side: RegSide,
+        rm: Reg,
+        rm_side: RegSide,
+    },
+    ///Signed Multiply Accumulate Long Dual
+    Smlald { cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg, swap_rm: bool },
+    ///Signed Multiply Accumulate Word by halfword
+    Smlaw { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rm_side: RegSide, ra: Reg },
+    ///Signed Multiply Subtract Dual
+    Smlsd { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool, ra: Reg },
+    ///Signed Multiply Subtract Long Dual
+    Smlsld { cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg, swap_rm: bool },
+    ///Signed Most significant word Multiply Accumulate
+    Smmla { round: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
+    ///Signed Most significant word Multiply Subtract
+    Smmls { round: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
+    ///Signed Most significant word Multiply
+    Smmul { round: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    ///Signed Multiply Add Dual
+    Smuad { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool },
+    ///Signed Multiply
+    Smul { cond: Cond, rd: Reg, rn: Reg, rn_side: RegSide, rm: Reg, rm_side: RegSide },
+    ///Signed Multiply Long
+    Smull { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    ///Signed Multiply Word by halfword
+    Smulw { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rm_side: RegSide },
+    ///Signed Multiply Subtract Dual
+    Smusd { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool },
 }

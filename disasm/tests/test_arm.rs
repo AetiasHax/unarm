@@ -622,4 +622,102 @@ mod tests {
     fn test_shsub8() {
         assert_asm!(0xe6312ff3, "shsub8 r2, r1, r3");
     }
+
+    #[test]
+    fn test_smla() {
+        assert_asm!(0xe1012384, "smlabb r1, r4, r3, r2");
+        assert_asm!(0xe10123a4, "smlatb r1, r4, r3, r2");
+        assert_asm!(0xe10123c4, "smlabt r1, r4, r3, r2");
+        assert_asm!(0xe10123e4, "smlatt r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smlad() {
+        assert_asm!(0xe7012314, "smlad r1, r4, r3, r2");
+        assert_asm!(0x07012334, "smladxeq r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smlal() {
+        assert_asm!(0xe0e12394, "smlal r2, r1, r4, r3");
+        assert_asm!(0xa0f12394, "smlalsge r2, r1, r4, r3");
+        assert_asm!(0xe1412384, "smlalbb r2, r1, r4, r3");
+        assert_asm!(0xe14123a4, "smlaltb r2, r1, r4, r3");
+        assert_asm!(0xe14123c4, "smlalbt r2, r1, r4, r3");
+        assert_asm!(0xe14123e4, "smlaltt r2, r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smlald() {
+        assert_asm!(0xe7412314, "smlald r2, r1, r4, r3");
+        assert_asm!(0x07412334, "smlaldxeq r2, r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smlaw() {
+        assert_asm!(0xe1212384, "smlawb r1, r4, r3, r2");
+        assert_asm!(0xe12123c4, "smlawt r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smlsd() {
+        assert_asm!(0xe7012354, "smlsd r1, r4, r3, r2");
+        assert_asm!(0x07012374, "smlsdxeq r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smlsld() {
+        assert_asm!(0xe7412354, "smlsld r2, r1, r4, r3");
+        assert_asm!(0x07412374, "smlsldxeq r2, r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smmla() {
+        assert_asm!(0xe7512314, "smmla r1, r4, r3, r2");
+        assert_asm!(0x07512334, "smmlareq r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smmls() {
+        assert_asm!(0xe75123d4, "smmls r1, r4, r3, r2");
+        assert_asm!(0x075123f4, "smmlsreq r1, r4, r3, r2");
+    }
+
+    #[test]
+    fn test_smmul() {
+        assert_asm!(0xe751f314, "smmul r1, r4, r3");
+        assert_asm!(0x0751f334, "smmulreq r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smuad() {
+        assert_asm!(0xe701f314, "smuad r1, r4, r3");
+        assert_asm!(0x0701f334, "smuadxeq r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smul() {
+        assert_asm!(0xe1610384, "smulbb r1, r4, r3");
+        assert_asm!(0xe16103a4, "smultb r1, r4, r3");
+        assert_asm!(0xe16103c4, "smulbt r1, r4, r3");
+        assert_asm!(0xe16103e4, "smultt r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smull() {
+        assert_asm!(0xe0c12394, "smull r2, r1, r4, r3");
+        assert_asm!(0xa0d12394, "smullsge r2, r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smulw() {
+        assert_asm!(0xe12103a4, "smulwb r1, r4, r3");
+        assert_asm!(0xe12103e4, "smulwt r1, r4, r3");
+    }
+
+    #[test]
+    fn test_smusd() {
+        assert_asm!(0xe701f354, "smusd r1, r4, r3");
+        assert_asm!(0x0701f374, "smusdxeq r1, r4, r3");
+    }
 }

@@ -160,6 +160,22 @@ pub trait Write: core::fmt::Write {
         endianness.write(self)?;
         Ok(())
     }
+    fn write_reg_side(&mut self, reg_side: RegSide) -> core::fmt::Result {
+        reg_side.write(self)?;
+        Ok(())
+    }
+    fn write_swap_rm(&mut self, swap_rm: bool) -> core::fmt::Result {
+        if swap_rm {
+            self.write_str("x")?;
+        }
+        Ok(())
+    }
+    fn write_round(&mut self, round: bool) -> core::fmt::Result {
+        if round {
+            self.write_str("r")?;
+        }
+        Ok(())
+    }
     fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
         ins.write_opcode(self)?;
         ins.write_params(self)?;
@@ -868,6 +884,22 @@ impl Endianness {
         Ok(())
     }
 }
+impl RegSide {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        match self {
+            Self::Bottom => {
+                formatter.write_str("b")?;
+            }
+            Self::Top => {
+                formatter.write_str("t")?;
+            }
+        }
+        Ok(())
+    }
+}
 impl Ins {
     pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -1329,6 +1361,101 @@ impl Ins {
             }
             Ins::Shsub8 { cond, rd, rn, rm } => {
                 formatter.write_str("shsub8")?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smla { cond, rd, rn, rn_side, rm, rm_side, ra } => {
+                formatter.write_str("smla")?;
+                formatter.write_reg_side(*rn_side)?;
+                formatter.write_reg_side(*rm_side)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smlad { cond, rd, rn, rm, swap_rm, ra } => {
+                formatter.write_str("smlad")?;
+                formatter.write_swap_rm(*swap_rm)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smlal { s, cond, rd_lo, rd_hi, rn, rm } => {
+                if formatter.options().ual {
+                    formatter.write_str("smlal")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("smlal")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Smlal_half { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
+                formatter.write_str("smlal")?;
+                formatter.write_reg_side(*rn_side)?;
+                formatter.write_reg_side(*rm_side)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smlald { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
+                formatter.write_str("smlald")?;
+                formatter.write_swap_rm(*swap_rm)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smlaw { cond, rd, rn, rm, rm_side, ra } => {
+                formatter.write_str("smlaw")?;
+                formatter.write_reg_side(*rm_side)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smlsd { cond, rd, rn, rm, swap_rm, ra } => {
+                formatter.write_str("smlsd")?;
+                formatter.write_swap_rm(*swap_rm)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smlsld { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
+                formatter.write_str("smlsld")?;
+                formatter.write_swap_rm(*swap_rm)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smmla { round, cond, rd, rn, rm, ra } => {
+                formatter.write_str("smmla")?;
+                formatter.write_round(*round)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smmls { round, cond, rd, rn, rm, ra } => {
+                formatter.write_str("smmls")?;
+                formatter.write_round(*round)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smmul { round, cond, rd, rn, rm } => {
+                formatter.write_str("smmul")?;
+                formatter.write_round(*round)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smuad { cond, rd, rn, rm, swap_rm } => {
+                formatter.write_str("smuad")?;
+                formatter.write_swap_rm(*swap_rm)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smul { cond, rd, rn, rn_side, rm, rm_side } => {
+                formatter.write_str("smul")?;
+                formatter.write_reg_side(*rn_side)?;
+                formatter.write_reg_side(*rm_side)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smull { s, cond, rd_lo, rd_hi, rn, rm } => {
+                if formatter.options().ual {
+                    formatter.write_str("smull")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("smull")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_s(*s)?;
+                }
+            }
+            Ins::Smulw { cond, rd, rn, rm, rm_side } => {
+                formatter.write_str("smulw")?;
+                formatter.write_reg_side(*rm_side)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Smusd { cond, rd, rn, rm, swap_rm } => {
+                formatter.write_str("smusd")?;
+                formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
         }
@@ -2036,6 +2163,156 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             Ins::Shsub8 { cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smla { cond, rd, rn, rn_side, rm, rm_side, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Smlad { cond, rd, rn, rm, swap_rm, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Smlal { s, cond, rd_lo, rd_hi, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smlal_half { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smlald { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smlaw { cond, rd, rn, rm, rm_side, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Smlsd { cond, rd, rn, rm, swap_rm, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Smlsld { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smmla { round, cond, rd, rn, rm, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Smmls { round, cond, rd, rn, rm, ra } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*ra)?;
+            }
+            Ins::Smmul { round, cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smuad { cond, rd, rn, rm, swap_rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smul { cond, rd, rn, rn_side, rm, rm_side } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smull { s, cond, rd_lo, rd_hi, rn, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd_lo)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rd_hi)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smulw { cond, rd, rn, rm, rm_side } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_separator()?;
+                formatter.write_reg(*rm)?;
+            }
+            Ins::Smusd { cond, rd, rn, rm, swap_rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
