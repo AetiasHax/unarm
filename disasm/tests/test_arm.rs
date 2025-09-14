@@ -7,6 +7,7 @@ mod tests {
             let ins = parse_arm($code, 0).expect("Illegal instruction");
             let options = Options {
                 version: unarm::Version::V6K,
+                extensions: unarm::Extensions::all(),
                 av: false,
                 r9_use: unarm::R9Use::R9,
                 sl: false,
@@ -1122,5 +1123,177 @@ mod tests {
     fn test_uxth() {
         assert_asm!(0xe6ff2073, "uxth r2, r3");
         assert_asm!(0x06ff2c73, "uxtheq r2, r3, ror #0x18");
+    }
+
+    #[test]
+    fn test_vabs() {
+        assert_asm!(0xeef0fae9, "vabs.f32 s31, s19");
+        assert_asm!(0x0ef0fbe9, "vabseq.f64 d31, d25");
+    }
+
+    #[test]
+    fn test_vadd() {
+        assert_asm!(0xee73fa29, "vadd.f32 s31, s6, s19");
+        assert_asm!(0x0e73fb29, "vaddeq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vcmp() {
+        assert_asm!(0xeef4fae9, "vcmpe.f32 s31, s19");
+        assert_asm!(0xeef4fa69, "vcmp.f32 s31, s19");
+        assert_asm!(0x0ef4fbe9, "vcmpeeq.f64 d31, d25");
+        assert_asm!(0x0ef4fb69, "vcmpeq.f64 d31, d25");
+    }
+
+    #[test]
+    fn test_vcvt() {
+        assert_asm!(0x0ef7fbe9, "vcvteq.f32.f64 s31, d25");
+        assert_asm!(0x1ef8fae9, "vcvtne.f32.s32 s31, s19");
+        assert_asm!(0x2ef8fa69, "vcvths.f32.u32 s31, s19");
+        assert_asm!(0x3ef7fae9, "vcvtlo.f64.f32 d31, s19");
+        assert_asm!(0x4ef8fbe9, "vcvtmi.f64.s32 d31, s19");
+        assert_asm!(0x5ef8fb69, "vcvtpl.f64.u32 d31, s19");
+        assert_asm!(0x6efdfae9, "vcvtvs.s32.f32 s31, s19");
+        assert_asm!(0x7efdfb69, "vcvtrvc.s32.f64 s31, d25");
+        assert_asm!(0x8efcfae9, "vcvthi.u32.f32 s31, s19");
+        assert_asm!(0x9efcfb69, "vcvtrls.u32.f64 s31, d25");
+    }
+
+    #[test]
+    fn test_vdiv() {
+        assert_asm!(0xeec3fa29, "vdiv.f32 s31, s6, s19");
+        assert_asm!(0x0ec3fb29, "vdiveq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vldm() {
+        assert_asm!(0xecb79a08, "vldmia r7!, {s18, s19, s20, s21, s22, s23, s24, s25}");
+        assert_asm!(0x0c979b08, "vldmiaeq r7, {d9, d10, d11, d12}");
+    }
+
+    #[test]
+    fn test_vldr() {
+        assert_asm!(0xedd79a29, "vldr s19, [r7, #0xa4]");
+        assert_asm!(0x0d579b29, "vldreq d25, [r7, #-0xa4]");
+    }
+
+    #[test]
+    fn test_vmla() {
+        assert_asm!(0xee43fa29, "vmla.f32 s31, s6, s19");
+        assert_asm!(0x0e43fb29, "vmlaeq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vmls() {
+        assert_asm!(0xee43fa69, "vmls.f32 s31, s6, s19");
+        assert_asm!(0x0e43fb69, "vmlseq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vmov() {
+        assert_asm!(0xee097a90, "vmov s19, r7");
+        assert_asm!(0x0e097b90, "vmoveq.32 d25[0x0], r7");
+        assert_asm!(0xeef0fa69, "vmov.f32 s31, s19");
+        assert_asm!(0x0ef0fb69, "vmoveq.f64 d31, d25");
+        assert_asm!(0xee0f7a90, "vmov s31, r7");
+        assert_asm!(0x0e2f7b90, "vmoveq.32 d31[0x1], r7");
+        assert_asm!(0xee1f7a90, "vmov r7, s31");
+        assert_asm!(0x0e1f7b90, "vmoveq.32 r7, d31[0x0]");
+        assert_asm!(0xec5b7a39, "vmov r7, r11, s19, s20");
+        assert_asm!(0xec4b7a39, "vmov s19, s20, r7, r11");
+    }
+
+    #[test]
+    fn test_vmrs() {
+        assert_asm!(0xeef17a10, "vmrs r7, fpscr");
+    }
+
+    #[test]
+    fn test_vmsr() {
+        assert_asm!(0xeee17a10, "vmsr fpscr, r7");
+    }
+
+    #[test]
+    fn test_vmul() {
+        assert_asm!(0xee63fa29, "vmul.f32 s31, s6, s19");
+        assert_asm!(0x0e63fb29, "vmuleq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vneg() {
+        assert_asm!(0xeef1fa69, "vneg.f32 s31, s19");
+        assert_asm!(0x0ef1fb69, "vnegeq.f64 d31, d25");
+    }
+
+    #[test]
+    fn test_vnmla() {
+        assert_asm!(0xee53fa69, "vnmla.f32 s31, s6, s19");
+        assert_asm!(0x0e53fb69, "vnmlaeq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vnmls() {
+        assert_asm!(0xee53fa29, "vnmls.f32 s31, s6, s19");
+        assert_asm!(0x0e53fb29, "vnmlseq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vnmul() {
+        assert_asm!(0xee63fa69, "vnmul.f32 s31, s6, s19");
+        assert_asm!(0x0e63fb69, "vnmuleq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_vpop() {
+        assert_asm!(0xecbd9a08, "vpop {s18, s19, s20, s21, s22, s23, s24, s25}");
+        assert_asm!(0x0cbd9b08, "vpopeq {d9, d10, d11, d12}");
+    }
+
+    #[test]
+    fn test_vpush() {
+        assert_asm!(0xed2d9a08, "vpush {s18, s19, s20, s21, s22, s23, s24, s25}");
+        assert_asm!(0x0d2d9b08, "vpusheq {d9, d10, d11, d12}");
+    }
+
+    #[test]
+    fn test_vsqrt() {
+        assert_asm!(0xeef1fae9, "vsqrt.f32 s31, s19");
+        assert_asm!(0x0ef1fbe9, "vsqrteq.f64 d31, d25");
+    }
+
+    #[test]
+    fn test_vstm() {
+        assert_asm!(0xece79a08, "vstmia r7!, {s19, s20, s21, s22, s23, s24, s25, s26}");
+        assert_asm!(0x0cc79b08, "vstmiaeq r7, {d25, d26, d27, d28}");
+    }
+
+    #[test]
+    fn test_vstr() {
+        assert_asm!(0xedc79a29, "vstr s19, [r7, #0xa4]");
+        assert_asm!(0x0d479b29, "vstreq d25, [r7, #-0xa4]");
+    }
+
+    #[test]
+    fn test_vsub() {
+        assert_asm!(0xee73fa69, "vsub.f32 s31, s6, s19");
+        assert_asm!(0x0e73fb69, "vsubeq.f64 d31, d3, d25");
+    }
+
+    #[test]
+    fn test_wfe() {
+        assert_asm!(0xe320f002, "wfe");
+        assert_asm!(0x0320f002, "wfeeq");
+    }
+
+    #[test]
+    fn test_wfi() {
+        assert_asm!(0xe320f003, "wfi");
+        assert_asm!(0x0320f003, "wfieq");
+    }
+
+    #[test]
+    fn test_yield() {
+        assert_asm!(0xe320f001, "yield");
+        assert_asm!(0x0320f001, "yieldeq");
     }
 }

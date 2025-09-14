@@ -10,7 +10,7 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatParams, Isa, IsaVersionPattern, OpcodePattern,
+        Format, FormatParams, Isa, IsaExtensionPattern, OpcodePattern,
     },
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
@@ -247,7 +247,9 @@ pub struct OpcodeFormat {
 
 #[derive(Deserialize, Debug)]
 pub struct OpcodeEncoding {
-    version: Vec<IsaVersionPattern>,
+    version: Vec<IsaExtensionPattern>,
+    #[serde(default)]
+    extensions: Vec<IsaExtensionPattern>,
     pattern: OpcodePattern,
     illegal: Option<DataExpr>,
     params: IndexMap<OpcodeParamName, OpcodeParamValue>,
@@ -260,20 +262,20 @@ impl OpcodeEncoding {
     fn parse_fn_tokens(&self, name: String, opcode: &Opcode, isa: &Isa) -> TokenStream {
         let fn_ident = Ident::new(&name, Span::call_site());
 
-        let params = opcode.params().iter().map(|(name, type_name)| {
+        let params = opcode.params().iter().map(|(param_name, type_name)| {
             let data_type = isa.types().get(type_name).unwrap();
-            let parse_expr = if let Some(value) = self.get_param(name) {
+            let parse_expr = if let Some(value) = self.get_param(param_name) {
                 value.parse_expr_tokens(isa, data_type)
             } else {
                 data_type.default_expr_tokens(isa).unwrap_or_else(|| {
                     panic!(
-                        "Param '{}' of type '{}' in opcode encoding '{}' has no default value",
-                        name.0, type_name.0, name
+                        "Missing value for parameter '{}' in opcode encoding '{}'",
+                        param_name.0, name
                     )
                 })
             };
 
-            let name_ident = Ident::new(&name.0, Span::call_site());
+            let name_ident = Ident::new(&param_name.0, Span::call_site());
             quote!(let #name_ident = #parse_expr;)
         });
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());

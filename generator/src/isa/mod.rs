@@ -1,5 +1,6 @@
 mod bit_range;
 mod data_type;
+mod extension;
 mod format;
 mod opcode;
 mod option;
@@ -14,6 +15,7 @@ use serde::Deserialize;
 
 pub use bit_range::*;
 pub use data_type::*;
+pub use extension::*;
 pub use format::*;
 pub use opcode::*;
 pub use option::*;
@@ -25,6 +27,7 @@ pub use version::*;
 pub struct Isa {
     options: IsaOptions,
     versions: IsaVersions,
+    extensions: IsaExtensions,
     types: DataTypes,
     opcodes: Opcodes,
 }
@@ -57,6 +60,10 @@ impl Isa {
 
     pub fn versions(&self) -> &IsaVersions {
         &self.versions
+    }
+
+    pub fn extensions(&self) -> &IsaExtensions {
+        &self.extensions
     }
 
     pub fn opcodes(&self) -> &Opcodes {

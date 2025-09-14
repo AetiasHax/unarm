@@ -3,6 +3,8 @@ use crate::*;
 pub struct Options {
     ///The version of ARM to use
     pub version: Version,
+    ///The extensions to enable
+    pub extensions: Extensions,
     ///If true, r0-r3 and r4-11 will display as a1-a4 and v1-v8 respectively
     pub av: bool,
     ///How R9 should be displayed
@@ -25,6 +27,19 @@ pub enum Version {
     V5Tej,
     V6,
     V6K,
+}
+#[derive(Clone, Copy)]
+pub struct Extensions(u8);
+impl Extensions {
+    pub fn none() -> Self {
+        Self(0)
+    }
+    pub fn all() -> Self {
+        Self(u8::MAX)
+    }
+    pub fn with_vfp_v2(self) -> Self {
+        Self(self.0 | 1)
+    }
 }
 #[derive(PartialEq, Eq)]
 pub enum R9Use {
@@ -288,6 +303,104 @@ pub enum RegSide {
     Bottom,
     ///Top halfword
     Top,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum Sreg {
+    S0,
+    S1,
+    S2,
+    S3,
+    S4,
+    S5,
+    S6,
+    S7,
+    S8,
+    S9,
+    S10,
+    S11,
+    S12,
+    S13,
+    S14,
+    S15,
+    S16,
+    S17,
+    S18,
+    S19,
+    S20,
+    S21,
+    S22,
+    S23,
+    S24,
+    S25,
+    S26,
+    S27,
+    S28,
+    S29,
+    S30,
+    S31,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum Dreg {
+    D0,
+    D1,
+    D2,
+    D3,
+    D4,
+    D5,
+    D6,
+    D7,
+    D8,
+    D9,
+    D10,
+    D11,
+    D12,
+    D13,
+    D14,
+    D15,
+    D16,
+    D17,
+    D18,
+    D19,
+    D20,
+    D21,
+    D22,
+    D23,
+    D24,
+    D25,
+    D26,
+    D27,
+    D28,
+    D29,
+    D30,
+    D31,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum VcmpF32Op2 {
+    ///Compare with zero
+    Zero,
+    ///Compare with register
+    Reg(Sreg),
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum VcmpF64Op2 {
+    ///Compare with zero
+    Zero,
+    ///Compare with register
+    Reg(Dreg),
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct DregIndex {
+    pub dreg: Dreg,
+    pub index: u32,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct Fpscr {}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum VldmVstmMode {
+    ///Increment After
+    Ia,
+    ///Decrement Before
+    Db,
 }
 pub enum Ins {
     ///Add with Carry
@@ -680,4 +793,130 @@ pub enum Ins {
     Uxtb16 { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
     ///Unsigned Extend Halfword
     Uxth { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    ///Vector Absolute 32-bit
+    VabsF32 { cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Absolute 64-bit
+    VabsF64 { cond: Cond, dd: Dreg, dm: Dreg },
+    ///Vector Add 32-bit
+    VaddF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Add 64-bit
+    VaddF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Compare 32-bit
+    VcmpF32 { quiet_nan_exc: bool, cond: Cond, sd: Sreg, op2: VcmpF32Op2 },
+    ///Vector Compare 64-bit
+    VcmpF64 { quiet_nan_exc: bool, cond: Cond, dd: Dreg, op2: VcmpF64Op2 },
+    ///Vector Convert to Floating-point 32-bit from Floating-point 64-bit
+    VcvtF32F64 { cond: Cond, sd: Sreg, dm: Dreg },
+    ///Vector Convert to Floating-point 32-bit from Signed 32-bit integer
+    VcvtF32S32 { cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Convert to Floating-point 32-bit from Unsigned 32-bit integer
+    VcvtF32U32 { cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Convert to Floating-point 64-bit from Floating-point 32-bit
+    VcvtF64F32 { cond: Cond, dd: Dreg, sm: Sreg },
+    ///Vector Convert to Floating-point 64-bit from Signed 32-bit integer
+    VcvtF64S32 { cond: Cond, dd: Dreg, sm: Sreg },
+    ///Vector Convert to Floating-point 64-bit from Unsigned 32-bit integer
+    VcvtF64U32 { cond: Cond, dd: Dreg, sm: Sreg },
+    ///Vector Convert to Signed 32-bit integer from Floating-point 32-bit
+    VcvtS32F32 { round_zero: bool, cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Convert to Signed 32-bit integer from Floating-point 64-bit
+    VcvtS32F64 { round_zero: bool, cond: Cond, sd: Sreg, dm: Dreg },
+    ///Vector Convert to Unsigned 32-bit integer from Floating-point 32-bit
+    VcvtU32F32 { round_zero: bool, cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Convert to Unsigned 32-bit integer from Floating-point 64-bit
+    VcvtU32F64 { round_zero: bool, cond: Cond, sd: Sreg, dm: Dreg },
+    ///Vector Divide Floating-point 32-bit
+    VdivF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Divide Floating-point 64-bit
+    VdivF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Load Multiple Floating-point 32-bit
+    VldmF32 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: SregList },
+    ///Vector Load Multiple Floating-point 64-bit
+    VldmF64 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: DregList },
+    ///Vector Load Register Floating-point 32-bit
+    VldrF32 { cond: Cond, sd: Sreg, addr: AddrLdrStr },
+    ///Vector Load Register Floating-point 64-bit
+    VldrF64 { cond: Cond, dd: Dreg, addr: AddrLdrStr },
+    ///Vector Multiply Accumulate Floating-point 32-bit
+    VmlaF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Multiply Accumulate Floating-point 64-bit
+    VmlaF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Multiply Subtract Floating-point 32-bit
+    VmlsF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Multiply Subtract Floating-point 64-bit
+    VmlsF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Move to 32-bit scalar from register
+    Vmov32Reg { cond: Cond, dd: DregIndex, rt: Reg },
+    ///Vector Move Floating-point 32-bit
+    VmovF32 { cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Move to Floating-point 32-bit from register
+    VmovF32Reg { cond: Cond, sn: Sreg, rt: Reg },
+    ///Vector Move Floating-point 64-bit
+    VmovF64 { cond: Cond, dd: Dreg, dm: Dreg },
+    ///Vector Move to register from 32-bit scalar
+    VmovReg32 { cond: Cond, rt: Reg, dn: DregIndex },
+    ///Vector Move to register from floating-point 32-bit
+    VmovRegF32 { cond: Cond, rt: Reg, sn: Sreg },
+    ///Vector Move to two registers from two floating-point 32-bit
+    VmovRegF32Dual { cond: Cond, rt: Reg, rt2: Reg, sm: Sreg, sm2: Sreg },
+    ///Vector Move to two floating-point 32-bit from two registers
+    VmovF32RegDual { cond: Cond, sm: Sreg, sm2: Sreg, rt: Reg, rt2: Reg },
+    ///Vector Move to two registers from one floating-point 64-bit
+    VmovRegF64 { cond: Cond, rt: Reg, rt2: Reg, dm: Dreg },
+    ///Vector Move to one floating-point 64-bit from two registers
+    VmovF64Reg { cond: Cond, dm: Dreg, rt: Reg, rt2: Reg },
+    ///Vector Move to Register from Status register
+    Vmrs { cond: Cond, rd: Reg, fpscr: Fpscr },
+    ///Vector Move to Status register from Register
+    Vmsr { cond: Cond, fpscr: Fpscr, rd: Reg },
+    ///Vector Multiply Floating-point 32-bit
+    VmulF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Multiply Floating-point 64-bit
+    VmulF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Negate Floating-point 32-bit
+    VnegF32 { cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Negate Floating-point 64-bit
+    VnegF64 { cond: Cond, dd: Dreg, dm: Dreg },
+    ///Vector Negate Multiply Accumulate Floating-point 32-bit
+    VnmlaF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Negate Multiply Accumulate Floating-point 64-bit
+    VnmlaF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Negate Multiply Subtract Floating-point 32-bit
+    VnmlsF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Negate Multiply Subtract Floating-point 64-bit
+    VnmlsF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Negate Multiply Floating-point 32-bit
+    VnmulF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Negate Multiply Floating-point 64-bit
+    VnmulF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Vector Pop Floating-point 32-bit
+    VpopF32 { cond: Cond, regs: SregList },
+    ///Vector Pop Floating-point 64-bit
+    VpopF64 { cond: Cond, regs: DregList },
+    ///Vector Push Floating-point 32-bit
+    VpushF32 { cond: Cond, regs: SregList },
+    ///Vector Push Floating-point 64-bit
+    VpushF64 { cond: Cond, regs: DregList },
+    ///Vector Square Root Floating-point 32-bit
+    VsqrtF32 { cond: Cond, sd: Sreg, sm: Sreg },
+    ///Vector Square Root Floating-point 64-bit
+    VsqrtF64 { cond: Cond, dd: Dreg, dm: Dreg },
+    ///Vector Store Multiple Floating-point 32-bit
+    VstmF32 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: SregList },
+    ///Vector Store Multiple Floating-point 64-bit
+    VstmF64 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: DregList },
+    ///Vector Store Register Floating-point 32-bit
+    VstrF32 { cond: Cond, sd: Sreg, addr: AddrLdrStr },
+    ///Vector Store Register Floating-point 64-bit
+    VstrF64 { cond: Cond, dd: Dreg, addr: AddrLdrStr },
+    ///Vector Subtract 32-bit
+    VsubF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
+    ///Vector Subtract 64-bit
+    VsubF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
+    ///Wait For Event
+    Wfe { cond: Cond },
+    ///Wait For Interrupt
+    Wfi { cond: Cond },
+    ///Yield
+    Yield { cond: Cond },
 }

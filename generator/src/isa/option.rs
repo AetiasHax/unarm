@@ -56,6 +56,8 @@ pub enum OptionKind {
     Enum(Vec<OptionEnumVariant>),
     #[serde(rename = "version")]
     Version,
+    #[serde(rename = "extensions")]
+    Extensions,
 }
 
 impl OptionKind {
@@ -67,6 +69,7 @@ impl OptionKind {
                 quote!(#type_name)
             }
             OptionKind::Version => quote!(Version),
+            OptionKind::Extensions => quote!(Extensions),
         }
     }
 
@@ -84,6 +87,7 @@ impl OptionKind {
                 })
             }
             OptionKind::Version => None,
+            OptionKind::Extensions => None,
         }
     }
 }

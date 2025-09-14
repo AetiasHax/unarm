@@ -7,6 +7,8 @@ impl Isa {
     pub fn generate_types(&self) -> TokenStream {
         let options_struct = self.options().struct_tokens();
         let version_enum = self.versions().enum_tokens();
+        let extensions_struct = self.extensions().struct_tokens();
+        let extensions_struct_impl = self.extensions().struct_impl_tokens();
         let internal_option_types = self.options().internal_types_tokens();
 
         let data_types = self.types().types_tokens(self);
@@ -20,6 +22,8 @@ impl Isa {
 
             #options_struct
             #version_enum
+            #extensions_struct
+            #extensions_struct_impl
             #internal_option_types
 
             #data_types

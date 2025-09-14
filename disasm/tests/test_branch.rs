@@ -6,6 +6,7 @@ mod tests {
         ($ins:ident, $disasm:literal) => {{
             let options = Options {
                 version: unarm::Version::V6K,
+                extensions: unarm::Extensions::all(),
                 av: false,
                 r9_use: unarm::R9Use::R9,
                 sl: false,
