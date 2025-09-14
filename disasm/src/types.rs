@@ -173,9 +173,21 @@ pub enum Op2 {
     ///Immediate
     Imm(u32),
     ///Register shifted by register
-    ShiftReg { rm: Reg, shift_op: ShiftOp, rs: Reg },
+    ShiftReg(ShiftReg),
     ///Register shifted by immediate
-    ShiftImm { rm: Reg, shift_op: ShiftOp, imm: u32 },
+    ShiftImm(ShiftImm),
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct ShiftReg {
+    pub rm: Reg,
+    pub shift_op: ShiftOp,
+    pub rs: Reg,
+}
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct ShiftImm {
+    pub rm: Reg,
+    pub shift_op: ShiftOp,
+    pub imm: u32,
 }
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Op2Shift {
@@ -451,7 +463,7 @@ pub enum Ins {
     ///Reverse bytes in signed halfword
     Revsh { cond: Cond, rd: Reg, rm: Reg },
     ///Return From Exception
-    Rfe { mode: SrsRfeMode, rn: Reg, writeback: bool },
+    Rfe { addr_mode: SrsRfeMode, rn: Reg, writeback: bool },
     ///Rotate Right
     Ror { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Rotate Right with Extend
@@ -534,4 +546,8 @@ pub enum Ins {
     Smulw { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rm_side: RegSide },
     ///Signed Multiply Subtract Dual
     Smusd { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool },
+    ///Store Return State
+    Srs { addr_mode: SrsRfeMode, rn: Reg, writeback: bool, mode: u32 },
+    ///Signed Saturate
+    Ssat { cond: Cond, rd: Reg, sat_imm: u32, op2: ShiftImm },
 }

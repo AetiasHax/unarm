@@ -173,19 +173,29 @@ impl Op2 {
         if (value & 0x2000000) == 0x2000000 {
             Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1))
         } else if (value & 0x2000010) == 0x10 {
-            Self::ShiftReg {
-                rm: Reg::parse(((value) & 0xf), pc),
-                shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
-                rs: Reg::parse((((value) >> 8) & 0xf), pc),
-            }
+            Self::ShiftReg(ShiftReg::parse(((value) & 0xfff), pc))
         } else if (value & 0x2000010) == 0x0 {
-            Self::ShiftImm {
-                rm: Reg::parse(((value) & 0xf), pc),
-                shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
-                imm: (((value) >> 7) & 0x1f),
-            }
+            Self::ShiftImm(ShiftImm::parse(((value) & 0xfff), pc))
         } else {
             panic!();
+        }
+    }
+}
+impl ShiftReg {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
+            rm: Reg::parse(((value) & 0xf), pc),
+            shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
+            rs: Reg::parse((((value) >> 8) & 0xf), pc),
+        }
+    }
+}
+impl ShiftImm {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
+            rm: Reg::parse(((value) & 0xf), pc),
+            shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
+            imm: (((value) >> 7) & 0x1f),
         }
     }
 }
@@ -534,8 +544,6 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_rev16_0(ins as u32, pc)
     } else if (ins & 0xff000d0) == 0x7000050 {
         parse_arm_smlsd_0(ins as u32, pc)
-    } else if (ins & 0xff000b0) == 0x12000a0 {
-        parse_arm_smulw_0(ins as u32, pc)
     } else if (ins & 0xff00070) == 0x6800010 {
         parse_arm_pkhbt_0(ins as u32, pc)
     } else if (ins & 0xff00070) == 0x6800050 {
@@ -560,6 +568,8 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_mul_0(ins as u32, pc)
     } else if (ins & 0xfe000f0) == 0xc00090 {
         parse_arm_smull_0(ins as u32, pc)
+    } else if (ins & 0xff000b0) == 0x12000a0 {
+        parse_arm_smulw_0(ins as u32, pc)
     } else if (ins & 0xfd700000) == 0xf5500000 {
         parse_arm_pld_0(ins as u32, pc)
     } else if (ins & 0xff100010) == 0xfe000010 {
@@ -572,10 +582,14 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_smlal_half_0(ins as u32, pc)
     } else if (ins & 0xff00090) == 0x1600080 {
         parse_arm_smul_0(ins as u32, pc)
+    } else if (ins & 0xfe00030) == 0x6a00010 {
+        parse_arm_ssat_0(ins as u32, pc)
     } else if (ins & 0xff000010) == 0xfe000000 {
         parse_arm_cdp2_0(ins as u32, pc)
     } else if (ins & 0xfe500000) == 0xf8100000 {
         parse_arm_rfe_0(ins as u32, pc)
+    } else if (ins & 0xfe500000) == 0xf8400000 {
+        parse_arm_srs_0(ins as u32, pc)
     } else if (ins & 0xff00000) == 0xc400000 {
         parse_arm_mcrr_0(ins as u32, pc)
     } else if (ins & 0xff00000) == 0xc500000 {
@@ -602,50 +616,50 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         parse_arm_cmn_0(ins as u32, pc)
     } else if (ins & 0xe708000) == 0x8500000 {
         parse_arm_ldm_1(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins as u32, pc)
+    } else if (ins & 0xd700000) == 0x4300000 {
+        parse_arm_ldrt_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x600000 {
         parse_arm_rsb_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins as u32, pc)
     } else if (ins & 0xdb00000) == 0x1200000 {
         parse_arm_msr_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins as u32, pc)
-    } else if (ins & 0xe508000) == 0x8508000 {
-        parse_arm_ldm_2(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x800000 {
+        parse_arm_add_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x0 {
         parse_arm_and_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0xa00000 {
         parse_arm_adc_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0xc00000 {
         parse_arm_sbc_0(ins as u32, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins as u32, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins as u32, pc)
-    } else if (ins & 0xf100010) == 0xe000010 {
-        parse_arm_mcr_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0xe00000 {
+        parse_arm_rsc_0(ins as u32, pc)
     } else if (ins & 0xde00000) == 0x1c00000 {
         parse_arm_bic_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x1e00000 {
+        parse_arm_mvn_0(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x1800000 {
+        parse_arm_orr_0(ins as u32, pc)
     } else if (ins & 0xf100010) == 0xe100010 {
         parse_arm_mrc_0(ins as u32, pc)
+    } else if (ins & 0xe508000) == 0x8508000 {
+        parse_arm_ldm_2(ins as u32, pc)
+    } else if (ins & 0xde00000) == 0x200000 {
+        parse_arm_eor_0(ins as u32, pc)
+    } else if (ins & 0xf100010) == 0xe000010 {
+        parse_arm_mcr_0(ins as u32, pc)
     } else if (ins & 0xf000010) == 0xe000000 {
         parse_arm_cdp_0(ins as u32, pc)
     } else if (ins & 0xe500000) == 0x8100000 {
         parse_arm_ldm_0(ins as u32, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins as u32, pc)
     } else if (ins & 0xe100000) == 0xc100000 {
         parse_arm_ldc_0(ins as u32, pc)
-    } else if (ins & 0xf000000) == 0xb000000 {
-        parse_arm_bl_0(ins as u32, pc)
     } else if (ins & 0xf000000) == 0xa000000 {
         parse_arm_b_0(ins as u32, pc)
+    } else if (ins & 0xf000000) == 0xb000000 {
+        parse_arm_bl_0(ins as u32, pc)
     } else if (ins & 0xc500000) == 0x4100000 {
         parse_arm_ldr_0(ins as u32, pc)
+    } else if (ins & 0xc500000) == 0x4500000 {
+        parse_arm_ldrb_0(ins as u32, pc)
     } else {
         None
     }
@@ -788,11 +802,11 @@ fn parse_thumb_adc_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Adc { s, cond, rd, rn, op2 })
 }
 fn parse_arm_add_0(value: u32, pc: u32) -> Option<Ins> {
@@ -824,11 +838,11 @@ fn parse_thumb_add_2(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 6) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Add { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_add_3(value: u32, pc: u32) -> Option<Ins> {
@@ -836,11 +850,11 @@ fn parse_thumb_add_3(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
     let rn = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0xf, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Add { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_add_4(value: u32, pc: u32) -> Option<Ins> {
@@ -864,11 +878,11 @@ fn parse_thumb_add_6(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Add { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_add_7(value: u32, pc: u32) -> Option<Ins> {
@@ -876,11 +890,11 @@ fn parse_thumb_add_7(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0xf, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Add { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_add_8(value: u32, pc: u32) -> Option<Ins> {
@@ -904,11 +918,11 @@ fn parse_thumb_and_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::And { s, cond, rd, rn, op2 })
 }
 fn parse_arm_asr_0(value: u32, pc: u32) -> Option<Ins> {
@@ -974,11 +988,11 @@ fn parse_thumb_bic_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Bic { s, cond, rd, rn, op2 })
 }
 fn parse_arm_bkpt_0(value: u32, pc: u32) -> Option<Ins> {
@@ -1126,11 +1140,11 @@ fn parse_arm_cmn_0(value: u32, pc: u32) -> Option<Ins> {
 fn parse_thumb_cmn_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Cmn { cond, rn, op2 })
 }
 fn parse_arm_cmp_0(value: u32, pc: u32) -> Option<Ins> {
@@ -1151,21 +1165,21 @@ fn parse_thumb_cmp_0(value: u32, pc: u32) -> Option<Ins> {
 fn parse_thumb_cmp_1(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Cmp { cond, rn, op2 })
 }
 fn parse_thumb_cmp_2(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rn = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0xf, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Cmp { cond, rn, op2 })
 }
 fn parse_arm_cps_0(value: u32, pc: u32) -> Option<Ins> {
@@ -1203,11 +1217,11 @@ fn parse_thumb_eor_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Eor { s, cond, rd, rn, op2 })
 }
 fn parse_arm_ldc_0(value: u32, pc: u32) -> Option<Ins> {
@@ -1683,22 +1697,22 @@ fn parse_thumb_mov_1(value: u32, pc: u32) -> Option<Ins> {
     let s = (0) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0xf, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Mov { s, cond, rd, op2 })
 }
 fn parse_thumb_mov_2(value: u32, pc: u32) -> Option<Ins> {
     let s = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Mov { s, cond, rd, op2 })
 }
 fn parse_arm_mrc_0(value: u32, pc: u32) -> Option<Ins> {
@@ -1820,11 +1834,11 @@ fn parse_thumb_mvn_0(value: u32, pc: u32) -> Option<Ins> {
     let s = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Mvn { s, cond, rd, op2 })
 }
 fn parse_arm_nop_0(value: u32, pc: u32) -> Option<Ins> {
@@ -1851,11 +1865,11 @@ fn parse_thumb_orr_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Orr { s, cond, rd, rn, op2 })
 }
 fn parse_arm_pkhbt_0(value: u32, pc: u32) -> Option<Ins> {
@@ -2088,10 +2102,14 @@ fn parse_arm_rfe_0(value: u32, pc: u32) -> Option<Ins> {
     if value & 0xffff != 0x0a00 {
         return None;
     }
-    let mode = SrsRfeMode::parse(((value) >> 23) & 0x3, pc);
+    let addr_mode = SrsRfeMode::parse(((value) >> 23) & 0x3, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let writeback = (((value) >> 21) & 0x1) != 0;
-    Some(Ins::Rfe { mode, rn, writeback })
+    Some(Ins::Rfe {
+        addr_mode,
+        rn,
+        writeback,
+    })
 }
 fn parse_arm_ror_0(value: u32, pc: u32) -> Option<Ins> {
     let s = (((value) >> 20) & 0x1) != 0;
@@ -2186,11 +2204,11 @@ fn parse_thumb_sbc_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
-    let op2 = Op2::ShiftImm {
+    let op2 = Op2::ShiftImm(ShiftImm {
         rm: Reg::parse(((value) >> 3) & 0x7, pc),
         shift_op: ShiftOp::default(),
         imm: 0,
-    };
+    });
     Some(Ins::Sbc { s, cond, rd, rn, op2 })
 }
 fn parse_arm_sel_0(value: u32, pc: u32) -> Option<Ins> {
@@ -2540,5 +2558,32 @@ fn parse_arm_smusd_0(value: u32, pc: u32) -> Option<Ins> {
         rn,
         rm,
         swap_rm,
+    })
+}
+fn parse_arm_srs_0(value: u32, pc: u32) -> Option<Ins> {
+    if value & 0xfffe0 != 0xd0500 {
+        return None;
+    }
+    let addr_mode = SrsRfeMode::parse(((value) >> 23) & 0x3, pc);
+    let rn = Reg::parse(13, pc);
+    let writeback = (((value) >> 21) & 0x1) != 0;
+    let mode = (value) & 0x1f;
+    Some(Ins::Srs {
+        addr_mode,
+        rn,
+        writeback,
+        mode,
+    })
+}
+fn parse_arm_ssat_0(value: u32, pc: u32) -> Option<Ins> {
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let sat_imm = (((value) >> 16) & 0x1f).wrapping_add(1);
+    let op2 = ShiftImm::parse((value) & 0xfff, pc);
+    Some(Ins::Ssat {
+        cond,
+        rd,
+        sat_imm,
+        op2,
     })
 }

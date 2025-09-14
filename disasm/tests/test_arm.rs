@@ -720,4 +720,18 @@ mod tests {
         assert_asm!(0xe701f354, "smusd r1, r4, r3");
         assert_asm!(0x0701f374, "smusdxeq r1, r4, r3");
     }
+
+    #[test]
+    fn test_srs() {
+        assert_asm!(0xf84d051f, "srsda sp, #0x1f");
+        assert_asm!(0xf96d051f, "srsdb sp!, #0x1f");
+        assert_asm!(0xf8cd051f, "srsia sp, #0x1f");
+        assert_asm!(0xf9ed051f, "srsib sp!, #0x1f");
+    }
+
+    #[test]
+    fn test_ssat() {
+        assert_asm!(0xe6af1512, "ssat r1, #0x10, r2, lsl #0xa");
+        assert_asm!(0x06b94a53, "ssateq r4, #0x1a, r3, asr #0x14");
+    }
 }

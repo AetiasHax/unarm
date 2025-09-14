@@ -100,6 +100,14 @@ pub trait Write: core::fmt::Write {
         op2.write(self)?;
         Ok(())
     }
+    fn write_shift_reg(&mut self, shift_reg: ShiftReg) -> core::fmt::Result {
+        shift_reg.write(self)?;
+        Ok(())
+    }
+    fn write_shift_imm(&mut self, shift_imm: ShiftImm) -> core::fmt::Result {
+        shift_imm.write(self)?;
+        Ok(())
+    }
     fn write_op2_shift(&mut self, op2_shift: Op2Shift) -> core::fmt::Result {
         op2_shift.write(self)?;
         Ok(())
@@ -592,30 +600,50 @@ impl Op2 {
                 formatter.write_str("#")?;
                 formatter.write_uimm(*imm)?;
             }
-            Self::ShiftReg { rm, shift_op, rs } => {
+            Self::ShiftReg(shift_reg) => {
+                formatter.write_shift_reg(*shift_reg)?;
+            }
+            Self::ShiftImm(shift_imm) => {
+                formatter.write_shift_imm(*shift_imm)?;
+            }
+        }
+        Ok(())
+    }
+}
+impl ShiftReg {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let Self { rm, shift_op, rs } = self;
+        formatter.write_reg(*rm)?;
+        formatter.write_separator()?;
+        formatter.write_shift_op(*shift_op)?;
+        formatter.write_space()?;
+        formatter.write_reg(*rs)?;
+        Ok(())
+    }
+}
+impl ShiftImm {
+    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: Write + ?Sized,
+    {
+        let Self { rm, shift_op, imm } = self;
+        if *imm == 0 && *shift_op == ShiftOp::Lsl {
+            formatter.write_reg(*rm)?;
+        } else {
+            if *imm == 0 && *shift_op == ShiftOp::Ror {
+                formatter.write_reg(*rm)?;
+                formatter.write_separator()?;
+                formatter.write_str("rrx")?;
+            } else {
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
                 formatter.write_shift_op(*shift_op)?;
                 formatter.write_space()?;
-                formatter.write_reg(*rs)?;
-            }
-            Self::ShiftImm { rm, shift_op, imm } => {
-                if *imm == 0 && *shift_op == ShiftOp::Lsl {
-                    formatter.write_reg(*rm)?;
-                } else {
-                    if *imm == 0 && *shift_op == ShiftOp::Ror {
-                        formatter.write_reg(*rm)?;
-                        formatter.write_separator()?;
-                        formatter.write_str("rrx")?;
-                    } else {
-                        formatter.write_reg(*rm)?;
-                        formatter.write_separator()?;
-                        formatter.write_shift_op(*shift_op)?;
-                        formatter.write_space()?;
-                        formatter.write_str("#")?;
-                        formatter.write_uimm(*imm)?;
-                    }
-                }
+                formatter.write_str("#")?;
+                formatter.write_uimm(*imm)?;
             }
         }
         Ok(())
@@ -1269,9 +1297,9 @@ impl Ins {
                 formatter.write_str("revsh")?;
                 formatter.write_cond(*cond)?;
             }
-            Ins::Rfe { mode, rn, writeback } => {
+            Ins::Rfe { addr_mode, rn, writeback } => {
                 formatter.write_str("rfe")?;
-                formatter.write_srs_rfe_mode(*mode)?;
+                formatter.write_srs_rfe_mode(*addr_mode)?;
             }
             Ins::Ror { s, cond, rd, rn, op2 } => {
                 formatter.write_str("ror")?;
@@ -1456,6 +1484,14 @@ impl Ins {
             Ins::Smusd { cond, rd, rn, rm, swap_rm } => {
                 formatter.write_str("smusd")?;
                 formatter.write_swap_rm(*swap_rm)?;
+                formatter.write_cond(*cond)?;
+            }
+            Ins::Srs { addr_mode, rn, writeback, mode } => {
+                formatter.write_str("srs")?;
+                formatter.write_srs_rfe_mode(*addr_mode)?;
+            }
+            Ins::Ssat { cond, rd, sat_imm, op2 } => {
+                formatter.write_str("ssat")?;
                 formatter.write_cond(*cond)?;
             }
         }
@@ -2042,7 +2078,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            Ins::Rfe { mode, rn, writeback } => {
+            Ins::Rfe { addr_mode, rn, writeback } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_wb(*writeback)?;
@@ -2319,6 +2355,23 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
+            }
+            Ins::Srs { addr_mode, rn, writeback, mode } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rn)?;
+                formatter.write_wb(*writeback)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*mode)?;
+            }
+            Ins::Ssat { cond, rd, sat_imm, op2 } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
+                formatter.write_separator()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*sat_imm)?;
+                formatter.write_separator()?;
+                formatter.write_shift_imm(*op2)?;
             }
         }
         Ok(())

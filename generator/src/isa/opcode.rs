@@ -376,15 +376,7 @@ impl OpcodeParamValue {
                 data_type.parse_expr_tokens(isa, Some(expr))
             }
             OpcodeParamValue::Enum(variant, value) => {
-                let inner_type = match data_type.kind() {
-                    DataTypeKind::Type(data_type_name, _) => {
-                        let Some(inner_type) = isa.types().get(data_type_name) else {
-                            panic!();
-                        };
-                        inner_type
-                    }
-                    _ => data_type,
-                };
+                let inner_type = data_type.canonical(isa);
                 let DataTypeKind::Enum(data_type_enum) = inner_type.kind() else {
                     panic!("Data type '{}' is not an enum", data_type.name().0);
                 };

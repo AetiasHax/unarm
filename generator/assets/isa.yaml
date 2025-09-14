@@ -383,35 +383,39 @@ types:
         description: Register shifted by register
         data:
           name: shift_reg
-          kind: !struct
-            format: !fmt (rm), (shift_op) (rs)
-            fields:
-            - name: rm
-              kind: !type [reg, bits(0..4)]
-            - name: shift_op
-              kind: !type [shift_op, bits(5..7)]
-            - name: rs
-              kind: !type [reg, bits(8..12)]
+          kind: !type [shift_reg, bits(0..12)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: shift_imm
         description: Register shifted by immediate
         data:
           name: shift_imm
-          kind: !struct
-            format: !if
-              cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
-              then: !fmt (rm)
-              else: !if
-                cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, ror)
-                then: !fmt (rm), rrx
-                else: !fmt "(rm), (shift_op) #(imm)"
-            fields:
-            - name: rm
-              kind: !type [reg, bits(0..4)]
-            - name: shift_op
-              kind: !type [shift_op, bits(5..7)]
-            - name: imm
-              kind: !uint bits(7..12)
+          kind: !type [shift_imm, bits(0..12)]
+- name: shift_reg
+  kind: !struct
+    format: !fmt (rm), (shift_op) (rs)
+    fields:
+    - name: rm
+      kind: !type [reg, bits(0..4)]
+    - name: shift_op
+      kind: !type [shift_op, bits(5..7)]
+    - name: rs
+      kind: !type [reg, bits(8..12)]
+- name: shift_imm
+  kind: !struct
+    format: !if
+      cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
+      then: !fmt (rm)
+      else: !if
+        cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, ror)
+        then: !fmt (rm), rrx
+        else: !fmt "(rm), (shift_op) #(imm)"
+    fields:
+    - name: rm
+      kind: !type [reg, bits(0..4)]
+    - name: shift_op
+      kind: !type [shift_op, bits(5..7)]
+    - name: imm
+      kind: !uint bits(7..12)
 - name: op2_shift
   kind: !enum
     bits: 0..32
@@ -2230,16 +2234,16 @@ opcodes:
 
 - mnemonic: rfe
   description: Return From Exception
-  params: { mode: srs_rfe_mode, rn: reg, writeback: wb }
+  params: { addr_mode: srs_rfe_mode, rn: reg, writeback: wb }
   format:
-    opcode: !fmt rfe(mode)
+    opcode: !fmt rfe(addr_mode)
     params: !fmt (rn)(writeback)
   arm:
   - version: [v6*]
     pattern: 1111_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
     illegal: ins() & 0xffff != 0x0a00
     params:
-      mode: !bits 23..25
+      addr_mode: !bits 23..25
       rn: !bits 16..20
       writeback: !bits 21
 
@@ -2825,4 +2829,35 @@ opcodes:
       rn: !bits 0..4
       rm: !bits 8..12
       swap_rm: !bits 5
+
+- mnemonic: srs
+  description: Store Return State
+  params: { addr_mode: srs_rfe_mode, rn: reg, writeback: wb, mode: uimm }
+  format:
+    opcode: !fmt srs(addr_mode)
+    params: !fmt "(rn)(writeback), #(mode)"
+  arm:
+  - version: [v6*]
+    pattern: 1111_100x_x1x0_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal: ins() & 0xfffe0 != 0xd0500
+    params:
+      addr_mode: !bits 23..25
+      rn: !const 13 # sp
+      writeback: !bits 21
+      mode: !bits 0..5
+
+- mnemonic: ssat
+  description: Signed Saturate
+  params: { cond: cond, rd: reg, sat_imm: uimm, op2: shift_imm }
+  format:
+    opcode: !fmt ssat(cond)
+    params: !fmt "(rd), #(sat_imm), (op2)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_101x_xxxx_xxxx_xxxx_xx01_xxxx
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      sat_imm: !expr bits(16..21) + 1
+      op2: !bits 0..12
 # endregion

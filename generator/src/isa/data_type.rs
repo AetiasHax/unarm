@@ -151,6 +151,17 @@ impl DataType {
         }
     }
 
+    pub fn canonical<'a>(&'a self, isa: &'a Isa) -> &'a DataType {
+        if let DataTypeKind::Type(name, _) = &self.kind {
+            let Some(inner_type) = isa.types().get(name) else {
+                panic!();
+            };
+            inner_type
+        } else {
+            self
+        }
+    }
+
     fn type_decl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         match &self.kind {
             DataTypeKind::Bool { .. } => None,
@@ -681,32 +692,48 @@ impl DataTypeEnumVariant {
         let enum_ident = enum_name.as_pascal_ident();
         let variant_ident = self.as_ident();
         if let Some(data) = &self.data {
-            if let DataTypeKind::Struct(data_type_struct) = &data.kind {
-                let OpcodeParamValue::Struct(struct_params) = value else {
-                    panic!(
-                        "Expected struct param for variant '{}' of enum '{}'",
-                        self.name.0, enum_name.0
-                    );
+            if let DataTypeKind::Type(_, _) = &data.kind {
+                let canonical_data = data.canonical(isa);
+                if let DataTypeKind::Struct(data_type_struct) = &canonical_data.kind
+                    && let OpcodeParamValue::Struct(struct_params) = value
+                {
+                    let record =
+                        data_type_struct.param_record_tokens(isa, &data.name, struct_params);
+                    let struct_ident = canonical_data.name.as_pascal_ident();
+                    return quote!(#enum_ident::#variant_ident(#struct_ident #record));
                 };
-                let record = data_type_struct.param_record_tokens(isa, &data.name, struct_params);
-                quote!(#enum_ident::#variant_ident #record)
-            } else {
-                let value_tokens = match value {
-                    OpcodeParamValue::Bits(bit_range) => bit_range.shift_mask_tokens(None),
-                    OpcodeParamValue::Const(imm) => {
-                        let lit = Literal::u32_unsuffixed(*imm);
-                        quote!(#lit)
-                    }
-                    OpcodeParamValue::Expr(data_expr) => {
-                        data_expr.as_tokens(Ident::new("value", Span::call_site()))
-                    }
-                    OpcodeParamValue::Enum(_, _) => {
-                        panic!()
-                    }
-                    OpcodeParamValue::Struct(_) => panic!(),
-                };
-                let parse_expr = data.parse_expr_tokens(isa, Some(value_tokens));
-                quote!(#enum_ident::#variant_ident(#parse_expr))
+            }
+
+            match &data.kind {
+                DataTypeKind::Struct(data_type_struct) => {
+                    let OpcodeParamValue::Struct(struct_params) = value else {
+                        panic!(
+                            "Expected struct param for variant '{}' of enum '{}'",
+                            self.name.0, enum_name.0
+                        );
+                    };
+                    let record =
+                        data_type_struct.param_record_tokens(isa, &data.name, struct_params);
+                    quote!(#enum_ident::#variant_ident #record)
+                }
+                _ => {
+                    let value_tokens = match value {
+                        OpcodeParamValue::Bits(bit_range) => bit_range.shift_mask_tokens(None),
+                        OpcodeParamValue::Const(imm) => {
+                            let lit = Literal::u32_unsuffixed(*imm);
+                            quote!(#lit)
+                        }
+                        OpcodeParamValue::Expr(data_expr) => {
+                            data_expr.as_tokens(Ident::new("value", Span::call_site()))
+                        }
+                        OpcodeParamValue::Enum(_, _) => {
+                            panic!()
+                        }
+                        OpcodeParamValue::Struct(_) => panic!(),
+                    };
+                    let parse_expr = data.parse_expr_tokens(isa, Some(value_tokens));
+                    quote!(#enum_ident::#variant_ident(#parse_expr))
+                }
             }
         } else {
             quote!(#enum_ident::#variant_ident)
