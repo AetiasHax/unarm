@@ -16,6 +16,7 @@ impl IsaVersions {
     pub fn enum_tokens(&self) -> TokenStream {
         let versions = self.0.iter().map(|v| v.as_ident());
         quote! {
+            #[derive(Clone, Copy)]
             pub enum Version {
                 #(#versions),*
             }

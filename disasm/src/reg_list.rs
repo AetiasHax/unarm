@@ -9,7 +9,7 @@ impl RegList {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Reg> {
-        (0..16).filter(|i| (self.0 & (1 << i)) != 0).map(|i| Reg::parse(i, 0))
+        (0..16).filter(|i| (self.0 & (1 << i)) != 0).map(|i| Reg::parse(i, 0).unwrap())
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
@@ -39,12 +39,12 @@ pub struct SregList {
 impl SregList {
     pub fn parse(value: u32) -> Self {
         let start = (((value >> 22) & 0x1) | ((value >> 11) & 0x1e)) as u8;
-        let end = (start + (value & 0xff) as u8).clamp(1, 31);
+        let end = start.wrapping_add(value as u8).clamp(1, 31);
         Self { start, end }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Sreg> {
-        (self.start..self.end).map(|i| Sreg::parse(i as u32, 0))
+        (self.start..self.end).map(|i| Sreg::parse(i as u32, 0).unwrap())
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
@@ -74,12 +74,12 @@ pub struct DregList {
 impl DregList {
     pub fn parse(value: u32) -> Self {
         let start = (((value >> 18) & 0x10) | ((value >> 12) & 0xf)) as u8;
-        let end = (start + ((value & 0xfe) >> 1) as u8).clamp(1, 31);
+        let end = start.wrapping_add(((value & 0xfe) >> 1) as u8).clamp(1, 31);
         Self { start, end }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Dreg> {
-        (self.start..self.end).map(|i| Dreg::parse(i as u32, 0))
+        (self.start..self.end).map(|i| Dreg::parse(i as u32, 0).unwrap())
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result

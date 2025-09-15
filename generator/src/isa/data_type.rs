@@ -485,7 +485,7 @@ impl DataTypeEnum {
     }
 
     fn can_be_illegal(&self, isa: &Isa) -> bool {
-        self.variants.values().any(|variant| variant.can_be_illegal(isa))
+        true
     }
 
     fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
@@ -501,7 +501,7 @@ impl DataTypeEnum {
                 quote! {
                     #(#variants)else*
                     else {
-                        panic!();
+                        None
                     }
                 }
             } else {
@@ -511,7 +511,7 @@ impl DataTypeEnum {
                 quote! {
                     match value {
                         #(#variants),*,
-                        _ => panic!(),
+                        _ => None,
                     }
                 }
             };
@@ -817,10 +817,22 @@ impl DataTypeStruct {
     fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
         let record = self.parse_record_tokens(isa);
+
+        let return_type = if self.can_be_illegal(isa) {
+            quote!(Option<Self>)
+        } else {
+            quote!(Self)
+        };
+        let return_value = if self.can_be_illegal(isa) {
+            quote!(Some(Self #record))
+        } else {
+            quote!(Self #record)
+        };
+
         quote! {
             impl #name_ident {
-                pub(crate) fn parse(value: u32, pc: u32) -> Self {
-                    Self #record
+                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
+                    #return_value
                 }
             }
         }

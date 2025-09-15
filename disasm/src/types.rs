@@ -1,5 +1,6 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 use crate::*;
+#[derive(Clone, Copy)]
 pub struct Options {
     ///The version of ARM to use
     pub version: Version,
@@ -18,10 +19,10 @@ pub struct Options {
     ///If true, use Unified Assembly Language syntax (UAL), otherwise use divided syntax
     pub ual: bool,
 }
+#[derive(Clone, Copy)]
 pub enum Version {
     V4,
     V4T,
-    V5,
     V5T,
     V5Te,
     V5Tej,
@@ -41,7 +42,7 @@ impl Extensions {
         Self(self.0 | 1)
     }
 }
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum R9Use {
     ///General purpose register
     R9,

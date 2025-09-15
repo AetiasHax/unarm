@@ -13,6 +13,7 @@ impl IsaOptions {
     pub fn struct_tokens(&self) -> TokenStream {
         let fields = self.0.iter().map(|(name, option)| option.struct_field_tokens(name));
         quote! {
+            #[derive(Clone, Copy)]
             pub struct Options {
                 #(#fields),*
             }
@@ -80,7 +81,7 @@ impl OptionKind {
                 let type_name = Ident::new(&snake_to_pascal_case(name), Span::call_site());
                 let variants = variants.iter().map(|v| v.variant_tokens());
                 Some(quote! {
-                    #[derive(PartialEq, Eq)]
+                    #[derive(Clone, Copy, PartialEq, Eq)]
                     pub enum #type_name {
                         #(#variants),*
                     }

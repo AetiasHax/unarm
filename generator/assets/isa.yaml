@@ -34,7 +34,6 @@ options:
 versions:
 - v4
 - v4t
-- v5
 - v5t
 - v5te
 - v5tej
