@@ -12,8 +12,8 @@ use crate::util::hex_literal::HexLiteral;
 pub struct BitRange(pub Range<u8>);
 
 impl BitRange {
-    pub fn mask(&self) -> u64 {
-        1u64.unbounded_shl(self.0.len() as u32).wrapping_sub(1)
+    pub fn mask(&self) -> u32 {
+        1u32.unbounded_shl(self.0.len() as u32).wrapping_sub(1)
     }
 
     pub fn shift_mask_tokens(&self, value: Option<Ident>) -> TokenStream {

@@ -10,7 +10,7 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatParams, Isa, IsaExtensionPattern, OpcodePattern,
+        Format, FormatParams, Isa, IsaExtensionPattern, OpcodeParseTree, OpcodePattern,
     },
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
@@ -84,6 +84,16 @@ impl Opcodes {
         }
     }
 
+    pub fn parse_arm_matchtree_fn_tokens(&self, isa: &Isa) -> TokenStream {
+        let tree = OpcodeParseTree::new_arm(isa);
+        let body = tree.parse_expr_tokens();
+        quote! {
+            pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
+                #body
+            }
+        }
+    }
+
     pub fn parse_thumb_ifchain_fn_tokens(&self) -> TokenStream {
         let mut encodings = self
             .0
@@ -94,11 +104,21 @@ impl Opcodes {
         encodings.sort_unstable();
         let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
         quote! {
-            pub fn parse_thumb(ins: u16, next: Option<u16>, pc: u32) -> Option<Ins> {
+            pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
                 #(#encodings_tokens)else*
                 else {
                     None
                 }
+            }
+        }
+    }
+
+    pub fn parse_thumb_matchtree_fn_tokens(&self, isa: &Isa) -> TokenStream {
+        let tree = OpcodeParseTree::new_thumb(isa);
+        let body = tree.parse_expr_tokens();
+        quote! {
+            pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
+                #body
             }
         }
     }
@@ -153,7 +173,7 @@ impl Opcode {
         }
     }
 
-    fn parse_fn_name(&self, arch: Arch, index: usize) -> String {
+    pub fn parse_fn_name(&self, arch: Arch, index: usize) -> String {
         match arch {
             Arch::Arm => format!("parse_arm_{}_{}", self.mnemonic, index),
             Arch::Thumb => format!("parse_thumb_{}_{}", self.mnemonic, index),
@@ -227,6 +247,14 @@ impl Opcode {
             let parse_fn_name = self.parse_fn_name(Arch::Thumb, i);
             encoding.as_parse_encoding(parse_fn_name)
         })
+    }
+
+    pub fn arm_encodings(&self) -> Option<&[OpcodeEncoding]> {
+        self.arm.as_deref()
+    }
+
+    pub fn thumb_encodings(&self) -> Option<&[OpcodeEncoding]> {
+        self.thumb.as_deref()
     }
 }
 
@@ -303,6 +331,10 @@ impl OpcodeEncoding {
     fn as_parse_encoding(&self, parse_fn_name: String) -> ParseOpcodeEncoding {
         ParseOpcodeEncoding { pattern: self.pattern.clone(), parse_fn_name }
     }
+
+    pub fn pattern(&self) -> &OpcodePattern {
+        &self.pattern
+    }
 }
 
 #[derive(PartialEq, Eq)]
@@ -327,24 +359,12 @@ impl ParseOpcodeEncoding {
     fn parse_ifchain_tokens(&self) -> TokenStream {
         let parse_fn_ident = Ident::new(&self.parse_fn_name, Span::call_site());
 
-        let first_bitmask = HexLiteral(self.pattern.first().bitmask());
-        let first_pattern = HexLiteral(self.pattern.first().pattern());
-        if let Some(second) = self.pattern.second() {
-            let second_bitmask = HexLiteral(second.bitmask());
-            let second_pattern = HexLiteral(second.pattern());
-            quote! {
-                if let Some(next) = next
-                    && (ins & #first_bitmask) == #first_pattern
-                    && (next & #second_bitmask) == #second_pattern
-                {
-                    #parse_fn_ident(((ins as u32) << 16) | (next as u32), pc)
-                }
-            }
-        } else {
-            quote! {
-                if (ins & #first_bitmask) == #first_pattern {
-                    #parse_fn_ident(ins as u32, pc)
-                }
+        let combined_pattern = self.pattern.combined();
+        let bitmask = HexLiteral(combined_pattern.bitmask());
+        let pattern = HexLiteral(combined_pattern.pattern());
+        quote! {
+            if (ins & #bitmask) == #pattern {
+                #parse_fn_ident(ins as u32, pc)
             }
         }
     }

@@ -4,6 +4,7 @@ mod extension;
 mod format;
 mod opcode;
 mod option;
+mod parse_tree;
 mod pattern;
 mod syn;
 mod version;
@@ -19,6 +20,7 @@ pub use extension::*;
 pub use format::*;
 pub use opcode::*;
 pub use option::*;
+pub use parse_tree::*;
 pub use pattern::*;
 pub use syn::*;
 pub use version::*;
@@ -71,6 +73,7 @@ impl Isa {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum Arch {
     Arm,
     Thumb,

@@ -39,10 +39,7 @@ impl Fuzzer {
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
-                    let first = (code >> 16) as u16;
-                    let second = (code & 0xffff) as u16;
-                    #[allow(clippy::unit_arg)]
-                    black_box(parse_thumb(first, Some(second), 0));
+                    black_box(parse_thumb(code, 0));
                 }
             }
         })
@@ -55,9 +52,7 @@ impl Fuzzer {
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
-                    let first = (code >> 16) as u16;
-                    let second = (code & 0xffff) as u16;
-                    let Some(ins) = parse_thumb(first, Some(second), 0) else { continue };
+                    let Some(ins) = parse_thumb(code, 0) else { continue };
                     black_box(ins.display(&options).to_string());
                 }
             }

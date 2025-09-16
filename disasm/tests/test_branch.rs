@@ -28,7 +28,7 @@ mod tests {
 
     macro_rules! assert_thumb {
         ($code:literal, $pc:literal, $disasm:literal) => {{
-            let ins = parse_thumb($code, None, $pc).expect("Illegal instruction");
+            let ins = parse_thumb($code, $pc).expect("Illegal instruction");
             assert_ins!(ins, $disasm)
         }};
     }

@@ -1136,7 +1136,7 @@ opcodes:
   - version: [v4t, v5t*, v6*]
     pattern: [1111_0xxx_xxxx_xxxx, 11x1_xxxx_xxxx_xxxx]
     params:
-      target: !expr ((bits(16..27) << 12) | (bits(0..11) << 1)).sign_extend(9) + 4
+      target: !expr ((bits(0..11) << 12) | (bits(16..27) << 1)).sign_extend(9) + 4
 
 - mnemonic: blx
   description: Branch with Link and Exchange
@@ -1159,7 +1159,7 @@ opcodes:
   - version: [v5t*, v6*]
     pattern: [1111_0xxx_xxxx_xxxx, 11x0_xxxx_xxxx_xxxx]
     params:
-      target: !enum [direct, !expr ((bits(16..27) << 12) | (bits(1..11) << 2)).sign_extend(9) + 4]
+      target: !enum [direct, !expr ((bits(0..11) << 12) | (bits(17..27) << 2)).sign_extend(9) + 4]
   - version: [v5t*, v6*]
     pattern: 0100_0111_1xxx_x000
     params:

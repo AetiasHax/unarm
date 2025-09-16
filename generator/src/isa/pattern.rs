@@ -8,16 +8,16 @@ use serde::{
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Pattern {
-    pattern: u64,
-    bitmask: u64,
+    pattern: u32,
+    bitmask: u32,
 }
 
 impl Pattern {
-    pub fn pattern(&self) -> u64 {
+    pub fn pattern(&self) -> u32 {
         self.pattern
     }
 
-    pub fn bitmask(&self) -> u64 {
+    pub fn bitmask(&self) -> u32 {
         self.bitmask
     }
 }
@@ -76,6 +76,17 @@ impl OpcodePattern {
 
     pub fn second(&self) -> Option<&Pattern> {
         self.second.as_ref()
+    }
+
+    pub fn combined(&self) -> Pattern {
+        if let Some(second) = &self.second {
+            Pattern {
+                pattern: (second.pattern() << 16) | self.first.pattern(),
+                bitmask: (second.bitmask() << 16) | self.first.bitmask(),
+            }
+        } else {
+            self.first.clone()
+        }
     }
 
     pub fn num_bits(&self) -> u32 {
