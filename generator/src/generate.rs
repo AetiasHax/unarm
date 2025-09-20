@@ -35,7 +35,7 @@ impl Isa {
     pub fn generate_parser(&self) -> TokenStream {
         let data_parse_impls = self.types().parse_impls_tokens(self);
         let data_default_impls = self.types().default_impls_tokens(self);
-        let parse_arm_fn = self.opcodes().parse_arm_matchtree_fn_tokens(self);
+        let parse_arm_fn = self.opcodes().parse_arm_lookup_match_tokens(self);
         let parse_thumb_fn = self.opcodes().parse_thumb_matchtree_fn_tokens(self);
         let opcode_parse_fns = self.opcodes().parse_fns_tokens(self);
 

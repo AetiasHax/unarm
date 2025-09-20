@@ -85,3 +85,44 @@ impl<'de> Visitor<'de> for BitRangeVisitor {
         BitRange::from_str(v).map_err(serde::de::Error::custom)
     }
 }
+
+pub struct BitRanges {
+    ranges: Vec<BitRange>,
+}
+
+impl BitRanges {
+    pub fn from_mask(mask: u32) -> Self {
+        let mut current: Option<BitRange> = None;
+        let mut ranges = Vec::new();
+        for i in 0..32 {
+            if ((mask >> i) & 1) != 0 {
+                if let Some(range) = current {
+                    current = Some(BitRange(range.0.start..i + 1))
+                } else {
+                    current = Some(BitRange(i..i + 1))
+                }
+            } else if let Some(range) = current {
+                ranges.push(range);
+                current = None;
+            }
+        }
+        if let Some(range) = current {
+            ranges.push(range);
+        }
+        Self { ranges }
+    }
+
+    pub fn shift_mask_tokens(&self, value: Option<Ident>) -> TokenStream {
+        let value = value.unwrap_or_else(|| Ident::new("value", Span::call_site()));
+        let mut tokens = Vec::new();
+        let mut bits = 0;
+        for range in &self.ranges {
+            let shift = Literal::u8_unsuffixed(range.0.start - bits);
+            let mask = HexLiteral(range.mask() << range.0.start);
+            let part = quote!((((#value) & #mask) >> #shift));
+            bits += range.0.len() as u8;
+            tokens.push(part);
+        }
+        quote!(#(#tokens)|*)
+    }
+}

@@ -2,6 +2,7 @@ mod bit_range;
 mod data_type;
 mod extension;
 mod format;
+mod lookup_table;
 mod opcode;
 mod option;
 mod parse_tree;
@@ -9,7 +10,7 @@ mod pattern;
 mod syn;
 mod version;
 
-use std::io::Read;
+use std::{fmt::Display, io::Read};
 
 use anyhow::Result;
 use serde::Deserialize;
@@ -18,6 +19,7 @@ pub use bit_range::*;
 pub use data_type::*;
 pub use extension::*;
 pub use format::*;
+pub use lookup_table::*;
 pub use opcode::*;
 pub use option::*;
 pub use parse_tree::*;
@@ -77,4 +79,13 @@ impl Isa {
 pub enum Arch {
     Arm,
     Thumb,
+}
+
+impl Display for Arch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Arch::Arm => f.write_str("arm"),
+            Arch::Thumb => f.write_str("thumb"),
+        }
+    }
 }
