@@ -17,22 +17,20 @@ impl BranchTarget {
 }
 impl BlxTarget {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        if (value & 0xf000000) == 0xb000000 {
-            Some(
-                Self::Direct(
-                    BranchTarget::parse(
-                        (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1))
-                            as i32) << 6 >> 6) as u32)
-                            .wrapping_add(8),
-                        pc,
-                    ),
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        if (value & 0xe000000) == 0xa000000 {
+            Self::Direct(
+                BranchTarget::parse(
+                    (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1))
+                        as i32) << 6 >> 6) as u32)
+                        .wrapping_add(8),
+                    pc,
                 ),
             )
         } else if (value & 0xffffff0) == 0x12fff30 {
-            Some(Self::Indirect(Reg::parse(((value) & 0xf), pc)))
+            Self::Indirect(Reg::parse(((value) & 0xf), pc))
         } else {
-            None
+            unreachable!()
         }
     }
 }
@@ -107,15 +105,15 @@ impl CoReg {
 }
 impl Op2 {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         if (value & 0x2000000) == 0x2000000 {
-            Some(Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1)))
+            Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1))
         } else if (value & 0x2000010) == 0x10 {
-            Some(Self::ShiftReg(ShiftReg::parse(((value) & 0xfff), pc)))
+            Self::ShiftReg(ShiftReg::parse(((value) & 0xfff), pc))
         } else if (value & 0x2000010) == 0x0 {
-            Some(Self::ShiftImm(ShiftImm::parse(((value) & 0xfff), pc)))
+            Self::ShiftImm(ShiftImm::parse(((value) & 0xfff), pc))
         } else {
-            None
+            unreachable!()
         }
     }
 }
@@ -225,11 +223,11 @@ impl AddrLdrStr {
         if (value & 0x1000000) == 0x1000000 {
             Some(Self::Pre {
                 rn: Reg::parse((((value) >> 16) & 0xf), pc),
-                offset: LdrStrOffset::parse((value), pc)?,
+                offset: LdrStrOffset::parse((value), pc),
                 writeback: ((((value) >> 21) & 0x1)) != 0,
             })
         } else if (value & 0x1200000) == 0x0 {
-            Some(Self::Post(AddrLdrStrPost::parse((value), pc)?))
+            Some(Self::Post(AddrLdrStrPost::parse((value), pc)))
         } else {
             None
         }
@@ -237,28 +235,26 @@ impl AddrLdrStr {
 }
 impl AddrLdrStrPost {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        Some(Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
             rn: Reg::parse((((value) >> 16) & 0xf), pc),
-            offset: LdrStrOffset::parse((value), pc)?,
-        })
+            offset: LdrStrOffset::parse((value), pc),
+        }
     }
 }
 impl LdrStrOffset {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
         if (value & 0x2000000) == 0x0 {
-            Some(
-                Self::Imm(
-                    ((if (((value) >> 23) & 0x1) == 0 {
-                        -(((value) & 0xfff) as i32)
-                    } else {
-                        ((value) & 0xfff) as i32
-                    })) as i32,
-                ),
+            Self::Imm(
+                ((if (((value) >> 23) & 0x1) == 0 {
+                    -(((value) & 0xfff) as i32)
+                } else {
+                    ((value) & 0xfff) as i32
+                })) as i32,
             )
         } else if (value & 0x2000000) == 0x2000000 {
-            Some(Self::Reg {
+            Self::Reg {
                 subtract: ((((value) >> 23) & 0x1) ^ 1) != 0,
                 rm: Reg::parse(((value) & 0xf), pc),
                 shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
@@ -267,9 +263,9 @@ impl LdrStrOffset {
                 } else {
                     (((value) >> 7) & 0x1f)
                 },
-            })
+            }
         } else {
-            None
+            unreachable!()
         }
     }
 }
@@ -124860,7 +124856,7 @@ fn parse_arm_adc_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Adc { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_adc_0(value: u32, pc: u32) -> Option<Ins> {
@@ -124883,7 +124879,7 @@ fn parse_arm_add_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Add { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_add_0(value: u32, pc: u32) -> Option<Ins> {
@@ -124982,7 +124978,7 @@ fn parse_arm_and_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::And { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_and_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125064,7 +125060,7 @@ fn parse_arm_bic_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Bic { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_bic_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125239,7 +125235,7 @@ fn parse_arm_cmn_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Cmn { cond, rn, op2 })
 }
 fn parse_thumb_cmn_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125261,7 +125257,7 @@ fn parse_arm_cmp_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Cmp { cond, rn, op2 })
 }
 fn parse_thumb_cmp_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125323,7 +125319,7 @@ fn parse_arm_eor_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Eor { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_eor_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125538,7 +125534,7 @@ fn parse_arm_ldrbt_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc)?);
+    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
     Some(Ins::Ldrbt { cond, rd, addr })
 }
 fn parse_arm_ldrd_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125698,7 +125694,7 @@ fn parse_arm_ldrt_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc)?);
+    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
     Some(Ins::Ldrt { cond, rd, addr })
 }
 fn parse_arm_lsl_0(value: u32, pc: u32) -> Option<Ins> {
@@ -125856,7 +125852,7 @@ fn parse_arm_mov_0(value: u32, pc: u32) -> Option<Ins> {
     let s = (((value) >> 20) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Mov { s, cond, rd, op2 })
 }
 fn parse_arm_mov_1(value: u32, pc: u32) -> Option<Ins> {
@@ -125869,7 +125865,7 @@ fn parse_arm_mov_1(value: u32, pc: u32) -> Option<Ins> {
     let s = (((value) >> 20) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Mov { s, cond, rd, op2 })
 }
 fn parse_thumb_mov_0(value: u32, pc: u32) -> Option<Ins> {
@@ -126031,7 +126027,7 @@ fn parse_arm_mvn_0(value: u32, pc: u32) -> Option<Ins> {
     let s = (((value) >> 20) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Mvn { s, cond, rd, op2 })
 }
 fn parse_thumb_mvn_0(value: u32, pc: u32) -> Option<Ins> {
@@ -126067,7 +126063,7 @@ fn parse_arm_orr_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Orr { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_orr_0(value: u32, pc: u32) -> Option<Ins> {
@@ -126418,7 +126414,7 @@ fn parse_arm_rsb_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Rsb { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_rsb_0(value: u32, pc: u32) -> Option<Ins> {
@@ -126437,7 +126433,7 @@ fn parse_arm_rsc_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Rsc { s, cond, rd, rn, op2 })
 }
 fn parse_arm_sadd16_0(value: u32, pc: u32) -> Option<Ins> {
@@ -126487,7 +126483,7 @@ fn parse_arm_sbc_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Sbc { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_sbc_0(value: u32, pc: u32) -> Option<Ins> {
@@ -127149,7 +127145,7 @@ fn parse_arm_strbt_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc)?);
+    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
     Some(Ins::Strbt { cond, rd, addr })
 }
 fn parse_arm_strd_0(value: u32, pc: u32) -> Option<Ins> {
@@ -127262,7 +127258,7 @@ fn parse_arm_strt_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc)?);
+    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
     Some(Ins::Strt { cond, rd, addr })
 }
 fn parse_arm_sub_0(value: u32, pc: u32) -> Option<Ins> {
@@ -127273,7 +127269,7 @@ fn parse_arm_sub_0(value: u32, pc: u32) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Sub { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_sub_0(value: u32, pc: u32) -> Option<Ins> {
@@ -127478,7 +127474,7 @@ fn parse_arm_teq_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Teq { cond, rn, op2 })
 }
 fn parse_arm_tst_0(value: u32, pc: u32) -> Option<Ins> {
@@ -127490,7 +127486,7 @@ fn parse_arm_tst_0(value: u32, pc: u32) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc)?;
+    let op2 = Op2::parse(value, pc);
     Some(Ins::Tst { cond, rn, op2 })
 }
 fn parse_thumb_tst_0(value: u32, pc: u32) -> Option<Ins> {

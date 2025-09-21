@@ -72,8 +72,9 @@ types:
 - name: blx_target
   kind: !union
     bits: 0..28
+    complete: true
     variants:
-      1011_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+      101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: direct
         description: Direct target
         data:
@@ -307,6 +308,7 @@ types:
 - name: op2
   kind: !union
     bits: 0..32
+    complete: true
     variants:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
@@ -491,6 +493,7 @@ types:
 - name: ldr_str_offset
   kind: !union
     bits: 0..32
+    complete: true
     variants:
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm

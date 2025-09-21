@@ -100,7 +100,6 @@ impl Opcodes {
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         let parse_buckets = lookup_table.parse_buckets_tokens();
         quote! {
-            // #[profiling::function]
             pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
                 #parse_fn_body
             }
@@ -352,7 +351,6 @@ impl OpcodeEncoding {
         });
 
         quote! {
-            // #[profiling::function]
             fn #fn_ident(value: u32, pc: u32) -> Option<Ins> {
                 #(#illegal_checks)*
                 #(#params)*

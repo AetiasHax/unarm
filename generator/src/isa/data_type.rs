@@ -261,7 +261,12 @@ impl DataType {
             }
             DataTypeKind::Union(data_type_union) => {
                 let expr = data_type_union.parse_expr_tokens(&self.name, value);
-                quote!(#expr?)
+                let try_op = if data_type_union.can_be_illegal() {
+                    quote!(?)
+                } else {
+                    quote!()
+                };
+                quote!(#expr #try_op)
             }
             DataTypeKind::Struct(data_type_struct) => {
                 let expr = data_type_struct.parse_expr_tokens(&self.name, value);
@@ -290,7 +295,7 @@ impl DataType {
             DataTypeKind::UInt(_) => false,
             DataTypeKind::Int(_) => false,
             DataTypeKind::Enum(_) => false,
-            DataTypeKind::Union(_) => true,
+            DataTypeKind::Union(data_type_union) => data_type_union.can_be_illegal(),
             DataTypeKind::Struct(data_type_struct) => data_type_struct.can_be_illegal(isa),
             DataTypeKind::Type(data_type_name, _) => {
                 isa.types().get(data_type_name).unwrap().can_be_illegal(isa)
@@ -530,7 +535,6 @@ impl DataTypeEnum {
 
         quote! {
             impl #name_ident {
-                // #[profiling::function]
                 #[inline(always)]
                 pub(crate) fn parse(value: u32, pc: u32) -> Self {
                     debug_assert!(value < #num_variants, #assert_message, value);
@@ -578,6 +582,9 @@ pub struct DataTypeUnion {
     bits: BitRange,
     default: Option<DataTypeEnumVariantName>,
     variants: IndexMap<Pattern, DataTypeEnumVariant>,
+    /// If true, the union covers all possible bit patterns for its bit range.
+    #[serde(default)]
+    complete: bool,
 }
 
 impl DataTypeUnion {
@@ -614,38 +621,53 @@ impl DataTypeUnion {
         self.variants.keys().any(|pattern| pattern.bitmask() != expected_bitmask)
     }
 
+    fn can_be_illegal(&self) -> bool {
+        !self.complete
+    }
+
     fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
 
-        let fn_body = if self.has_optional_bits() {
-            let variants = self
-                .variants
-                .iter()
-                .map(|(pattern, variant)| variant.parse_if_tokens(isa, pattern));
-            quote! {
-                #(#variants)else*
-                else {
-                    None
-                }
-            }
+        let can_be_illegal = self.can_be_illegal();
+        let illegal_expr = if can_be_illegal {
+            quote!(None)
         } else {
-            let variants = self
-                .variants
-                .iter()
-                .map(|(pattern, variant)| variant.parse_match_tokens(isa, pattern));
-            quote! {
-                match value {
-                    #(#variants),*,
-                    _ => None,
+            quote!(unreachable!())
+        };
+
+        let fn_body =
+            if self.has_optional_bits() {
+                let variants = self.variants.iter().map(|(pattern, variant)| {
+                    variant.parse_if_tokens(isa, pattern, can_be_illegal)
+                });
+                quote! {
+                    #(#variants)else*
+                    else {
+                        #illegal_expr
+                    }
                 }
-            }
+            } else {
+                let variants = self.variants.iter().map(|(pattern, variant)| {
+                    variant.parse_match_tokens(isa, pattern, can_be_illegal)
+                });
+                quote! {
+                    match value {
+                        #(#variants),*,
+                        _ => #illegal_expr,
+                    }
+                }
+            };
+
+        let return_type = if can_be_illegal {
+            quote!(Option<Self>)
+        } else {
+            quote!(Self)
         };
 
         quote! {
             impl #name_ident {
-                // #[profiling::function]
                 #[inline(always)]
-                pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
                     #fn_body
                 }
             }
@@ -723,16 +745,21 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_match_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
+    fn parse_match_tokens(
+        &self,
+        isa: &Isa,
+        pattern: &Pattern,
+        can_be_illegal: bool,
+    ) -> TokenStream {
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens(isa);
+        let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
         quote!(#pattern => { #parse_expr })
     }
 
-    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
+    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern, can_be_illegal: bool) -> TokenStream {
         let bitmask = HexLiteral(pattern.bitmask());
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens(isa);
+        let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
         quote! {
             if (value & #bitmask) == #pattern {
                 #parse_expr
@@ -740,7 +767,7 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_expr_tokens(&self, isa: &Isa) -> TokenStream {
+    fn parse_expr_tokens(&self, isa: &Isa, can_be_illegal: bool) -> TokenStream {
         let variant_ident = self.name.as_pascal_ident();
         let parse_expr = if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
@@ -763,8 +790,10 @@ impl DataTypeEnumVariant {
                 }
                 Some(#parse_expr)
             }
-        } else {
+        } else if can_be_illegal {
             quote!(Some(#parse_expr))
+        } else {
+            parse_expr
         }
     }
 
@@ -935,7 +964,6 @@ impl DataTypeStruct {
 
         quote! {
             impl #name_ident {
-                // #[profiling::function]
                 #[inline(always)]
                 pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
                     #return_value
