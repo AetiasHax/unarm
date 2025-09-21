@@ -35,11 +35,23 @@ pub struct Encoding<'a> {
 
 impl<'a> OpcodeLookupTable<'a> {
     pub fn new_arm(isa: &'a Isa) -> Self {
+        Self::new(isa, Arch::Arm, 0x0ff801f0)
+    }
+
+    pub fn new_thumb(isa: &'a Isa) -> Self {
+        Self::new(isa, Arch::Thumb, 0xffc0)
+    }
+
+    fn new(isa: &'a Isa, arch: Arch, bitmask: u32) -> Self {
         let mut encodings = isa
             .opcodes()
             .iter()
             .filter_map(|opcode| {
-                opcode.arm_encodings().map(|encodings| {
+                let encodings = match arch {
+                    Arch::Arm => opcode.arm_encodings(),
+                    Arch::Thumb => opcode.thumb_encodings(),
+                }?;
+                Some(
                     encodings
                         .iter()
                         .enumerate()
@@ -49,8 +61,8 @@ impl<'a> OpcodeLookupTable<'a> {
                             index_opcode: index,
                             index_all: 0,
                         })
-                        .collect::<Vec<_>>()
-                })
+                        .collect::<Vec<_>>(),
+                )
             })
             .flatten()
             .collect::<Vec<_>>();
@@ -62,7 +74,7 @@ impl<'a> OpcodeLookupTable<'a> {
         for (index, encoding) in encodings.iter_mut().enumerate() {
             encoding.index_all = index;
         }
-        Self::optimize(encodings, Arch::Arm, 0x0ff801f0)
+        Self::optimize(encodings, arch, bitmask)
     }
 
     pub fn optimize(encodings: Vec<Encoding<'a>>, arch: Arch, bitmask: u32) -> Self {

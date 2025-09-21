@@ -152,6 +152,19 @@ impl Opcodes {
             }
         }
     }
+
+    pub fn parse_thumb_lookup_match_tokens(&self, isa: &Isa) -> TokenStream {
+        let lookup_table = OpcodeLookupTable::new_thumb(isa);
+        let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
+        let parse_buckets = lookup_table.parse_buckets_tokens();
+        quote! {
+            pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
+                #parse_fn_body
+            }
+
+            #parse_buckets
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
