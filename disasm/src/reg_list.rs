@@ -9,7 +9,7 @@ impl RegList {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Reg> {
-        (0..16).filter(|i| (self.0 & (1 << i)) != 0).map(|i| Reg::parse(i, 0).unwrap())
+        (0..16).filter(|i| (self.0 & (1 << i)) != 0).map(|i| Reg::parse(i, 0))
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
@@ -44,7 +44,7 @@ impl SregList {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Sreg> {
-        (self.start..self.end).map(|i| Sreg::parse(i as u32, 0).unwrap())
+        (self.start..self.end).map(|i| Sreg::parse(i as u32, 0))
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
@@ -79,7 +79,7 @@ impl DregList {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Dreg> {
-        (self.start..self.end).map(|i| Dreg::parse(i as u32, 0).unwrap())
+        (self.start..self.end).map(|i| Dreg::parse(i as u32, 0))
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result

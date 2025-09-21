@@ -100,6 +100,7 @@ impl Opcodes {
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         let parse_buckets = lookup_table.parse_buckets_tokens();
         quote! {
+            // #[profiling::function]
             pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
                 #parse_fn_body
             }
@@ -309,7 +310,8 @@ pub struct OpcodeEncoding {
     #[serde(default)]
     extensions: Vec<IsaExtensionPattern>,
     pattern: OpcodePattern,
-    illegal: Option<DataExpr>,
+    #[serde(default)]
+    illegal: Vec<DataExpr>,
     params: IndexMap<OpcodeParamName, OpcodeParamValue>,
 }
 impl OpcodeEncoding {
@@ -339,7 +341,7 @@ impl OpcodeEncoding {
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
 
-        let illegal_check = self.illegal.as_ref().map(|illegal| {
+        let illegal_checks = self.illegal.iter().map(|illegal| {
             let ident = Ident::new("value", Span::call_site());
             let illegal_expr = illegal.as_tokens(ident);
             quote! {
@@ -350,8 +352,9 @@ impl OpcodeEncoding {
         });
 
         quote! {
+            // #[profiling::function]
             fn #fn_ident(value: u32, pc: u32) -> Option<Ins> {
-                #illegal_check
+                #(#illegal_checks)*
                 #(#params)*
                 Some(Ins::#variant_ident { #(#param_names),* })
             }
