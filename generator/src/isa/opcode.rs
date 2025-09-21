@@ -98,20 +98,16 @@ impl Opcodes {
     pub fn parse_arm_lookup_match_tokens(&self, isa: &Isa) -> TokenStream {
         let lookup_table = OpcodeLookupTable::new_arm(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
-        let parse_buckets = lookup_table.parse_buckets_tokens();
         quote! {
             pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
                 #parse_fn_body
             }
-
-            #parse_buckets
         }
     }
 
     pub fn parse_arm_lookup_table_tokens(&self, isa: &Isa) -> TokenStream {
         let lookup_table = OpcodeLookupTable::new_arm(isa);
         let parse_fn_body = lookup_table.parse_table_fn_body_tokens();
-        // let parse_buckets = lookup_table.parse_buckets_tokens();
         let table = lookup_table.buckets_table_array_tokens();
         let encodings = lookup_table.encoding_array_tokens();
         quote! {
@@ -156,13 +152,10 @@ impl Opcodes {
     pub fn parse_thumb_lookup_match_tokens(&self, isa: &Isa) -> TokenStream {
         let lookup_table = OpcodeLookupTable::new_thumb(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
-        let parse_buckets = lookup_table.parse_buckets_tokens();
         quote! {
             pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
                 #parse_fn_body
             }
-
-            #parse_buckets
         }
     }
 }

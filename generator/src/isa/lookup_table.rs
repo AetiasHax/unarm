@@ -133,8 +133,12 @@ impl<'a> OpcodeLookupTable<'a> {
             let mapped_key = self.bucket_parse_map.get(key).unwrap();
             let fn_name = format!("parse_{}_{mapped_key:x}", self.arch);
             let fn_ident = Ident::new(&fn_name, Span::call_site());
+
+            let bucket = self.buckets.get(*key).unwrap();
+            let body_tokens = bucket.parse_bucket_tokens(self.arch);
+
             quote! {
-                #(#pattern_literals)|* => #fn_ident(ins, pc)
+                #(#pattern_literals)|* => #body_tokens
             }
         });
         let bit_ranges = BitRanges::from_mask(self.bitmask);
@@ -163,25 +167,6 @@ impl<'a> OpcodeLookupTable<'a> {
             }
             None
         }
-    }
-
-    pub fn parse_buckets_tokens(&self) -> TokenStream {
-        let parse_case_fns = self
-            .buckets
-            .iter()
-            .enumerate()
-            .filter(|(key, _)| self.bucket_parse_map.get(key) == Some(key))
-            .map(|(key, bucket)| {
-                let body_tokens = bucket.parse_bucket_tokens(self.arch);
-                let fn_name = format!("parse_{}_{key:x}", self.arch);
-                let fn_ident = Ident::new(&fn_name, Span::call_site());
-                quote! {
-                    fn #fn_ident(ins: u32, pc: u32) -> Option<Ins> {
-                        #body_tokens
-                    }
-                }
-            });
-        quote!(#(#parse_case_fns)*)
     }
 
     pub fn buckets_table_array_tokens(&self) -> TokenStream {

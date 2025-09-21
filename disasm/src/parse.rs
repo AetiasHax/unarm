@@ -471,14 +471,70 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x85f | 0x860 | 0x861 | 0x862 | 0x863 | 0x864 | 0x865 | 0x866 | 0x867 | 0x868
         | 0x869 | 0x86a | 0x86b | 0x86c | 0x86d | 0x86e | 0x86f | 0x870 | 0x871 | 0x872
         | 0x873 | 0x874 | 0x875 | 0x876 | 0x877 | 0x878 | 0x879 | 0x87a | 0x87b | 0x87c
-        | 0x87d | 0x87e | 0x87f => parse_arm_0(ins, pc),
-        0x9 | 0x19 | 0x29 | 0x39 | 0x49 | 0x59 | 0x69 | 0x79 => parse_arm_9(ins, pc),
-        0xb | 0x1b | 0x2b | 0x3b => parse_arm_b(ins, pc),
-        0xd | 0x1d | 0x2d | 0x3d => parse_arm_d(ins, pc),
-        0xf | 0x1f | 0x2f | 0x3f => parse_arm_f(ins, pc),
-        0x4b | 0x5b | 0x6b | 0x7b => parse_arm_4b(ins, pc),
-        0x4d | 0x5d | 0x6d | 0x7d => parse_arm_4d(ins, pc),
-        0x4f | 0x5f | 0x6f | 0x7f => parse_arm_4f(ins, pc),
+        | 0x87d | 0x87e | 0x87f => parse_arm_and_0(ins, pc),
+        0x9 | 0x19 | 0x29 | 0x39 | 0x49 | 0x59 | 0x69 | 0x79 => {
+            if (ins & 0xfe000f0) == 0x90 {
+                parse_arm_mul_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xb | 0x1b | 0x2b | 0x3b => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xd | 0x1d | 0x2d | 0x3d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xf | 0x1f | 0x2f | 0x3f => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x4b | 0x5b | 0x6b | 0x7b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x4d | 0x5d | 0x6d | 0x7d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x4f | 0x5f | 0x6f | 0x7f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x0 {
+                parse_arm_and_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x80 | 0x81 | 0x82 | 0x83 | 0x84 | 0x85 | 0x86 | 0x87 | 0x88 | 0x8a | 0x8c | 0x8e
         | 0x90 | 0x91 | 0x92 | 0x93 | 0x94 | 0x95 | 0x96 | 0x97 | 0x98 | 0x9a | 0x9c
         | 0x9e | 0xa0 | 0xa1 | 0xa2 | 0xa3 | 0xa4 | 0xa5 | 0xa6 | 0xa7 | 0xa8 | 0xaa
@@ -500,14 +556,70 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x8de | 0x8df | 0x8e0 | 0x8e1 | 0x8e2 | 0x8e3 | 0x8e4 | 0x8e5 | 0x8e6 | 0x8e7
         | 0x8e8 | 0x8e9 | 0x8ea | 0x8eb | 0x8ec | 0x8ed | 0x8ee | 0x8ef | 0x8f0 | 0x8f1
         | 0x8f2 | 0x8f3 | 0x8f4 | 0x8f5 | 0x8f6 | 0x8f7 | 0x8f8 | 0x8f9 | 0x8fa | 0x8fb
-        | 0x8fc | 0x8fd | 0x8fe | 0x8ff => parse_arm_80(ins, pc),
-        0x89 | 0x99 | 0xa9 | 0xb9 | 0xc9 | 0xd9 | 0xe9 | 0xf9 => parse_arm_89(ins, pc),
-        0x8b | 0x9b | 0xab | 0xbb => parse_arm_8b(ins, pc),
-        0x8d | 0x9d | 0xad | 0xbd => parse_arm_8d(ins, pc),
-        0x8f | 0x9f | 0xaf | 0xbf => parse_arm_8f(ins, pc),
-        0xcb | 0xdb | 0xeb | 0xfb => parse_arm_cb(ins, pc),
-        0xcd | 0xdd | 0xed | 0xfd => parse_arm_cd(ins, pc),
-        0xcf | 0xdf | 0xef | 0xff => parse_arm_cf(ins, pc),
+        | 0x8fc | 0x8fd | 0x8fe | 0x8ff => parse_arm_eor_0(ins, pc),
+        0x89 | 0x99 | 0xa9 | 0xb9 | 0xc9 | 0xd9 | 0xe9 | 0xf9 => {
+            if (ins & 0xfe000f0) == 0x200090 {
+                parse_arm_mla_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x8b | 0x9b | 0xab | 0xbb => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x8d | 0x9d | 0xad | 0xbd => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x8f | 0x9f | 0xaf | 0xbf => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xcb | 0xdb | 0xeb | 0xfb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xcd | 0xdd | 0xed | 0xfd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xcf | 0xdf | 0xef | 0xff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x200000 {
+                parse_arm_eor_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x100 | 0x101 | 0x102 | 0x103 | 0x104 | 0x105 | 0x106 | 0x107 | 0x108 | 0x10a
         | 0x10c | 0x10e | 0x110 | 0x111 | 0x112 | 0x113 | 0x114 | 0x115 | 0x116 | 0x117
         | 0x118 | 0x11a | 0x11c | 0x11e | 0x120 | 0x121 | 0x122 | 0x123 | 0x124 | 0x125
@@ -531,16 +643,82 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x964 | 0x965 | 0x966 | 0x967 | 0x968 | 0x969 | 0x96a | 0x96b | 0x96c | 0x96d
         | 0x96e | 0x96f | 0x970 | 0x971 | 0x972 | 0x973 | 0x974 | 0x975 | 0x976 | 0x977
         | 0x978 | 0x979 | 0x97a | 0x97b | 0x97c | 0x97d | 0x97e | 0x97f => {
-            parse_arm_100(ins, pc)
+            parse_arm_sub_0(ins, pc)
         }
-        0x109 | 0x119 | 0x129 | 0x139 => parse_arm_109(ins, pc),
-        0x10b | 0x11b | 0x12b | 0x13b => parse_arm_10b(ins, pc),
-        0x10d | 0x11d => parse_arm_10d(ins, pc),
-        0x10f | 0x11f | 0x12f | 0x13f => parse_arm_10f(ins, pc),
-        0x12d | 0x13d => parse_arm_12d(ins, pc),
-        0x14b | 0x15b | 0x16b | 0x17b => parse_arm_14b(ins, pc),
-        0x14d | 0x15d | 0x16d | 0x17d => parse_arm_14d(ins, pc),
-        0x14f | 0x15f | 0x16f | 0x17f => parse_arm_14f(ins, pc),
+        0x109 | 0x119 | 0x129 | 0x139 => {
+            if (ins & 0xff000f0) == 0x400090 {
+                parse_arm_umaal_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x10b | 0x11b | 0x12b | 0x13b => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x10d | 0x11d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x10f | 0x11f | 0x12f | 0x13f => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x12d | 0x13d => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x14b | 0x15b | 0x16b | 0x17b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x14d | 0x15d | 0x16d | 0x17d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x14f | 0x15f | 0x16f | 0x17f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x400000 {
+                parse_arm_sub_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x180 | 0x181 | 0x182 | 0x183 | 0x184 | 0x185 | 0x186 | 0x187 | 0x188 | 0x189
         | 0x18a | 0x18c | 0x18e | 0x190 | 0x191 | 0x192 | 0x193 | 0x194 | 0x195 | 0x196
         | 0x197 | 0x198 | 0x199 | 0x19a | 0x19c | 0x19e | 0x1a0 | 0x1a1 | 0x1a2 | 0x1a3
@@ -564,14 +742,72 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x9e0 | 0x9e1 | 0x9e2 | 0x9e3 | 0x9e4 | 0x9e5 | 0x9e6 | 0x9e7 | 0x9e8 | 0x9e9
         | 0x9ea | 0x9eb | 0x9ec | 0x9ed | 0x9ee | 0x9ef | 0x9f0 | 0x9f1 | 0x9f2 | 0x9f3
         | 0x9f4 | 0x9f5 | 0x9f6 | 0x9f7 | 0x9f8 | 0x9f9 | 0x9fa | 0x9fb | 0x9fc | 0x9fd
-        | 0x9fe | 0x9ff => parse_arm_180(ins, pc),
-        0x18b | 0x19b | 0x1ab | 0x1bb => parse_arm_18b(ins, pc),
-        0x18d | 0x19d => parse_arm_18d(ins, pc),
-        0x18f | 0x19f | 0x1af | 0x1bf => parse_arm_18f(ins, pc),
-        0x1ad | 0x1bd => parse_arm_1ad(ins, pc),
-        0x1cb | 0x1db | 0x1eb | 0x1fb => parse_arm_1cb(ins, pc),
-        0x1cd | 0x1dd | 0x1ed | 0x1fd => parse_arm_1cd(ins, pc),
-        0x1cf | 0x1df | 0x1ef | 0x1ff => parse_arm_1cf(ins, pc),
+        | 0x9fe | 0x9ff => parse_arm_rsb_0(ins, pc),
+        0x18b | 0x19b | 0x1ab | 0x1bb => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18d | 0x19d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18f | 0x19f | 0x1af | 0x1bf => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1ad | 0x1bd => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1cb | 0x1db | 0x1eb | 0x1fb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1cd | 0x1dd | 0x1ed | 0x1fd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1cf | 0x1df | 0x1ef | 0x1ff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x600000 {
+                parse_arm_rsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x200 | 0x201 | 0x202 | 0x203 | 0x204 | 0x205 | 0x206 | 0x207 | 0x208 | 0x20a
         | 0x20c | 0x20e | 0x210 | 0x211 | 0x212 | 0x213 | 0x214 | 0x215 | 0x216 | 0x217
         | 0x218 | 0x21a | 0x21c | 0x21e | 0x220 | 0x221 | 0x222 | 0x223 | 0x224 | 0x225
@@ -594,16 +830,70 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xa5e | 0xa5f | 0xa60 | 0xa61 | 0xa62 | 0xa63 | 0xa64 | 0xa65 | 0xa66 | 0xa67
         | 0xa68 | 0xa69 | 0xa6a | 0xa6b | 0xa6c | 0xa6d | 0xa6e | 0xa6f | 0xa70 | 0xa71
         | 0xa72 | 0xa73 | 0xa74 | 0xa75 | 0xa76 | 0xa77 | 0xa78 | 0xa79 | 0xa7a | 0xa7b
-        | 0xa7c | 0xa7d | 0xa7e | 0xa7f => parse_arm_200(ins, pc),
+        | 0xa7c | 0xa7d | 0xa7e | 0xa7f => parse_arm_add_0(ins, pc),
         0x209 | 0x219 | 0x229 | 0x239 | 0x249 | 0x259 | 0x269 | 0x279 => {
-            parse_arm_209(ins, pc)
+            if (ins & 0xfe000f0) == 0x800090 {
+                parse_arm_umull_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x20b | 0x21b | 0x22b | 0x23b => parse_arm_20b(ins, pc),
-        0x20d | 0x21d | 0x22d | 0x23d => parse_arm_20d(ins, pc),
-        0x20f | 0x21f | 0x22f | 0x23f => parse_arm_20f(ins, pc),
-        0x24b | 0x25b | 0x26b | 0x27b => parse_arm_24b(ins, pc),
-        0x24d | 0x25d | 0x26d | 0x27d => parse_arm_24d(ins, pc),
-        0x24f | 0x25f | 0x26f | 0x27f => parse_arm_24f(ins, pc),
+        0x20b | 0x21b | 0x22b | 0x23b => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x20d | 0x21d | 0x22d | 0x23d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x20f | 0x21f | 0x22f | 0x23f => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x24b | 0x25b | 0x26b | 0x27b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x24d | 0x25d | 0x26d | 0x27d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x24f | 0x25f | 0x26f | 0x27f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x800000 {
+                parse_arm_add_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x280 | 0x281 | 0x282 | 0x283 | 0x284 | 0x285 | 0x286 | 0x287 | 0x288 | 0x28a
         | 0x28c | 0x28e | 0x290 | 0x291 | 0x292 | 0x293 | 0x294 | 0x295 | 0x296 | 0x297
         | 0x298 | 0x29a | 0x29c | 0x29e | 0x2a0 | 0x2a1 | 0x2a2 | 0x2a3 | 0x2a4 | 0x2a5
@@ -626,16 +916,70 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xade | 0xadf | 0xae0 | 0xae1 | 0xae2 | 0xae3 | 0xae4 | 0xae5 | 0xae6 | 0xae7
         | 0xae8 | 0xae9 | 0xaea | 0xaeb | 0xaec | 0xaed | 0xaee | 0xaef | 0xaf0 | 0xaf1
         | 0xaf2 | 0xaf3 | 0xaf4 | 0xaf5 | 0xaf6 | 0xaf7 | 0xaf8 | 0xaf9 | 0xafa | 0xafb
-        | 0xafc | 0xafd | 0xafe | 0xaff => parse_arm_280(ins, pc),
+        | 0xafc | 0xafd | 0xafe | 0xaff => parse_arm_adc_0(ins, pc),
         0x289 | 0x299 | 0x2a9 | 0x2b9 | 0x2c9 | 0x2d9 | 0x2e9 | 0x2f9 => {
-            parse_arm_289(ins, pc)
+            if (ins & 0xfe000f0) == 0xa00090 {
+                parse_arm_umlal_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x28b | 0x29b | 0x2ab | 0x2bb => parse_arm_28b(ins, pc),
-        0x28d | 0x29d | 0x2ad | 0x2bd => parse_arm_28d(ins, pc),
-        0x28f | 0x29f | 0x2af | 0x2bf => parse_arm_28f(ins, pc),
-        0x2cb | 0x2db | 0x2eb | 0x2fb => parse_arm_2cb(ins, pc),
-        0x2cd | 0x2dd | 0x2ed | 0x2fd => parse_arm_2cd(ins, pc),
-        0x2cf | 0x2df | 0x2ef | 0x2ff => parse_arm_2cf(ins, pc),
+        0x28b | 0x29b | 0x2ab | 0x2bb => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x28d | 0x29d | 0x2ad | 0x2bd => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x28f | 0x29f | 0x2af | 0x2bf => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x2cb | 0x2db | 0x2eb | 0x2fb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x2cd | 0x2dd | 0x2ed | 0x2fd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x2cf | 0x2df | 0x2ef | 0x2ff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xa00000 {
+                parse_arm_adc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x300 | 0x301 | 0x302 | 0x303 | 0x304 | 0x305 | 0x306 | 0x307 | 0x308 | 0x30a
         | 0x30c | 0x30e | 0x310 | 0x311 | 0x312 | 0x313 | 0x314 | 0x315 | 0x316 | 0x317
         | 0x318 | 0x31a | 0x31c | 0x31e | 0x320 | 0x321 | 0x322 | 0x323 | 0x324 | 0x325
@@ -658,17 +1002,81 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xb5e | 0xb5f | 0xb60 | 0xb61 | 0xb62 | 0xb63 | 0xb64 | 0xb65 | 0xb66 | 0xb67
         | 0xb68 | 0xb69 | 0xb6a | 0xb6b | 0xb6c | 0xb6d | 0xb6e | 0xb6f | 0xb70 | 0xb71
         | 0xb72 | 0xb73 | 0xb74 | 0xb75 | 0xb76 | 0xb77 | 0xb78 | 0xb79 | 0xb7a | 0xb7b
-        | 0xb7c | 0xb7d | 0xb7e | 0xb7f => parse_arm_300(ins, pc),
+        | 0xb7c | 0xb7d | 0xb7e | 0xb7f => parse_arm_sbc_0(ins, pc),
         0x309 | 0x319 | 0x329 | 0x339 | 0x349 | 0x359 | 0x369 | 0x379 => {
-            parse_arm_309(ins, pc)
+            if (ins & 0xfe000f0) == 0xc00090 {
+                parse_arm_smull_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x30b | 0x31b | 0x32b | 0x33b => parse_arm_30b(ins, pc),
-        0x30d | 0x31d => parse_arm_30d(ins, pc),
-        0x30f | 0x31f | 0x32f | 0x33f => parse_arm_30f(ins, pc),
-        0x32d | 0x33d => parse_arm_32d(ins, pc),
-        0x34b | 0x35b | 0x36b | 0x37b => parse_arm_34b(ins, pc),
-        0x34d | 0x35d | 0x36d | 0x37d => parse_arm_34d(ins, pc),
-        0x34f | 0x35f | 0x36f | 0x37f => parse_arm_34f(ins, pc),
+        0x30b | 0x31b | 0x32b | 0x33b => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x30d | 0x31d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x30f | 0x31f | 0x32f | 0x33f => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x32d | 0x33d => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x34b | 0x35b | 0x36b | 0x37b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x34d | 0x35d | 0x36d | 0x37d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x34f | 0x35f | 0x36f | 0x37f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xc00000 {
+                parse_arm_sbc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x380 | 0x381 | 0x382 | 0x383 | 0x384 | 0x385 | 0x386 | 0x387 | 0x388 | 0x38a
         | 0x38c | 0x38e | 0x390 | 0x391 | 0x392 | 0x393 | 0x394 | 0x395 | 0x396 | 0x397
         | 0x398 | 0x39a | 0x39c | 0x39e | 0x3a0 | 0x3a1 | 0x3a2 | 0x3a3 | 0x3a4 | 0x3a5
@@ -691,20 +1099,94 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xbde | 0xbdf | 0xbe0 | 0xbe1 | 0xbe2 | 0xbe3 | 0xbe4 | 0xbe5 | 0xbe6 | 0xbe7
         | 0xbe8 | 0xbe9 | 0xbea | 0xbeb | 0xbec | 0xbed | 0xbee | 0xbef | 0xbf0 | 0xbf1
         | 0xbf2 | 0xbf3 | 0xbf4 | 0xbf5 | 0xbf6 | 0xbf7 | 0xbf8 | 0xbf9 | 0xbfa | 0xbfb
-        | 0xbfc | 0xbfd | 0xbfe | 0xbff => parse_arm_380(ins, pc),
+        | 0xbfc | 0xbfd | 0xbfe | 0xbff => parse_arm_rsc_0(ins, pc),
         0x389 | 0x399 | 0x3a9 | 0x3b9 | 0x3c9 | 0x3d9 | 0x3e9 | 0x3f9 => {
-            parse_arm_389(ins, pc)
+            if (ins & 0xfe000f0) == 0xe00090 {
+                parse_arm_smlal_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x38b | 0x39b | 0x3ab | 0x3bb => parse_arm_38b(ins, pc),
-        0x38d | 0x39d => parse_arm_38d(ins, pc),
-        0x38f | 0x39f | 0x3af | 0x3bf => parse_arm_38f(ins, pc),
-        0x3ad | 0x3bd => parse_arm_3ad(ins, pc),
-        0x3cb | 0x3db | 0x3eb | 0x3fb => parse_arm_3cb(ins, pc),
-        0x3cd | 0x3dd | 0x3ed | 0x3fd => parse_arm_3cd(ins, pc),
-        0x3cf | 0x3df | 0x3ef | 0x3ff => parse_arm_3cf(ins, pc),
-        0x400 | 0x410 | 0x420 | 0x430 => parse_arm_400(ins, pc),
+        0x38b | 0x39b | 0x3ab | 0x3bb => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x38d | 0x39d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x38f | 0x39f | 0x3af | 0x3bf => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3ad | 0x3bd => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3cb | 0x3db | 0x3eb | 0x3fb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3cd | 0x3dd | 0x3ed | 0x3fd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3cf | 0x3df | 0x3ef | 0x3ff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0xe00000 {
+                parse_arm_rsc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x400 | 0x410 | 0x420 | 0x430 => {
+            if (ins & 0xfff100f0) == 0xf1010000 {
+                parse_arm_setend_0(ins, pc)
+            } else if (ins & 0xfff10020) == 0xf1000000 {
+                parse_arm_cps_0(ins, pc)
+            } else if (ins & 0xfb002f0) == 0x1000000 {
+                parse_arm_mrs_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x401 | 0x404 | 0x411 | 0x414 | 0x421 | 0x424 | 0x431 | 0x434 => {
-            parse_arm_401(ins, pc)
+            parse_arm_cps_0(ins, pc)
         }
         0x402 | 0x403 | 0x406 | 0x407 | 0x412 | 0x413 | 0x416 | 0x417 | 0x422 | 0x423
         | 0x426 | 0x427 | 0x432 | 0x433 | 0x436 | 0x437 | 0x501 | 0x502 | 0x503 | 0x504
@@ -727,21 +1209,51 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xd20 | 0xd21 | 0xd22 | 0xd23 | 0xd24 | 0xd25 | 0xd26 | 0xd27 | 0xd28 | 0xd29
         | 0xd2a | 0xd2b | 0xd2c | 0xd2d | 0xd2e | 0xd2f | 0xd30 | 0xd31 | 0xd32 | 0xd33
         | 0xd34 | 0xd35 | 0xd36 | 0xd37 | 0xd38 | 0xd39 | 0xd3a | 0xd3b | 0xd3c | 0xd3d
-        | 0xd3e | 0xd3f => parse_arm_402(ins, pc),
-        0x405 | 0x415 | 0x425 | 0x435 => parse_arm_405(ins, pc),
-        0x408 | 0x40c | 0x418 | 0x41c | 0x428 | 0x42c | 0x438 | 0x43c => {
-            parse_arm_408(ins, pc)
+        | 0xd3e | 0xd3f => None,
+        0x405 | 0x415 | 0x425 | 0x435 => {
+            if (ins & 0xfff10020) == 0xf1000000 {
+                parse_arm_cps_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x1000050 {
+                parse_arm_qadd_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x409 | 0x419 | 0x429 | 0x439 => parse_arm_409(ins, pc),
+        0x408 | 0x40c | 0x418 | 0x41c | 0x428 | 0x42c | 0x438 | 0x43c => {
+            if (ins & 0xfff10020) == 0xf1000000 {
+                parse_arm_cps_0(ins, pc)
+            } else if (ins & 0xff00090) == 0x1000080 {
+                parse_arm_smla_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x409 | 0x419 | 0x429 | 0x439 => {
+            if (ins & 0xfff10020) == 0xf1000000 {
+                parse_arm_cps_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x1000090 {
+                parse_arm_swp_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x40a | 0x40e | 0x41a | 0x41e | 0x42a | 0x42e | 0x43a | 0x43e => {
-            parse_arm_40a(ins, pc)
+            parse_arm_smla_0(ins, pc)
         }
         0x40b | 0x41b | 0x42b | 0x43b | 0x50b | 0x51b | 0x52b | 0x53b | 0x6ab | 0x6bb => {
-            parse_arm_40b(ins, pc)
+            parse_arm_strh_0(ins, pc)
         }
-        0x40d | 0x41d | 0x42d | 0x43d => parse_arm_40d(ins, pc),
+        0x40d | 0x41d | 0x42d | 0x43d => {
+            if (ins & 0xfff10020) == 0xf1000000 {
+                parse_arm_cps_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x40f | 0x41f | 0x42f | 0x43f | 0x50f | 0x51f | 0x52f | 0x53f | 0x6af | 0x6bf => {
-            parse_arm_40f(ins, pc)
+            parse_arm_strd_0(ins, pc)
         }
         0x440 | 0x441 | 0x442 | 0x443 | 0x444 | 0x445 | 0x446 | 0x447 | 0x448 | 0x449
         | 0x44a | 0x44c | 0x44e | 0x450 | 0x451 | 0x452 | 0x453 | 0x454 | 0x455 | 0x456
@@ -754,10 +1266,34 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xc5c | 0xc5d | 0xc5e | 0xc5f | 0xc60 | 0xc61 | 0xc62 | 0xc63 | 0xc64 | 0xc65
         | 0xc66 | 0xc67 | 0xc68 | 0xc69 | 0xc6a | 0xc6b | 0xc6c | 0xc6d | 0xc6e | 0xc6f
         | 0xc70 | 0xc71 | 0xc72 | 0xc73 | 0xc74 | 0xc75 | 0xc76 | 0xc77 | 0xc78 | 0xc79
-        | 0xc7a | 0xc7b | 0xc7c | 0xc7d | 0xc7e | 0xc7f => parse_arm_440(ins, pc),
-        0x44b | 0x45b | 0x46b | 0x47b => parse_arm_44b(ins, pc),
-        0x44d | 0x45d | 0x46d | 0x47d => parse_arm_44d(ins, pc),
-        0x44f | 0x45f | 0x46f | 0x47f => parse_arm_44f(ins, pc),
+        | 0xc7a | 0xc7b | 0xc7c | 0xc7d | 0xc7e | 0xc7f => parse_arm_tst_0(ins, pc),
+        0x44b | 0x45b | 0x46b | 0x47b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1100000 {
+                parse_arm_tst_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x44d | 0x45d | 0x46d | 0x47d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1100000 {
+                parse_arm_tst_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x44f | 0x45f | 0x46f | 0x47f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1100000 {
+                parse_arm_tst_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x480 | 0x484 | 0x486 | 0x489 | 0x490 | 0x494 | 0x496 | 0x499 | 0x4a0 | 0x4a4
         | 0x4a6 | 0x4a9 | 0x4b0 | 0x4b4 | 0x4b6 | 0x4b9 | 0x580 | 0x582 | 0x583 | 0x584
         | 0x586 | 0x587 | 0x589 | 0x590 | 0x592 | 0x593 | 0x594 | 0x596 | 0x597 | 0x599
@@ -775,25 +1311,97 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xda4 | 0xda5 | 0xda6 | 0xda7 | 0xda8 | 0xda9 | 0xdaa | 0xdab | 0xdac | 0xdad
         | 0xdae | 0xdaf | 0xdb0 | 0xdb1 | 0xdb2 | 0xdb3 | 0xdb4 | 0xdb5 | 0xdb6 | 0xdb7
         | 0xdb8 | 0xdb9 | 0xdba | 0xdbb | 0xdbc | 0xdbd | 0xdbe | 0xdbf => {
-            parse_arm_480(ins, pc)
+            parse_arm_msr_0(ins, pc)
         }
-        0x481 | 0x491 | 0x4a1 | 0x4b1 => parse_arm_481(ins, pc),
-        0x482 | 0x492 | 0x4a2 | 0x4b2 => parse_arm_482(ins, pc),
-        0x483 | 0x493 | 0x4a3 | 0x4b3 => parse_arm_483(ins, pc),
-        0x485 | 0x495 | 0x4a5 | 0x4b5 => parse_arm_485(ins, pc),
-        0x487 | 0x497 | 0x4a7 | 0x4b7 => parse_arm_487(ins, pc),
+        0x481 | 0x491 | 0x4a1 | 0x4b1 => {
+            if (ins & 0xff000f0) == 0x1200010 {
+                parse_arm_bx_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x482 | 0x492 | 0x4a2 | 0x4b2 => {
+            if (ins & 0xff000f0) == 0x1200020 {
+                parse_arm_bxj_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x483 | 0x493 | 0x4a3 | 0x4b3 => {
+            if (ins & 0xff000f0) == 0x1200030 {
+                parse_arm_blx_1(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x485 | 0x495 | 0x4a5 | 0x4b5 => {
+            if (ins & 0xff000f0) == 0x1200050 {
+                parse_arm_qsub_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x487 | 0x497 | 0x4a7 | 0x4b7 => {
+            if (ins & 0xfff000f0) == 0xe1200070 {
+                parse_arm_bkpt_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x488 | 0x48c | 0x498 | 0x49c | 0x4a8 | 0x4ac | 0x4b8 | 0x4bc => {
-            parse_arm_488(ins, pc)
+            if (ins & 0xff000b0) == 0x1200080 {
+                parse_arm_smlaw_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x48a | 0x48e | 0x49a | 0x49e | 0x4aa | 0x4ae | 0x4ba | 0x4be => {
-            parse_arm_48a(ins, pc)
+            if (ins & 0xff000b0) == 0x12000a0 {
+                parse_arm_smulw_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x48b | 0x49b | 0x4ab | 0x4bb | 0x58b | 0x59b | 0x5ab | 0x5bb => {
-            parse_arm_48b(ins, pc)
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x48d | 0x49d | 0x4ad | 0x4bd | 0x58d | 0x59d => parse_arm_48d(ins, pc),
+        0x48d | 0x49d | 0x4ad | 0x4bd | 0x58d | 0x59d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x48f | 0x49f | 0x4af | 0x4bf | 0x58f | 0x59f | 0x5af | 0x5bf => {
-            parse_arm_48f(ins, pc)
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x4c0 | 0x4c1 | 0x4c2 | 0x4c3 | 0x4c4 | 0x4c5 | 0x4c6 | 0x4c7 | 0x4c8 | 0x4c9
         | 0x4ca | 0x4cc | 0x4ce | 0x4d0 | 0x4d1 | 0x4d2 | 0x4d3 | 0x4d4 | 0x4d5 | 0x4d6
@@ -806,17 +1414,51 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xcdc | 0xcdd | 0xcde | 0xcdf | 0xce0 | 0xce1 | 0xce2 | 0xce3 | 0xce4 | 0xce5
         | 0xce6 | 0xce7 | 0xce8 | 0xce9 | 0xcea | 0xceb | 0xcec | 0xced | 0xcee | 0xcef
         | 0xcf0 | 0xcf1 | 0xcf2 | 0xcf3 | 0xcf4 | 0xcf5 | 0xcf6 | 0xcf7 | 0xcf8 | 0xcf9
-        | 0xcfa | 0xcfb | 0xcfc | 0xcfd | 0xcfe | 0xcff => parse_arm_4c0(ins, pc),
-        0x4cb | 0x4db | 0x4eb | 0x4fb => parse_arm_4cb(ins, pc),
-        0x4cd | 0x4dd | 0x4ed | 0x4fd => parse_arm_4cd(ins, pc),
-        0x4cf | 0x4df | 0x4ef | 0x4ff => parse_arm_4cf(ins, pc),
-        0x500 | 0x510 | 0x520 | 0x530 => parse_arm_500(ins, pc),
-        0x505 | 0x515 | 0x525 | 0x535 => parse_arm_505(ins, pc),
+        | 0xcfa | 0xcfb | 0xcfc | 0xcfd | 0xcfe | 0xcff => parse_arm_teq_0(ins, pc),
+        0x4cb | 0x4db | 0x4eb | 0x4fb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1300000 {
+                parse_arm_teq_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x4cd | 0x4dd | 0x4ed | 0x4fd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1300000 {
+                parse_arm_teq_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x4cf | 0x4df | 0x4ef | 0x4ff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1300000 {
+                parse_arm_teq_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x500 | 0x510 | 0x520 | 0x530 => parse_arm_mrs_0(ins, pc),
+        0x505 | 0x515 | 0x525 | 0x535 => parse_arm_qdadd_0(ins, pc),
         0x508 | 0x50a | 0x50c | 0x50e | 0x518 | 0x51a | 0x51c | 0x51e | 0x528 | 0x52a
-        | 0x52c | 0x52e | 0x538 | 0x53a | 0x53c | 0x53e => parse_arm_508(ins, pc),
-        0x509 | 0x519 | 0x529 | 0x539 => parse_arm_509(ins, pc),
-        0x50d | 0x51d | 0x6ad | 0x6bd => parse_arm_50d(ins, pc),
-        0x52d | 0x53d => parse_arm_52d(ins, pc),
+        | 0x52c | 0x52e | 0x538 | 0x53a | 0x53c | 0x53e => {
+            parse_arm_smlal_half_0(ins, pc)
+        }
+        0x509 | 0x519 | 0x529 | 0x539 => parse_arm_swpb_0(ins, pc),
+        0x50d | 0x51d | 0x6ad | 0x6bd => parse_arm_ldrd_0(ins, pc),
+        0x52d | 0x53d => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x540 | 0x541 | 0x542 | 0x543 | 0x544 | 0x545 | 0x546 | 0x547 | 0x548 | 0x549
         | 0x54a | 0x54c | 0x54e | 0x550 | 0x551 | 0x552 | 0x553 | 0x554 | 0x555 | 0x556
         | 0x557 | 0x558 | 0x559 | 0x55a | 0x55c | 0x55e | 0x560 | 0x561 | 0x562 | 0x563
@@ -828,15 +1470,73 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xd5c | 0xd5d | 0xd5e | 0xd5f | 0xd60 | 0xd61 | 0xd62 | 0xd63 | 0xd64 | 0xd65
         | 0xd66 | 0xd67 | 0xd68 | 0xd69 | 0xd6a | 0xd6b | 0xd6c | 0xd6d | 0xd6e | 0xd6f
         | 0xd70 | 0xd71 | 0xd72 | 0xd73 | 0xd74 | 0xd75 | 0xd76 | 0xd77 | 0xd78 | 0xd79
-        | 0xd7a | 0xd7b | 0xd7c | 0xd7d | 0xd7e | 0xd7f => parse_arm_540(ins, pc),
-        0x54b | 0x55b | 0x56b | 0x57b => parse_arm_54b(ins, pc),
-        0x54d | 0x55d | 0x56d | 0x57d => parse_arm_54d(ins, pc),
-        0x54f | 0x55f | 0x56f | 0x57f => parse_arm_54f(ins, pc),
-        0x581 | 0x591 | 0x5a1 | 0x5b1 => parse_arm_581(ins, pc),
-        0x585 | 0x595 | 0x5a5 | 0x5b5 => parse_arm_585(ins, pc),
+        | 0xd7a | 0xd7b | 0xd7c | 0xd7d | 0xd7e | 0xd7f => parse_arm_cmp_0(ins, pc),
+        0x54b | 0x55b | 0x56b | 0x57b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1500000 {
+                parse_arm_cmp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x54d | 0x55d | 0x56d | 0x57d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1500000 {
+                parse_arm_cmp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x54f | 0x55f | 0x56f | 0x57f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1500000 {
+                parse_arm_cmp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x581 | 0x591 | 0x5a1 | 0x5b1 => {
+            if (ins & 0xff000f0) == 0x1600010 {
+                parse_arm_clz_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x585 | 0x595 | 0x5a5 | 0x5b5 => {
+            if (ins & 0xff000f0) == 0x1600050 {
+                parse_arm_qdsub_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x588 | 0x58a | 0x58c | 0x58e | 0x598 | 0x59a | 0x59c | 0x59e | 0x5a8 | 0x5aa
-        | 0x5ac | 0x5ae | 0x5b8 | 0x5ba | 0x5bc | 0x5be => parse_arm_588(ins, pc),
-        0x5ad | 0x5bd => parse_arm_5ad(ins, pc),
+        | 0x5ac | 0x5ae | 0x5b8 | 0x5ba | 0x5bc | 0x5be => {
+            if (ins & 0xff00090) == 0x1600080 {
+                parse_arm_smul_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x5ad | 0x5bd => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x5c0 | 0x5c1 | 0x5c2 | 0x5c3 | 0x5c4 | 0x5c5 | 0x5c6 | 0x5c7 | 0x5c8 | 0x5c9
         | 0x5ca | 0x5cc | 0x5ce | 0x5d0 | 0x5d1 | 0x5d2 | 0x5d3 | 0x5d4 | 0x5d5 | 0x5d6
         | 0x5d7 | 0x5d8 | 0x5d9 | 0x5da | 0x5dc | 0x5de | 0x5e0 | 0x5e1 | 0x5e2 | 0x5e3
@@ -848,10 +1548,34 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xddc | 0xddd | 0xdde | 0xddf | 0xde0 | 0xde1 | 0xde2 | 0xde3 | 0xde4 | 0xde5
         | 0xde6 | 0xde7 | 0xde8 | 0xde9 | 0xdea | 0xdeb | 0xdec | 0xded | 0xdee | 0xdef
         | 0xdf0 | 0xdf1 | 0xdf2 | 0xdf3 | 0xdf4 | 0xdf5 | 0xdf6 | 0xdf7 | 0xdf8 | 0xdf9
-        | 0xdfa | 0xdfb | 0xdfc | 0xdfd | 0xdfe | 0xdff => parse_arm_5c0(ins, pc),
-        0x5cb | 0x5db | 0x5eb | 0x5fb => parse_arm_5cb(ins, pc),
-        0x5cd | 0x5dd | 0x5ed | 0x5fd => parse_arm_5cd(ins, pc),
-        0x5cf | 0x5df | 0x5ef | 0x5ff => parse_arm_5cf(ins, pc),
+        | 0xdfa | 0xdfb | 0xdfc | 0xdfd | 0xdfe | 0xdff => parse_arm_cmn_0(ins, pc),
+        0x5cb | 0x5db | 0x5eb | 0x5fb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1700000 {
+                parse_arm_cmn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x5cd | 0x5dd | 0x5ed | 0x5fd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1700000 {
+                parse_arm_cmn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x5cf | 0x5df | 0x5ef | 0x5ff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xdf00000) == 0x1700000 {
+                parse_arm_cmn_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x600 | 0x601 | 0x602 | 0x603 | 0x604 | 0x605 | 0x606 | 0x607 | 0x608 | 0x60a
         | 0x60c | 0x60e | 0x610 | 0x611 | 0x612 | 0x613 | 0x614 | 0x615 | 0x616 | 0x617
         | 0x618 | 0x61a | 0x61c | 0x61e | 0x620 | 0x621 | 0x622 | 0x623 | 0x624 | 0x625
@@ -874,42 +1598,186 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xe5e | 0xe5f | 0xe60 | 0xe61 | 0xe62 | 0xe63 | 0xe64 | 0xe65 | 0xe66 | 0xe67
         | 0xe68 | 0xe69 | 0xe6a | 0xe6b | 0xe6c | 0xe6d | 0xe6e | 0xe6f | 0xe70 | 0xe71
         | 0xe72 | 0xe73 | 0xe74 | 0xe75 | 0xe76 | 0xe77 | 0xe78 | 0xe79 | 0xe7a | 0xe7b
-        | 0xe7c | 0xe7d | 0xe7e | 0xe7f => parse_arm_600(ins, pc),
-        0x609 | 0x619 | 0x629 | 0x639 => parse_arm_609(ins, pc),
-        0x60b | 0x61b | 0x62b | 0x63b => parse_arm_60b(ins, pc),
-        0x60d | 0x61d | 0x62d | 0x63d => parse_arm_60d(ins, pc),
-        0x60f | 0x61f | 0x62f | 0x63f => parse_arm_60f(ins, pc),
-        0x649 | 0x659 | 0x669 | 0x679 => parse_arm_649(ins, pc),
-        0x64b | 0x65b | 0x66b | 0x67b => parse_arm_64b(ins, pc),
-        0x64d | 0x65d | 0x66d | 0x67d => parse_arm_64d(ins, pc),
-        0x64f | 0x65f | 0x66f | 0x67f => parse_arm_64f(ins, pc),
-        0x680 | 0x6c0 => parse_arm_680(ins, pc),
+        | 0xe7c | 0xe7d | 0xe7e | 0xe7f => parse_arm_orr_0(ins, pc),
+        0x609 | 0x619 | 0x629 | 0x639 => {
+            if (ins & 0xff000f0) == 0x1800090 {
+                parse_arm_strex_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x60b | 0x61b | 0x62b | 0x63b => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x60d | 0x61d | 0x62d | 0x63d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x60f | 0x61f | 0x62f | 0x63f => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x649 | 0x659 | 0x669 | 0x679 => {
+            if (ins & 0xff000f0) == 0x1900090 {
+                parse_arm_ldrex_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x64b | 0x65b | 0x66b | 0x67b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x64d | 0x65d | 0x66d | 0x67d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x64f | 0x65f | 0x66f | 0x67f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1800000 {
+                parse_arm_orr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x680 | 0x6c0 => {
+            if (ins & 0xfe00ff0) == 0x1a00000 {
+                parse_arm_mov_1(ins, pc)
+            } else if (ins & 0xfef0060) == 0x1a00000 {
+                parse_arm_lsl_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x681 | 0x688 | 0x690 | 0x691 | 0x698 | 0x6c1 | 0x6c8 | 0x6d0 | 0x6d1 | 0x6d8 => {
-            parse_arm_681(ins, pc)
+            parse_arm_lsl_0(ins, pc)
         }
         0x682 | 0x683 | 0x68a | 0x692 | 0x693 | 0x69a | 0x6c2 | 0x6c3 | 0x6ca | 0x6d2
-        | 0x6d3 | 0x6da => parse_arm_682(ins, pc),
+        | 0x6d3 | 0x6da => parse_arm_lsr_0(ins, pc),
         0x684 | 0x685 | 0x68c | 0x694 | 0x695 | 0x69c | 0x6c4 | 0x6c5 | 0x6cc | 0x6d4
-        | 0x6d5 | 0x6dc => parse_arm_684(ins, pc),
-        0x686 | 0x6c6 => parse_arm_686(ins, pc),
-        0x687 | 0x68e | 0x696 | 0x697 | 0x69e | 0x6c7 | 0x6ce | 0x6d6 | 0x6d7 | 0x6de => {
-            parse_arm_687(ins, pc)
+        | 0x6d5 | 0x6dc => parse_arm_asr_0(ins, pc),
+        0x686 | 0x6c6 => {
+            if (ins & 0xfe00ff0) == 0x1a00060 {
+                parse_arm_rrx_0(ins, pc)
+            } else if (ins & 0xfef0060) == 0x1a00060 {
+                parse_arm_ror_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x689 | 0x699 => parse_arm_689(ins, pc),
-        0x68b | 0x69b => parse_arm_68b(ins, pc),
-        0x68d | 0x69d => parse_arm_68d(ins, pc),
-        0x68f | 0x69f => parse_arm_68f(ins, pc),
-        0x6a0 | 0x6e0 => parse_arm_6a0(ins, pc),
-        0x6a6 | 0x6e6 => parse_arm_6a6(ins, pc),
-        0x6a9 | 0x6b9 => parse_arm_6a9(ins, pc),
-        0x6c9 | 0x6d9 => parse_arm_6c9(ins, pc),
-        0x6cb | 0x6db => parse_arm_6cb(ins, pc),
-        0x6cd | 0x6dd => parse_arm_6cd(ins, pc),
-        0x6cf | 0x6df => parse_arm_6cf(ins, pc),
-        0x6e9 | 0x6f9 => parse_arm_6e9(ins, pc),
-        0x6eb | 0x6fb => parse_arm_6eb(ins, pc),
-        0x6ed | 0x6fd => parse_arm_6ed(ins, pc),
-        0x6ef | 0x6ff => parse_arm_6ef(ins, pc),
+        0x687 | 0x68e | 0x696 | 0x697 | 0x69e | 0x6c7 | 0x6ce | 0x6d6 | 0x6d7 | 0x6de => {
+            parse_arm_ror_0(ins, pc)
+        }
+        0x689 | 0x699 => {
+            if (ins & 0xfef0060) == 0x1a00000 {
+                parse_arm_lsl_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x1a00090 {
+                parse_arm_strexd_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x68b | 0x69b => {
+            if (ins & 0xfef0060) == 0x1a00020 {
+                parse_arm_lsr_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x68d | 0x69d => {
+            if (ins & 0xfef0060) == 0x1a00040 {
+                parse_arm_asr_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x68f | 0x69f => {
+            if (ins & 0xfef0060) == 0x1a00060 {
+                parse_arm_ror_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x6a0 | 0x6e0 => parse_arm_mov_1(ins, pc),
+        0x6a6 | 0x6e6 => parse_arm_rrx_0(ins, pc),
+        0x6a9 | 0x6b9 => parse_arm_strexd_0(ins, pc),
+        0x6c9 | 0x6d9 => {
+            if (ins & 0xfef0060) == 0x1a00000 {
+                parse_arm_lsl_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x1b00090 {
+                parse_arm_ldrexd_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x6cb | 0x6db => {
+            if (ins & 0xfef0060) == 0x1a00020 {
+                parse_arm_lsr_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x6cd | 0x6dd => {
+            if (ins & 0xfef0060) == 0x1a00040 {
+                parse_arm_asr_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x6cf | 0x6df => {
+            if (ins & 0xfef0060) == 0x1a00060 {
+                parse_arm_ror_0(ins, pc)
+            } else if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x6e9 | 0x6f9 => parse_arm_ldrexd_0(ins, pc),
+        0x6eb | 0x6fb => parse_arm_ldrh_0(ins, pc),
+        0x6ed | 0x6fd => parse_arm_ldrsb_0(ins, pc),
+        0x6ef | 0x6ff => parse_arm_ldrsh_0(ins, pc),
         0x700 | 0x701 | 0x702 | 0x703 | 0x704 | 0x705 | 0x706 | 0x707 | 0x708 | 0x70a
         | 0x70c | 0x70e | 0x710 | 0x711 | 0x712 | 0x713 | 0x714 | 0x715 | 0x716 | 0x717
         | 0x718 | 0x71a | 0x71c | 0x71e | 0x720 | 0x721 | 0x722 | 0x723 | 0x724 | 0x725
@@ -932,16 +1800,90 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xf5e | 0xf5f | 0xf60 | 0xf61 | 0xf62 | 0xf63 | 0xf64 | 0xf65 | 0xf66 | 0xf67
         | 0xf68 | 0xf69 | 0xf6a | 0xf6b | 0xf6c | 0xf6d | 0xf6e | 0xf6f | 0xf70 | 0xf71
         | 0xf72 | 0xf73 | 0xf74 | 0xf75 | 0xf76 | 0xf77 | 0xf78 | 0xf79 | 0xf7a | 0xf7b
-        | 0xf7c | 0xf7d | 0xf7e | 0xf7f => parse_arm_700(ins, pc),
-        0x709 | 0x719 | 0x729 | 0x739 => parse_arm_709(ins, pc),
-        0x70b | 0x71b | 0x72b | 0x73b => parse_arm_70b(ins, pc),
-        0x70d | 0x71d => parse_arm_70d(ins, pc),
-        0x70f | 0x71f | 0x72f | 0x73f => parse_arm_70f(ins, pc),
-        0x72d | 0x73d => parse_arm_72d(ins, pc),
-        0x749 | 0x759 | 0x769 | 0x779 => parse_arm_749(ins, pc),
-        0x74b | 0x75b | 0x76b | 0x77b => parse_arm_74b(ins, pc),
-        0x74d | 0x75d | 0x76d | 0x77d => parse_arm_74d(ins, pc),
-        0x74f | 0x75f | 0x76f | 0x77f => parse_arm_74f(ins, pc),
+        | 0xf7c | 0xf7d | 0xf7e | 0xf7f => parse_arm_bic_0(ins, pc),
+        0x709 | 0x719 | 0x729 | 0x739 => {
+            if (ins & 0xff000f0) == 0x1c00090 {
+                parse_arm_strexb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x70b | 0x71b | 0x72b | 0x73b => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x70d | 0x71d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x70f | 0x71f | 0x72f | 0x73f => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x72d | 0x73d => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x749 | 0x759 | 0x769 | 0x779 => {
+            if (ins & 0xff000f0) == 0x1d00090 {
+                parse_arm_ldrexb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x74b | 0x75b | 0x76b | 0x77b => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x74d | 0x75d | 0x76d | 0x77d => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x74f | 0x75f | 0x76f | 0x77f => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1c00000 {
+                parse_arm_bic_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x780 | 0x781 | 0x782 | 0x783 | 0x784 | 0x785 | 0x786 | 0x787 | 0x788 | 0x78a
         | 0x78c | 0x78e | 0x790 | 0x791 | 0x792 | 0x793 | 0x794 | 0x795 | 0x796 | 0x797
         | 0x798 | 0x79a | 0x79c | 0x79e | 0x7a0 | 0x7a1 | 0x7a2 | 0x7a3 | 0x7a4 | 0x7a5
@@ -964,18 +1906,116 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xfde | 0xfdf | 0xfe0 | 0xfe1 | 0xfe2 | 0xfe3 | 0xfe4 | 0xfe5 | 0xfe6 | 0xfe7
         | 0xfe8 | 0xfe9 | 0xfea | 0xfeb | 0xfec | 0xfed | 0xfee | 0xfef | 0xff0 | 0xff1
         | 0xff2 | 0xff3 | 0xff4 | 0xff5 | 0xff6 | 0xff7 | 0xff8 | 0xff9 | 0xffa | 0xffb
-        | 0xffc | 0xffd | 0xffe | 0xfff => parse_arm_780(ins, pc),
-        0x789 | 0x799 | 0x7a9 | 0x7b9 => parse_arm_789(ins, pc),
-        0x78b | 0x79b | 0x7ab | 0x7bb => parse_arm_78b(ins, pc),
-        0x78d | 0x79d => parse_arm_78d(ins, pc),
-        0x78f | 0x79f | 0x7af | 0x7bf => parse_arm_78f(ins, pc),
-        0x7ad | 0x7bd => parse_arm_7ad(ins, pc),
-        0x7c9 | 0x7d9 | 0x7e9 | 0x7f9 => parse_arm_7c9(ins, pc),
-        0x7cb | 0x7db | 0x7eb | 0x7fb => parse_arm_7cb(ins, pc),
-        0x7cd | 0x7dd | 0x7ed | 0x7fd => parse_arm_7cd(ins, pc),
-        0x7cf | 0x7df | 0x7ef | 0x7ff => parse_arm_7cf(ins, pc),
-        0xc80 | 0xc90 => parse_arm_c80(ins, pc),
-        0xc81 | 0xc91 => parse_arm_c81(ins, pc),
+        | 0xffc | 0xffd | 0xffe | 0xfff => parse_arm_mvn_0(ins, pc),
+        0x789 | 0x799 | 0x7a9 | 0x7b9 => {
+            if (ins & 0xff000f0) == 0x1e00090 {
+                parse_arm_strexh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x78b | 0x79b | 0x7ab | 0x7bb => {
+            if (ins & 0xe1000f0) == 0xb0 {
+                parse_arm_strh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x78d | 0x79d => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x78f | 0x79f | 0x7af | 0x7bf => {
+            if (ins & 0xe1000f0) == 0xf0 {
+                parse_arm_strd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x7ad | 0x7bd => {
+            if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc)
+            } else if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x7c9 | 0x7d9 | 0x7e9 | 0x7f9 => {
+            if (ins & 0xff000f0) == 0x1f00090 {
+                parse_arm_ldrexh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x7cb | 0x7db | 0x7eb | 0x7fb => {
+            if (ins & 0xe1000f0) == 0x1000b0 {
+                parse_arm_ldrh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x7cd | 0x7dd | 0x7ed | 0x7fd => {
+            if (ins & 0xe1000f0) == 0x1000d0 {
+                parse_arm_ldrsb_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x7cf | 0x7df | 0x7ef | 0x7ff => {
+            if (ins & 0xe1000f0) == 0x1000f0 {
+                parse_arm_ldrsh_0(ins, pc)
+            } else if (ins & 0xde00000) == 0x1e00000 {
+                parse_arm_mvn_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xc80 | 0xc90 => {
+            if (ins & 0xfff00ff) == 0x3200000 {
+                parse_arm_nop_0(ins, pc)
+            } else if (ins & 0xfff00ff) == 0x3200004 {
+                parse_arm_sev_0(ins, pc)
+            } else if (ins & 0xfff00ff) == 0x3200002 {
+                parse_arm_wfe_0(ins, pc)
+            } else if (ins & 0xfff00ff) == 0x3200003 {
+                parse_arm_wfi_0(ins, pc)
+            } else if (ins & 0xfff00ff) == 0x3200001 {
+                parse_arm_yield_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0xc81 | 0xc91 => {
+            if (ins & 0xfff00ff) == 0x3200014 {
+                parse_arm_csdb_0(ins, pc)
+            } else if (ins & 0xdb00000) == 0x1200000 {
+                parse_arm_msr_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0xe80 | 0xe81 | 0xe82 | 0xe83 | 0xe84 | 0xe85 | 0xe86 | 0xe87 | 0xe88 | 0xe89
         | 0xe8a | 0xe8b | 0xe8c | 0xe8d | 0xe8e | 0xe8f | 0xe90 | 0xe91 | 0xe92 | 0xe93
         | 0xe94 | 0xe95 | 0xe96 | 0xe97 | 0xe98 | 0xe99 | 0xe9a | 0xe9b | 0xe9c | 0xe9d
@@ -989,7 +2029,7 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0xee4 | 0xee5 | 0xee6 | 0xee7 | 0xee8 | 0xee9 | 0xeea | 0xeeb | 0xeec | 0xeed
         | 0xeee | 0xeef | 0xef0 | 0xef1 | 0xef2 | 0xef3 | 0xef4 | 0xef5 | 0xef6 | 0xef7
         | 0xef8 | 0xef9 | 0xefa | 0xefb | 0xefc | 0xefd | 0xefe | 0xeff => {
-            parse_arm_e80(ins, pc)
+            parse_arm_mov_0(ins, pc)
         }
         0x1000 | 0x1001 | 0x1002 | 0x1003 | 0x1004 | 0x1005 | 0x1006 | 0x1007 | 0x1008
         | 0x1009 | 0x100a | 0x100b | 0x100c | 0x100d | 0x100e | 0x100f | 0x1010 | 0x1011
@@ -1071,7 +2111,7 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1ea2 | 0x1ea3 | 0x1ea4 | 0x1ea5 | 0x1ea6 | 0x1ea7 | 0x1ea8 | 0x1ea9 | 0x1eaa
         | 0x1eab | 0x1eac | 0x1ead | 0x1eae | 0x1eaf | 0x1eb0 | 0x1eb1 | 0x1eb2 | 0x1eb3
         | 0x1eb4 | 0x1eb5 | 0x1eb6 | 0x1eb7 | 0x1eb8 | 0x1eb9 | 0x1eba | 0x1ebb | 0x1ebc
-        | 0x1ebd | 0x1ebe | 0x1ebf => parse_arm_1000(ins, pc),
+        | 0x1ebd | 0x1ebe | 0x1ebf => parse_arm_str_0(ins, pc),
         0x1040 | 0x1041 | 0x1042 | 0x1043 | 0x1044 | 0x1045 | 0x1046 | 0x1047 | 0x1048
         | 0x1049 | 0x104a | 0x104b | 0x104c | 0x104d | 0x104e | 0x104f | 0x1050 | 0x1051
         | 0x1052 | 0x1053 | 0x1054 | 0x1055 | 0x1056 | 0x1057 | 0x1058 | 0x1059 | 0x105a
@@ -1154,7 +2194,7 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1ee0 | 0x1ee1 | 0x1ee2 | 0x1ee3 | 0x1ee4 | 0x1ee5 | 0x1ee6 | 0x1ee7 | 0x1ee8
         | 0x1ee9 | 0x1eea | 0x1eeb | 0x1eec | 0x1eed | 0x1eee | 0x1eef | 0x1ef0 | 0x1ef1
         | 0x1ef2 | 0x1ef3 | 0x1ef4 | 0x1ef5 | 0x1ef6 | 0x1ef7 | 0x1ef8 | 0x1ef9 | 0x1efa
-        | 0x1efb | 0x1efc | 0x1efd | 0x1efe | 0x1eff => parse_arm_1040(ins, pc),
+        | 0x1efb | 0x1efc | 0x1efd | 0x1efe | 0x1eff => parse_arm_ldr_0(ins, pc),
         0x1080 | 0x1081 | 0x1082 | 0x1083 | 0x1084 | 0x1085 | 0x1086 | 0x1087 | 0x1088
         | 0x1089 | 0x108a | 0x108b | 0x108c | 0x108d | 0x108e | 0x108f | 0x1090 | 0x1091
         | 0x1092 | 0x1093 | 0x1094 | 0x1095 | 0x1096 | 0x1097 | 0x1098 | 0x1099 | 0x109a
@@ -1178,7 +2218,15 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1a94 | 0x1a96 | 0x1a98 | 0x1a9a | 0x1a9b | 0x1a9c | 0x1a9e | 0x1a9f | 0x1aa0
         | 0x1aa2 | 0x1aa4 | 0x1aa6 | 0x1aa8 | 0x1aaa | 0x1aab | 0x1aac | 0x1aae | 0x1aaf
         | 0x1ab0 | 0x1ab2 | 0x1ab4 | 0x1ab6 | 0x1ab8 | 0x1aba | 0x1abb | 0x1abc | 0x1abe
-        | 0x1abf => parse_arm_1080(ins, pc),
+        | 0x1abf => {
+            if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x10c0 | 0x10c1 | 0x10c2 | 0x10c3 | 0x10c4 | 0x10c5 | 0x10c6 | 0x10c7 | 0x10c8
         | 0x10c9 | 0x10ca | 0x10cb | 0x10cc | 0x10cd | 0x10ce | 0x10cf | 0x10d0 | 0x10d1
         | 0x10d2 | 0x10d3 | 0x10d4 | 0x10d5 | 0x10d6 | 0x10d7 | 0x10d8 | 0x10d9 | 0x10da
@@ -1201,7 +2249,15 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1ac6 | 0x1ac8 | 0x1aca | 0x1acc | 0x1ace | 0x1acf | 0x1ad0 | 0x1ad2 | 0x1ad4
         | 0x1ad6 | 0x1ad8 | 0x1ada | 0x1adc | 0x1ade | 0x1adf | 0x1ae0 | 0x1ae2 | 0x1ae4
         | 0x1ae6 | 0x1ae8 | 0x1aea | 0x1aec | 0x1aee | 0x1aef | 0x1af0 | 0x1af2 | 0x1af4
-        | 0x1af6 | 0x1af8 | 0x1afa | 0x1afc | 0x1afe | 0x1aff => parse_arm_10c0(ins, pc),
+        | 0x1af6 | 0x1af8 | 0x1afa | 0x1afc | 0x1afe | 0x1aff => {
+            if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1100 | 0x1101 | 0x1102 | 0x1103 | 0x1104 | 0x1105 | 0x1106 | 0x1107 | 0x1108
         | 0x1109 | 0x110a | 0x110b | 0x110c | 0x110d | 0x110e | 0x110f | 0x1110 | 0x1111
         | 0x1112 | 0x1113 | 0x1114 | 0x1115 | 0x1116 | 0x1117 | 0x1118 | 0x1119 | 0x111a
@@ -1285,7 +2341,7 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1fa4 | 0x1fa5 | 0x1fa6 | 0x1fa7 | 0x1fa8 | 0x1fa9 | 0x1faa | 0x1fab | 0x1fac
         | 0x1fad | 0x1fae | 0x1faf | 0x1fb0 | 0x1fb1 | 0x1fb2 | 0x1fb3 | 0x1fb4 | 0x1fb5
         | 0x1fb6 | 0x1fb7 | 0x1fb8 | 0x1fb9 | 0x1fba | 0x1fbb | 0x1fbc | 0x1fbd | 0x1fbe
-        | 0x1fbf => parse_arm_1100(ins, pc),
+        | 0x1fbf => parse_arm_strb_0(ins, pc),
         0x1140 | 0x1141 | 0x1142 | 0x1143 | 0x1144 | 0x1145 | 0x1146 | 0x1147 | 0x1148
         | 0x1149 | 0x114a | 0x114b | 0x114c | 0x114d | 0x114e | 0x114f | 0x1150 | 0x1151
         | 0x1152 | 0x1153 | 0x1154 | 0x1155 | 0x1156 | 0x1157 | 0x1158 | 0x1159 | 0x115a
@@ -1339,7 +2395,7 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1fe0 | 0x1fe1 | 0x1fe2 | 0x1fe3 | 0x1fe4 | 0x1fe5 | 0x1fe6 | 0x1fe7 | 0x1fe8
         | 0x1fe9 | 0x1fea | 0x1feb | 0x1fec | 0x1fed | 0x1fee | 0x1ff0 | 0x1ff1 | 0x1ff2
         | 0x1ff3 | 0x1ff4 | 0x1ff5 | 0x1ff6 | 0x1ff7 | 0x1ff8 | 0x1ff9 | 0x1ffa | 0x1ffb
-        | 0x1ffc | 0x1ffd | 0x1ffe => parse_arm_1140(ins, pc),
+        | 0x1ffc | 0x1ffd | 0x1ffe => parse_arm_ldrb_0(ins, pc),
         0x1180 | 0x1181 | 0x1182 | 0x1183 | 0x1184 | 0x1185 | 0x1186 | 0x1187 | 0x1188
         | 0x1189 | 0x118a | 0x118b | 0x118c | 0x118d | 0x118e | 0x118f | 0x1190 | 0x1191
         | 0x1192 | 0x1193 | 0x1194 | 0x1195 | 0x1196 | 0x1197 | 0x1198 | 0x1199 | 0x119a
@@ -1363,7 +2419,15 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1b94 | 0x1b96 | 0x1b98 | 0x1b9a | 0x1b9b | 0x1b9c | 0x1b9e | 0x1b9f | 0x1ba0
         | 0x1ba2 | 0x1ba4 | 0x1ba6 | 0x1ba8 | 0x1baa | 0x1bab | 0x1bac | 0x1bae | 0x1baf
         | 0x1bb0 | 0x1bb2 | 0x1bb4 | 0x1bb6 | 0x1bb8 | 0x1bba | 0x1bbb | 0x1bbc | 0x1bbe
-        | 0x1bbf => parse_arm_1180(ins, pc),
+        | 0x1bbf => {
+            if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x11c0 | 0x11c1 | 0x11c2 | 0x11c3 | 0x11c4 | 0x11c5 | 0x11c6 | 0x11c7 | 0x11c8
         | 0x11c9 | 0x11ca | 0x11cb | 0x11cc | 0x11cd | 0x11ce | 0x11cf | 0x11d0 | 0x11d1
         | 0x11d2 | 0x11d3 | 0x11d4 | 0x11d5 | 0x11d6 | 0x11d7 | 0x11d8 | 0x11d9 | 0x11da
@@ -1387,9 +2451,33 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1bd3 | 0x1bd4 | 0x1bd6 | 0x1bd8 | 0x1bda | 0x1bdc | 0x1bde | 0x1bdf | 0x1be0
         | 0x1be2 | 0x1be3 | 0x1be4 | 0x1be6 | 0x1be8 | 0x1bea | 0x1bec | 0x1bee | 0x1bef
         | 0x1bf0 | 0x1bf2 | 0x1bf3 | 0x1bf4 | 0x1bf6 | 0x1bf8 | 0x1bfa | 0x1bfc | 0x1bfe
-        | 0x1bff => parse_arm_11c0(ins, pc),
-        0x1260 => parse_arm_1260(ins, pc),
-        0x14a0 => parse_arm_14a0(ins, pc),
+        | 0x1bff => {
+            if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1260 => {
+            if (ins & 0xfff0fff) == 0x49d0004 {
+                parse_arm_pop_1(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x14a0 => {
+            if (ins & 0xfff0fff) == 0x52d0004 {
+                parse_arm_push_1(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1540 | 0x1541 | 0x1542 | 0x1543 | 0x1544 | 0x1545 | 0x1546 | 0x1547 | 0x1548
         | 0x1549 | 0x154a | 0x154b | 0x154c | 0x154d | 0x154e | 0x154f | 0x1550 | 0x1551
         | 0x1552 | 0x1553 | 0x1554 | 0x1555 | 0x1556 | 0x1557 | 0x1558 | 0x1559 | 0x155a
@@ -1416,104 +2504,746 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x1f5f | 0x1f60 | 0x1f61 | 0x1f62 | 0x1f63 | 0x1f64 | 0x1f65 | 0x1f66 | 0x1f67
         | 0x1f68 | 0x1f69 | 0x1f6a | 0x1f6b | 0x1f6c | 0x1f6d | 0x1f6e | 0x1f6f | 0x1f70
         | 0x1f71 | 0x1f72 | 0x1f73 | 0x1f74 | 0x1f75 | 0x1f76 | 0x1f77 | 0x1f78 | 0x1f79
-        | 0x1f7a | 0x1f7b | 0x1f7c | 0x1f7d | 0x1f7e | 0x1f7f => parse_arm_1540(ins, pc),
-        0x15c1 | 0x15d1 | 0x15e1 | 0x15f1 => parse_arm_15c1(ins, pc),
-        0x1841 | 0x1851 | 0x1861 | 0x1871 => parse_arm_1841(ins, pc),
-        0x1843 | 0x1853 | 0x1863 | 0x1873 => parse_arm_1843(ins, pc),
-        0x1845 | 0x1855 | 0x1865 | 0x1875 => parse_arm_1845(ins, pc),
-        0x1847 | 0x1857 | 0x1867 | 0x1877 => parse_arm_1847(ins, pc),
-        0x1849 | 0x1859 | 0x1869 | 0x1879 => parse_arm_1849(ins, pc),
-        0x184f | 0x185f | 0x186f | 0x187f => parse_arm_184f(ins, pc),
-        0x1881 | 0x1891 | 0x18a1 | 0x18b1 => parse_arm_1881(ins, pc),
-        0x1883 | 0x1893 | 0x18a3 | 0x18b3 => parse_arm_1883(ins, pc),
-        0x1885 | 0x1895 | 0x18a5 | 0x18b5 => parse_arm_1885(ins, pc),
-        0x1887 | 0x1897 | 0x18a7 | 0x18b7 => parse_arm_1887(ins, pc),
-        0x1889 | 0x1899 | 0x18a9 | 0x18b9 => parse_arm_1889(ins, pc),
-        0x188f | 0x189f | 0x18af | 0x18bf => parse_arm_188f(ins, pc),
-        0x18c1 | 0x18d1 | 0x18e1 | 0x18f1 => parse_arm_18c1(ins, pc),
-        0x18c3 | 0x18d3 | 0x18e3 | 0x18f3 => parse_arm_18c3(ins, pc),
-        0x18c5 | 0x18d5 | 0x18e5 | 0x18f5 => parse_arm_18c5(ins, pc),
-        0x18c7 | 0x18d7 | 0x18e7 | 0x18f7 => parse_arm_18c7(ins, pc),
-        0x18c9 | 0x18d9 | 0x18e9 | 0x18f9 => parse_arm_18c9(ins, pc),
-        0x18cf | 0x18df | 0x18ef | 0x18ff => parse_arm_18cf(ins, pc),
-        0x1941 | 0x1951 | 0x1961 | 0x1971 => parse_arm_1941(ins, pc),
-        0x1943 | 0x1953 | 0x1963 | 0x1973 => parse_arm_1943(ins, pc),
-        0x1945 | 0x1955 | 0x1965 | 0x1975 => parse_arm_1945(ins, pc),
-        0x1947 | 0x1957 | 0x1967 | 0x1977 => parse_arm_1947(ins, pc),
-        0x1949 | 0x1959 | 0x1969 | 0x1979 => parse_arm_1949(ins, pc),
-        0x194f | 0x195f | 0x196f | 0x197f => parse_arm_194f(ins, pc),
-        0x1981 | 0x1991 | 0x19a1 | 0x19b1 => parse_arm_1981(ins, pc),
-        0x1983 | 0x1993 | 0x19a3 | 0x19b3 => parse_arm_1983(ins, pc),
-        0x1985 | 0x1995 | 0x19a5 | 0x19b5 => parse_arm_1985(ins, pc),
-        0x1987 | 0x1997 | 0x19a7 | 0x19b7 => parse_arm_1987(ins, pc),
-        0x1989 | 0x1999 | 0x19a9 | 0x19b9 => parse_arm_1989(ins, pc),
-        0x198f | 0x199f | 0x19af | 0x19bf => parse_arm_198f(ins, pc),
-        0x19c1 | 0x19d1 | 0x19e1 | 0x19f1 => parse_arm_19c1(ins, pc),
-        0x19c3 | 0x19d3 | 0x19e3 | 0x19f3 => parse_arm_19c3(ins, pc),
-        0x19c5 | 0x19d5 | 0x19e5 | 0x19f5 => parse_arm_19c5(ins, pc),
-        0x19c7 | 0x19d7 | 0x19e7 | 0x19f7 => parse_arm_19c7(ins, pc),
-        0x19c9 | 0x19d9 | 0x19e9 | 0x19f9 => parse_arm_19c9(ins, pc),
-        0x19cf | 0x19df | 0x19ef | 0x19ff => parse_arm_19cf(ins, pc),
+        | 0x1f7a | 0x1f7b | 0x1f7c | 0x1f7d | 0x1f7e | 0x1f7f => {
+            if (ins & 0xfd700000) == 0xf5500000 {
+                parse_arm_pld_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x15c1 | 0x15d1 | 0x15e1 | 0x15f1 => {
+            if (ins & 0xfff000f0) == 0xf5700010 {
+                parse_arm_clrex_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1841 | 0x1851 | 0x1861 | 0x1871 => {
+            if (ins & 0xff000f0) == 0x6100010 {
+                parse_arm_sadd16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1843 | 0x1853 | 0x1863 | 0x1873 => {
+            if (ins & 0xff000f0) == 0x6100030 {
+                parse_arm_sasx_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1845 | 0x1855 | 0x1865 | 0x1875 => {
+            if (ins & 0xff000f0) == 0x6100050 {
+                parse_arm_ssax_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1847 | 0x1857 | 0x1867 | 0x1877 => {
+            if (ins & 0xff000f0) == 0x6100070 {
+                parse_arm_ssub16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1849 | 0x1859 | 0x1869 | 0x1879 => {
+            if (ins & 0xff000f0) == 0x6100090 {
+                parse_arm_sadd8_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x184f | 0x185f | 0x186f | 0x187f => {
+            if (ins & 0xff000f0) == 0x61000f0 {
+                parse_arm_ssub8_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1881 | 0x1891 | 0x18a1 | 0x18b1 => {
+            if (ins & 0xff000f0) == 0x6200010 {
+                parse_arm_qadd16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1883 | 0x1893 | 0x18a3 | 0x18b3 => {
+            if (ins & 0xff000f0) == 0x6200030 {
+                parse_arm_qasx_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1885 | 0x1895 | 0x18a5 | 0x18b5 => {
+            if (ins & 0xff000f0) == 0x6200050 {
+                parse_arm_qsax_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1887 | 0x1897 | 0x18a7 | 0x18b7 => {
+            if (ins & 0xff000f0) == 0x6200070 {
+                parse_arm_qsub16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1889 | 0x1899 | 0x18a9 | 0x18b9 => {
+            if (ins & 0xff000f0) == 0x6200090 {
+                parse_arm_qadd8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x188f | 0x189f | 0x18af | 0x18bf => {
+            if (ins & 0xff000f0) == 0x62000f0 {
+                parse_arm_qsub8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18c1 | 0x18d1 | 0x18e1 | 0x18f1 => {
+            if (ins & 0xff000f0) == 0x6300010 {
+                parse_arm_shadd16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18c3 | 0x18d3 | 0x18e3 | 0x18f3 => {
+            if (ins & 0xff000f0) == 0x6300030 {
+                parse_arm_shasx_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18c5 | 0x18d5 | 0x18e5 | 0x18f5 => {
+            if (ins & 0xff000f0) == 0x6300050 {
+                parse_arm_shsax_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18c7 | 0x18d7 | 0x18e7 | 0x18f7 => {
+            if (ins & 0xff000f0) == 0x6300070 {
+                parse_arm_shsub16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18c9 | 0x18d9 | 0x18e9 | 0x18f9 => {
+            if (ins & 0xff000f0) == 0x6300090 {
+                parse_arm_shadd8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x18cf | 0x18df | 0x18ef | 0x18ff => {
+            if (ins & 0xff000f0) == 0x63000f0 {
+                parse_arm_shsub8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1941 | 0x1951 | 0x1961 | 0x1971 => {
+            if (ins & 0xff000f0) == 0x6500010 {
+                parse_arm_uadd16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1943 | 0x1953 | 0x1963 | 0x1973 => {
+            if (ins & 0xff000f0) == 0x6500030 {
+                parse_arm_uasx_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1945 | 0x1955 | 0x1965 | 0x1975 => {
+            if (ins & 0xff000f0) == 0x6500050 {
+                parse_arm_usax_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1947 | 0x1957 | 0x1967 | 0x1977 => {
+            if (ins & 0xff000f0) == 0x6500070 {
+                parse_arm_usub16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1949 | 0x1959 | 0x1969 | 0x1979 => {
+            if (ins & 0xff000f0) == 0x6500090 {
+                parse_arm_uadd8_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x194f | 0x195f | 0x196f | 0x197f => {
+            if (ins & 0xff000f0) == 0x65000f0 {
+                parse_arm_usub8_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1981 | 0x1991 | 0x19a1 | 0x19b1 => {
+            if (ins & 0xff000f0) == 0x6600010 {
+                parse_arm_uqadd16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1983 | 0x1993 | 0x19a3 | 0x19b3 => {
+            if (ins & 0xff000f0) == 0x6600030 {
+                parse_arm_uqasx_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1985 | 0x1995 | 0x19a5 | 0x19b5 => {
+            if (ins & 0xff000f0) == 0x6600050 {
+                parse_arm_uqsax_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1987 | 0x1997 | 0x19a7 | 0x19b7 => {
+            if (ins & 0xff000f0) == 0x6600070 {
+                parse_arm_uqsub16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1989 | 0x1999 | 0x19a9 | 0x19b9 => {
+            if (ins & 0xff000f0) == 0x6600090 {
+                parse_arm_uqadd8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x198f | 0x199f | 0x19af | 0x19bf => {
+            if (ins & 0xff000f0) == 0x66000f0 {
+                parse_arm_uqsub8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x19c1 | 0x19d1 | 0x19e1 | 0x19f1 => {
+            if (ins & 0xff000f0) == 0x6700010 {
+                parse_arm_uhadd16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x19c3 | 0x19d3 | 0x19e3 | 0x19f3 => {
+            if (ins & 0xff000f0) == 0x6700030 {
+                parse_arm_uhasx_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x19c5 | 0x19d5 | 0x19e5 | 0x19f5 => {
+            if (ins & 0xff000f0) == 0x6700050 {
+                parse_arm_uhsax_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x19c7 | 0x19d7 | 0x19e7 | 0x19f7 => {
+            if (ins & 0xff000f0) == 0x6700070 {
+                parse_arm_uhsub16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x19c9 | 0x19d9 | 0x19e9 | 0x19f9 => {
+            if (ins & 0xff000f0) == 0x6700090 {
+                parse_arm_uhadd8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x19cf | 0x19df | 0x19ef | 0x19ff => {
+            if (ins & 0xff000f0) == 0x67000f0 {
+                parse_arm_uhsub8_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1a01 | 0x1a09 | 0x1a11 | 0x1a19 | 0x1a21 | 0x1a29 | 0x1a31 | 0x1a39 => {
-            parse_arm_1a01(ins, pc)
+            if (ins & 0xff00070) == 0x6800010 {
+                parse_arm_pkhbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x1a05 | 0x1a0d | 0x1a15 | 0x1a1d | 0x1a25 | 0x1a2d | 0x1a35 | 0x1a3d => {
-            parse_arm_1a05(ins, pc)
+            if (ins & 0xff00070) == 0x6800050 {
+                parse_arm_pkhtb_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x1a07 | 0x1a17 => parse_arm_1a07(ins, pc),
-        0x1a0b | 0x1a1b | 0x1a2b | 0x1a3b => parse_arm_1a0b(ins, pc),
-        0x1a27 | 0x1a37 => parse_arm_1a27(ins, pc),
+        0x1a07 | 0x1a17 => {
+            if (ins & 0xff000f0) == 0x6800070 {
+                parse_arm_sxtab16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1a0b | 0x1a1b | 0x1a2b | 0x1a3b => {
+            if (ins & 0xff000f0) == 0x68000b0 {
+                parse_arm_sel_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1a27 | 0x1a37 => {
+            if (ins & 0xfff00f0) == 0x68f0070 {
+                parse_arm_sxtb16_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x6800070 {
+                parse_arm_sxtab16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1a81 | 0x1a85 | 0x1a89 | 0x1a8d | 0x1a91 | 0x1a95 | 0x1a99 | 0x1a9d | 0x1aa1
         | 0x1aa5 | 0x1aa9 | 0x1aad | 0x1ab1 | 0x1ab5 | 0x1ab9 | 0x1abd => {
-            parse_arm_1a81(ins, pc)
+            if (ins & 0xfe00030) == 0x6a00010 {
+                parse_arm_ssat_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x1a83 | 0x1a93 | 0x1aa3 | 0x1ab3 => parse_arm_1a83(ins, pc),
-        0x1a87 | 0x1a97 => parse_arm_1a87(ins, pc),
-        0x1aa7 | 0x1ab7 => parse_arm_1aa7(ins, pc),
+        0x1a83 | 0x1a93 | 0x1aa3 | 0x1ab3 => {
+            if (ins & 0xff000f0) == 0x6a00030 {
+                parse_arm_ssat16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1a87 | 0x1a97 => {
+            if (ins & 0xff000f0) == 0x6a00070 {
+                parse_arm_sxtab_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1aa7 | 0x1ab7 => {
+            if (ins & 0xfff00f0) == 0x6af0070 {
+                parse_arm_sxtb_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x6a00070 {
+                parse_arm_sxtab_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4200000 {
+                parse_arm_strt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1ac1 | 0x1ac5 | 0x1ac9 | 0x1acd | 0x1ad1 | 0x1ad5 | 0x1ad9 | 0x1add | 0x1ae1
         | 0x1ae5 | 0x1ae9 | 0x1aed | 0x1af1 | 0x1af5 | 0x1af9 | 0x1afd => {
-            parse_arm_1ac1(ins, pc)
+            if (ins & 0xfe00030) == 0x6a00010 {
+                parse_arm_ssat_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x1ac3 | 0x1ad3 | 0x1ae3 | 0x1af3 => parse_arm_1ac3(ins, pc),
-        0x1ac7 | 0x1ad7 => parse_arm_1ac7(ins, pc),
-        0x1acb | 0x1adb | 0x1aeb | 0x1afb => parse_arm_1acb(ins, pc),
-        0x1ae7 | 0x1af7 => parse_arm_1ae7(ins, pc),
-        0x1b07 | 0x1b17 => parse_arm_1b07(ins, pc),
-        0x1b27 | 0x1b37 => parse_arm_1b27(ins, pc),
+        0x1ac3 | 0x1ad3 | 0x1ae3 | 0x1af3 => {
+            if (ins & 0xff000f0) == 0x6b00030 {
+                parse_arm_rev_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1ac7 | 0x1ad7 => {
+            if (ins & 0xff000f0) == 0x6b00070 {
+                parse_arm_sxtah_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1acb | 0x1adb | 0x1aeb | 0x1afb => {
+            if (ins & 0xff000f0) == 0x6b000b0 {
+                parse_arm_rev16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1ae7 | 0x1af7 => {
+            if (ins & 0xfff00f0) == 0x6bf0070 {
+                parse_arm_sxth_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x6b00070 {
+                parse_arm_sxtah_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4300000 {
+                parse_arm_ldrt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4100000 {
+                parse_arm_ldr_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1b07 | 0x1b17 => {
+            if (ins & 0xff000f0) == 0x6c00070 {
+                parse_arm_uxtab16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1b27 | 0x1b37 => {
+            if (ins & 0xfff00f0) == 0x6cf0070 {
+                parse_arm_uxtb16_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x6c00070 {
+                parse_arm_uxtab16_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1b81 | 0x1b85 | 0x1b89 | 0x1b8d | 0x1b91 | 0x1b95 | 0x1b99 | 0x1b9d | 0x1ba1
         | 0x1ba5 | 0x1ba9 | 0x1bad | 0x1bb1 | 0x1bb5 | 0x1bb9 | 0x1bbd => {
-            parse_arm_1b81(ins, pc)
+            if (ins & 0xfe00030) == 0x6e00010 {
+                parse_arm_usat_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x1b83 | 0x1b93 | 0x1ba3 | 0x1bb3 => parse_arm_1b83(ins, pc),
-        0x1b87 | 0x1b97 => parse_arm_1b87(ins, pc),
-        0x1ba7 | 0x1bb7 => parse_arm_1ba7(ins, pc),
+        0x1b83 | 0x1b93 | 0x1ba3 | 0x1bb3 => {
+            if (ins & 0xff000f0) == 0x6e00030 {
+                parse_arm_usat16_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1b87 | 0x1b97 => {
+            if (ins & 0xff000f0) == 0x6e00070 {
+                parse_arm_uxtab_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1ba7 | 0x1bb7 => {
+            if (ins & 0xfff00f0) == 0x6ef0070 {
+                parse_arm_uxtb_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x6e00070 {
+                parse_arm_uxtab_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4600000 {
+                parse_arm_strbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1bc1 | 0x1bc5 | 0x1bc9 | 0x1bcd | 0x1bd1 | 0x1bd5 | 0x1bd9 | 0x1bdd | 0x1be1
         | 0x1be5 | 0x1be9 | 0x1bed | 0x1bf1 | 0x1bf5 | 0x1bf9 | 0x1bfd => {
-            parse_arm_1bc1(ins, pc)
+            if (ins & 0xfe00030) == 0x6e00010 {
+                parse_arm_usat_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x1bc7 | 0x1bd7 => parse_arm_1bc7(ins, pc),
-        0x1bcb | 0x1bdb | 0x1beb | 0x1bfb => parse_arm_1bcb(ins, pc),
-        0x1be7 | 0x1bf7 => parse_arm_1be7(ins, pc),
+        0x1bc7 | 0x1bd7 => {
+            if (ins & 0xff000f0) == 0x6f00070 {
+                parse_arm_uxtah_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1bcb | 0x1bdb | 0x1beb | 0x1bfb => {
+            if (ins & 0xff000f0) == 0x6f000b0 {
+                parse_arm_revsh_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1be7 | 0x1bf7 => {
+            if (ins & 0xfff00f0) == 0x6ff0070 {
+                parse_arm_uxth_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x6f00070 {
+                parse_arm_uxtah_0(ins, pc)
+            } else if (ins & 0xd700000) == 0x4700000 {
+                parse_arm_ldrbt_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1c01 | 0x1c03 | 0x1c11 | 0x1c13 | 0x1c21 | 0x1c23 | 0x1c31 | 0x1c33 => {
-            parse_arm_1c01(ins, pc)
+            if (ins & 0xff0f0d0) == 0x700f010 {
+                parse_arm_smuad_0(ins, pc)
+            } else if (ins & 0xff000d0) == 0x7000010 {
+                parse_arm_smlad_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x1c05 | 0x1c07 | 0x1c15 | 0x1c17 | 0x1c25 | 0x1c27 | 0x1c35 | 0x1c37 => {
-            parse_arm_1c05(ins, pc)
+            if (ins & 0xff0f0d0) == 0x700f050 {
+                parse_arm_smusd_0(ins, pc)
+            } else if (ins & 0xff000d0) == 0x7000050 {
+                parse_arm_smlsd_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x1d01 | 0x1d03 | 0x1d11 | 0x1d13 | 0x1d21 | 0x1d23 | 0x1d31 | 0x1d33 => {
-            parse_arm_1d01(ins, pc)
+            if (ins & 0xff000d0) == 0x7400010 {
+                parse_arm_smlald_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x1d05 | 0x1d07 | 0x1d15 | 0x1d17 | 0x1d25 | 0x1d27 | 0x1d35 | 0x1d37 => {
-            parse_arm_1d05(ins, pc)
+            if (ins & 0xff000d0) == 0x7400050 {
+                parse_arm_smlsld_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4400000 {
+                parse_arm_strb_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x1d41 | 0x1d43 | 0x1d51 | 0x1d53 | 0x1d61 | 0x1d63 | 0x1d71 | 0x1d73 => {
-            parse_arm_1d41(ins, pc)
+            if (ins & 0xff0f0d0) == 0x750f010 {
+                parse_arm_smmul_0(ins, pc)
+            } else if (ins & 0xff000d0) == 0x7500010 {
+                parse_arm_smmla_0(ins, pc)
+            } else if (ins & 0xfd700000) == 0xf5500000 {
+                parse_arm_pld_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x1d4d | 0x1d4f | 0x1d5d | 0x1d5f | 0x1d6d | 0x1d6f | 0x1d7d | 0x1d7f => {
-            parse_arm_1d4d(ins, pc)
+            if (ins & 0xff000d0) == 0x75000d0 {
+                parse_arm_smmls_0(ins, pc)
+            } else if (ins & 0xfd700000) == 0xf5500000 {
+                parse_arm_pld_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x1e01 | 0x1e11 | 0x1e21 | 0x1e31 => parse_arm_1e01(ins, pc),
-        0x1fcf | 0x1fdf | 0x1fef | 0x1fff => parse_arm_1fcf(ins, pc),
+        0x1e01 | 0x1e11 | 0x1e21 | 0x1e31 => {
+            if (ins & 0xff0f0f0) == 0x780f010 {
+                parse_arm_usad8_0(ins, pc)
+            } else if (ins & 0xff000f0) == 0x7800010 {
+                parse_arm_usada8_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4000000 {
+                parse_arm_str_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x1fcf | 0x1fdf | 0x1fef | 0x1fff => {
+            if (ins & 0xfff000f0) == 0xe7f000f0 {
+                parse_arm_udf_0(ins, pc)
+            } else if (ins & 0xc500000) == 0x4500000 {
+                parse_arm_ldrb_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x2000 | 0x2001 | 0x2002 | 0x2003 | 0x2004 | 0x2005 | 0x2006 | 0x2007 | 0x2008
         | 0x2009 | 0x200a | 0x200b | 0x200c | 0x200d | 0x200e | 0x200f | 0x2010 | 0x2011
         | 0x2012 | 0x2013 | 0x2014 | 0x2015 | 0x2016 | 0x2017 | 0x2018 | 0x2019 | 0x201a
@@ -1567,7 +3297,7 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x26a2 | 0x26a3 | 0x26a4 | 0x26a5 | 0x26a6 | 0x26a7 | 0x26a8 | 0x26a9 | 0x26aa
         | 0x26ab | 0x26ac | 0x26ad | 0x26ae | 0x26af | 0x26b0 | 0x26b1 | 0x26b2 | 0x26b3
         | 0x26b4 | 0x26b5 | 0x26b6 | 0x26b7 | 0x26b8 | 0x26b9 | 0x26ba | 0x26bb | 0x26bc
-        | 0x26bd | 0x26be | 0x26bf => parse_arm_2000(ins, pc),
+        | 0x26bd | 0x26be | 0x26bf => parse_arm_stm_0(ins, pc),
         0x2040 | 0x2041 | 0x2042 | 0x2043 | 0x2044 | 0x2045 | 0x2046 | 0x2047 | 0x2048
         | 0x2049 | 0x204a | 0x204b | 0x204c | 0x204d | 0x204e | 0x204f | 0x2050 | 0x2051
         | 0x2052 | 0x2053 | 0x2054 | 0x2055 | 0x2056 | 0x2057 | 0x2058 | 0x2059 | 0x205a
@@ -1621,7 +3351,15 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x26e2 | 0x26e3 | 0x26e4 | 0x26e5 | 0x26e6 | 0x26e7 | 0x26e8 | 0x26e9 | 0x26ea
         | 0x26eb | 0x26ec | 0x26ed | 0x26ee | 0x26ef | 0x26f0 | 0x26f1 | 0x26f2 | 0x26f3
         | 0x26f4 | 0x26f5 | 0x26f6 | 0x26f7 | 0x26f8 | 0x26f9 | 0x26fa | 0x26fb | 0x26fc
-        | 0x26fd | 0x26fe | 0x26ff => parse_arm_2040(ins, pc),
+        | 0x26fd | 0x26fe | 0x26ff => {
+            if (ins & 0xfe500000) == 0xf8100000 {
+                parse_arm_rfe_0(ins, pc)
+            } else if (ins & 0xe500000) == 0x8100000 {
+                parse_arm_ldm_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x2100 | 0x2101 | 0x2102 | 0x2103 | 0x2104 | 0x2105 | 0x2106 | 0x2107 | 0x2108
         | 0x2109 | 0x210a | 0x210b | 0x210c | 0x210d | 0x210e | 0x210f | 0x2110 | 0x2111
         | 0x2112 | 0x2113 | 0x2114 | 0x2115 | 0x2116 | 0x2117 | 0x2118 | 0x2119 | 0x211a
@@ -1679,7 +3417,13 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x27a6 | 0x27a7 | 0x27a8 | 0x27a9 | 0x27aa | 0x27ab | 0x27ac | 0x27ad | 0x27ae
         | 0x27af | 0x27b0 | 0x27b1 | 0x27b2 | 0x27b3 | 0x27b4 | 0x27b5 | 0x27b6 | 0x27b7
         | 0x27b8 | 0x27b9 | 0x27ba | 0x27bb | 0x27bc | 0x27bd | 0x27be | 0x27bf => {
-            parse_arm_2100(ins, pc)
+            if (ins & 0xfe500000) == 0xf8400000 {
+                parse_arm_srs_0(ins, pc)
+            } else if (ins & 0xe100000) == 0x8000000 {
+                parse_arm_stm_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x2140 | 0x2141 | 0x2142 | 0x2143 | 0x2144 | 0x2145 | 0x2146 | 0x2147 | 0x2148
         | 0x2149 | 0x214a | 0x214b | 0x214c | 0x214d | 0x214e | 0x214f | 0x2150 | 0x2151
@@ -1709,7 +3453,15 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x2761 | 0x2762 | 0x2763 | 0x2764 | 0x2765 | 0x2766 | 0x2767 | 0x2768 | 0x2769
         | 0x276a | 0x276b | 0x276c | 0x276d | 0x276e | 0x276f | 0x2770 | 0x2771 | 0x2772
         | 0x2773 | 0x2774 | 0x2775 | 0x2776 | 0x2777 | 0x2778 | 0x2779 | 0x277a | 0x277b
-        | 0x277c | 0x277d | 0x277e | 0x277f => parse_arm_2140(ins, pc),
+        | 0x277c | 0x277d | 0x277e | 0x277f => {
+            if (ins & 0xe708000) == 0x8500000 {
+                parse_arm_ldm_1(ins, pc)
+            } else if (ins & 0xe508000) == 0x8508000 {
+                parse_arm_ldm_2(ins, pc)
+            } else {
+                None
+            }
+        }
         0x21c0 | 0x21c1 | 0x21c2 | 0x21c3 | 0x21c4 | 0x21c5 | 0x21c6 | 0x21c7 | 0x21c8
         | 0x21c9 | 0x21ca | 0x21cb | 0x21cc | 0x21cd | 0x21ce | 0x21cf | 0x21d0 | 0x21d1
         | 0x21d2 | 0x21d3 | 0x21d4 | 0x21d5 | 0x21d6 | 0x21d7 | 0x21d8 | 0x21d9 | 0x21da
@@ -1738,15 +3490,33 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x27e1 | 0x27e2 | 0x27e3 | 0x27e4 | 0x27e5 | 0x27e6 | 0x27e7 | 0x27e8 | 0x27e9
         | 0x27ea | 0x27eb | 0x27ec | 0x27ed | 0x27ee | 0x27ef | 0x27f0 | 0x27f1 | 0x27f2
         | 0x27f3 | 0x27f4 | 0x27f5 | 0x27f6 | 0x27f7 | 0x27f8 | 0x27f9 | 0x27fa | 0x27fb
-        | 0x27fc | 0x27fd | 0x27fe | 0x27ff => parse_arm_21c0(ins, pc),
+        | 0x27fc | 0x27fd | 0x27fe | 0x27ff => parse_arm_ldm_2(ins, pc),
         0x22e0 | 0x22e1 | 0x22e2 | 0x22e3 | 0x22e4 | 0x22e5 | 0x22e6 | 0x22e7 | 0x22e8
         | 0x22e9 | 0x22ea | 0x22eb | 0x22ec | 0x22ed | 0x22ee | 0x22ef | 0x22f0 | 0x22f1
         | 0x22f2 | 0x22f3 | 0x22f4 | 0x22f5 | 0x22f6 | 0x22f7 | 0x22f8 | 0x22f9 | 0x22fa
-        | 0x22fb | 0x22fc | 0x22fd | 0x22fe | 0x22ff => parse_arm_22e0(ins, pc),
+        | 0x22fb | 0x22fc | 0x22fd | 0x22fe | 0x22ff => {
+            if (ins & 0xfff0000) == 0x8bd0000 {
+                parse_arm_pop_0(ins, pc)
+            } else if (ins & 0xfe500000) == 0xf8100000 {
+                parse_arm_rfe_0(ins, pc)
+            } else if (ins & 0xe500000) == 0x8100000 {
+                parse_arm_ldm_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x24a0 | 0x24a1 | 0x24a2 | 0x24a3 | 0x24a4 | 0x24a5 | 0x24a6 | 0x24a7 | 0x24a8
         | 0x24a9 | 0x24aa | 0x24ab | 0x24ac | 0x24ad | 0x24ae | 0x24af | 0x24b0 | 0x24b1
         | 0x24b2 | 0x24b3 | 0x24b4 | 0x24b5 | 0x24b6 | 0x24b7 | 0x24b8 | 0x24b9 | 0x24ba
-        | 0x24bb | 0x24bc | 0x24bd | 0x24be | 0x24bf => parse_arm_24a0(ins, pc),
+        | 0x24bb | 0x24bc | 0x24bd | 0x24be | 0x24bf => {
+            if (ins & 0xfff0000) == 0x92d0000 {
+                parse_arm_push_0(ins, pc)
+            } else if (ins & 0xe100000) == 0x8000000 {
+                parse_arm_stm_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x2800 | 0x2801 | 0x2802 | 0x2803 | 0x2804 | 0x2805 | 0x2806 | 0x2807 | 0x2808
         | 0x2809 | 0x280a | 0x280b | 0x280c | 0x280d | 0x280e | 0x280f | 0x2810 | 0x2811
         | 0x2812 | 0x2813 | 0x2814 | 0x2815 | 0x2816 | 0x2817 | 0x2818 | 0x2819 | 0x281a
@@ -1861,7 +3631,13 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x2be7 | 0x2be8 | 0x2be9 | 0x2bea | 0x2beb | 0x2bec | 0x2bed | 0x2bee | 0x2bef
         | 0x2bf0 | 0x2bf1 | 0x2bf2 | 0x2bf3 | 0x2bf4 | 0x2bf5 | 0x2bf6 | 0x2bf7 | 0x2bf8
         | 0x2bf9 | 0x2bfa | 0x2bfb | 0x2bfc | 0x2bfd | 0x2bfe | 0x2bff => {
-            parse_arm_2800(ins, pc)
+            if (ins & 0xfe000000) == 0xfa000000 {
+                parse_arm_blx_0(ins, pc)
+            } else if (ins & 0xf000000) == 0xa000000 {
+                parse_arm_b_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x2c00 | 0x2c01 | 0x2c02 | 0x2c03 | 0x2c04 | 0x2c05 | 0x2c06 | 0x2c07 | 0x2c08
         | 0x2c09 | 0x2c0a | 0x2c0b | 0x2c0c | 0x2c0d | 0x2c0e | 0x2c0f | 0x2c10 | 0x2c11
@@ -1977,7 +3753,13 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x2fe7 | 0x2fe8 | 0x2fe9 | 0x2fea | 0x2feb | 0x2fec | 0x2fed | 0x2fee | 0x2fef
         | 0x2ff0 | 0x2ff1 | 0x2ff2 | 0x2ff3 | 0x2ff4 | 0x2ff5 | 0x2ff6 | 0x2ff7 | 0x2ff8
         | 0x2ff9 | 0x2ffa | 0x2ffb | 0x2ffc | 0x2ffd | 0x2ffe | 0x2fff => {
-            parse_arm_2c00(ins, pc)
+            if (ins & 0xfe000000) == 0xfa000000 {
+                parse_arm_blx_0(ins, pc)
+            } else if (ins & 0xf000000) == 0xb000000 {
+                parse_arm_bl_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3000 | 0x3001 | 0x3002 | 0x3003 | 0x3004 | 0x3005 | 0x3006 | 0x3007 | 0x3008
         | 0x3009 | 0x300a | 0x300b | 0x300c | 0x300d | 0x300e | 0x300f | 0x3020 | 0x3021
@@ -2014,7 +3796,17 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3780 | 0x3781 | 0x3782 | 0x3783 | 0x3784 | 0x3785 | 0x3786 | 0x3787 | 0x3788
         | 0x3789 | 0x378a | 0x378b | 0x378c | 0x378d | 0x378e | 0x378f | 0x37a0 | 0x37a1
         | 0x37a2 | 0x37a3 | 0x37a4 | 0x37a5 | 0x37a6 | 0x37a7 | 0x37a8 | 0x37a9 | 0x37aa
-        | 0x37ab | 0x37ac | 0x37ad | 0x37ae | 0x37af => parse_arm_3000(ins, pc),
+        | 0x37ab | 0x37ac | 0x37ad | 0x37ae | 0x37af => {
+            if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000a00 {
+                parse_arm_vstm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3010 | 0x3011 | 0x3012 | 0x3013 | 0x3014 | 0x3015 | 0x3016 | 0x3017 | 0x3018
         | 0x3019 | 0x301a | 0x301b | 0x301c | 0x301d | 0x301e | 0x301f | 0x3030 | 0x3031
         | 0x3032 | 0x3033 | 0x3034 | 0x3035 | 0x3036 | 0x3037 | 0x3038 | 0x3039 | 0x303a
@@ -2050,7 +3842,17 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3790 | 0x3791 | 0x3792 | 0x3793 | 0x3794 | 0x3795 | 0x3796 | 0x3797 | 0x3798
         | 0x3799 | 0x379a | 0x379b | 0x379c | 0x379d | 0x379e | 0x379f | 0x37b0 | 0x37b1
         | 0x37b2 | 0x37b3 | 0x37b4 | 0x37b5 | 0x37b6 | 0x37b7 | 0x37b8 | 0x37b9 | 0x37ba
-        | 0x37bb | 0x37bc | 0x37bd | 0x37be | 0x37bf => parse_arm_3010(ins, pc),
+        | 0x37bb | 0x37bc | 0x37bd | 0x37be | 0x37bf => {
+            if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000b00 {
+                parse_arm_vstm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3040 | 0x3041 | 0x3042 | 0x3043 | 0x3044 | 0x3045 | 0x3046 | 0x3047 | 0x3048
         | 0x3049 | 0x304a | 0x304b | 0x304c | 0x304d | 0x304e | 0x304f | 0x3060 | 0x3061
         | 0x3062 | 0x3063 | 0x3064 | 0x3065 | 0x3066 | 0x3067 | 0x3068 | 0x3069 | 0x306a
@@ -2086,7 +3888,17 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x37c0 | 0x37c1 | 0x37c2 | 0x37c3 | 0x37c4 | 0x37c5 | 0x37c6 | 0x37c7 | 0x37c8
         | 0x37c9 | 0x37ca | 0x37cb | 0x37cc | 0x37cd | 0x37ce | 0x37cf | 0x37e0 | 0x37e1
         | 0x37e2 | 0x37e3 | 0x37e4 | 0x37e5 | 0x37e6 | 0x37e7 | 0x37e8 | 0x37e9 | 0x37ea
-        | 0x37eb | 0x37ec | 0x37ed | 0x37ee | 0x37ef => parse_arm_3040(ins, pc),
+        | 0x37eb | 0x37ec | 0x37ed | 0x37ee | 0x37ef => {
+            if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100a00 {
+                parse_arm_vldm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3050 | 0x3051 | 0x3052 | 0x3053 | 0x3054 | 0x3055 | 0x3056 | 0x3057 | 0x3058
         | 0x3059 | 0x305a | 0x305b | 0x305c | 0x305d | 0x305e | 0x305f | 0x3070 | 0x3071
         | 0x3072 | 0x3073 | 0x3074 | 0x3075 | 0x3076 | 0x3077 | 0x3078 | 0x3079 | 0x307a
@@ -2122,35 +3934,189 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x37d0 | 0x37d1 | 0x37d2 | 0x37d3 | 0x37d4 | 0x37d5 | 0x37d6 | 0x37d7 | 0x37d8
         | 0x37d9 | 0x37da | 0x37db | 0x37dc | 0x37dd | 0x37de | 0x37df | 0x37f0 | 0x37f1
         | 0x37f2 | 0x37f3 | 0x37f4 | 0x37f5 | 0x37f6 | 0x37f7 | 0x37f8 | 0x37f9 | 0x37fa
-        | 0x37fb | 0x37fc | 0x37fd | 0x37fe | 0x37ff => parse_arm_3050(ins, pc),
+        | 0x37fb | 0x37fc | 0x37fd | 0x37fe | 0x37ff => {
+            if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100b00 {
+                parse_arm_vldm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3100 | 0x3102 | 0x3104 | 0x3105 | 0x3106 | 0x3107 | 0x3108 | 0x3109 | 0x310a
         | 0x310b | 0x310c | 0x310d | 0x310e | 0x310f | 0x3120 | 0x3122 | 0x3124 | 0x3125
         | 0x3126 | 0x3127 | 0x3128 | 0x3129 | 0x312a | 0x312b | 0x312c | 0x312d | 0x312e
-        | 0x312f => parse_arm_3100(ins, pc),
-        0x3101 | 0x3103 | 0x3121 | 0x3123 => parse_arm_3101(ins, pc),
+        | 0x312f => {
+            if (ins & 0xfff00000) == 0xfc400000 {
+                parse_arm_mcrr2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc400000 {
+                parse_arm_mcrr_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000a00 {
+                parse_arm_vstm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3101 | 0x3103 | 0x3121 | 0x3123 => {
+            if (ins & 0xff00fd0) == 0xc400a10 {
+                parse_arm_vmov_f32_reg_dual_0(ins, pc)
+            } else if (ins & 0xfff00000) == 0xfc400000 {
+                parse_arm_mcrr2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc400000 {
+                parse_arm_mcrr_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000a00 {
+                parse_arm_vstm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3110 | 0x3112 | 0x3114 | 0x3115 | 0x3116 | 0x3117 | 0x3118 | 0x3119 | 0x311a
         | 0x311b | 0x311c | 0x311d | 0x311e | 0x311f | 0x3130 | 0x3132 | 0x3134 | 0x3135
         | 0x3136 | 0x3137 | 0x3138 | 0x3139 | 0x313a | 0x313b | 0x313c | 0x313d | 0x313e
-        | 0x313f => parse_arm_3110(ins, pc),
-        0x3111 | 0x3113 | 0x3131 | 0x3133 => parse_arm_3111(ins, pc),
+        | 0x313f => {
+            if (ins & 0xfff00000) == 0xfc400000 {
+                parse_arm_mcrr2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc400000 {
+                parse_arm_mcrr_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000b00 {
+                parse_arm_vstm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3111 | 0x3113 | 0x3131 | 0x3133 => {
+            if (ins & 0xff00fd0) == 0xc400b10 {
+                parse_arm_vmov_f64_reg_0(ins, pc)
+            } else if (ins & 0xfff00000) == 0xfc400000 {
+                parse_arm_mcrr2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc400000 {
+                parse_arm_mcrr_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000b00 {
+                parse_arm_vstm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3140 | 0x3142 | 0x3144 | 0x3145 | 0x3146 | 0x3147 | 0x3148 | 0x3149 | 0x314a
         | 0x314b | 0x314c | 0x314d | 0x314e | 0x314f | 0x3160 | 0x3162 | 0x3164 | 0x3165
         | 0x3166 | 0x3167 | 0x3168 | 0x3169 | 0x316a | 0x316b | 0x316c | 0x316d | 0x316e
-        | 0x316f => parse_arm_3140(ins, pc),
-        0x3141 | 0x3143 | 0x3161 | 0x3163 => parse_arm_3141(ins, pc),
+        | 0x316f => {
+            if (ins & 0xfff00000) == 0xfc500000 {
+                parse_arm_mrrc2_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc500000 {
+                parse_arm_mrrc_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100a00 {
+                parse_arm_vldm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3141 | 0x3143 | 0x3161 | 0x3163 => {
+            if (ins & 0xff00fd0) == 0xc500a10 {
+                parse_arm_vmov_reg_f32_dual_0(ins, pc)
+            } else if (ins & 0xfff00000) == 0xfc500000 {
+                parse_arm_mrrc2_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc500000 {
+                parse_arm_mrrc_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100a00 {
+                parse_arm_vldm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3150 | 0x3152 | 0x3154 | 0x3155 | 0x3156 | 0x3157 | 0x3158 | 0x3159 | 0x315a
         | 0x315b | 0x315c | 0x315d | 0x315e | 0x315f | 0x3170 | 0x3172 | 0x3174 | 0x3175
         | 0x3176 | 0x3177 | 0x3178 | 0x3179 | 0x317a | 0x317b | 0x317c | 0x317d | 0x317e
-        | 0x317f => parse_arm_3150(ins, pc),
-        0x3151 | 0x3153 | 0x3171 | 0x3173 => parse_arm_3151(ins, pc),
+        | 0x317f => {
+            if (ins & 0xfff00000) == 0xfc500000 {
+                parse_arm_mrrc2_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc500000 {
+                parse_arm_mrrc_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100b00 {
+                parse_arm_vldm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3151 | 0x3153 | 0x3171 | 0x3173 => {
+            if (ins & 0xff00fd0) == 0xc500b10 {
+                parse_arm_vmov_reg_f64_0(ins, pc)
+            } else if (ins & 0xfff00000) == 0xfc500000 {
+                parse_arm_mrrc2_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xff00000) == 0xc500000 {
+                parse_arm_mrrc_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100b00 {
+                parse_arm_vldm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x32e0 | 0x32e1 | 0x32e2 | 0x32e3 | 0x32e4 | 0x32e5 | 0x32e6 | 0x32e7 | 0x32e8
         | 0x32e9 | 0x32ea | 0x32eb | 0x32ec | 0x32ed | 0x32ee | 0x32ef | 0x33e0 | 0x33e1
         | 0x33e2 | 0x33e3 | 0x33e4 | 0x33e5 | 0x33e6 | 0x33e7 | 0x33e8 | 0x33e9 | 0x33ea
-        | 0x33eb | 0x33ec | 0x33ed | 0x33ee | 0x33ef => parse_arm_32e0(ins, pc),
+        | 0x33eb | 0x33ec | 0x33ed | 0x33ee | 0x33ef => {
+            if (ins & 0xfbf0f00) == 0xcbd0a00 {
+                parse_arm_vpop_f32_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100a00 {
+                parse_arm_vldm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x32f0 | 0x32f1 | 0x32f2 | 0x32f3 | 0x32f4 | 0x32f5 | 0x32f6 | 0x32f7 | 0x32f8
         | 0x32f9 | 0x32fa | 0x32fb | 0x32fc | 0x32fd | 0x32fe | 0x32ff | 0x33f0 | 0x33f1
         | 0x33f2 | 0x33f3 | 0x33f4 | 0x33f5 | 0x33f6 | 0x33f7 | 0x33f8 | 0x33f9 | 0x33fa
-        | 0x33fb | 0x33fc | 0x33fd | 0x33fe | 0x33ff => parse_arm_32f0(ins, pc),
+        | 0x33fb | 0x33fc | 0x33fd | 0x33fe | 0x33ff => {
+            if (ins & 0xfbf0f00) == 0xcbd0b00 {
+                parse_arm_vpop_f64_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100b00 {
+                parse_arm_vldm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3400 | 0x3401 | 0x3402 | 0x3403 | 0x3404 | 0x3405 | 0x3406 | 0x3407 | 0x3408
         | 0x3409 | 0x340a | 0x340b | 0x340c | 0x340d | 0x340e | 0x340f | 0x3420 | 0x3421
         | 0x3422 | 0x3423 | 0x3424 | 0x3425 | 0x3426 | 0x3427 | 0x3428 | 0x3429 | 0x342a
@@ -2165,7 +4131,19 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3703 | 0x3704 | 0x3705 | 0x3706 | 0x3707 | 0x3708 | 0x3709 | 0x370a | 0x370b
         | 0x370c | 0x370d | 0x370e | 0x370f | 0x3720 | 0x3721 | 0x3722 | 0x3723 | 0x3724
         | 0x3725 | 0x3726 | 0x3727 | 0x3728 | 0x3729 | 0x372a | 0x372b | 0x372c | 0x372d
-        | 0x372e | 0x372f => parse_arm_3400(ins, pc),
+        | 0x372e | 0x372f => {
+            if (ins & 0xf300f00) == 0xd000a00 {
+                parse_arm_vstr_f32_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000a00 {
+                parse_arm_vstm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3410 | 0x3411 | 0x3412 | 0x3413 | 0x3414 | 0x3415 | 0x3416 | 0x3417 | 0x3418
         | 0x3419 | 0x341a | 0x341b | 0x341c | 0x341d | 0x341e | 0x341f | 0x3430 | 0x3431
         | 0x3432 | 0x3433 | 0x3434 | 0x3435 | 0x3436 | 0x3437 | 0x3438 | 0x3439 | 0x343a
@@ -2180,7 +4158,19 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3713 | 0x3714 | 0x3715 | 0x3716 | 0x3717 | 0x3718 | 0x3719 | 0x371a | 0x371b
         | 0x371c | 0x371d | 0x371e | 0x371f | 0x3730 | 0x3731 | 0x3732 | 0x3733 | 0x3734
         | 0x3735 | 0x3736 | 0x3737 | 0x3738 | 0x3739 | 0x373a | 0x373b | 0x373c | 0x373d
-        | 0x373e | 0x373f => parse_arm_3410(ins, pc),
+        | 0x373e | 0x373f => {
+            if (ins & 0xf300f00) == 0xd000b00 {
+                parse_arm_vstr_f64_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000b00 {
+                parse_arm_vstm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3440 | 0x3441 | 0x3442 | 0x3443 | 0x3444 | 0x3445 | 0x3446 | 0x3447 | 0x3448
         | 0x3449 | 0x344a | 0x344b | 0x344c | 0x344d | 0x344e | 0x344f | 0x3460 | 0x3461
         | 0x3462 | 0x3463 | 0x3464 | 0x3465 | 0x3466 | 0x3467 | 0x3468 | 0x3469 | 0x346a
@@ -2195,7 +4185,19 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3743 | 0x3744 | 0x3745 | 0x3746 | 0x3747 | 0x3748 | 0x3749 | 0x374a | 0x374b
         | 0x374c | 0x374d | 0x374e | 0x374f | 0x3760 | 0x3761 | 0x3762 | 0x3763 | 0x3764
         | 0x3765 | 0x3766 | 0x3767 | 0x3768 | 0x3769 | 0x376a | 0x376b | 0x376c | 0x376d
-        | 0x376e | 0x376f => parse_arm_3440(ins, pc),
+        | 0x376e | 0x376f => {
+            if (ins & 0xf300f00) == 0xd100a00 {
+                parse_arm_vldr_f32_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100a00 {
+                parse_arm_vldm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3450 | 0x3451 | 0x3452 | 0x3453 | 0x3454 | 0x3455 | 0x3456 | 0x3457 | 0x3458
         | 0x3459 | 0x345a | 0x345b | 0x345c | 0x345d | 0x345e | 0x345f | 0x3470 | 0x3471
         | 0x3472 | 0x3473 | 0x3474 | 0x3475 | 0x3476 | 0x3477 | 0x3478 | 0x3479 | 0x347a
@@ -2210,33 +4212,109 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3753 | 0x3754 | 0x3755 | 0x3756 | 0x3757 | 0x3758 | 0x3759 | 0x375a | 0x375b
         | 0x375c | 0x375d | 0x375e | 0x375f | 0x3770 | 0x3771 | 0x3772 | 0x3773 | 0x3774
         | 0x3775 | 0x3776 | 0x3777 | 0x3778 | 0x3779 | 0x377a | 0x377b | 0x377c | 0x377d
-        | 0x377e | 0x377f => parse_arm_3450(ins, pc),
+        | 0x377e | 0x377f => {
+            if (ins & 0xf300f00) == 0xd100b00 {
+                parse_arm_vldr_f64_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc100000 {
+                parse_arm_ldc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc100b00 {
+                parse_arm_vldm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc100000 {
+                parse_arm_ldc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x34a0 | 0x34a1 | 0x34a2 | 0x34a3 | 0x34a4 | 0x34a5 | 0x34a6 | 0x34a7 | 0x34a8
         | 0x34a9 | 0x34aa | 0x34ab | 0x34ac | 0x34ad | 0x34ae | 0x34af | 0x35a0 | 0x35a1
         | 0x35a2 | 0x35a3 | 0x35a4 | 0x35a5 | 0x35a6 | 0x35a7 | 0x35a8 | 0x35a9 | 0x35aa
-        | 0x35ab | 0x35ac | 0x35ad | 0x35ae | 0x35af => parse_arm_34a0(ins, pc),
+        | 0x35ab | 0x35ac | 0x35ad | 0x35ae | 0x35af => {
+            if (ins & 0xfbf0f00) == 0xd2d0a00 {
+                parse_arm_vpush_f32_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000a00 {
+                parse_arm_vstm_f32_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x34b0 | 0x34b1 | 0x34b2 | 0x34b3 | 0x34b4 | 0x34b5 | 0x34b6 | 0x34b7 | 0x34b8
         | 0x34b9 | 0x34ba | 0x34bb | 0x34bc | 0x34bd | 0x34be | 0x34bf | 0x35b0 | 0x35b1
         | 0x35b2 | 0x35b3 | 0x35b4 | 0x35b5 | 0x35b6 | 0x35b7 | 0x35b8 | 0x35b9 | 0x35ba
-        | 0x35bb | 0x35bc | 0x35bd | 0x35be | 0x35bf => parse_arm_34b0(ins, pc),
+        | 0x35bb | 0x35bc | 0x35bd | 0x35be | 0x35bf => {
+            if (ins & 0xfbf0f00) == 0xd2d0b00 {
+                parse_arm_vpush_f64_0(ins, pc)
+            } else if (ins & 0xfe100000) == 0xfc000000 {
+                parse_arm_stc2_0(ins, pc)
+            } else if (ins & 0xe100f00) == 0xc000b00 {
+                parse_arm_vstm_f64_0(ins, pc)
+            } else if (ins & 0xe100000) == 0xc000000 {
+                parse_arm_stc_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3800 | 0x3802 | 0x3808 | 0x380a | 0x3820 | 0x3822 | 0x3828 | 0x382a | 0x3900
         | 0x3902 | 0x3908 | 0x390a | 0x3920 | 0x3922 | 0x3928 | 0x392a => {
-            parse_arm_3800(ins, pc)
+            if (ins & 0xfb00f50) == 0xe000a00 {
+                parse_arm_vmla_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3801 | 0x3803 | 0x3805 | 0x3807 | 0x3809 | 0x380b | 0x380d | 0x380f | 0x3821
         | 0x3823 | 0x3825 | 0x3827 | 0x3829 | 0x382b | 0x382d | 0x382f => {
-            parse_arm_3801(ins, pc)
+            if (ins & 0xff00f10) == 0xe000a10 {
+                parse_arm_vmov_f32_reg_0(ins, pc)
+            } else if (ins & 0xff100010) == 0xfe000010 {
+                parse_arm_mcr2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe000010 {
+                parse_arm_mcr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3804 | 0x3806 | 0x380c | 0x380e | 0x3824 | 0x3826 | 0x382c | 0x382e | 0x3904
         | 0x3906 | 0x390c | 0x390e | 0x3924 | 0x3926 | 0x392c | 0x392e => {
-            parse_arm_3804(ins, pc)
+            if (ins & 0xfb00f50) == 0xe000a40 {
+                parse_arm_vmls_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3810 | 0x3812 | 0x3818 | 0x381a | 0x3830 | 0x3832 | 0x3838 | 0x383a | 0x3910
         | 0x3912 | 0x3918 | 0x391a | 0x3930 | 0x3932 | 0x3938 | 0x393a => {
-            parse_arm_3810(ins, pc)
+            if (ins & 0xfb00f50) == 0xe000b00 {
+                parse_arm_vmla_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3811 | 0x3819 | 0x3831 | 0x3839 | 0x3891 | 0x3899 | 0x38b1 | 0x38b9 => {
-            parse_arm_3811(ins, pc)
+            if (ins & 0xfd00f70) == 0xe000b10 {
+                parse_arm_vmov_32_reg_0(ins, pc)
+            } else if (ins & 0xff100010) == 0xfe000010 {
+                parse_arm_mcr2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe000010 {
+                parse_arm_mcr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3813 | 0x3815 | 0x3817 | 0x381b | 0x381d | 0x381f | 0x3833 | 0x3835 | 0x3837
         | 0x383b | 0x383d | 0x383f | 0x3881 | 0x3883 | 0x3885 | 0x3887 | 0x3889 | 0x388b
@@ -2263,30 +4341,84 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3b3d | 0x3b3f | 0x3b91 | 0x3b93 | 0x3b95 | 0x3b97 | 0x3b99 | 0x3b9b | 0x3b9d
         | 0x3b9f | 0x3ba1 | 0x3ba3 | 0x3ba5 | 0x3ba7 | 0x3ba9 | 0x3bab | 0x3bad | 0x3baf
         | 0x3bb1 | 0x3bb3 | 0x3bb5 | 0x3bb7 | 0x3bb9 | 0x3bbb | 0x3bbd | 0x3bbf => {
-            parse_arm_3813(ins, pc)
+            if (ins & 0xff100010) == 0xfe000010 {
+                parse_arm_mcr2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe000010 {
+                parse_arm_mcr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3814 | 0x3816 | 0x381c | 0x381e | 0x3834 | 0x3836 | 0x383c | 0x383e | 0x3914
         | 0x3916 | 0x391c | 0x391e | 0x3934 | 0x3936 | 0x393c | 0x393e => {
-            parse_arm_3814(ins, pc)
+            if (ins & 0xfb00f50) == 0xe000b40 {
+                parse_arm_vmls_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3840 | 0x3842 | 0x3848 | 0x384a | 0x3860 | 0x3862 | 0x3868 | 0x386a | 0x3940
         | 0x3942 | 0x3948 | 0x394a | 0x3960 | 0x3962 | 0x3968 | 0x396a => {
-            parse_arm_3840(ins, pc)
+            if (ins & 0xfb00f50) == 0xe100a00 {
+                parse_arm_vnmls_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3841 | 0x3843 | 0x3845 | 0x3847 | 0x3849 | 0x384b | 0x384d | 0x384f | 0x3861
         | 0x3863 | 0x3865 | 0x3867 | 0x3869 | 0x386b | 0x386d | 0x386f => {
-            parse_arm_3841(ins, pc)
+            if (ins & 0xff00f10) == 0xe100a10 {
+                parse_arm_vmov_reg_f32_0(ins, pc)
+            } else if (ins & 0xff100010) == 0xfe100010 {
+                parse_arm_mrc2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe100010 {
+                parse_arm_mrc_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3844 | 0x3846 | 0x384c | 0x384e | 0x3864 | 0x3866 | 0x386c | 0x386e | 0x3944
         | 0x3946 | 0x394c | 0x394e | 0x3964 | 0x3966 | 0x396c | 0x396e => {
-            parse_arm_3844(ins, pc)
+            if (ins & 0xfb00f50) == 0xe100a40 {
+                parse_arm_vnmla_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3850 | 0x3852 | 0x3858 | 0x385a | 0x3870 | 0x3872 | 0x3878 | 0x387a | 0x3950
         | 0x3952 | 0x3958 | 0x395a | 0x3970 | 0x3972 | 0x3978 | 0x397a => {
-            parse_arm_3850(ins, pc)
+            if (ins & 0xfb00f50) == 0xe100b00 {
+                parse_arm_vnmls_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3851 | 0x3859 | 0x3871 | 0x3879 | 0x38d1 | 0x38d9 | 0x38f1 | 0x38f9 => {
-            parse_arm_3851(ins, pc)
+            if (ins & 0xfd00f70) == 0xe100b10 {
+                parse_arm_vmov_reg_32_0(ins, pc)
+            } else if (ins & 0xff100010) == 0xfe100010 {
+                parse_arm_mrc2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe100010 {
+                parse_arm_mrc_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3853 | 0x3855 | 0x3857 | 0x385b | 0x385d | 0x385f | 0x3873 | 0x3875 | 0x3877
         | 0x387b | 0x387d | 0x387f | 0x38c1 | 0x38c3 | 0x38c5 | 0x38c7 | 0x38c9 | 0x38cb
@@ -2313,47 +4445,133 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3b7d | 0x3b7f | 0x3bd1 | 0x3bd3 | 0x3bd5 | 0x3bd7 | 0x3bd9 | 0x3bdb | 0x3bdd
         | 0x3bdf | 0x3be1 | 0x3be3 | 0x3be5 | 0x3be7 | 0x3be9 | 0x3beb | 0x3bed | 0x3bef
         | 0x3bf1 | 0x3bf3 | 0x3bf5 | 0x3bf7 | 0x3bf9 | 0x3bfb | 0x3bfd | 0x3bff => {
-            parse_arm_3853(ins, pc)
+            if (ins & 0xff100010) == 0xfe100010 {
+                parse_arm_mrc2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe100010 {
+                parse_arm_mrc_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3854 | 0x3856 | 0x385c | 0x385e | 0x3874 | 0x3876 | 0x387c | 0x387e | 0x3954
         | 0x3956 | 0x395c | 0x395e | 0x3974 | 0x3976 | 0x397c | 0x397e => {
-            parse_arm_3854(ins, pc)
+            if (ins & 0xfb00f50) == 0xe100b40 {
+                parse_arm_vnmla_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3880 | 0x3882 | 0x3888 | 0x388a | 0x38a0 | 0x38a2 | 0x38a8 | 0x38aa | 0x3980
         | 0x3982 | 0x3988 | 0x398a | 0x39a0 | 0x39a2 | 0x39a8 | 0x39aa => {
-            parse_arm_3880(ins, pc)
+            if (ins & 0xfb00f50) == 0xe200a00 {
+                parse_arm_vmul_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3884 | 0x3886 | 0x388c | 0x388e | 0x38a4 | 0x38a6 | 0x38ac | 0x38ae | 0x3984
         | 0x3986 | 0x398c | 0x398e | 0x39a4 | 0x39a6 | 0x39ac | 0x39ae => {
-            parse_arm_3884(ins, pc)
+            if (ins & 0xfb00f50) == 0xe200a40 {
+                parse_arm_vnmul_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3890 | 0x3892 | 0x3898 | 0x389a | 0x38b0 | 0x38b2 | 0x38b8 | 0x38ba | 0x3990
         | 0x3992 | 0x3998 | 0x399a | 0x39b0 | 0x39b2 | 0x39b8 | 0x39ba => {
-            parse_arm_3890(ins, pc)
+            if (ins & 0xfb00f50) == 0xe200b00 {
+                parse_arm_vmul_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3894 | 0x3896 | 0x389c | 0x389e | 0x38b4 | 0x38b6 | 0x38bc | 0x38be | 0x3994
         | 0x3996 | 0x399c | 0x399e | 0x39b4 | 0x39b6 | 0x39bc | 0x39be => {
-            parse_arm_3894(ins, pc)
+            if (ins & 0xfb00f50) == 0xe200b40 {
+                parse_arm_vnmul_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x38c0 | 0x38c2 | 0x38c8 | 0x38ca | 0x38e0 | 0x38e2 | 0x38e8 | 0x38ea | 0x39c0
         | 0x39c2 | 0x39c8 | 0x39ca | 0x39e0 | 0x39e2 | 0x39e8 | 0x39ea => {
-            parse_arm_38c0(ins, pc)
+            if (ins & 0xfb00f50) == 0xe300a00 {
+                parse_arm_vadd_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x38c4 | 0x38c6 | 0x38cc | 0x38ce | 0x38e4 | 0x38e6 | 0x38ec | 0x38ee | 0x39c4
         | 0x39c6 | 0x39cc | 0x39ce | 0x39e4 | 0x39e6 | 0x39ec | 0x39ee => {
-            parse_arm_38c4(ins, pc)
+            if (ins & 0xfb00f50) == 0xe300a40 {
+                parse_arm_vsub_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x38d0 | 0x38d2 | 0x38d8 | 0x38da | 0x38f0 | 0x38f2 | 0x38f8 | 0x38fa | 0x39d0
         | 0x39d2 | 0x39d8 | 0x39da | 0x39f0 | 0x39f2 | 0x39f8 | 0x39fa => {
-            parse_arm_38d0(ins, pc)
+            if (ins & 0xfb00f50) == 0xe300b00 {
+                parse_arm_vadd_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x38d4 | 0x38d6 | 0x38dc | 0x38de | 0x38f4 | 0x38f6 | 0x38fc | 0x38fe | 0x39d4
         | 0x39d6 | 0x39dc | 0x39de | 0x39f4 | 0x39f6 | 0x39fc | 0x39fe => {
-            parse_arm_38d4(ins, pc)
+            if (ins & 0xfb00f50) == 0xe300b40 {
+                parse_arm_vsub_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3a00 | 0x3a02 | 0x3a08 | 0x3a0a | 0x3a20 | 0x3a22 | 0x3a28 | 0x3a2a | 0x3b00
         | 0x3b02 | 0x3b08 | 0x3b0a | 0x3b20 | 0x3b22 | 0x3b28 | 0x3b2a => {
-            parse_arm_3a00(ins, pc)
+            if (ins & 0xfb00f50) == 0xe800a00 {
+                parse_arm_vdiv_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3a04 | 0x3a06 | 0x3a0c | 0x3a0e | 0x3a14 | 0x3a16 | 0x3a1c | 0x3a1e | 0x3a24
         | 0x3a26 | 0x3a2c | 0x3a2e | 0x3a34 | 0x3a36 | 0x3a3c | 0x3a3e | 0x3a40 | 0x3a42
@@ -2376,24 +4594,172 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3ba4 | 0x3ba6 | 0x3ba8 | 0x3baa | 0x3bac | 0x3bae | 0x3bb0 | 0x3bb2 | 0x3bb4
         | 0x3bb6 | 0x3bb8 | 0x3bba | 0x3bbc | 0x3bbe | 0x3bc0 | 0x3bc2 | 0x3bc8 | 0x3bca
         | 0x3bd0 | 0x3bd2 | 0x3bd8 | 0x3bda | 0x3be0 | 0x3be2 | 0x3be8 | 0x3bea | 0x3bf0
-        | 0x3bf2 | 0x3bf8 | 0x3bfa => parse_arm_3a04(ins, pc),
+        | 0x3bf2 | 0x3bf8 | 0x3bfa => {
+            if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3a10 | 0x3a12 | 0x3a18 | 0x3a1a | 0x3a30 | 0x3a32 | 0x3a38 | 0x3a3a | 0x3b10
         | 0x3b12 | 0x3b18 | 0x3b1a | 0x3b30 | 0x3b32 | 0x3b38 | 0x3b3a => {
-            parse_arm_3a10(ins, pc)
+            if (ins & 0xfb00f50) == 0xe800b00 {
+                parse_arm_vdiv_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
         }
-        0x3ac4 | 0x3ac6 | 0x3bc4 | 0x3bc6 => parse_arm_3ac4(ins, pc),
-        0x3acc | 0x3ace | 0x3bcc | 0x3bce => parse_arm_3acc(ins, pc),
-        0x3ad4 | 0x3ad6 | 0x3bd4 | 0x3bd6 => parse_arm_3ad4(ins, pc),
-        0x3adc | 0x3ade | 0x3bdc | 0x3bde => parse_arm_3adc(ins, pc),
-        0x3ae4 | 0x3ae6 | 0x3be4 | 0x3be6 => parse_arm_3ae4(ins, pc),
-        0x3aec | 0x3aee | 0x3bec | 0x3bee => parse_arm_3aec(ins, pc),
-        0x3af4 | 0x3af6 | 0x3bf4 | 0x3bf6 => parse_arm_3af4(ins, pc),
-        0x3afc | 0x3afe | 0x3bfc | 0x3bfe => parse_arm_3afc(ins, pc),
+        0x3ac4 | 0x3ac6 | 0x3bc4 | 0x3bc6 => {
+            if (ins & 0xfbf0fd0) == 0xeb00a40 {
+                parse_arm_vmov_f32_0(ins, pc)
+            } else if (ins & 0xfbf0fd0) == 0xeb10a40 {
+                parse_arm_vneg_f32_0(ins, pc)
+            } else if (ins & 0xfbf0f50) == 0xeb40a40 {
+                parse_arm_vcmp_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3acc | 0x3ace | 0x3bcc | 0x3bce => {
+            if (ins & 0xfbf0fd0) == 0xeb00ac0 {
+                parse_arm_vabs_f32_0(ins, pc)
+            } else if (ins & 0xfbf0fd0) == 0xeb70ac0 {
+                parse_arm_vcvt_f64_f32_0(ins, pc)
+            } else if (ins & 0xfbf0fd0) == 0xeb10ac0 {
+                parse_arm_vsqrt_f32_0(ins, pc)
+            } else if (ins & 0xfbf0f50) == 0xeb40a40 {
+                parse_arm_vcmp_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3ad4 | 0x3ad6 | 0x3bd4 | 0x3bd6 => {
+            if (ins & 0xfbf0fd0) == 0xeb00b40 {
+                parse_arm_vmov_f64_0(ins, pc)
+            } else if (ins & 0xfbf0fd0) == 0xeb10b40 {
+                parse_arm_vneg_f64_0(ins, pc)
+            } else if (ins & 0xfbf0f50) == 0xeb40b40 {
+                parse_arm_vcmp_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3adc | 0x3ade | 0x3bdc | 0x3bde => {
+            if (ins & 0xfbf0fd0) == 0xeb00bc0 {
+                parse_arm_vabs_f64_0(ins, pc)
+            } else if (ins & 0xfbf0fd0) == 0xeb70bc0 {
+                parse_arm_vcvt_f32_f64_0(ins, pc)
+            } else if (ins & 0xfbf0fd0) == 0xeb10bc0 {
+                parse_arm_vsqrt_f64_0(ins, pc)
+            } else if (ins & 0xfbf0f50) == 0xeb40b40 {
+                parse_arm_vcmp_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3ae4 | 0x3ae6 | 0x3be4 | 0x3be6 => {
+            if (ins & 0xfbc0fd0) == 0xeb80a40 {
+                parse_arm_vcvt_f32_u32_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebd0a40 {
+                parse_arm_vcvt_s32_f32_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebc0a40 {
+                parse_arm_vcvt_u32_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3aec | 0x3aee | 0x3bec | 0x3bee => {
+            if (ins & 0xfbc0fd0) == 0xeb80ac0 {
+                parse_arm_vcvt_f32_s32_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebd0a40 {
+                parse_arm_vcvt_s32_f32_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebc0a40 {
+                parse_arm_vcvt_u32_f32_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3af4 | 0x3af6 | 0x3bf4 | 0x3bf6 => {
+            if (ins & 0xfbc0fd0) == 0xeb80b40 {
+                parse_arm_vcvt_f64_u32_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebd0b40 {
+                parse_arm_vcvt_s32_f64_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebc0b40 {
+                parse_arm_vcvt_u32_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x3afc | 0x3afe | 0x3bfc | 0x3bfe => {
+            if (ins & 0xfbc0fd0) == 0xeb80bc0 {
+                parse_arm_vcvt_f64_s32_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebd0b40 {
+                parse_arm_vcvt_s32_f64_0(ins, pc)
+            } else if (ins & 0xfbd0f50) == 0xebc0b40 {
+                parse_arm_vcvt_u32_f64_0(ins, pc)
+            } else if (ins & 0xff000010) == 0xfe000000 {
+                parse_arm_cdp2_0(ins, pc)
+            } else if (ins & 0xf000010) == 0xe000000 {
+                parse_arm_cdp_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x3b81 | 0x3b83 | 0x3b85 | 0x3b87 | 0x3b89 | 0x3b8b | 0x3b8d | 0x3b8f => {
-            parse_arm_3b81(ins, pc)
+            if (ins & 0xfff0f10) == 0xee10a10 {
+                parse_arm_vmsr_0(ins, pc)
+            } else if (ins & 0xff100010) == 0xfe000010 {
+                parse_arm_mcr2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe000010 {
+                parse_arm_mcr_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3bc1 | 0x3bc3 | 0x3bc5 | 0x3bc7 | 0x3bc9 | 0x3bcb | 0x3bcd | 0x3bcf => {
-            parse_arm_3bc1(ins, pc)
+            if (ins & 0xfff0f10) == 0xef10a10 {
+                parse_arm_vmrs_0(ins, pc)
+            } else if (ins & 0xff100010) == 0xfe100010 {
+                parse_arm_mrc2_0(ins, pc)
+            } else if (ins & 0xf100010) == 0xe100010 {
+                parse_arm_mrc_0(ins, pc)
+            } else {
+                None
+            }
         }
         0x3c00 | 0x3c01 | 0x3c02 | 0x3c03 | 0x3c04 | 0x3c05 | 0x3c06 | 0x3c07 | 0x3c08
         | 0x3c09 | 0x3c0a | 0x3c0b | 0x3c0c | 0x3c0d | 0x3c0e | 0x3c0f | 0x3c10 | 0x3c11
@@ -2509,3011 +4875,187 @@ pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3fe7 | 0x3fe8 | 0x3fe9 | 0x3fea | 0x3feb | 0x3fec | 0x3fed | 0x3fee | 0x3fef
         | 0x3ff0 | 0x3ff1 | 0x3ff2 | 0x3ff3 | 0x3ff4 | 0x3ff5 | 0x3ff6 | 0x3ff7 | 0x3ff8
         | 0x3ff9 | 0x3ffa | 0x3ffb | 0x3ffc | 0x3ffd | 0x3ffe | 0x3fff => {
-            parse_arm_3c00(ins, pc)
+            parse_arm_svc_0(ins, pc)
         }
         _ => unreachable!(),
     }
 }
-fn parse_arm_0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_and_0(ins, pc)
-}
-fn parse_arm_9(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000f0) == 0x90 {
-        parse_arm_mul_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_4b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_4d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_4f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x0 {
-        parse_arm_and_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_80(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_eor_0(ins, pc)
-}
-fn parse_arm_89(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000f0) == 0x200090 {
-        parse_arm_mla_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_8b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_8d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_8f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x200000 {
-        parse_arm_eor_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_100(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_sub_0(ins, pc)
-}
-fn parse_arm_109(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x400090 {
-        parse_arm_umaal_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_10b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_10d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_10f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_12d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_14b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_14d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_14f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x400000 {
-        parse_arm_sub_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_180(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_rsb_0(ins, pc)
-}
-fn parse_arm_18b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1ad(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x600000 {
-        parse_arm_rsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_200(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_add_0(ins, pc)
-}
-fn parse_arm_209(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000f0) == 0x800090 {
-        parse_arm_umull_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_20b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_20d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_20f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_24b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_24d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_24f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x800000 {
-        parse_arm_add_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_280(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_adc_0(ins, pc)
-}
-fn parse_arm_289(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000f0) == 0xa00090 {
-        parse_arm_umlal_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_28b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_28d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_28f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xa00000 {
-        parse_arm_adc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_300(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_sbc_0(ins, pc)
-}
-fn parse_arm_309(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000f0) == 0xc00090 {
-        parse_arm_smull_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_30b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_30d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_30f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_32d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_34b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_34d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_34f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xc00000 {
-        parse_arm_sbc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_380(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_rsc_0(ins, pc)
-}
-fn parse_arm_389(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000f0) == 0xe00090 {
-        parse_arm_smlal_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3ad(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0xe00000 {
-        parse_arm_rsc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_400(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff100f0) == 0xf1010000 {
-        parse_arm_setend_0(ins, pc)
-    } else if (ins & 0xfff10020) == 0xf1000000 {
-        parse_arm_cps_0(ins, pc)
-    } else if (ins & 0xfb002f0) == 0x1000000 {
-        parse_arm_mrs_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_401(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_cps_0(ins, pc)
-}
-fn parse_arm_402(ins: u32, pc: u32) -> Option<Ins> {
-    None
-}
-fn parse_arm_405(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff10020) == 0xf1000000 {
-        parse_arm_cps_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x1000050 {
-        parse_arm_qadd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_408(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff10020) == 0xf1000000 {
-        parse_arm_cps_0(ins, pc)
-    } else if (ins & 0xff00090) == 0x1000080 {
-        parse_arm_smla_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_409(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff10020) == 0xf1000000 {
-        parse_arm_cps_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x1000090 {
-        parse_arm_swp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_40a(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_smla_0(ins, pc)
-}
-fn parse_arm_40b(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_strh_0(ins, pc)
-}
-fn parse_arm_40d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff10020) == 0xf1000000 {
-        parse_arm_cps_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_40f(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_strd_0(ins, pc)
-}
-fn parse_arm_440(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_tst_0(ins, pc)
-}
-fn parse_arm_44b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1100000 {
-        parse_arm_tst_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_44d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1100000 {
-        parse_arm_tst_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_44f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1100000 {
-        parse_arm_tst_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_480(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_msr_0(ins, pc)
-}
-fn parse_arm_481(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1200010 {
-        parse_arm_bx_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_482(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1200020 {
-        parse_arm_bxj_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_483(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1200030 {
-        parse_arm_blx_1(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_485(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1200050 {
-        parse_arm_qsub_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_487(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff000f0) == 0xe1200070 {
-        parse_arm_bkpt_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_488(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000b0) == 0x1200080 {
-        parse_arm_smlaw_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_48a(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000b0) == 0x12000a0 {
-        parse_arm_smulw_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_48b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_48d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_48f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_4c0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_teq_0(ins, pc)
-}
-fn parse_arm_4cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1300000 {
-        parse_arm_teq_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_4cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1300000 {
-        parse_arm_teq_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_4cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1300000 {
-        parse_arm_teq_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_500(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_mrs_0(ins, pc)
-}
-fn parse_arm_505(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_qdadd_0(ins, pc)
-}
-fn parse_arm_508(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_smlal_half_0(ins, pc)
-}
-fn parse_arm_509(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_swpb_0(ins, pc)
-}
-fn parse_arm_50d(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldrd_0(ins, pc)
-}
-fn parse_arm_52d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_540(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_cmp_0(ins, pc)
-}
-fn parse_arm_54b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1500000 {
-        parse_arm_cmp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_54d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1500000 {
-        parse_arm_cmp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_54f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1500000 {
-        parse_arm_cmp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_581(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1600010 {
-        parse_arm_clz_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_585(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1600050 {
-        parse_arm_qdsub_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_588(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00090) == 0x1600080 {
-        parse_arm_smul_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_5ad(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_5c0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_cmn_0(ins, pc)
-}
-fn parse_arm_5cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1700000 {
-        parse_arm_cmn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_5cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1700000 {
-        parse_arm_cmn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_5cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xdf00000) == 0x1700000 {
-        parse_arm_cmn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_600(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_orr_0(ins, pc)
-}
-fn parse_arm_609(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1800090 {
-        parse_arm_strex_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_60b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_60d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_60f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_649(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1900090 {
-        parse_arm_ldrex_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_64b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_64d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_64f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1800000 {
-        parse_arm_orr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_680(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe00ff0) == 0x1a00000 {
-        parse_arm_mov_1(ins, pc)
-    } else if (ins & 0xfef0060) == 0x1a00000 {
-        parse_arm_lsl_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_681(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_lsl_0(ins, pc)
-}
-fn parse_arm_682(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_lsr_0(ins, pc)
-}
-fn parse_arm_684(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_asr_0(ins, pc)
-}
-fn parse_arm_686(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe00ff0) == 0x1a00060 {
-        parse_arm_rrx_0(ins, pc)
-    } else if (ins & 0xfef0060) == 0x1a00060 {
-        parse_arm_ror_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_687(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ror_0(ins, pc)
-}
-fn parse_arm_689(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00000 {
-        parse_arm_lsl_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x1a00090 {
-        parse_arm_strexd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_68b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00020 {
-        parse_arm_lsr_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_68d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00040 {
-        parse_arm_asr_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_68f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00060 {
-        parse_arm_ror_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_6a0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_mov_1(ins, pc)
-}
-fn parse_arm_6a6(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_rrx_0(ins, pc)
-}
-fn parse_arm_6a9(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_strexd_0(ins, pc)
-}
-fn parse_arm_6c9(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00000 {
-        parse_arm_lsl_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x1b00090 {
-        parse_arm_ldrexd_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_6cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00020 {
-        parse_arm_lsr_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_6cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00040 {
-        parse_arm_asr_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_6cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfef0060) == 0x1a00060 {
-        parse_arm_ror_0(ins, pc)
-    } else if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_6e9(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldrexd_0(ins, pc)
-}
-fn parse_arm_6eb(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldrh_0(ins, pc)
-}
-fn parse_arm_6ed(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldrsb_0(ins, pc)
-}
-fn parse_arm_6ef(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldrsh_0(ins, pc)
-}
-fn parse_arm_700(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_bic_0(ins, pc)
-}
-fn parse_arm_709(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1c00090 {
-        parse_arm_strexb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_70b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_70d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_70f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_72d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_749(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1d00090 {
-        parse_arm_ldrexb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_74b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_74d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_74f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1c00000 {
-        parse_arm_bic_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_780(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_mvn_0(ins, pc)
-}
-fn parse_arm_789(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1e00090 {
-        parse_arm_strexh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_78b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xb0 {
-        parse_arm_strh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_78d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_78f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0xf0 {
-        parse_arm_strd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_7ad(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe5f00f0) == 0x4f00d0 {
-        parse_arm_ldrd_1(ins, pc)
-    } else if (ins & 0xe1000f0) == 0xd0 {
-        parse_arm_ldrd_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_7c9(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x1f00090 {
-        parse_arm_ldrexh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_7cb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000b0 {
-        parse_arm_ldrh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_7cd(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000d0 {
-        parse_arm_ldrsb_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_7cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe1000f0) == 0x1000f0 {
-        parse_arm_ldrsh_0(ins, pc)
-    } else if (ins & 0xde00000) == 0x1e00000 {
-        parse_arm_mvn_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_c80(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00ff) == 0x3200000 {
-        parse_arm_nop_0(ins, pc)
-    } else if (ins & 0xfff00ff) == 0x3200004 {
-        parse_arm_sev_0(ins, pc)
-    } else if (ins & 0xfff00ff) == 0x3200002 {
-        parse_arm_wfe_0(ins, pc)
-    } else if (ins & 0xfff00ff) == 0x3200003 {
-        parse_arm_wfi_0(ins, pc)
-    } else if (ins & 0xfff00ff) == 0x3200001 {
-        parse_arm_yield_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_c81(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00ff) == 0x3200014 {
-        parse_arm_csdb_0(ins, pc)
-    } else if (ins & 0xdb00000) == 0x1200000 {
-        parse_arm_msr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_e80(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_mov_0(ins, pc)
-}
-fn parse_arm_1000(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_str_0(ins, pc)
-}
-fn parse_arm_1040(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldr_0(ins, pc)
-}
-fn parse_arm_1080(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_10c0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1100(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_strb_0(ins, pc)
-}
-fn parse_arm_1140(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldrb_0(ins, pc)
-}
-fn parse_arm_1180(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_11c0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1260(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff0fff) == 0x49d0004 {
-        parse_arm_pop_1(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_14a0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff0fff) == 0x52d0004 {
-        parse_arm_push_1(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1540(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfd700000) == 0xf5500000 {
-        parse_arm_pld_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_15c1(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff000f0) == 0xf5700010 {
-        parse_arm_clrex_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1841(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6100010 {
-        parse_arm_sadd16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1843(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6100030 {
-        parse_arm_sasx_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1845(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6100050 {
-        parse_arm_ssax_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1847(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6100070 {
-        parse_arm_ssub16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1849(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6100090 {
-        parse_arm_sadd8_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_184f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x61000f0 {
-        parse_arm_ssub8_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1881(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6200010 {
-        parse_arm_qadd16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1883(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6200030 {
-        parse_arm_qasx_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1885(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6200050 {
-        parse_arm_qsax_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1887(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6200070 {
-        parse_arm_qsub16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1889(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6200090 {
-        parse_arm_qadd8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_188f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x62000f0 {
-        parse_arm_qsub8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18c1(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6300010 {
-        parse_arm_shadd16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18c3(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6300030 {
-        parse_arm_shasx_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18c5(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6300050 {
-        parse_arm_shsax_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18c7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6300070 {
-        parse_arm_shsub16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18c9(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6300090 {
-        parse_arm_shadd8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_18cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x63000f0 {
-        parse_arm_shsub8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1941(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6500010 {
-        parse_arm_uadd16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1943(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6500030 {
-        parse_arm_uasx_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1945(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6500050 {
-        parse_arm_usax_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1947(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6500070 {
-        parse_arm_usub16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1949(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6500090 {
-        parse_arm_uadd8_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_194f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x65000f0 {
-        parse_arm_usub8_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1981(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6600010 {
-        parse_arm_uqadd16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1983(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6600030 {
-        parse_arm_uqasx_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1985(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6600050 {
-        parse_arm_uqsax_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1987(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6600070 {
-        parse_arm_uqsub16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1989(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6600090 {
-        parse_arm_uqadd8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_198f(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x66000f0 {
-        parse_arm_uqsub8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_19c1(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6700010 {
-        parse_arm_uhadd16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_19c3(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6700030 {
-        parse_arm_uhasx_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_19c5(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6700050 {
-        parse_arm_uhsax_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_19c7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6700070 {
-        parse_arm_uhsub16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_19c9(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6700090 {
-        parse_arm_uhadd8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_19cf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x67000f0 {
-        parse_arm_uhsub8_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a01(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00070) == 0x6800010 {
-        parse_arm_pkhbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a05(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00070) == 0x6800050 {
-        parse_arm_pkhtb_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a07(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6800070 {
-        parse_arm_sxtab16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a0b(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x68000b0 {
-        parse_arm_sel_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a27(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00f0) == 0x68f0070 {
-        parse_arm_sxtb16_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x6800070 {
-        parse_arm_sxtab16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a81(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe00030) == 0x6a00010 {
-        parse_arm_ssat_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a83(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6a00030 {
-        parse_arm_ssat16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1a87(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6a00070 {
-        parse_arm_sxtab_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1aa7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00f0) == 0x6af0070 {
-        parse_arm_sxtb_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x6a00070 {
-        parse_arm_sxtab_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4200000 {
-        parse_arm_strt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1ac1(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe00030) == 0x6a00010 {
-        parse_arm_ssat_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1ac3(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6b00030 {
-        parse_arm_rev_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1ac7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6b00070 {
-        parse_arm_sxtah_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1acb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6b000b0 {
-        parse_arm_rev16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1ae7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00f0) == 0x6bf0070 {
-        parse_arm_sxth_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x6b00070 {
-        parse_arm_sxtah_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4300000 {
-        parse_arm_ldrt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4100000 {
-        parse_arm_ldr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1b07(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6c00070 {
-        parse_arm_uxtab16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1b27(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00f0) == 0x6cf0070 {
-        parse_arm_uxtb16_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x6c00070 {
-        parse_arm_uxtab16_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1b81(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe00030) == 0x6e00010 {
-        parse_arm_usat_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1b83(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6e00030 {
-        parse_arm_usat16_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1b87(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6e00070 {
-        parse_arm_uxtab_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1ba7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00f0) == 0x6ef0070 {
-        parse_arm_uxtb_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x6e00070 {
-        parse_arm_uxtab_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4600000 {
-        parse_arm_strbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1bc1(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe00030) == 0x6e00010 {
-        parse_arm_usat_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1bc7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6f00070 {
-        parse_arm_uxtah_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1bcb(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000f0) == 0x6f000b0 {
-        parse_arm_revsh_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1be7(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00f0) == 0x6ff0070 {
-        parse_arm_uxth_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x6f00070 {
-        parse_arm_uxtah_0(ins, pc)
-    } else if (ins & 0xd700000) == 0x4700000 {
-        parse_arm_ldrbt_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1c01(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff0f0d0) == 0x700f010 {
-        parse_arm_smuad_0(ins, pc)
-    } else if (ins & 0xff000d0) == 0x7000010 {
-        parse_arm_smlad_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1c05(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff0f0d0) == 0x700f050 {
-        parse_arm_smusd_0(ins, pc)
-    } else if (ins & 0xff000d0) == 0x7000050 {
-        parse_arm_smlsd_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1d01(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000d0) == 0x7400010 {
-        parse_arm_smlald_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1d05(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000d0) == 0x7400050 {
-        parse_arm_smlsld_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4400000 {
-        parse_arm_strb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1d41(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff0f0d0) == 0x750f010 {
-        parse_arm_smmul_0(ins, pc)
-    } else if (ins & 0xff000d0) == 0x7500010 {
-        parse_arm_smmla_0(ins, pc)
-    } else if (ins & 0xfd700000) == 0xf5500000 {
-        parse_arm_pld_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1d4d(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000d0) == 0x75000d0 {
-        parse_arm_smmls_0(ins, pc)
-    } else if (ins & 0xfd700000) == 0xf5500000 {
-        parse_arm_pld_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1e01(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff0f0f0) == 0x780f010 {
-        parse_arm_usad8_0(ins, pc)
-    } else if (ins & 0xff000f0) == 0x7800010 {
-        parse_arm_usada8_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4000000 {
-        parse_arm_str_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_1fcf(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff000f0) == 0xe7f000f0 {
-        parse_arm_udf_0(ins, pc)
-    } else if (ins & 0xc500000) == 0x4500000 {
-        parse_arm_ldrb_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2000(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_stm_0(ins, pc)
-}
-fn parse_arm_2040(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe500000) == 0xf8100000 {
-        parse_arm_rfe_0(ins, pc)
-    } else if (ins & 0xe500000) == 0x8100000 {
-        parse_arm_ldm_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2100(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe500000) == 0xf8400000 {
-        parse_arm_srs_0(ins, pc)
-    } else if (ins & 0xe100000) == 0x8000000 {
-        parse_arm_stm_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2140(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xe708000) == 0x8500000 {
-        parse_arm_ldm_1(ins, pc)
-    } else if (ins & 0xe508000) == 0x8508000 {
-        parse_arm_ldm_2(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_21c0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_ldm_2(ins, pc)
-}
-fn parse_arm_22e0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff0000) == 0x8bd0000 {
-        parse_arm_pop_0(ins, pc)
-    } else if (ins & 0xfe500000) == 0xf8100000 {
-        parse_arm_rfe_0(ins, pc)
-    } else if (ins & 0xe500000) == 0x8100000 {
-        parse_arm_ldm_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_24a0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff0000) == 0x92d0000 {
-        parse_arm_push_0(ins, pc)
-    } else if (ins & 0xe100000) == 0x8000000 {
-        parse_arm_stm_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2800(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000000) == 0xfa000000 {
-        parse_arm_blx_0(ins, pc)
-    } else if (ins & 0xf000000) == 0xa000000 {
-        parse_arm_b_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_2c00(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe000000) == 0xfa000000 {
-        parse_arm_blx_0(ins, pc)
-    } else if (ins & 0xf000000) == 0xb000000 {
-        parse_arm_bl_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3000(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000a00 {
-        parse_arm_vstm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3010(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000b00 {
-        parse_arm_vstm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3040(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100a00 {
-        parse_arm_vldm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3050(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100b00 {
-        parse_arm_vldm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3100(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00000) == 0xfc400000 {
-        parse_arm_mcrr2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc400000 {
-        parse_arm_mcrr_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000a00 {
-        parse_arm_vstm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3101(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00fd0) == 0xc400a10 {
-        parse_arm_vmov_f32_reg_dual_0(ins, pc)
-    } else if (ins & 0xfff00000) == 0xfc400000 {
-        parse_arm_mcrr2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc400000 {
-        parse_arm_mcrr_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000a00 {
-        parse_arm_vstm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3110(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00000) == 0xfc400000 {
-        parse_arm_mcrr2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc400000 {
-        parse_arm_mcrr_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000b00 {
-        parse_arm_vstm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3111(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00fd0) == 0xc400b10 {
-        parse_arm_vmov_f64_reg_0(ins, pc)
-    } else if (ins & 0xfff00000) == 0xfc400000 {
-        parse_arm_mcrr2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc400000 {
-        parse_arm_mcrr_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000b00 {
-        parse_arm_vstm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3140(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00000) == 0xfc500000 {
-        parse_arm_mrrc2_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc500000 {
-        parse_arm_mrrc_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100a00 {
-        parse_arm_vldm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3141(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00fd0) == 0xc500a10 {
-        parse_arm_vmov_reg_f32_dual_0(ins, pc)
-    } else if (ins & 0xfff00000) == 0xfc500000 {
-        parse_arm_mrrc2_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc500000 {
-        parse_arm_mrrc_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100a00 {
-        parse_arm_vldm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3150(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff00000) == 0xfc500000 {
-        parse_arm_mrrc2_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc500000 {
-        parse_arm_mrrc_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100b00 {
-        parse_arm_vldm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3151(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00fd0) == 0xc500b10 {
-        parse_arm_vmov_reg_f64_0(ins, pc)
-    } else if (ins & 0xfff00000) == 0xfc500000 {
-        parse_arm_mrrc2_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xff00000) == 0xc500000 {
-        parse_arm_mrrc_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100b00 {
-        parse_arm_vldm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_32e0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0f00) == 0xcbd0a00 {
-        parse_arm_vpop_f32_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100a00 {
-        parse_arm_vldm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_32f0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0f00) == 0xcbd0b00 {
-        parse_arm_vpop_f64_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100b00 {
-        parse_arm_vldm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3400(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xf300f00) == 0xd000a00 {
-        parse_arm_vstr_f32_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000a00 {
-        parse_arm_vstm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3410(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xf300f00) == 0xd000b00 {
-        parse_arm_vstr_f64_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000b00 {
-        parse_arm_vstm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3440(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xf300f00) == 0xd100a00 {
-        parse_arm_vldr_f32_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100a00 {
-        parse_arm_vldm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3450(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xf300f00) == 0xd100b00 {
-        parse_arm_vldr_f64_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc100000 {
-        parse_arm_ldc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc100b00 {
-        parse_arm_vldm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc100000 {
-        parse_arm_ldc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_34a0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0f00) == 0xd2d0a00 {
-        parse_arm_vpush_f32_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000a00 {
-        parse_arm_vstm_f32_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_34b0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0f00) == 0xd2d0b00 {
-        parse_arm_vpush_f64_0(ins, pc)
-    } else if (ins & 0xfe100000) == 0xfc000000 {
-        parse_arm_stc2_0(ins, pc)
-    } else if (ins & 0xe100f00) == 0xc000b00 {
-        parse_arm_vstm_f64_0(ins, pc)
-    } else if (ins & 0xe100000) == 0xc000000 {
-        parse_arm_stc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3800(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe000a00 {
-        parse_arm_vmla_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3801(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00f10) == 0xe000a10 {
-        parse_arm_vmov_f32_reg_0(ins, pc)
-    } else if (ins & 0xff100010) == 0xfe000010 {
-        parse_arm_mcr2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe000010 {
-        parse_arm_mcr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3804(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe000a40 {
-        parse_arm_vmls_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3810(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe000b00 {
-        parse_arm_vmla_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3811(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfd00f70) == 0xe000b10 {
-        parse_arm_vmov_32_reg_0(ins, pc)
-    } else if (ins & 0xff100010) == 0xfe000010 {
-        parse_arm_mcr2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe000010 {
-        parse_arm_mcr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3813(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff100010) == 0xfe000010 {
-        parse_arm_mcr2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe000010 {
-        parse_arm_mcr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3814(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe000b40 {
-        parse_arm_vmls_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3840(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe100a00 {
-        parse_arm_vnmls_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3841(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00f10) == 0xe100a10 {
-        parse_arm_vmov_reg_f32_0(ins, pc)
-    } else if (ins & 0xff100010) == 0xfe100010 {
-        parse_arm_mrc2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe100010 {
-        parse_arm_mrc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3844(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe100a40 {
-        parse_arm_vnmla_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3850(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe100b00 {
-        parse_arm_vnmls_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3851(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfd00f70) == 0xe100b10 {
-        parse_arm_vmov_reg_32_0(ins, pc)
-    } else if (ins & 0xff100010) == 0xfe100010 {
-        parse_arm_mrc2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe100010 {
-        parse_arm_mrc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3853(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff100010) == 0xfe100010 {
-        parse_arm_mrc2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe100010 {
-        parse_arm_mrc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3854(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe100b40 {
-        parse_arm_vnmla_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3880(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe200a00 {
-        parse_arm_vmul_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3884(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe200a40 {
-        parse_arm_vnmul_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3890(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe200b00 {
-        parse_arm_vmul_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3894(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe200b40 {
-        parse_arm_vnmul_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38c0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe300a00 {
-        parse_arm_vadd_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38c4(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe300a40 {
-        parse_arm_vsub_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38d0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe300b00 {
-        parse_arm_vadd_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_38d4(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe300b40 {
-        parse_arm_vsub_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3a00(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe800a00 {
-        parse_arm_vdiv_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3a04(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3a10(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfb00f50) == 0xe800b00 {
-        parse_arm_vdiv_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3ac4(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0fd0) == 0xeb00a40 {
-        parse_arm_vmov_f32_0(ins, pc)
-    } else if (ins & 0xfbf0fd0) == 0xeb10a40 {
-        parse_arm_vneg_f32_0(ins, pc)
-    } else if (ins & 0xfbf0f50) == 0xeb40a40 {
-        parse_arm_vcmp_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3acc(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0fd0) == 0xeb00ac0 {
-        parse_arm_vabs_f32_0(ins, pc)
-    } else if (ins & 0xfbf0fd0) == 0xeb70ac0 {
-        parse_arm_vcvt_f64_f32_0(ins, pc)
-    } else if (ins & 0xfbf0fd0) == 0xeb10ac0 {
-        parse_arm_vsqrt_f32_0(ins, pc)
-    } else if (ins & 0xfbf0f50) == 0xeb40a40 {
-        parse_arm_vcmp_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3ad4(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0fd0) == 0xeb00b40 {
-        parse_arm_vmov_f64_0(ins, pc)
-    } else if (ins & 0xfbf0fd0) == 0xeb10b40 {
-        parse_arm_vneg_f64_0(ins, pc)
-    } else if (ins & 0xfbf0f50) == 0xeb40b40 {
-        parse_arm_vcmp_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3adc(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbf0fd0) == 0xeb00bc0 {
-        parse_arm_vabs_f64_0(ins, pc)
-    } else if (ins & 0xfbf0fd0) == 0xeb70bc0 {
-        parse_arm_vcvt_f32_f64_0(ins, pc)
-    } else if (ins & 0xfbf0fd0) == 0xeb10bc0 {
-        parse_arm_vsqrt_f64_0(ins, pc)
-    } else if (ins & 0xfbf0f50) == 0xeb40b40 {
-        parse_arm_vcmp_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3ae4(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbc0fd0) == 0xeb80a40 {
-        parse_arm_vcvt_f32_u32_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebd0a40 {
-        parse_arm_vcvt_s32_f32_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebc0a40 {
-        parse_arm_vcvt_u32_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3aec(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbc0fd0) == 0xeb80ac0 {
-        parse_arm_vcvt_f32_s32_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebd0a40 {
-        parse_arm_vcvt_s32_f32_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebc0a40 {
-        parse_arm_vcvt_u32_f32_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3af4(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbc0fd0) == 0xeb80b40 {
-        parse_arm_vcvt_f64_u32_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebd0b40 {
-        parse_arm_vcvt_s32_f64_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebc0b40 {
-        parse_arm_vcvt_u32_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3afc(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfbc0fd0) == 0xeb80bc0 {
-        parse_arm_vcvt_f64_s32_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebd0b40 {
-        parse_arm_vcvt_s32_f64_0(ins, pc)
-    } else if (ins & 0xfbd0f50) == 0xebc0b40 {
-        parse_arm_vcvt_u32_f64_0(ins, pc)
-    } else if (ins & 0xff000010) == 0xfe000000 {
-        parse_arm_cdp2_0(ins, pc)
-    } else if (ins & 0xf000010) == 0xe000000 {
-        parse_arm_cdp_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3b81(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff0f10) == 0xee10a10 {
-        parse_arm_vmsr_0(ins, pc)
-    } else if (ins & 0xff100010) == 0xfe000010 {
-        parse_arm_mcr2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe000010 {
-        parse_arm_mcr_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3bc1(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xfff0f10) == 0xef10a10 {
-        parse_arm_vmrs_0(ins, pc)
-    } else if (ins & 0xff100010) == 0xfe100010 {
-        parse_arm_mrc2_0(ins, pc)
-    } else if (ins & 0xf100010) == 0xe100010 {
-        parse_arm_mrc_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_arm_3c00(ins: u32, pc: u32) -> Option<Ins> {
-    parse_arm_svc_0(ins, pc)
-}
 pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
     match (((ins) & 0xffc0) >> 6) {
-        0x0 => parse_thumb_0(ins, pc),
+        0x0 => {
+            if (ins & 0xffc0) == 0x0 {
+                parse_thumb_mov_2(ins, pc)
+            } else if (ins & 0xf800) == 0x0 {
+                parse_thumb_lsl_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xa | 0xb | 0xc | 0xd | 0xe
         | 0xf | 0x10 | 0x11 | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19
-        | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e | 0x1f => parse_thumb_1(ins, pc),
+        | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e | 0x1f => parse_thumb_lsl_0(ins, pc),
         0x20 | 0x21 | 0x22 | 0x23 | 0x24 | 0x25 | 0x26 | 0x27 | 0x28 | 0x29 | 0x2a | 0x2b
         | 0x2c | 0x2d | 0x2e | 0x2f | 0x30 | 0x31 | 0x32 | 0x33 | 0x34 | 0x35 | 0x36
         | 0x37 | 0x38 | 0x39 | 0x3a | 0x3b | 0x3c | 0x3d | 0x3e | 0x3f => {
-            parse_thumb_20(ins, pc)
+            parse_thumb_lsr_0(ins, pc)
         }
         0x40 | 0x41 | 0x42 | 0x43 | 0x44 | 0x45 | 0x46 | 0x47 | 0x48 | 0x49 | 0x4a | 0x4b
         | 0x4c | 0x4d | 0x4e | 0x4f | 0x50 | 0x51 | 0x52 | 0x53 | 0x54 | 0x55 | 0x56
         | 0x57 | 0x58 | 0x59 | 0x5a | 0x5b | 0x5c | 0x5d | 0x5e | 0x5f => {
-            parse_thumb_40(ins, pc)
+            parse_thumb_asr_0(ins, pc)
         }
-        0x60 | 0x61 | 0x62 | 0x63 | 0x64 | 0x65 | 0x66 | 0x67 => parse_thumb_60(ins, pc),
-        0x68 | 0x69 | 0x6a | 0x6b | 0x6c | 0x6d | 0x6e | 0x6f => parse_thumb_68(ins, pc),
-        0x70 | 0x71 | 0x72 | 0x73 | 0x74 | 0x75 | 0x76 | 0x77 => parse_thumb_70(ins, pc),
-        0x78 | 0x79 | 0x7a | 0x7b | 0x7c | 0x7d | 0x7e | 0x7f => parse_thumb_78(ins, pc),
+        0x60 | 0x61 | 0x62 | 0x63 | 0x64 | 0x65 | 0x66 | 0x67 => {
+            parse_thumb_add_2(ins, pc)
+        }
+        0x68 | 0x69 | 0x6a | 0x6b | 0x6c | 0x6d | 0x6e | 0x6f => {
+            parse_thumb_sub_2(ins, pc)
+        }
+        0x70 | 0x71 | 0x72 | 0x73 | 0x74 | 0x75 | 0x76 | 0x77 => {
+            parse_thumb_add_0(ins, pc)
+        }
+        0x78 | 0x79 | 0x7a | 0x7b | 0x7c | 0x7d | 0x7e | 0x7f => {
+            parse_thumb_sub_0(ins, pc)
+        }
         0x80 | 0x81 | 0x82 | 0x83 | 0x84 | 0x85 | 0x86 | 0x87 | 0x88 | 0x89 | 0x8a | 0x8b
         | 0x8c | 0x8d | 0x8e | 0x8f | 0x90 | 0x91 | 0x92 | 0x93 | 0x94 | 0x95 | 0x96
         | 0x97 | 0x98 | 0x99 | 0x9a | 0x9b | 0x9c | 0x9d | 0x9e | 0x9f => {
-            parse_thumb_80(ins, pc)
+            parse_thumb_mov_0(ins, pc)
         }
         0xa0 | 0xa1 | 0xa2 | 0xa3 | 0xa4 | 0xa5 | 0xa6 | 0xa7 | 0xa8 | 0xa9 | 0xaa | 0xab
         | 0xac | 0xad | 0xae | 0xaf | 0xb0 | 0xb1 | 0xb2 | 0xb3 | 0xb4 | 0xb5 | 0xb6
         | 0xb7 | 0xb8 | 0xb9 | 0xba | 0xbb | 0xbc | 0xbd | 0xbe | 0xbf => {
-            parse_thumb_a0(ins, pc)
+            parse_thumb_cmp_0(ins, pc)
         }
         0xc0 | 0xc1 | 0xc2 | 0xc3 | 0xc4 | 0xc5 | 0xc6 | 0xc7 | 0xc8 | 0xc9 | 0xca | 0xcb
         | 0xcc | 0xcd | 0xce | 0xcf | 0xd0 | 0xd1 | 0xd2 | 0xd3 | 0xd4 | 0xd5 | 0xd6
         | 0xd7 | 0xd8 | 0xd9 | 0xda | 0xdb | 0xdc | 0xdd | 0xde | 0xdf => {
-            parse_thumb_c0(ins, pc)
+            parse_thumb_add_1(ins, pc)
         }
         0xe0 | 0xe1 | 0xe2 | 0xe3 | 0xe4 | 0xe5 | 0xe6 | 0xe7 | 0xe8 | 0xe9 | 0xea | 0xeb
         | 0xec | 0xed | 0xee | 0xef | 0xf0 | 0xf1 | 0xf2 | 0xf3 | 0xf4 | 0xf5 | 0xf6
         | 0xf7 | 0xf8 | 0xf9 | 0xfa | 0xfb | 0xfc | 0xfd | 0xfe | 0xff => {
-            parse_thumb_e0(ins, pc)
+            parse_thumb_sub_1(ins, pc)
         }
-        0x100 => parse_thumb_100(ins, pc),
-        0x101 => parse_thumb_101(ins, pc),
-        0x102 => parse_thumb_102(ins, pc),
-        0x103 => parse_thumb_103(ins, pc),
-        0x104 => parse_thumb_104(ins, pc),
-        0x105 => parse_thumb_105(ins, pc),
-        0x106 => parse_thumb_106(ins, pc),
-        0x107 => parse_thumb_107(ins, pc),
-        0x108 => parse_thumb_108(ins, pc),
-        0x109 => parse_thumb_109(ins, pc),
-        0x10a => parse_thumb_10a(ins, pc),
-        0x10b => parse_thumb_10b(ins, pc),
-        0x10c => parse_thumb_10c(ins, pc),
-        0x10d => parse_thumb_10d(ins, pc),
-        0x10e => parse_thumb_10e(ins, pc),
-        0x10f => parse_thumb_10f(ins, pc),
-        0x110 => parse_thumb_110(ins, pc),
-        0x111 => parse_thumb_111(ins, pc),
-        0x112 => parse_thumb_112(ins, pc),
-        0x113 => parse_thumb_113(ins, pc),
-        0x114 | 0x115 | 0x116 | 0x117 => parse_thumb_114(ins, pc),
-        0x118 | 0x119 | 0x11a | 0x11b => parse_thumb_118(ins, pc),
-        0x11c | 0x11d => parse_thumb_11c(ins, pc),
-        0x11e | 0x11f => parse_thumb_11e(ins, pc),
+        0x100 => parse_thumb_and_0(ins, pc),
+        0x101 => parse_thumb_eor_0(ins, pc),
+        0x102 => parse_thumb_lsl_1(ins, pc),
+        0x103 => parse_thumb_lsr_1(ins, pc),
+        0x104 => parse_thumb_asr_1(ins, pc),
+        0x105 => parse_thumb_adc_0(ins, pc),
+        0x106 => parse_thumb_sbc_0(ins, pc),
+        0x107 => parse_thumb_ror_0(ins, pc),
+        0x108 => parse_thumb_tst_0(ins, pc),
+        0x109 => parse_thumb_rsb_0(ins, pc),
+        0x10a => parse_thumb_cmp_1(ins, pc),
+        0x10b => parse_thumb_cmn_0(ins, pc),
+        0x10c => parse_thumb_orr_0(ins, pc),
+        0x10d => parse_thumb_mul_0(ins, pc),
+        0x10e => parse_thumb_bic_0(ins, pc),
+        0x10f => parse_thumb_mvn_0(ins, pc),
+        0x110 => parse_thumb_add_3(ins, pc),
+        0x111 => {
+            if (ins & 0xff78) == 0x4468 {
+                parse_thumb_add_6(ins, pc)
+            } else if (ins & 0xff00) == 0x4400 {
+                parse_thumb_add_3(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x112 => {
+            if (ins & 0xff87) == 0x4485 {
+                parse_thumb_add_7(ins, pc)
+            } else if (ins & 0xff00) == 0x4400 {
+                parse_thumb_add_3(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x113 => {
+            if (ins & 0xff78) == 0x4468 {
+                parse_thumb_add_6(ins, pc)
+            } else if (ins & 0xff87) == 0x4485 {
+                parse_thumb_add_7(ins, pc)
+            } else if (ins & 0xff00) == 0x4400 {
+                parse_thumb_add_3(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x114 | 0x115 | 0x116 | 0x117 => parse_thumb_cmp_2(ins, pc),
+        0x118 | 0x119 | 0x11a | 0x11b => parse_thumb_mov_1(ins, pc),
+        0x11c | 0x11d => parse_thumb_bx_0(ins, pc),
+        0x11e | 0x11f => parse_thumb_blx_1(ins, pc),
         0x120 | 0x121 | 0x122 | 0x123 | 0x124 | 0x125 | 0x126 | 0x127 | 0x128 | 0x129
         | 0x12a | 0x12b | 0x12c | 0x12d | 0x12e | 0x12f | 0x130 | 0x131 | 0x132 | 0x133
         | 0x134 | 0x135 | 0x136 | 0x137 | 0x138 | 0x139 | 0x13a | 0x13b | 0x13c | 0x13d
-        | 0x13e | 0x13f => parse_thumb_120(ins, pc),
+        | 0x13e | 0x13f => parse_thumb_ldr_2(ins, pc),
         0x140 | 0x141 | 0x142 | 0x143 | 0x144 | 0x145 | 0x146 | 0x147 => {
-            parse_thumb_140(ins, pc)
+            parse_thumb_str_2(ins, pc)
         }
         0x148 | 0x149 | 0x14a | 0x14b | 0x14c | 0x14d | 0x14e | 0x14f => {
-            parse_thumb_148(ins, pc)
+            parse_thumb_strh_1(ins, pc)
         }
         0x150 | 0x151 | 0x152 | 0x153 | 0x154 | 0x155 | 0x156 | 0x157 => {
-            parse_thumb_150(ins, pc)
+            parse_thumb_strb_1(ins, pc)
         }
         0x158 | 0x159 | 0x15a | 0x15b | 0x15c | 0x15d | 0x15e | 0x15f => {
-            parse_thumb_158(ins, pc)
+            parse_thumb_ldrsb_0(ins, pc)
         }
         0x160 | 0x161 | 0x162 | 0x163 | 0x164 | 0x165 | 0x166 | 0x167 => {
-            parse_thumb_160(ins, pc)
+            parse_thumb_ldr_3(ins, pc)
         }
         0x168 | 0x169 | 0x16a | 0x16b | 0x16c | 0x16d | 0x16e | 0x16f => {
-            parse_thumb_168(ins, pc)
+            parse_thumb_ldrh_1(ins, pc)
         }
         0x170 | 0x171 | 0x172 | 0x173 | 0x174 | 0x175 | 0x176 | 0x177 => {
-            parse_thumb_170(ins, pc)
+            parse_thumb_ldrb_1(ins, pc)
         }
         0x178 | 0x179 | 0x17a | 0x17b | 0x17c | 0x17d | 0x17e | 0x17f => {
-            parse_thumb_178(ins, pc)
+            parse_thumb_ldrsh_0(ins, pc)
         }
         0x180 | 0x181 | 0x182 | 0x183 | 0x184 | 0x185 | 0x186 | 0x187 | 0x188 | 0x189
         | 0x18a | 0x18b | 0x18c | 0x18d | 0x18e | 0x18f | 0x190 | 0x191 | 0x192 | 0x193
         | 0x194 | 0x195 | 0x196 | 0x197 | 0x198 | 0x199 | 0x19a | 0x19b | 0x19c | 0x19d
-        | 0x19e | 0x19f => parse_thumb_180(ins, pc),
+        | 0x19e | 0x19f => parse_thumb_str_0(ins, pc),
         0x1a0 | 0x1a1 | 0x1a2 | 0x1a3 | 0x1a4 | 0x1a5 | 0x1a6 | 0x1a7 | 0x1a8 | 0x1a9
         | 0x1aa | 0x1ab | 0x1ac | 0x1ad | 0x1ae | 0x1af | 0x1b0 | 0x1b1 | 0x1b2 | 0x1b3
         | 0x1b4 | 0x1b5 | 0x1b6 | 0x1b7 | 0x1b8 | 0x1b9 | 0x1ba | 0x1bb | 0x1bc | 0x1bd
-        | 0x1be | 0x1bf => parse_thumb_1a0(ins, pc),
+        | 0x1be | 0x1bf => parse_thumb_ldr_0(ins, pc),
         0x1c0 | 0x1c1 | 0x1c2 | 0x1c3 | 0x1c4 | 0x1c5 | 0x1c6 | 0x1c7 | 0x1c8 | 0x1c9
         | 0x1ca | 0x1cb | 0x1cc | 0x1cd | 0x1ce | 0x1cf | 0x1d0 | 0x1d1 | 0x1d2 | 0x1d3
         | 0x1d4 | 0x1d5 | 0x1d6 | 0x1d7 | 0x1d8 | 0x1d9 | 0x1da | 0x1db | 0x1dc | 0x1dd
-        | 0x1de | 0x1df => parse_thumb_1c0(ins, pc),
+        | 0x1de | 0x1df => parse_thumb_strb_0(ins, pc),
         0x1e0 | 0x1e1 | 0x1e2 | 0x1e3 | 0x1e4 | 0x1e5 | 0x1e6 | 0x1e7 | 0x1e8 | 0x1e9
         | 0x1ea | 0x1eb | 0x1ec | 0x1ed | 0x1ee | 0x1ef | 0x1f0 | 0x1f1 | 0x1f2 | 0x1f3
         | 0x1f4 | 0x1f5 | 0x1f6 | 0x1f7 | 0x1f8 | 0x1f9 | 0x1fa | 0x1fb | 0x1fc | 0x1fd
-        | 0x1fe | 0x1ff => parse_thumb_1e0(ins, pc),
+        | 0x1fe | 0x1ff => parse_thumb_ldrb_0(ins, pc),
         0x200 | 0x201 | 0x202 | 0x203 | 0x204 | 0x205 | 0x206 | 0x207 | 0x208 | 0x209
         | 0x20a | 0x20b | 0x20c | 0x20d | 0x20e | 0x20f | 0x210 | 0x211 | 0x212 | 0x213
         | 0x214 | 0x215 | 0x216 | 0x217 | 0x218 | 0x219 | 0x21a | 0x21b | 0x21c | 0x21d
-        | 0x21e | 0x21f => parse_thumb_200(ins, pc),
+        | 0x21e | 0x21f => parse_thumb_strh_0(ins, pc),
         0x220 | 0x221 | 0x222 | 0x223 | 0x224 | 0x225 | 0x226 | 0x227 | 0x228 | 0x229
         | 0x22a | 0x22b | 0x22c | 0x22d | 0x22e | 0x22f | 0x230 | 0x231 | 0x232 | 0x233
         | 0x234 | 0x235 | 0x236 | 0x237 | 0x238 | 0x239 | 0x23a | 0x23b | 0x23c | 0x23d
-        | 0x23e | 0x23f => parse_thumb_220(ins, pc),
+        | 0x23e | 0x23f => parse_thumb_ldrh_0(ins, pc),
         0x240 | 0x241 | 0x242 | 0x243 | 0x244 | 0x245 | 0x246 | 0x247 | 0x248 | 0x249
         | 0x24a | 0x24b | 0x24c | 0x24d | 0x24e | 0x24f | 0x250 | 0x251 | 0x252 | 0x253
         | 0x254 | 0x255 | 0x256 | 0x257 | 0x258 | 0x259 | 0x25a | 0x25b | 0x25c | 0x25d
-        | 0x25e | 0x25f => parse_thumb_240(ins, pc),
+        | 0x25e | 0x25f => parse_thumb_str_1(ins, pc),
         0x260 | 0x261 | 0x262 | 0x263 | 0x264 | 0x265 | 0x266 | 0x267 | 0x268 | 0x269
         | 0x26a | 0x26b | 0x26c | 0x26d | 0x26e | 0x26f | 0x270 | 0x271 | 0x272 | 0x273
         | 0x274 | 0x275 | 0x276 | 0x277 | 0x278 | 0x279 | 0x27a | 0x27b | 0x27c | 0x27d
-        | 0x27e | 0x27f => parse_thumb_260(ins, pc),
+        | 0x27e | 0x27f => parse_thumb_ldr_1(ins, pc),
         0x280 | 0x281 | 0x282 | 0x283 | 0x284 | 0x285 | 0x286 | 0x287 | 0x288 | 0x289
         | 0x28a | 0x28b | 0x28c | 0x28d | 0x28e | 0x28f | 0x290 | 0x291 | 0x292 | 0x293
         | 0x294 | 0x295 | 0x296 | 0x297 | 0x298 | 0x299 | 0x29a | 0x29b | 0x29c | 0x29d
-        | 0x29e | 0x29f => parse_thumb_280(ins, pc),
+        | 0x29e | 0x29f => parse_thumb_add_8(ins, pc),
         0x2a0 | 0x2a1 | 0x2a2 | 0x2a3 | 0x2a4 | 0x2a5 | 0x2a6 | 0x2a7 | 0x2a8 | 0x2a9
         | 0x2aa | 0x2ab | 0x2ac | 0x2ad | 0x2ae | 0x2af | 0x2b0 | 0x2b1 | 0x2b2 | 0x2b3
         | 0x2b4 | 0x2b5 | 0x2b6 | 0x2b7 | 0x2b8 | 0x2b9 | 0x2ba | 0x2bb | 0x2bc | 0x2bd
-        | 0x2be | 0x2bf => parse_thumb_2a0(ins, pc),
-        0x2c0 | 0x2c1 => parse_thumb_2c0(ins, pc),
-        0x2c2 | 0x2c3 => parse_thumb_2c2(ins, pc),
+        | 0x2be | 0x2bf => parse_thumb_add_4(ins, pc),
+        0x2c0 | 0x2c1 => parse_thumb_add_5(ins, pc),
+        0x2c2 | 0x2c3 => parse_thumb_sub_3(ins, pc),
         0x2c4 | 0x2c5 | 0x2c6 | 0x2c7 | 0x2cc | 0x2cd | 0x2ce | 0x2cf | 0x2d8 | 0x2da
         | 0x2db | 0x2dc | 0x2dd | 0x2de | 0x2df | 0x2e0 | 0x2e1 | 0x2e2 | 0x2e3 | 0x2e4
         | 0x2e5 | 0x2e6 | 0x2e7 | 0x2ea | 0x2ec | 0x2ed | 0x2ee | 0x2ef | 0x2fd | 0x2fe
@@ -5523,329 +5065,80 @@ pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
         | 0x3bd | 0x3be | 0x3bf | 0x3e0 | 0x3e1 | 0x3e2 | 0x3e3 | 0x3e4 | 0x3e5 | 0x3e6
         | 0x3e7 | 0x3e8 | 0x3e9 | 0x3ea | 0x3eb | 0x3ec | 0x3ed | 0x3ee | 0x3ef | 0x3f0
         | 0x3f1 | 0x3f2 | 0x3f3 | 0x3f4 | 0x3f5 | 0x3f6 | 0x3f7 | 0x3f8 | 0x3f9 | 0x3fa
-        | 0x3fb | 0x3fc | 0x3fd | 0x3fe | 0x3ff => parse_thumb_2c4(ins, pc),
-        0x2c8 => parse_thumb_2c8(ins, pc),
-        0x2c9 => parse_thumb_2c9(ins, pc),
-        0x2ca => parse_thumb_2ca(ins, pc),
-        0x2cb => parse_thumb_2cb(ins, pc),
+        | 0x3fb | 0x3fc | 0x3fd | 0x3fe | 0x3ff => None,
+        0x2c8 => parse_thumb_sxth_0(ins, pc),
+        0x2c9 => parse_thumb_sxtb_0(ins, pc),
+        0x2ca => parse_thumb_uxth_0(ins, pc),
+        0x2cb => parse_thumb_uxtb_0(ins, pc),
         0x2d0 | 0x2d1 | 0x2d2 | 0x2d3 | 0x2d4 | 0x2d5 | 0x2d6 | 0x2d7 => {
-            parse_thumb_2d0(ins, pc)
+            parse_thumb_push_0(ins, pc)
         }
-        0x2d9 => parse_thumb_2d9(ins, pc),
-        0x2e8 => parse_thumb_2e8(ins, pc),
-        0x2e9 => parse_thumb_2e9(ins, pc),
-        0x2eb => parse_thumb_2eb(ins, pc),
+        0x2d9 => {
+            if (ins & 0xffe8) == 0xb660 {
+                parse_thumb_cps_0(ins, pc)
+            } else if (ins & 0xffe0) == 0xb640 {
+                parse_thumb_setend_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x2e8 => parse_thumb_rev_0(ins, pc),
+        0x2e9 => parse_thumb_rev16_0(ins, pc),
+        0x2eb => parse_thumb_revsh_0(ins, pc),
         0x2f0 | 0x2f1 | 0x2f2 | 0x2f3 | 0x2f4 | 0x2f5 | 0x2f6 | 0x2f7 => {
-            parse_thumb_2f0(ins, pc)
+            parse_thumb_pop_0(ins, pc)
         }
-        0x2f8 | 0x2f9 | 0x2fa | 0x2fb => parse_thumb_2f8(ins, pc),
-        0x2fc => parse_thumb_2fc(ins, pc),
+        0x2f8 | 0x2f9 | 0x2fa | 0x2fb => parse_thumb_bkpt_0(ins, pc),
+        0x2fc => parse_thumb_nop_0(ins, pc),
         0x300 | 0x301 | 0x302 | 0x303 | 0x304 | 0x305 | 0x306 | 0x307 | 0x308 | 0x309
         | 0x30a | 0x30b | 0x30c | 0x30d | 0x30e | 0x30f | 0x310 | 0x311 | 0x312 | 0x313
         | 0x314 | 0x315 | 0x316 | 0x317 | 0x318 | 0x319 | 0x31a | 0x31b | 0x31c | 0x31d
-        | 0x31e | 0x31f => parse_thumb_300(ins, pc),
+        | 0x31e | 0x31f => parse_thumb_stm_0(ins, pc),
         0x320 | 0x321 | 0x322 | 0x323 | 0x324 | 0x325 | 0x326 | 0x327 | 0x328 | 0x329
         | 0x32a | 0x32b | 0x32c | 0x32d | 0x32e | 0x32f | 0x330 | 0x331 | 0x332 | 0x333
         | 0x334 | 0x335 | 0x336 | 0x337 | 0x338 | 0x339 | 0x33a | 0x33b | 0x33c | 0x33d
-        | 0x33e | 0x33f => parse_thumb_320(ins, pc),
+        | 0x33e | 0x33f => parse_thumb_ldm_0(ins, pc),
         0x340 | 0x341 | 0x342 | 0x343 | 0x344 | 0x345 | 0x346 | 0x347 | 0x348 | 0x349
         | 0x34a | 0x34b | 0x34c | 0x34d | 0x34e | 0x34f | 0x350 | 0x351 | 0x352 | 0x353
         | 0x354 | 0x355 | 0x356 | 0x357 | 0x358 | 0x359 | 0x35a | 0x35b | 0x35c | 0x35d
         | 0x35e | 0x35f | 0x360 | 0x361 | 0x362 | 0x363 | 0x364 | 0x365 | 0x366 | 0x367
         | 0x368 | 0x369 | 0x36a | 0x36b | 0x36c | 0x36d | 0x36e | 0x36f | 0x370 | 0x371
-        | 0x372 | 0x373 | 0x374 | 0x375 | 0x376 | 0x377 => parse_thumb_340(ins, pc),
-        0x378 | 0x379 | 0x37a | 0x37b => parse_thumb_378(ins, pc),
-        0x37c | 0x37d | 0x37e | 0x37f => parse_thumb_37c(ins, pc),
+        | 0x372 | 0x373 | 0x374 | 0x375 | 0x376 | 0x377 => parse_thumb_b_0(ins, pc),
+        0x378 | 0x379 | 0x37a | 0x37b => {
+            if (ins & 0xff00) == 0xde00 {
+                parse_thumb_udf_0(ins, pc)
+            } else if (ins & 0xf000) == 0xd000 {
+                parse_thumb_b_0(ins, pc)
+            } else {
+                None
+            }
+        }
+        0x37c | 0x37d | 0x37e | 0x37f => {
+            if (ins & 0xff00) == 0xdf00 {
+                parse_thumb_svc_0(ins, pc)
+            } else if (ins & 0xf000) == 0xd000 {
+                parse_thumb_b_0(ins, pc)
+            } else {
+                None
+            }
+        }
         0x380 | 0x381 | 0x382 | 0x383 | 0x384 | 0x385 | 0x386 | 0x387 | 0x388 | 0x389
         | 0x38a | 0x38b | 0x38c | 0x38d | 0x38e | 0x38f | 0x390 | 0x391 | 0x392 | 0x393
         | 0x394 | 0x395 | 0x396 | 0x397 | 0x398 | 0x399 | 0x39a | 0x39b | 0x39c | 0x39d
-        | 0x39e | 0x39f => parse_thumb_380(ins, pc),
+        | 0x39e | 0x39f => parse_thumb_b_1(ins, pc),
         0x3c0 | 0x3c1 | 0x3c2 | 0x3c3 | 0x3c4 | 0x3c5 | 0x3c6 | 0x3c7 | 0x3c8 | 0x3c9
         | 0x3ca | 0x3cb | 0x3cc | 0x3cd | 0x3ce | 0x3cf | 0x3d0 | 0x3d1 | 0x3d2 | 0x3d3
         | 0x3d4 | 0x3d5 | 0x3d6 | 0x3d7 | 0x3d8 | 0x3d9 | 0x3da | 0x3db | 0x3dc | 0x3dd
-        | 0x3de | 0x3df => parse_thumb_3c0(ins, pc),
+        | 0x3de | 0x3df => {
+            if (ins & 0xd000f800) == 0xd000f000 {
+                parse_thumb_bl_0(ins, pc)
+            } else if (ins & 0xd000f800) == 0xc000f000 {
+                parse_thumb_blx_0(ins, pc)
+            } else {
+                None
+            }
+        }
         _ => unreachable!(),
-    }
-}
-fn parse_thumb_0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xffc0) == 0x0 {
-        parse_thumb_mov_2(ins, pc)
-    } else if (ins & 0xf800) == 0x0 {
-        parse_thumb_lsl_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_1(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_lsl_0(ins, pc)
-}
-fn parse_thumb_20(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_lsr_0(ins, pc)
-}
-fn parse_thumb_40(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_asr_0(ins, pc)
-}
-fn parse_thumb_60(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_2(ins, pc)
-}
-fn parse_thumb_68(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sub_2(ins, pc)
-}
-fn parse_thumb_70(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_0(ins, pc)
-}
-fn parse_thumb_78(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sub_0(ins, pc)
-}
-fn parse_thumb_80(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_mov_0(ins, pc)
-}
-fn parse_thumb_a0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_cmp_0(ins, pc)
-}
-fn parse_thumb_c0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_1(ins, pc)
-}
-fn parse_thumb_e0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sub_1(ins, pc)
-}
-fn parse_thumb_100(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_and_0(ins, pc)
-}
-fn parse_thumb_101(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_eor_0(ins, pc)
-}
-fn parse_thumb_102(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_lsl_1(ins, pc)
-}
-fn parse_thumb_103(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_lsr_1(ins, pc)
-}
-fn parse_thumb_104(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_asr_1(ins, pc)
-}
-fn parse_thumb_105(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_adc_0(ins, pc)
-}
-fn parse_thumb_106(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sbc_0(ins, pc)
-}
-fn parse_thumb_107(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ror_0(ins, pc)
-}
-fn parse_thumb_108(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_tst_0(ins, pc)
-}
-fn parse_thumb_109(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_rsb_0(ins, pc)
-}
-fn parse_thumb_10a(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_cmp_1(ins, pc)
-}
-fn parse_thumb_10b(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_cmn_0(ins, pc)
-}
-fn parse_thumb_10c(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_orr_0(ins, pc)
-}
-fn parse_thumb_10d(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_mul_0(ins, pc)
-}
-fn parse_thumb_10e(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_bic_0(ins, pc)
-}
-fn parse_thumb_10f(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_mvn_0(ins, pc)
-}
-fn parse_thumb_110(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_3(ins, pc)
-}
-fn parse_thumb_111(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff78) == 0x4468 {
-        parse_thumb_add_6(ins, pc)
-    } else if (ins & 0xff00) == 0x4400 {
-        parse_thumb_add_3(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_112(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff87) == 0x4485 {
-        parse_thumb_add_7(ins, pc)
-    } else if (ins & 0xff00) == 0x4400 {
-        parse_thumb_add_3(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_113(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff78) == 0x4468 {
-        parse_thumb_add_6(ins, pc)
-    } else if (ins & 0xff87) == 0x4485 {
-        parse_thumb_add_7(ins, pc)
-    } else if (ins & 0xff00) == 0x4400 {
-        parse_thumb_add_3(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_114(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_cmp_2(ins, pc)
-}
-fn parse_thumb_118(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_mov_1(ins, pc)
-}
-fn parse_thumb_11c(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_bx_0(ins, pc)
-}
-fn parse_thumb_11e(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_blx_1(ins, pc)
-}
-fn parse_thumb_120(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldr_2(ins, pc)
-}
-fn parse_thumb_140(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_str_2(ins, pc)
-}
-fn parse_thumb_148(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_strh_1(ins, pc)
-}
-fn parse_thumb_150(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_strb_1(ins, pc)
-}
-fn parse_thumb_158(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldrsb_0(ins, pc)
-}
-fn parse_thumb_160(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldr_3(ins, pc)
-}
-fn parse_thumb_168(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldrh_1(ins, pc)
-}
-fn parse_thumb_170(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldrb_1(ins, pc)
-}
-fn parse_thumb_178(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldrsh_0(ins, pc)
-}
-fn parse_thumb_180(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_str_0(ins, pc)
-}
-fn parse_thumb_1a0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldr_0(ins, pc)
-}
-fn parse_thumb_1c0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_strb_0(ins, pc)
-}
-fn parse_thumb_1e0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldrb_0(ins, pc)
-}
-fn parse_thumb_200(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_strh_0(ins, pc)
-}
-fn parse_thumb_220(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldrh_0(ins, pc)
-}
-fn parse_thumb_240(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_str_1(ins, pc)
-}
-fn parse_thumb_260(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldr_1(ins, pc)
-}
-fn parse_thumb_280(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_8(ins, pc)
-}
-fn parse_thumb_2a0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_4(ins, pc)
-}
-fn parse_thumb_2c0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_add_5(ins, pc)
-}
-fn parse_thumb_2c2(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sub_3(ins, pc)
-}
-fn parse_thumb_2c4(ins: u32, pc: u32) -> Option<Ins> {
-    None
-}
-fn parse_thumb_2c8(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sxth_0(ins, pc)
-}
-fn parse_thumb_2c9(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_sxtb_0(ins, pc)
-}
-fn parse_thumb_2ca(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_uxth_0(ins, pc)
-}
-fn parse_thumb_2cb(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_uxtb_0(ins, pc)
-}
-fn parse_thumb_2d0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_push_0(ins, pc)
-}
-fn parse_thumb_2d9(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xffe8) == 0xb660 {
-        parse_thumb_cps_0(ins, pc)
-    } else if (ins & 0xffe0) == 0xb640 {
-        parse_thumb_setend_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_2e8(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_rev_0(ins, pc)
-}
-fn parse_thumb_2e9(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_rev16_0(ins, pc)
-}
-fn parse_thumb_2eb(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_revsh_0(ins, pc)
-}
-fn parse_thumb_2f0(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_pop_0(ins, pc)
-}
-fn parse_thumb_2f8(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_bkpt_0(ins, pc)
-}
-fn parse_thumb_2fc(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_nop_0(ins, pc)
-}
-fn parse_thumb_300(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_stm_0(ins, pc)
-}
-fn parse_thumb_320(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_ldm_0(ins, pc)
-}
-fn parse_thumb_340(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_b_0(ins, pc)
-}
-fn parse_thumb_378(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00) == 0xde00 {
-        parse_thumb_udf_0(ins, pc)
-    } else if (ins & 0xf000) == 0xd000 {
-        parse_thumb_b_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_37c(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xff00) == 0xdf00 {
-        parse_thumb_svc_0(ins, pc)
-    } else if (ins & 0xf000) == 0xd000 {
-        parse_thumb_b_0(ins, pc)
-    } else {
-        None
-    }
-}
-fn parse_thumb_380(ins: u32, pc: u32) -> Option<Ins> {
-    parse_thumb_b_1(ins, pc)
-}
-fn parse_thumb_3c0(ins: u32, pc: u32) -> Option<Ins> {
-    if (ins & 0xd000f800) == 0xd000f000 {
-        parse_thumb_bl_0(ins, pc)
-    } else if (ins & 0xd000f800) == 0xc000f000 {
-        parse_thumb_blx_0(ins, pc)
-    } else {
-        None
     }
 }
 fn parse_arm_adc_0(value: u32, pc: u32) -> Option<Ins> {
