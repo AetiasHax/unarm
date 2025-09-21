@@ -62,6 +62,7 @@ pub enum BlxTarget {
     ///Indirect target
     Indirect(Reg),
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Cond {
     ///Equal
@@ -95,6 +96,7 @@ pub enum Cond {
     ///Always
     Al,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Reg {
     R0,
@@ -114,6 +116,7 @@ pub enum Reg {
     Lr,
     Pc,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum StatusReg {
     ///Current program status register
@@ -136,6 +139,7 @@ pub enum MsrOp2 {
     ///Register
     Reg(Reg),
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum ShiftOp {
     ///Logical shift left
@@ -147,6 +151,7 @@ pub enum ShiftOp {
     ///Rotate right
     Ror,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Coproc {
     P0,
@@ -166,6 +171,7 @@ pub enum Coproc {
     P14,
     P15,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum CoReg {
     C0,
@@ -237,6 +243,7 @@ pub enum AddrLdcStc {
     ///Unindexed
     Unidx { rn: Reg, option: u32 },
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum LdmStmMode {
     ///Decrement After
@@ -280,6 +287,7 @@ pub enum MiscLoadOffset {
     ///Register offset
     Reg { rm: Reg, subtract: bool },
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum SrsRfeMode {
     ///Decrement After
@@ -291,6 +299,7 @@ pub enum SrsRfeMode {
     ///Increment Before
     Ib,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Endianness {
     ///Little-endian
@@ -298,6 +307,7 @@ pub enum Endianness {
     ///Big-endian
     Be,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum RegSide {
     ///Bottom halfword
@@ -305,6 +315,7 @@ pub enum RegSide {
     ///Top halfword
     Top,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Sreg {
     S0,
@@ -340,6 +351,7 @@ pub enum Sreg {
     S30,
     S31,
 }
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Dreg {
     D0,

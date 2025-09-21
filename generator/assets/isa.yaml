@@ -70,7 +70,7 @@ types:
     - name: addr
       kind: !uint pc + bits(0..32)
 - name: blx_target
-  kind: !enum
+  kind: !union
     bits: 0..28
     variants:
       1011_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -90,164 +90,131 @@ types:
     bits: 0..4
     default: al
     variants:
-      0000:
-        name: eq
-        description: Equal
-      0001:
-        name: ne
-        description: Not equal
-      0010:
-        name: hs
-        description: Unsigned higher or same
-      0011:
-        name: lo
-        description: Unsigned lower
-      0100:
-        name: mi
-        description: Minus/negative
-      0101:
-        name: pl
-        description: Plus/positive
-      0110:
-        name: vs
-        description: Overflow set
-      0111:
-        name: vc
-        description: Overflow clear
-      1000:
-        name: hi
-        description: Unsigned higher
-      1001:
-        name: ls
-        description: Unsigned lower or same
-      1010:
-        name: ge
-        description: Signed greater than or equal
-      1011:
-        name: lt
-        description: Signed less than
-      1100:
-        name: gt
-        description: Signed greater than
-      1101:
-        name: le
-        description: Signed less than or equal
-      1110:
-        name: al
-        description: Always
-        format: !fmt ""
+    - name: eq
+      description: Equal
+    - name: ne
+      description: Not equal
+    - name: hs
+      description: Unsigned higher or same
+    - name: lo
+      description: Unsigned lower
+    - name: mi
+      description: Minus/negative
+    - name: pl
+      description: Plus/positive
+    - name: vs
+      description: Overflow set
+    - name: vc
+      description: Overflow clear
+    - name: hi
+      description: Unsigned higher
+    - name: ls
+      description: Unsigned lower or same
+    - name: ge
+      description: Signed greater than or equal
+    - name: lt
+      description: Signed less than
+    - name: gt
+      description: Signed greater than
+    - name: le
+      description: Signed less than or equal
+    - name: al
+      description: Always
+      format: !fmt ""
 - name: reg
   kind: !enum
     bits: 0..4
     variants:
-      0000:
-        name: r0
-        format: !if
+    - name: r0
+      format: !if
+        cond: option(av)
+        then: !fmt a1
+        else: !fmt r0
+    - name: r1
+      format: !if
+        cond: option(av)
+        then: !fmt a2
+        else: !fmt r1
+    - name: r2
+      format: !if
+        cond: option(av)
+        then: !fmt a3
+        else: !fmt r2
+    - name: r3
+      format: !if
+        cond: option(av)
+        then: !fmt a4
+        else: !fmt r3
+    - name: r4
+      format: !if
+        cond: option(av)
+        then: !fmt v1
+        else: !fmt r4
+    - name: r5
+      format: !if
+        cond: option(av)
+        then: !fmt v2
+        else: !fmt r5
+    - name: r6
+      format: !if
+        cond: option(av)
+        then: !fmt v3
+        else: !fmt r6
+    - name: r7
+      format: !if
+        cond: option(av)
+        then: !fmt v4
+        else: !fmt r7
+    - name: r8
+      format: !if
+        cond: option(av)
+        then: !fmt v5
+        else: !fmt r8
+    - name: r9
+      format: !if
+        cond: option(r9_use) == enum_variant(r9_use, r9)
+        then: !if
           cond: option(av)
-          then: !fmt a1
-          else: !fmt r0
-      0001:
-        name: r1
-        format: !if
+          then: !fmt v6
+          else: !fmt r9
+        else: !if
+          cond: option(r9_use) == enum_variant(r9_use, sb)
+          then: !fmt sb
+          else: !fmt tr
+    - name: r10
+      format: !if
+        cond: option(sl)
+        then: !fmt sl
+        else: !if
           cond: option(av)
-          then: !fmt a2
-          else: !fmt r1
-      0010:
-        name: r2
-        format: !if
+          then: !fmt v7
+          else: !fmt r10
+    - name: r11
+      format: !if
+        cond: option(fp)
+        then: !fmt fp
+        else: !if
           cond: option(av)
-          then: !fmt a3
-          else: !fmt r2
-      0011:
-        name: r3
-        format: !if
-          cond: option(av)
-          then: !fmt a4
-          else: !fmt r3
-      0100:
-        name: r4
-        format: !if
-          cond: option(av)
-          then: !fmt v1
-          else: !fmt r4
-      0101:
-        name: r5
-        format: !if
-          cond: option(av)
-          then: !fmt v2
-          else: !fmt r5
-      0110:
-        name: r6
-        format: !if
-          cond: option(av)
-          then: !fmt v3
-          else: !fmt r6
-      0111:
-        name: r7
-        format: !if
-          cond: option(av)
-          then: !fmt v4
-          else: !fmt r7
-      1000:
-        name: r8
-        format: !if
-          cond: option(av)
-          then: !fmt v5
-          else: !fmt r8
-      1001:
-        name: r9
-        format: !if
-          cond: option(r9_use) == enum_variant(r9_use, r9)
-          then: !if
-            cond: option(av)
-            then: !fmt v6
-            else: !fmt r9
-          else: !if
-            cond: option(r9_use) == enum_variant(r9_use, sb)
-            then: !fmt sb
-            else: !fmt tr
-      1010:
-        name: r10
-        format: !if
-          cond: option(sl)
-          then: !fmt sl
-          else: !if
-            cond: option(av)
-            then: !fmt v7
-            else: !fmt r10
-      1011:
-        name: r11
-        format: !if
-          cond: option(fp)
-          then: !fmt fp
-          else: !if
-            cond: option(av)
-            then: !fmt v8
-            else: !fmt r11
-      1100:
-        name: r12
-        format: !if
-          cond: option(ip)
-          then: !fmt ip
-          else: !fmt r12
-      1101:
-        name: sp
-      1110:
-        name: lr
-      1111:
-        name: pc
+          then: !fmt v8
+          else: !fmt r11
+    - name: r12
+      format: !if
+        cond: option(ip)
+        then: !fmt ip
+        else: !fmt r12
+    - name: sp
+    - name: lr
+    - name: pc
 - name: reg_list
   kind: !custom
 - name: status_reg
   kind: !enum
     bits: 0..1
     variants:
-      0:
-        name: cpsr
-        description: Current program status register
-      1:
-        name: spsr
-        description: Saved program status register
+    - name: cpsr
+      description: Current program status register
+    - name: spsr
+      description: Saved program status register
 - name: status_fields
   kind: !struct
     format: !fmt (reg)_(f)(x)(s)(c)
@@ -267,7 +234,7 @@ types:
       kind: !bool
         bits: 19
 - name: msr_op2
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -289,92 +256,56 @@ types:
     bits: 0..2
     default: lsl
     variants:
-      00:
-        name: lsl
-        description: Logical shift left
-      01:
-        name: lsr
-        description: Logical shift right
-      10:
-        name: asr
-        description: Arithmetic shift right
-      11:
-        name: ror
-        description: Rotate right
+    - name: lsl
+      description: Logical shift left
+    - name: lsr
+      description: Logical shift right
+    - name: asr
+      description: Arithmetic shift right
+    - name: ror
+      description: Rotate right
 - name: coproc
   kind: !enum
     bits: 0..4
     variants:
-      0000:
-        name: p0
-      0001:
-        name: p1
-      0010:
-        name: p2
-      0011:
-        name: p3
-      0100:
-        name: p4
-      0101:
-        name: p5
-      0110:
-        name: p6
-      0111:
-        name: p7
-      1000:
-        name: p8
-      1001:
-        name: p9
-      1010:
-        name: p10
-      1011:
-        name: p11
-      1100:
-        name: p12
-      1101:
-        name: p13
-      1110:
-        name: p14
-      1111:
-        name: p15
+    - name: p0
+    - name: p1
+    - name: p2
+    - name: p3
+    - name: p4
+    - name: p5
+    - name: p6
+    - name: p7
+    - name: p8
+    - name: p9
+    - name: p10
+    - name: p11
+    - name: p12
+    - name: p13
+    - name: p14
+    - name: p15
 - name: co_reg
   kind: !enum
     bits: 0..4
     variants:
-      0000:
-        name: c0
-      0001:
-        name: c1
-      0010:
-        name: c2
-      0011:
-        name: c3
-      0100:
-        name: c4
-      0101:
-        name: c5
-      0110:
-        name: c6
-      0111:
-        name: c7
-      1000:
-        name: c8
-      1001:
-        name: c9
-      1010:
-        name: c10
-      1011:
-        name: c11
-      1100:
-        name: c12
-      1101:
-        name: c13
-      1110:
-        name: c14
-      1111:
-        name: c15
+    - name: c0
+    - name: c1
+    - name: c2
+    - name: c3
+    - name: c4
+    - name: c5
+    - name: c6
+    - name: c7
+    - name: c8
+    - name: c9
+    - name: c10
+    - name: c11
+    - name: c12
+    - name: c13
+    - name: c14
+    - name: c15
 - name: op2
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -423,7 +354,7 @@ types:
     - name: imm
       kind: !uint bits(7..12)
 - name: op2_shift
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
@@ -440,8 +371,8 @@ types:
           name: reg
           kind: !type [reg, bits(8..12)]
 - name: cps_effect
-  kind: !enum
-    bits: 0..20
+  kind: !union
+    bits: 0..2
     variants:
       00:
         name: set_mode
@@ -467,7 +398,7 @@ types:
       kind: !bool
         bits: 0
 - name: addr_ldc_stc
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -513,24 +444,20 @@ types:
     bits: 0..2
     default: ia
     variants:
-      00:
-        name: da
-        description: Decrement After
-      01:
-        name: ia
-        description: Increment After
-        format: !if
-          cond: option(ual)
-          then: !fmt ""
-          else: !fmt ia
-      10:
-        name: db
-        description: Decrement Before
-      11:
-        name: ib
-        description: Increment Before
+    - name: da
+      description: Decrement After
+    - name: ia
+      description: Increment After
+      format: !if
+        cond: option(ual)
+        then: !fmt ""
+        else: !fmt ia
+    - name: db
+      description: Decrement Before
+    - name: ib
+      description: Increment Before
 - name: addr_ldr_str
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -562,7 +489,7 @@ types:
     - name: offset
       kind: !type [ldr_str_offset, bits(0..32)]
 - name: ldr_str_offset
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -595,7 +522,7 @@ types:
             - name: imm
               kind: !uint if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }
 - name: addr_misc_load
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -625,7 +552,7 @@ types:
             - name: offset
               kind: !type [misc_load_offset, bits(0..32)]
 - name: misc_load_offset
-  kind: !enum
+  kind: !union
     bits: 0..32
     variants:
       xxxx_000x_x1xx_xxxx_xxxx_xxxx_1xx1_xxxx:
@@ -653,40 +580,32 @@ types:
     bits: 0..2
     default: ia
     variants:
-      00:
-        name: da
-        description: Decrement After
-      01:
-        name: ia
-        description: Increment After
-      10:
-        name: db
-        description: Decrement Before
-      11:
-        name: ib
-        description: Increment Before
+    - name: da
+      description: Decrement After
+    - name: ia
+      description: Increment After
+    - name: db
+      description: Decrement Before
+    - name: ib
+      description: Increment Before
 - name: endianness
   kind: !enum
     bits: 0..1
     variants:
-      0:
-        name: le
-        description: Little-endian
-      1:
-        name: be
-        description: Big-endian
+    - name: le
+      description: Little-endian
+    - name: be
+      description: Big-endian
 - name: reg_side
   kind: !enum
     bits: 0..1
     variants:
-      0:
-        name: bottom
-        description: Bottom halfword
-        format: !fmt b
-      1:
-        name: top
-        description: Top halfword
-        format: !fmt t
+    - name: bottom
+      description: Bottom halfword
+      format: !fmt b
+    - name: top
+      description: Top halfword
+      format: !fmt t
 - name: swap_rm
   kind: !bool
     bits: 0
@@ -699,144 +618,80 @@ types:
   kind: !enum
     bits: 0..5
     variants:
-      00000:
-        name: s0
-      00001:
-        name: s1
-      00010:
-        name: s2
-      00011:
-        name: s3
-      00100:
-        name: s4
-      00101:
-        name: s5
-      00110:
-        name: s6
-      00111:
-        name: s7
-      01000:
-        name: s8
-      01001:
-        name: s9
-      01010:
-        name: s10
-      01011:
-        name: s11
-      01100:
-        name: s12
-      01101:
-        name: s13
-      01110:
-        name: s14
-      01111:
-        name: s15
-      10000:
-        name: s16
-      10001:
-        name: s17
-      10010:
-        name: s18
-      10011:
-        name: s19
-      10100:
-        name: s20
-      10101:
-        name: s21
-      10110:
-        name: s22
-      10111:
-        name: s23
-      11000:
-        name: s24
-      11001:
-        name: s25
-      11010:
-        name: s26
-      11011:
-        name: s27
-      11100:
-        name: s28
-      11101:
-        name: s29
-      11110:
-        name: s30
-      11111:
-        name: s31
+      - name: s0
+      - name: s1
+      - name: s2
+      - name: s3
+      - name: s4
+      - name: s5
+      - name: s6
+      - name: s7
+      - name: s8
+      - name: s9
+      - name: s10
+      - name: s11
+      - name: s12
+      - name: s13
+      - name: s14
+      - name: s15
+      - name: s16
+      - name: s17
+      - name: s18
+      - name: s19
+      - name: s20
+      - name: s21
+      - name: s22
+      - name: s23
+      - name: s24
+      - name: s25
+      - name: s26
+      - name: s27
+      - name: s28
+      - name: s29
+      - name: s30
+      - name: s31
 - name: dreg
   kind: !enum
     bits: 0..5
     variants:
-      00000:
-        name: d0
-      00001:
-        name: d1
-      00010:
-        name: d2
-      00011:
-        name: d3
-      00100:
-        name: d4
-      00101:
-        name: d5
-      00110:
-        name: d6
-      00111:
-        name: d7
-      01000:
-        name: d8
-      01001:
-        name: d9
-      01010:
-        name: d10
-      01011:
-        name: d11
-      01100:
-        name: d12
-      01101:
-        name: d13
-      01110:
-        name: d14
-      01111:
-        name: d15
-      10000:
-        name: d16
-      10001:
-        name: d17
-      10010:
-        name: d18
-      10011:
-        name: d19
-      10100:
-        name: d20
-      10101:
-        name: d21
-      10110:
-        name: d22
-      10111:
-        name: d23
-      11000:
-        name: d24
-      11001:
-        name: d25
-      11010:
-        name: d26
-      11011:
-        name: d27
-      11100:
-        name: d28
-      11101:
-        name: d29
-      11110:
-        name: d30
-      11111:
-        name: d31
+      - name: d0
+      - name: d1
+      - name: d2
+      - name: d3
+      - name: d4
+      - name: d5
+      - name: d6
+      - name: d7
+      - name: d8
+      - name: d9
+      - name: d10
+      - name: d11
+      - name: d12
+      - name: d13
+      - name: d14
+      - name: d15
+      - name: d16
+      - name: d17
+      - name: d18
+      - name: d19
+      - name: d20
+      - name: d21
+      - name: d22
+      - name: d23
+      - name: d24
+      - name: d25
+      - name: d26
+      - name: d27
+      - name: d28
+      - name: d29
+      - name: d30
+      - name: d31
 - name: quiet_nan_exc
   kind: !bool
     bits: 0
     write: e
 - name: vcmp_f32_op2
-  kind: !enum
+  kind: !union
     bits: 0..6
     variants:
       000000:
@@ -849,7 +704,7 @@ types:
           name: sm
           kind: !type [sreg, (bits(0..4) << 1) | bit(5)]
 - name: vcmp_f64_op2
-  kind: !enum
+  kind: !union
     bits: 0..6
     variants:
       000000:
@@ -878,7 +733,7 @@ types:
     format: !fmt fpscr
     fields: []
 - name: vldm_vstm_mode
-  kind: !enum
+  kind: !union
     bits: 0..2
     variants:
       01:

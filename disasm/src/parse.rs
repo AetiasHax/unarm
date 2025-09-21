@@ -36,55 +36,28 @@ impl BlxTarget {
 }
 impl Cond {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Eq),
-            0x1 => Some(Self::Ne),
-            0x2 => Some(Self::Hs),
-            0x3 => Some(Self::Lo),
-            0x4 => Some(Self::Mi),
-            0x5 => Some(Self::Pl),
-            0x6 => Some(Self::Vs),
-            0x7 => Some(Self::Vc),
-            0x8 => Some(Self::Hi),
-            0x9 => Some(Self::Ls),
-            0xa => Some(Self::Ge),
-            0xb => Some(Self::Lt),
-            0xc => Some(Self::Gt),
-            0xd => Some(Self::Le),
-            0xe => Some(Self::Al),
-            _ => None,
+        if value < 15 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl Reg {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::R0),
-            0x1 => Some(Self::R1),
-            0x2 => Some(Self::R2),
-            0x3 => Some(Self::R3),
-            0x4 => Some(Self::R4),
-            0x5 => Some(Self::R5),
-            0x6 => Some(Self::R6),
-            0x7 => Some(Self::R7),
-            0x8 => Some(Self::R8),
-            0x9 => Some(Self::R9),
-            0xa => Some(Self::R10),
-            0xb => Some(Self::R11),
-            0xc => Some(Self::R12),
-            0xd => Some(Self::Sp),
-            0xe => Some(Self::Lr),
-            0xf => Some(Self::Pc),
-            _ => None,
+        if value < 16 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl StatusReg {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Cpsr),
-            0x1 => Some(Self::Spsr),
-            _ => None,
+        if value < 2 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
@@ -115,58 +88,28 @@ impl MsrOp2 {
 }
 impl ShiftOp {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Lsl),
-            0x1 => Some(Self::Lsr),
-            0x2 => Some(Self::Asr),
-            0x3 => Some(Self::Ror),
-            _ => None,
+        if value < 4 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl Coproc {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::P0),
-            0x1 => Some(Self::P1),
-            0x2 => Some(Self::P2),
-            0x3 => Some(Self::P3),
-            0x4 => Some(Self::P4),
-            0x5 => Some(Self::P5),
-            0x6 => Some(Self::P6),
-            0x7 => Some(Self::P7),
-            0x8 => Some(Self::P8),
-            0x9 => Some(Self::P9),
-            0xa => Some(Self::P10),
-            0xb => Some(Self::P11),
-            0xc => Some(Self::P12),
-            0xd => Some(Self::P13),
-            0xe => Some(Self::P14),
-            0xf => Some(Self::P15),
-            _ => None,
+        if value < 16 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl CoReg {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::C0),
-            0x1 => Some(Self::C1),
-            0x2 => Some(Self::C2),
-            0x3 => Some(Self::C3),
-            0x4 => Some(Self::C4),
-            0x5 => Some(Self::C5),
-            0x6 => Some(Self::C6),
-            0x7 => Some(Self::C7),
-            0x8 => Some(Self::C8),
-            0x9 => Some(Self::C9),
-            0xa => Some(Self::C10),
-            0xb => Some(Self::C11),
-            0xc => Some(Self::C12),
-            0xd => Some(Self::C13),
-            0xe => Some(Self::C14),
-            0xf => Some(Self::C15),
-            _ => None,
+        if value < 16 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
@@ -222,14 +165,11 @@ impl Op2Shift {
 }
 impl CpsEffect {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        if (value & 0x3) == 0x0 {
-            Some(Self::SetMode)
-        } else if (value & 0x3) == 0x2 {
-            Some(Self::Ie)
-        } else if (value & 0x3) == 0x3 {
-            Some(Self::Id)
-        } else {
-            None
+        match value {
+            0x0 => Some(Self::SetMode),
+            0x2 => Some(Self::Ie),
+            0x3 => Some(Self::Id),
+            _ => None,
         }
     }
 }
@@ -275,12 +215,10 @@ impl AddrLdcStc {
 }
 impl LdmStmMode {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Da),
-            0x1 => Some(Self::Ia),
-            0x2 => Some(Self::Db),
-            0x3 => Some(Self::Ib),
-            _ => None,
+        if value < 4 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
@@ -380,108 +318,46 @@ impl MiscLoadOffset {
 }
 impl SrsRfeMode {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Da),
-            0x1 => Some(Self::Ia),
-            0x2 => Some(Self::Db),
-            0x3 => Some(Self::Ib),
-            _ => None,
+        if value < 4 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl Endianness {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Le),
-            0x1 => Some(Self::Be),
-            _ => None,
+        if value < 2 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl RegSide {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::Bottom),
-            0x1 => Some(Self::Top),
-            _ => None,
+        if value < 2 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl Sreg {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::S0),
-            0x1 => Some(Self::S1),
-            0x2 => Some(Self::S2),
-            0x3 => Some(Self::S3),
-            0x4 => Some(Self::S4),
-            0x5 => Some(Self::S5),
-            0x6 => Some(Self::S6),
-            0x7 => Some(Self::S7),
-            0x8 => Some(Self::S8),
-            0x9 => Some(Self::S9),
-            0xa => Some(Self::S10),
-            0xb => Some(Self::S11),
-            0xc => Some(Self::S12),
-            0xd => Some(Self::S13),
-            0xe => Some(Self::S14),
-            0xf => Some(Self::S15),
-            0x10 => Some(Self::S16),
-            0x11 => Some(Self::S17),
-            0x12 => Some(Self::S18),
-            0x13 => Some(Self::S19),
-            0x14 => Some(Self::S20),
-            0x15 => Some(Self::S21),
-            0x16 => Some(Self::S22),
-            0x17 => Some(Self::S23),
-            0x18 => Some(Self::S24),
-            0x19 => Some(Self::S25),
-            0x1a => Some(Self::S26),
-            0x1b => Some(Self::S27),
-            0x1c => Some(Self::S28),
-            0x1d => Some(Self::S29),
-            0x1e => Some(Self::S30),
-            0x1f => Some(Self::S31),
-            _ => None,
+        if value < 32 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }
 impl Dreg {
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        match value {
-            0x0 => Some(Self::D0),
-            0x1 => Some(Self::D1),
-            0x2 => Some(Self::D2),
-            0x3 => Some(Self::D3),
-            0x4 => Some(Self::D4),
-            0x5 => Some(Self::D5),
-            0x6 => Some(Self::D6),
-            0x7 => Some(Self::D7),
-            0x8 => Some(Self::D8),
-            0x9 => Some(Self::D9),
-            0xa => Some(Self::D10),
-            0xb => Some(Self::D11),
-            0xc => Some(Self::D12),
-            0xd => Some(Self::D13),
-            0xe => Some(Self::D14),
-            0xf => Some(Self::D15),
-            0x10 => Some(Self::D16),
-            0x11 => Some(Self::D17),
-            0x12 => Some(Self::D18),
-            0x13 => Some(Self::D19),
-            0x14 => Some(Self::D20),
-            0x15 => Some(Self::D21),
-            0x16 => Some(Self::D22),
-            0x17 => Some(Self::D23),
-            0x18 => Some(Self::D24),
-            0x19 => Some(Self::D25),
-            0x1a => Some(Self::D26),
-            0x1b => Some(Self::D27),
-            0x1c => Some(Self::D28),
-            0x1d => Some(Self::D29),
-            0x1e => Some(Self::D30),
-            0x1f => Some(Self::D31),
-            _ => None,
+        if value < 32 {
+            unsafe { Some(core::mem::transmute::<u8, Self>(value as u8)) }
+        } else {
+            None
         }
     }
 }

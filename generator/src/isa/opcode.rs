@@ -429,11 +429,16 @@ impl OpcodeParamValue {
             }
             OpcodeParamValue::Enum(variant, value) => {
                 let inner_type = data_type.canonical(isa);
-                let DataTypeKind::Enum(data_type_enum) = inner_type.kind() else {
-                    panic!("Data type '{}' is not an enum", data_type.name().0);
-                };
-                let Some((_, variant)) = data_type_enum.get_variant(variant) else {
-                    panic!();
+                let variant = match inner_type.kind() {
+                    DataTypeKind::Enum(data_type_enum) => {
+                        data_type_enum.get_variant(variant).unwrap()
+                    }
+                    DataTypeKind::Union(data_type_union) => {
+                        data_type_union.get_variant(variant).unwrap().1
+                    }
+                    _ => {
+                        panic!("Data type '{}' is not an enum", data_type.name().0);
+                    }
                 };
                 variant.param_expr_tokens(isa, inner_type.name(), value)
             }

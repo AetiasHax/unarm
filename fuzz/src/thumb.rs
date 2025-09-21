@@ -1,5 +1,6 @@
 use std::{hint::black_box, ops::RangeInclusive};
 
+use rand::RngCore;
 use unarm::{parse_thumb, Options};
 
 use crate::Test;
@@ -15,6 +16,7 @@ pub fn fuzz(num_threads: usize, iterations: usize, options: Options, test: Test)
 
     let handles: Vec<_> = match test {
         Test::Parse => fuzzers.iter().map(|f| f.parse()).collect(),
+        Test::ParseRandom => fuzzers.iter().map(|f| f.parse_random()).collect(),
         Test::ParseAndWrite => fuzzers.iter().map(|f| f.parse_and_write()).collect(),
     };
     for handle in handles {
@@ -39,6 +41,21 @@ impl Fuzzer {
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
+                    black_box(parse_thumb(code, 0));
+                }
+            }
+        })
+    }
+
+    fn parse_random(&self) -> std::thread::JoinHandle<()> {
+        let range = self.range.clone();
+        let iterations = self.iterations;
+        std::thread::spawn(move || {
+            let mut rng = rand::rng();
+            for _ in 0..iterations {
+                for _ in range.clone() {
+                    let code = rng.next_u32();
+                    #[allow(clippy::unit_arg)]
                     black_box(parse_thumb(code, 0));
                 }
             }

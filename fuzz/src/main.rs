@@ -8,6 +8,7 @@ use unarm::{Extensions, Options, R9Use, Version};
 #[derive(Clone, Copy)]
 pub enum Test {
     Parse,
+    ParseRandom,
     ParseAndWrite,
 }
 
@@ -43,6 +44,7 @@ fn main() {
                 "v6k" => version = Some(Version::V6K),
                 "ual" => ual = true,
                 "parse" => test = Some(Test::Parse),
+                "parse-random" => test = Some(Test::ParseRandom),
                 "parse-and-write" => test = Some(Test::ParseAndWrite),
                 _ => panic!("Unknown argument '{}'", arg),
             }
@@ -62,7 +64,7 @@ fn main() {
         panic!("Expected one of: v4, v4t, v5t, v5te, v5tej, v6, v6k");
     };
     let Some(test) = test else {
-        panic!("Expected one of: parse, parse-and-write");
+        panic!("Expected one of: parse, parse-random, parse-and-write");
     };
     let options = Options {
         version,

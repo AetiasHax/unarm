@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, anyhow, bail};
 use indexmap::IndexMap;
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::{ToTokens, quote};
@@ -122,6 +122,8 @@ pub enum DataTypeKind {
     Int(DataExpr),
     #[serde(rename = "enum")]
     Enum(DataTypeEnum),
+    #[serde(rename = "union")]
+    Union(DataTypeUnion),
     #[serde(rename = "struct")]
     Struct(DataTypeStruct),
     #[serde(rename = "type")]
@@ -145,6 +147,7 @@ impl DataType {
             DataTypeKind::UInt(_) => Ok(()),
             DataTypeKind::Int(_) => Ok(()),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.validate(&self.name),
+            DataTypeKind::Union(data_type_union) => data_type_union.validate(&self.name),
             DataTypeKind::Struct(_) => Ok(()),
             DataTypeKind::Type(_, _) => Ok(()),
             DataTypeKind::Custom => Ok(()),
@@ -168,6 +171,9 @@ impl DataType {
             DataTypeKind::UInt(_) => None,
             DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.enum_tokens(isa, &self.name)),
+            DataTypeKind::Union(data_type_union) => {
+                Some(data_type_union.enum_tokens(isa, &self.name))
+            }
             DataTypeKind::Struct(data_type_struct) => {
                 Some(data_type_struct.struct_tokens(isa, &self.name))
             }
@@ -182,7 +188,10 @@ impl DataType {
             DataTypeKind::UInt(_) => None,
             DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => {
-                Some(data_type_enum.parse_impl_tokens(isa, &self.name))
+                Some(data_type_enum.parse_impl_tokens(&self.name))
+            }
+            DataTypeKind::Union(data_type_union) => {
+                Some(data_type_union.parse_impl_tokens(isa, &self.name))
             }
             DataTypeKind::Struct(data_type_struct) => {
                 Some(data_type_struct.parse_impl_tokens(isa, &self.name))
@@ -198,6 +207,10 @@ impl DataType {
             DataTypeKind::UInt(_) => quote!(u32),
             DataTypeKind::Int(_) => quote!(i32),
             DataTypeKind::Enum(_) => {
+                let name_ident = self.name.as_pascal_ident();
+                quote!(#name_ident)
+            }
+            DataTypeKind::Union(_) => {
                 let name_ident = self.name.as_pascal_ident();
                 quote!(#name_ident)
             }
@@ -244,8 +257,11 @@ impl DataType {
             }
             DataTypeKind::Enum(data_type_enum) => {
                 let expr = data_type_enum.parse_expr_tokens(&self.name, value);
-                let illegal_try = data_type_enum.can_be_illegal(isa).then(|| quote!(?));
-                quote!(#expr #illegal_try)
+                quote!(#expr?)
+            }
+            DataTypeKind::Union(data_type_union) => {
+                let expr = data_type_union.parse_expr_tokens(&self.name, value);
+                quote!(#expr?)
             }
             DataTypeKind::Struct(data_type_struct) => {
                 let expr = data_type_struct.parse_expr_tokens(&self.name, value);
@@ -273,7 +289,8 @@ impl DataType {
             DataTypeKind::Bool { .. } => false,
             DataTypeKind::UInt(_) => false,
             DataTypeKind::Int(_) => false,
-            DataTypeKind::Enum(data_type_enum) => data_type_enum.can_be_illegal(isa),
+            DataTypeKind::Enum(_) => true,
+            DataTypeKind::Union(_) => true,
             DataTypeKind::Struct(data_type_struct) => data_type_struct.can_be_illegal(isa),
             DataTypeKind::Type(data_type_name, _) => {
                 isa.types().get(data_type_name).unwrap().can_be_illegal(isa)
@@ -288,6 +305,7 @@ impl DataType {
             DataTypeKind::UInt(_) => Some(quote!(0)),
             DataTypeKind::Int(_) => Some(quote!(0)),
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_expr_tokens(&self.name),
+            DataTypeKind::Union(data_type_union) => data_type_union.default_expr_tokens(&self.name),
             DataTypeKind::Struct(data_type_struct) => {
                 data_type_struct.default_expr_tokens(isa, &self.name)
             }
@@ -310,6 +328,9 @@ impl DataType {
             DataTypeKind::UInt(_) => return None,
             DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(data_type_enum) => data_type_enum.default_impl_body_tokens(isa)?,
+            DataTypeKind::Union(data_type_union) => {
+                data_type_union.default_impl_body_tokens(isa)?
+            }
             DataTypeKind::Struct(data_type_struct) => {
                 data_type_struct.default_impl_body_tokens(isa)?
             }
@@ -332,6 +353,9 @@ impl DataType {
             DataTypeKind::UInt(_) => None,
             DataTypeKind::Int(_) => None,
             DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.write_impl_body_tokens(isa)),
+            DataTypeKind::Union(data_type_union) => {
+                Some(data_type_union.write_impl_body_tokens(isa))
+            }
             DataTypeKind::Struct(data_type_struct) => {
                 Some(data_type_struct.write_impl_body_tokens(isa))
             }
@@ -346,6 +370,7 @@ impl DataType {
             DataTypeKind::UInt(_) => return None,
             DataTypeKind::Int(_) => return None,
             DataTypeKind::Enum(_) => {}
+            DataTypeKind::Union(_) => {}
             DataTypeKind::Struct(_) => {}
             DataTypeKind::Type(_, _) => return None,
             DataTypeKind::Custom => return None,
@@ -391,6 +416,7 @@ impl DataType {
             DataTypeKind::UInt(_) => "uimm",
             DataTypeKind::Int(_) => "simm",
             DataTypeKind::Enum(_) => &self.name.0,
+            DataTypeKind::Union(_) => &self.name.0,
             DataTypeKind::Struct(_) => &self.name.0,
             DataTypeKind::Type(name, _) => &name.0,
             DataTypeKind::Custom => &self.name.0,
@@ -422,6 +448,7 @@ impl DataType {
                 }
             }
             DataTypeKind::Enum(_) => quote!(#value.write(#formatter)?;),
+            DataTypeKind::Union(_) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Struct(_) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Type(_, _) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Custom => quote!(#value.write(#formatter)?;),
@@ -448,10 +475,113 @@ impl DataType {
 pub struct DataTypeEnum {
     bits: BitRange,
     default: Option<DataTypeEnumVariantName>,
-    variants: IndexMap<Pattern, DataTypeEnumVariant>,
+    variants: Vec<DataTypeEnumVariant>,
 }
 
 impl DataTypeEnum {
+    pub fn get_variant(&self, name: &DataTypeEnumVariantName) -> Option<&DataTypeEnumVariant> {
+        self.variants.iter().find(|v| v.name() == name)
+    }
+
+    pub fn validate(&self, name: &DataTypeName) -> Result<()> {
+        if let Some(default) = &self.default {
+            self.get_variant(default).ok_or_else(|| {
+                anyhow!("Default variant '{default}' of union '{name}' not found")
+            })?;
+        }
+        for variant in &self.variants {
+            if variant.data.is_some() {
+                bail!(
+                    "Variant '{}' of enum '{}' cannot have associated data",
+                    variant.name.0,
+                    name
+                );
+            }
+        }
+        Ok(())
+    }
+
+    fn repr_type(&self) -> TokenStream {
+        match self.variants.len() {
+            0..0x100 => quote!(u8),
+            0x100..0x10000 => quote!(u16),
+            _ => quote!(u32),
+        }
+    }
+
+    fn enum_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
+        let name_ident = name.as_pascal_ident();
+        let variants = self.variants.iter().map(|v| v.variant_tokens(isa));
+        let repr_type = self.repr_type();
+        quote! {
+            #[repr(#repr_type)]
+            #[derive(PartialEq, Eq, Clone, Copy)]
+            pub enum #name_ident {
+                #(#variants),*
+            }
+        }
+    }
+
+    fn parse_impl_tokens(&self, name: &DataTypeName) -> TokenStream {
+        let name_ident = name.as_pascal_ident();
+        let num_variants = Literal::usize_unsuffixed(self.variants.len());
+        let repr_type = self.repr_type();
+
+        quote! {
+            impl #name_ident {
+                // #[profiling::function]
+                pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+                    if value < #num_variants {
+                        unsafe { Some(core::mem::transmute::<#repr_type, Self>(value as #repr_type)) }
+                    } else {
+                        None
+                    }
+                }
+            }
+        }
+    }
+
+    fn parse_expr_tokens(&self, name: &DataTypeName, value: Option<TokenStream>) -> TokenStream {
+        let name_ident = name.as_pascal_ident();
+        let value = value.unwrap_or_else(|| self.bits.shift_mask_tokens(None));
+        quote!(#name_ident::parse(#value, pc))
+    }
+
+    fn default_impl_body_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let default = self.default.as_ref()?;
+        let Some(default_variant) = self.get_variant(default) else {
+            panic!();
+        };
+        default_variant.default_expr_tokens(isa)
+    }
+
+    fn default_expr_tokens(&self, name: &DataTypeName) -> Option<TokenStream> {
+        if self.default.is_some() {
+            let name_ident = name.as_pascal_ident();
+            Some(quote!(#name_ident::default()))
+        } else {
+            None
+        }
+    }
+
+    fn write_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
+        let variants = self.variants.iter().map(|variant| variant.write_expr_tokens(isa));
+        quote! {
+            match self {
+                #(#variants),*
+            }
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DataTypeUnion {
+    bits: BitRange,
+    default: Option<DataTypeEnumVariantName>,
+    variants: IndexMap<Pattern, DataTypeEnumVariant>,
+}
+
+impl DataTypeUnion {
     pub fn get_variant(
         &self,
         name: &DataTypeEnumVariantName,
@@ -461,8 +591,9 @@ impl DataTypeEnum {
 
     pub fn validate(&self, name: &DataTypeName) -> Result<()> {
         if let Some(default) = &self.default {
-            self.get_variant(default)
-                .ok_or_else(|| anyhow!("Default variant '{default}' of enum '{name}' not found"))?;
+            self.get_variant(default).ok_or_else(|| {
+                anyhow!("Default variant '{default}' of union '{name}' not found")
+            })?;
         }
         Ok(())
     }
@@ -478,53 +609,43 @@ impl DataTypeEnum {
         }
     }
 
-    /// Returns `true` if any enum variant has any optional bits, e.g. the "x" in `00x1`
+    /// Returns `true` if any union variant has any optional bits, e.g. the "x" in `00x1`
     fn has_optional_bits(&self) -> bool {
         let expected_bitmask = self.bits.mask();
         self.variants.keys().any(|pattern| pattern.bitmask() != expected_bitmask)
     }
 
-    fn can_be_illegal(&self, isa: &Isa) -> bool {
-        true
-    }
-
     fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
 
-        let can_be_illegal = self.can_be_illegal(isa);
-
-        let fn_body =
-            if self.has_optional_bits() {
-                let variants = self.variants.iter().map(|(pattern, variant)| {
-                    variant.parse_if_tokens(isa, pattern, can_be_illegal)
-                });
-                quote! {
-                    #(#variants)else*
-                    else {
-                        None
-                    }
+        let fn_body = if self.has_optional_bits() {
+            let variants = self
+                .variants
+                .iter()
+                .map(|(pattern, variant)| variant.parse_if_tokens(isa, pattern));
+            quote! {
+                #(#variants)else*
+                else {
+                    None
                 }
-            } else {
-                let variants = self.variants.iter().map(|(pattern, variant)| {
-                    variant.parse_match_tokens(isa, pattern, can_be_illegal)
-                });
-                quote! {
-                    match value {
-                        #(#variants),*,
-                        _ => None,
-                    }
-                }
-            };
-
-        let return_type = if can_be_illegal {
-            quote!(Option<Self>)
+            }
         } else {
-            quote!(Self)
+            let variants = self
+                .variants
+                .iter()
+                .map(|(pattern, variant)| variant.parse_match_tokens(isa, pattern));
+            quote! {
+                match value {
+                    #(#variants),*,
+                    _ => None,
+                }
+            }
         };
 
         quote! {
             impl #name_ident {
-                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
+                // #[profiling::function]
+                pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
                     #fn_body
                 }
             }
@@ -606,21 +727,16 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_match_tokens(
-        &self,
-        isa: &Isa,
-        pattern: &Pattern,
-        can_be_illegal: bool,
-    ) -> TokenStream {
+    fn parse_match_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
+        let parse_expr = self.parse_expr_tokens(isa);
         quote!(#pattern => { #parse_expr })
     }
 
-    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern, can_be_illegal: bool) -> TokenStream {
+    fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern) -> TokenStream {
         let bitmask = HexLiteral(pattern.bitmask());
         let pattern = HexLiteral(pattern.pattern());
-        let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
+        let parse_expr = self.parse_expr_tokens(isa);
         quote! {
             if (value & #bitmask) == #pattern {
                 #parse_expr
@@ -628,7 +744,7 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn parse_expr_tokens(&self, isa: &Isa, can_be_illegal: bool) -> TokenStream {
+    fn parse_expr_tokens(&self, isa: &Isa) -> TokenStream {
         let variant_ident = self.as_ident();
         let parse_expr = if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
@@ -651,10 +767,8 @@ impl DataTypeEnumVariant {
                 }
                 Some(#parse_expr)
             }
-        } else if can_be_illegal {
-            quote!(Some(#parse_expr))
         } else {
-            parse_expr
+            quote!(Some(#parse_expr))
         }
     }
 
@@ -831,6 +945,7 @@ impl DataTypeStruct {
 
         quote! {
             impl #name_ident {
+                // #[profiling::function]
                 pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
                     #return_value
                 }
