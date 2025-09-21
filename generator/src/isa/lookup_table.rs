@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::quote;
 use syn::Ident;
@@ -11,9 +13,14 @@ pub struct OpcodeLookupTable<'a> {
     arch: Arch,
     bitmask: u32,
     buckets: Vec<Bucket<'a>>,
+    /// Maps bucket index to the bucket index sharing the same parse function, for deduplication. Can be the same index.
+    bucket_parse_map: BTreeMap<usize, usize>,
+    /// Reverse mapping of `bucket_parse_map`
+    bucket_parse_map_rev: BTreeMap<usize, Vec<usize>>,
     all_encodings: Vec<Encoding<'a>>,
 }
 
+#[derive(PartialEq, Eq)]
 pub struct Bucket<'a> {
     encodings: Vec<Encoding<'a>>,
 }
@@ -82,16 +89,40 @@ impl<'a> OpcodeLookupTable<'a> {
             })
             .collect::<Vec<_>>();
 
-        OpcodeLookupTable { arch, bitmask, buckets, all_encodings: encodings }
+        let bucket_parse_clones = buckets
+            .iter()
+            .enumerate()
+            .map(|(i, bucket)| {
+                buckets.iter().take(i).position(|b| b == bucket).map(|j| (i, j)).unwrap_or((i, i))
+            })
+            .collect::<BTreeMap<_, _>>();
+        let bucket_parse_clones_rev = bucket_parse_clones.iter().map(|(k, v)| (*v, *k)).fold(
+            BTreeMap::<usize, Vec<usize>>::new(),
+            |mut acc, (k, v)| {
+                acc.entry(k).or_default().push(v);
+                acc
+            },
+        );
+
+        OpcodeLookupTable {
+            arch,
+            bitmask,
+            buckets,
+            all_encodings: encodings,
+            bucket_parse_map: bucket_parse_clones,
+            bucket_parse_map_rev: bucket_parse_clones_rev,
+        }
     }
 
     pub fn parse_match_fn_body_tokens(&self) -> TokenStream {
-        let cases = (0..self.buckets.len()).map(|key| {
-            let pattern_literal = HexLiteral(key);
-            let fn_name = format!("parse_{}_{key}", self.arch);
+        let cases = self.bucket_parse_map_rev.iter().map(|(key, clones)| {
+            let pattern_literals = clones.iter().map(|k| HexLiteral(*k));
+
+            let mapped_key = self.bucket_parse_map.get(key).unwrap();
+            let fn_name = format!("parse_{}_{mapped_key:x}", self.arch);
             let fn_ident = Ident::new(&fn_name, Span::call_site());
             quote! {
-                #pattern_literal => #fn_ident(ins, pc)
+                #(#pattern_literals)|* => #fn_ident(ins, pc)
             }
         });
         let bit_ranges = BitRanges::from_mask(self.bitmask);
@@ -123,16 +154,21 @@ impl<'a> OpcodeLookupTable<'a> {
     }
 
     pub fn parse_buckets_tokens(&self) -> TokenStream {
-        let parse_case_fns = self.buckets.iter().enumerate().map(|(key, bucket)| {
-            let body_tokens = bucket.parse_bucket_tokens(self.arch);
-            let fn_name = format!("parse_{}_{key}", self.arch);
-            let fn_ident = Ident::new(&fn_name, Span::call_site());
-            quote! {
-                fn #fn_ident(ins: u32, pc: u32) -> Option<Ins> {
-                    #body_tokens
+        let parse_case_fns = self
+            .buckets
+            .iter()
+            .enumerate()
+            .filter(|(key, _)| self.bucket_parse_map.get(key) == Some(key))
+            .map(|(key, bucket)| {
+                let body_tokens = bucket.parse_bucket_tokens(self.arch);
+                let fn_name = format!("parse_{}_{key:x}", self.arch);
+                let fn_ident = Ident::new(&fn_name, Span::call_site());
+                quote! {
+                    fn #fn_ident(ins: u32, pc: u32) -> Option<Ins> {
+                        #body_tokens
+                    }
                 }
-            }
-        });
+            });
         quote!(#(#parse_case_fns)*)
     }
 
@@ -225,3 +261,11 @@ impl<'a> Encoding<'a> {
         quote!((#bitmask, #pattern, #parse_fn_ident))
     }
 }
+
+impl<'a> PartialEq for Encoding<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.encoding, other.encoding)
+    }
+}
+
+impl<'a> Eq for Encoding<'a> {}
