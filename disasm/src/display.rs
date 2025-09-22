@@ -1,6 +1,7 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::needless_else)]
+#![allow(clippy::explicit_auto_deref)]
 #![allow(unused_variables)]
 use crate::*;
 pub trait Write: core::fmt::Write {
@@ -38,6 +39,12 @@ pub trait Write: core::fmt::Write {
     fn write_subtract(&mut self, subtract: bool) -> core::fmt::Result {
         if subtract {
             self.write_str("-")?;
+        }
+        Ok(())
+    }
+    fn write_thumb(&mut self, thumb: bool) -> core::fmt::Result {
+        if thumb {
+            self.write_str("thumb")?;
         }
         Ok(())
     }
@@ -182,6 +189,16 @@ pub trait Write: core::fmt::Write {
     fn write_round(&mut self, round: bool) -> core::fmt::Result {
         if round {
             self.write_str("r")?;
+        }
+        Ok(())
+    }
+    fn write_round_zero(&mut self, round_zero: bool) -> core::fmt::Result {
+        if round_zero {
+            if self.options().ual {
+                self.write_str("r")?;
+            } else {
+                self.write_str("z")?;
+            }
         }
         Ok(())
     }
@@ -1193,7 +1210,7 @@ impl VcmpF32Op2 {
     {
         match self {
             Self::Zero => {
-                formatter.write_str("zero")?;
+                formatter.write_str("#0.0")?;
             }
             Self::Reg(sm) => {
                 formatter.write_sreg(*sm)?;
@@ -1209,7 +1226,7 @@ impl VcmpF64Op2 {
     {
         match self {
             Self::Zero => {
-                formatter.write_str("zero")?;
+                formatter.write_str("#0.0")?;
             }
             Self::Reg(dm) => {
                 formatter.write_dreg(*dm)?;
@@ -1224,10 +1241,14 @@ impl DregIndex {
         F: Write + ?Sized,
     {
         let Self { dreg, index } = self;
-        formatter.write_dreg(*dreg)?;
-        formatter.write_str("[")?;
-        formatter.write_uimm(*index)?;
-        formatter.write_str("]")?;
+        if formatter.options().ual {
+            formatter.write_dreg(*dreg)?;
+            formatter.write_str("[")?;
+            formatter.write_uimm(*index)?;
+            formatter.write_str("]")?;
+        } else {
+            formatter.write_dreg(*dreg)?;
+        }
         Ok(())
     }
 }
@@ -1264,7 +1285,7 @@ impl Ins {
     {
         match self {
             Ins::Illegal => formatter.write_str("<illegal>")?,
-            Ins::Adc { s, cond, rd, rn, op2 } => {
+            Ins::Adc { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("adc")?;
                     formatter.write_s(*s)?;
@@ -1272,10 +1293,12 @@ impl Ins {
                 } else {
                     formatter.write_str("adc")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
-            Ins::Add { s, cond, rd, rn, op2 } => {
+            Ins::Add { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("add")?;
                     formatter.write_s(*s)?;
@@ -1283,10 +1306,12 @@ impl Ins {
                 } else {
                     formatter.write_str("add")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
-            Ins::And { s, cond, rd, rn, op2 } => {
+            Ins::And { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("and")?;
                     formatter.write_s(*s)?;
@@ -1294,19 +1319,26 @@ impl Ins {
                 } else {
                     formatter.write_str("and")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
-            Ins::Asr { s, cond, rd, rn, op2 } => {
-                formatter.write_str("asr")?;
-                formatter.write_s(*s)?;
-                formatter.write_cond(*cond)?;
+            Ins::Asr { s, thumb, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("asr")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("asr")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::B { cond, target } => {
                 formatter.write_str("b")?;
                 formatter.write_cond(*cond)?;
             }
-            Ins::Bic { s, cond, rd, rn, op2 } => {
+            Ins::Bic { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("bic")?;
                     formatter.write_s(*s)?;
@@ -1314,7 +1346,9 @@ impl Ins {
                 } else {
                     formatter.write_str("bic")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
             Ins::Bkpt { imm } => {
@@ -1366,7 +1400,7 @@ impl Ins {
                 formatter.write_str("csdb")?;
                 formatter.write_cond(*cond)?;
             }
-            Ins::Eor { s, cond, rd, rn, op2 } => {
+            Ins::Eor { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("eor")?;
                     formatter.write_s(*s)?;
@@ -1374,7 +1408,9 @@ impl Ins {
                 } else {
                     formatter.write_str("eor")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
             Ins::Ldc { l, cond, coproc, crd, dest } => {
@@ -1408,16 +1444,34 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Ldrb { cond, rd, addr } => {
-                formatter.write_str("ldrb")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrb")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("b")?;
+                }
             }
             Ins::Ldrbt { cond, rd, addr } => {
-                formatter.write_str("ldrbt")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrbt")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("bt")?;
+                }
             }
             Ins::Ldrd { cond, rd, rd2, addr } => {
-                formatter.write_str("ldrd")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrd")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("d")?;
+                }
             }
             Ins::Ldrex { cond, rd, rn } => {
                 formatter.write_str("ldrex")?;
@@ -1436,27 +1490,56 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Ldrh { cond, rd, addr } => {
-                formatter.write_str("ldrh")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrh")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("h")?;
+                }
             }
             Ins::Ldrsb { cond, rd, addr } => {
-                formatter.write_str("ldrsb")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrsb")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("sb")?;
+                }
             }
             Ins::Ldrsh { cond, rd, addr } => {
-                formatter.write_str("ldrsh")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrsh")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("sh")?;
+                }
             }
             Ins::Ldrt { cond, rd, addr } => {
-                formatter.write_str("ldrt")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ldrt")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ldr")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("t")?;
+                }
             }
-            Ins::Lsl { s, cond, rd, rn, op2 } => {
-                formatter.write_str("lsl")?;
-                formatter.write_s(*s)?;
-                formatter.write_cond(*cond)?;
+            Ins::Lsl { s, thumb, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("lsl")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("lsl")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
-            Ins::Lsr { s, cond, rd, rn, op2 } => {
+            Ins::Lsr { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_str("lsr")?;
                 formatter.write_s(*s)?;
                 formatter.write_cond(*cond)?;
@@ -1486,7 +1569,7 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
-            Ins::Mov { s, cond, rd, op2 } => {
+            Ins::Mov { s, thumb, cond, rd, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("mov")?;
                     formatter.write_s(*s)?;
@@ -1494,7 +1577,9 @@ impl Ins {
                 } else {
                     formatter.write_str("mov")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
             Ins::Mrc { cond, coproc, opc1, rd, crn, crm, opc2 } => {
@@ -1519,7 +1604,7 @@ impl Ins {
                 formatter.write_str("msr")?;
                 formatter.write_cond(*cond)?;
             }
-            Ins::Mul { s, cond, rd, rn, rm } => {
+            Ins::Mul { s, thumb, cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("mul")?;
                     formatter.write_s(*s)?;
@@ -1527,10 +1612,12 @@ impl Ins {
                 } else {
                     formatter.write_str("mul")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
-            Ins::Mvn { s, cond, rd, op2 } => {
+            Ins::Mvn { s, thumb, cond, rd, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("mvn")?;
                     formatter.write_s(*s)?;
@@ -1538,14 +1625,19 @@ impl Ins {
                 } else {
                     formatter.write_str("mvn")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
+            }
+            Ins::Neg { rd, rm } => {
+                formatter.write_str("neg")?;
             }
             Ins::Nop { cond } => {
                 formatter.write_str("nop")?;
                 formatter.write_cond(*cond)?;
             }
-            Ins::Orr { s, cond, rd, rn, op2 } => {
+            Ins::Orr { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("orr")?;
                     formatter.write_s(*s)?;
@@ -1553,7 +1645,9 @@ impl Ins {
                 } else {
                     formatter.write_str("orr")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
             Ins::Pkhbt { cond, rd, rn, rm, shift_op, shift } => {
@@ -1588,8 +1682,13 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Qasx { cond, rd, rn, rm } => {
-                formatter.write_str("qasx")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("qasx")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("qaddsubx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Qdadd { cond, rd, rm, rn } => {
                 formatter.write_str("qdadd")?;
@@ -1600,8 +1699,13 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Qsax { cond, rd, rn, rm } => {
-                formatter.write_str("qsax")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("qsax")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("qsubaddx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Qsub { cond, rd, rm, rn } => {
                 formatter.write_str("qsub")?;
@@ -1631,10 +1735,15 @@ impl Ins {
                 formatter.write_str("rfe")?;
                 formatter.write_srs_rfe_mode(*addr_mode)?;
             }
-            Ins::Ror { s, cond, rd, rn, op2 } => {
-                formatter.write_str("ror")?;
-                formatter.write_s(*s)?;
-                formatter.write_cond(*cond)?;
+            Ins::Ror { s, thumb, cond, rd, rn, op2 } => {
+                if formatter.options().ual {
+                    formatter.write_str("ror")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ror")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Rrx { s, cond, rd, rm } => {
                 formatter.write_str("rrx")?;
@@ -1672,10 +1781,15 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Sasx { cond, rd, rn, rm } => {
-                formatter.write_str("sasx")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("sasx")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("saddsubx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
-            Ins::Sbc { s, cond, rd, rn, op2 } => {
+            Ins::Sbc { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("sbc")?;
                     formatter.write_s(*s)?;
@@ -1683,7 +1797,9 @@ impl Ins {
                 } else {
                     formatter.write_str("sbc")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
             Ins::Sel { cond, rd, rn, rm } => {
@@ -1706,12 +1822,22 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Shasx { cond, rd, rn, rm } => {
-                formatter.write_str("shasx")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("shasx")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("shaddsubx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Shsax { cond, rd, rn, rm } => {
-                formatter.write_str("shsax")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("shsax")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("shsubaddx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Shsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("shsub16")?;
@@ -1829,8 +1955,13 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Ssax { cond, rd, rn, rm } => {
-                formatter.write_str("ssax")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("ssax")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("ssubaddx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Ssub16 { cond, rd, rn, rm } => {
                 formatter.write_str("ssub16")?;
@@ -1861,7 +1992,7 @@ impl Ins {
                     formatter.write_ldm_stm_mode(*mode)?;
                     formatter.write_cond(*cond)?;
                 } else {
-                    formatter.write_str("ldm")?;
+                    formatter.write_str("stm")?;
                     formatter.write_cond(*cond)?;
                     formatter.write_ldm_stm_mode(*mode)?;
                 }
@@ -1871,16 +2002,34 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Strb { cond, rd, addr } => {
-                formatter.write_str("strb")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("strb")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("str")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("b")?;
+                }
             }
             Ins::Strbt { cond, rd, addr } => {
-                formatter.write_str("strbt")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("strbt")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("str")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("bt")?;
+                }
             }
             Ins::Strd { cond, rd, rd2, addr } => {
-                formatter.write_str("strd")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("strd")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("str")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("d")?;
+                }
             }
             Ins::Strex { cond, rd, rm, rn } => {
                 formatter.write_str("strex")?;
@@ -1899,14 +2048,26 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Strh { cond, rd, addr } => {
-                formatter.write_str("strh")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("strh")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("str")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("h")?;
+                }
             }
             Ins::Strt { cond, rd, addr } => {
-                formatter.write_str("strt")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("strt")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("str")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str("t")?;
+                }
             }
-            Ins::Sub { s, cond, rd, rn, op2 } => {
+            Ins::Sub { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("sub")?;
                     formatter.write_s(*s)?;
@@ -1914,7 +2075,9 @@ impl Ins {
                 } else {
                     formatter.write_str("sub")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_s(*s)?;
+                    if !*thumb {
+                        formatter.write_s(*s)?;
+                    } else {}
                 }
             }
             Ins::Svc { cond, imm } => {
@@ -1990,12 +2153,22 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Uhasx { cond, rd, rn, rm } => {
-                formatter.write_str("uhasx")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("uhasx")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("uhaddsubx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Uhsax { cond, rd, rn, rm } => {
-                formatter.write_str("uhsax")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("uhsax")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("uhsubaddx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Uhsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("uhsub16")?;
@@ -2040,12 +2213,22 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Uqasx { cond, rd, rn, rm } => {
-                formatter.write_str("uqasx")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("uqasx")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("uqaddsubx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Uqsax { cond, rd, rn, rm } => {
-                formatter.write_str("uqsax")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("uqsax")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("uqsubaddx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Uqsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("uqsub16")?;
@@ -2072,8 +2255,13 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::Usax { cond, rd, rn, rm } => {
-                formatter.write_str("usax")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("usax")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("usubaddx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Usub16 { cond, rd, rn, rm } => {
                 formatter.write_str("usub16")?;
@@ -2108,240 +2296,512 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::VabsF32 { cond, sd, sm } => {
-                formatter.write_str("vabs")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vabs")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fabss")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VabsF64 { cond, dd, dm } => {
-                formatter.write_str("vabs")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vabs")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fabsd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VaddF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vadd")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vadd")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fadds")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VaddF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vadd")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vadd")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("faddd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcmpF32 { quiet_nan_exc, cond, sd, op2 } => {
-                formatter.write_str("vcmp")?;
-                formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcmp")?;
+                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fcmp")?;
+                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    if formatter.options().ual && *op2 == VcmpF32Op2::Zero {
+                        formatter.write_str("z")?;
+                    } else {}
+                    formatter.write_str("s")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcmpF64 { quiet_nan_exc, cond, dd, op2 } => {
-                formatter.write_str("vcmp")?;
-                formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcmp")?;
+                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fcmp")?;
+                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    if formatter.options().ual && *op2 == VcmpF64Op2::Zero {
+                        formatter.write_str("z")?;
+                    } else {}
+                    formatter.write_str("d")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtF32F64 { cond, sd, dm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32.f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32.f64")?;
+                } else {
+                    formatter.write_str("fcvtsd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtF32S32 { cond, sd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32.s32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32.s32")?;
+                } else {
+                    formatter.write_str("fsitos")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtF32U32 { cond, sd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32.u32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32.u32")?;
+                } else {
+                    formatter.write_str("fuitos")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtF64F32 { cond, dd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64.f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64.f32")?;
+                } else {
+                    formatter.write_str("fcvtds")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtF64S32 { cond, dd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64.s32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64.s32")?;
+                } else {
+                    formatter.write_str("fsitod")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtF64U32 { cond, dd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64.u32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64.u32")?;
+                } else {
+                    formatter.write_str("fuitod")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtS32F32 { round_zero, cond, sd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_round(*round_zero)?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".s32.f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".s32.f32")?;
+                } else {
+                    formatter.write_str("ftosi")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_str("s")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtS32F64 { round_zero, cond, sd, dm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_round(*round_zero)?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".s32.f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".s32.f64")?;
+                } else {
+                    formatter.write_str("ftosi")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_str("d")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtU32F32 { round_zero, cond, sd, sm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_round(*round_zero)?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".u32.f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".u32.f32")?;
+                } else {
+                    formatter.write_str("ftoui")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_str("s")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VcvtU32F64 { round_zero, cond, sd, dm } => {
-                formatter.write_str("vcvt")?;
-                formatter.write_round(*round_zero)?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".u32.f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vcvt")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".u32.f64")?;
+                } else {
+                    formatter.write_str("ftoui")?;
+                    formatter.write_round_zero(*round_zero)?;
+                    formatter.write_str("d")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VdivF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vdiv")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vdiv")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fdivs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VdivF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vdiv")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vdiv")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fdivd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VldmF32 { mode, cond, rn, writeback, regs } => {
-                formatter.write_str("vldm")?;
-                formatter.write_vldm_vstm_mode(*mode)?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vldm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fldm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_str("s")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VldmF64 { mode, cond, rn, writeback, regs } => {
-                formatter.write_str("vldm")?;
-                formatter.write_vldm_vstm_mode(*mode)?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vldm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fldm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_str("d")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VldrF32 { cond, sd, addr } => {
-                formatter.write_str("vldr")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vldr")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("flds")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VldrF64 { cond, dd, addr } => {
-                formatter.write_str("vldr")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vldr")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fldd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmlaF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vmla")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmla")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fmacs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmlaF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vmla")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmla")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fmacd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmlsF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vmls")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmls")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fmscs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmlsF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vmls")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmls")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fmscd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Vmov32Reg { cond, dd, rt } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".32")?;
+                } else {
+                    if (*dd).index == 0 {
+                        formatter.write_str("fmdlr")?;
+                        formatter.write_cond(*cond)?;
+                    } else {
+                        formatter.write_str("fmdhr")?;
+                        formatter.write_cond(*cond)?;
+                    }
+                }
             }
             Ins::VmovF32 { cond, sd, sm } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fcpys")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovF32Reg { cond, sn, rt } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmsr")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovF64 { cond, dd, dm } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fcpyd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovReg32 { cond, rt, dn } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".32")?;
+                } else {
+                    if (*dn).index == 0 {
+                        formatter.write_str("fmrdl")?;
+                        formatter.write_cond(*cond)?;
+                    } else {
+                        formatter.write_str("fmrdh")?;
+                        formatter.write_cond(*cond)?;
+                    }
+                }
             }
             Ins::VmovRegF32 { cond, rt, sn } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmrs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovRegF32Dual { cond, rt, rt2, sm, sm2 } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmrrs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovF32RegDual { cond, sm, sm2, rt, rt2 } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmsrr")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovRegF64 { cond, rt, rt2, dm } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmrrd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmovF64Reg { cond, dm, rt, rt2 } => {
-                formatter.write_str("vmov")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmov")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmdrr")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Vmrs { cond, rd, fpscr } => {
-                formatter.write_str("vmrs")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmrs")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmrx")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::Vmsr { cond, fpscr, rd } => {
-                formatter.write_str("vmsr")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vmsr")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fmxr")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmulF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vmul")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmul")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fmuls")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VmulF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vmul")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vmul")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fmuld")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnegF32 { cond, sd, sm } => {
-                formatter.write_str("vneg")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vneg")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fnegs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnegF64 { cond, dd, dm } => {
-                formatter.write_str("vneg")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vneg")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fnegd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnmlaF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vnmla")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vnmla")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fnmacs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnmlaF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vnmla")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vnmla")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fnmacd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnmlsF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vnmls")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vnmls")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fnmscs")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnmlsF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vnmls")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vnmls")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fnmscd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnmulF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vnmul")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vnmul")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fnmuls")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VnmulF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vnmul")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vnmul")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fnmuld")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VpopF32 { cond, regs } => {
                 formatter.write_str("vpop")?;
@@ -2360,42 +2820,90 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             Ins::VsqrtF32 { cond, sd, sm } => {
-                formatter.write_str("vsqrt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vsqrt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fsqrts")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                }
             }
             Ins::VsqrtF64 { cond, dd, dm } => {
-                formatter.write_str("vsqrt")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vsqrt")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fsqrtd")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                }
             }
             Ins::VstmF32 { mode, cond, rn, writeback, regs } => {
-                formatter.write_str("vstm")?;
-                formatter.write_vldm_vstm_mode(*mode)?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vstm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fstm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_str("s")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VstmF64 { mode, cond, rn, writeback, regs } => {
-                formatter.write_str("vstm")?;
-                formatter.write_vldm_vstm_mode(*mode)?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vstm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fstm")?;
+                    formatter.write_vldm_vstm_mode(*mode)?;
+                    formatter.write_str("d")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VstrF32 { cond, sd, addr } => {
-                formatter.write_str("vstr")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vstr")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fsts")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VstrF64 { cond, dd, addr } => {
-                formatter.write_str("vstr")?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("vstr")?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("fstd")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             Ins::VsubF32 { cond, sd, sn, sm } => {
-                formatter.write_str("vsub")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f32")?;
+                if formatter.options().ual {
+                    formatter.write_str("vsub")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                } else {
+                    formatter.write_str("fsubs")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f32")?;
+                }
             }
             Ins::VsubF64 { cond, dd, dn, dm } => {
-                formatter.write_str("vsub")?;
-                formatter.write_cond(*cond)?;
-                formatter.write_str(".f64")?;
+                if formatter.options().ual {
+                    formatter.write_str("vsub")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                } else {
+                    formatter.write_str("fsubd")?;
+                    formatter.write_cond(*cond)?;
+                    formatter.write_str(".f64")?;
+                }
             }
             Ins::Wfe { cond } => {
                 formatter.write_str("wfe")?;
@@ -2418,49 +2926,79 @@ impl Ins {
     {
         match self {
             Ins::Illegal => {}
-            Ins::Adc { s, cond, rd, rn, op2 } => {
+            Ins::Adc { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
-            Ins::Add { s, cond, rd, rn, op2 } => {
+            Ins::Add { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb || *rd != *rn {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
-            Ins::And { s, cond, rd, rn, op2 } => {
+            Ins::And { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
-            Ins::Asr { s, cond, rd, rn, op2 } => {
+            Ins::Asr { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2_shift(*op2)?;
+                if formatter.options().ual || !*thumb || *rd != *rn {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                }
             }
             Ins::B { cond, target } => {
                 formatter.write_space()?;
                 formatter.write_branch_target(*target)?;
             }
-            Ins::Bic { s, cond, rd, rn, op2 } => {
+            Ins::Bic { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
             Ins::Bkpt { imm } => {
                 formatter.write_space()?;
@@ -2551,13 +3089,19 @@ impl Ins {
                 }
             }
             Ins::Csdb { cond } => {}
-            Ins::Eor { s, cond, rd, rn, op2 } => {
+            Ins::Eor { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
             Ins::Ldc { l, cond, coproc, crd, dest } => {
                 formatter.write_space()?;
@@ -2673,21 +3217,33 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_addr_ldr_str(*addr)?;
             }
-            Ins::Lsl { s, cond, rd, rn, op2 } => {
+            Ins::Lsl { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2_shift(*op2)?;
+                if formatter.options().ual || !*thumb || *rd != *rn {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                }
             }
-            Ins::Lsr { s, cond, rd, rn, op2 } => {
+            Ins::Lsr { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2_shift(*op2)?;
+                if formatter.options().ual || !*thumb || *rd != *rn {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                }
             }
             Ins::Mcr { cond, coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_space()?;
@@ -2757,7 +3313,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            Ins::Mov { s, cond, rd, op2 } => {
+            Ins::Mov { s, thumb, cond, rd, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
@@ -2833,28 +3389,46 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_msr_op2(*op2)?;
             }
-            Ins::Mul { s, cond, rd, rn, rm } => {
+            Ins::Mul { s, thumb, cond, rd, rn, rm } => {
+                formatter.write_space()?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rm)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                }
+            }
+            Ins::Mvn { s, thumb, cond, rd, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
+                formatter.write_op2(*op2)?;
+            }
+            Ins::Neg { rd, rm } => {
+                formatter.write_space()?;
+                formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            Ins::Mvn { s, cond, rd, op2 } => {
-                formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
-            }
             Ins::Nop { cond } => {}
-            Ins::Orr { s, cond, rd, rn, op2 } => {
+            Ins::Orr { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
             Ins::Pkhbt { cond, rd, rn, rm, shift_op, shift } => {
                 formatter.write_space()?;
@@ -2999,13 +3573,19 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_wb(*writeback)?;
             }
-            Ins::Ror { s, cond, rd, rn, op2 } => {
+            Ins::Ror { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2_shift(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2_shift(*op2)?;
+                }
             }
             Ins::Rrx { s, cond, rd, rm } => {
                 formatter.write_space()?;
@@ -3053,13 +3633,19 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            Ins::Sbc { s, cond, rd, rn, op2 } => {
+            Ins::Sbc { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
             Ins::Sel { cond, rd, rn, rm } => {
                 formatter.write_space()?;
@@ -3432,13 +4018,19 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_addr_ldr_str(*addr)?;
             }
-            Ins::Sub { s, cond, rd, rn, op2 } => {
+            Ins::Sub { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
-                formatter.write_reg(*rd)?;
-                formatter.write_separator()?;
-                formatter.write_reg(*rn)?;
-                formatter.write_separator()?;
-                formatter.write_op2(*op2)?;
+                if formatter.options().ual || !*thumb || *rd != *rn {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_reg(*rn)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                } else {
+                    formatter.write_reg(*rd)?;
+                    formatter.write_separator()?;
+                    formatter.write_op2(*op2)?;
+                }
             }
             Ins::Svc { cond, imm } => {
                 formatter.write_space()?;
@@ -3891,14 +4483,18 @@ impl Ins {
             Ins::VcmpF32 { quiet_nan_exc, cond, sd, op2 } => {
                 formatter.write_space()?;
                 formatter.write_sreg(*sd)?;
-                formatter.write_separator()?;
-                formatter.write_vcmp_f32_op2(*op2)?;
+                if formatter.options().ual || *op2 != VcmpF32Op2::Zero {
+                    formatter.write_separator()?;
+                    formatter.write_vcmp_f32_op2(*op2)?;
+                } else {}
             }
             Ins::VcmpF64 { quiet_nan_exc, cond, dd, op2 } => {
                 formatter.write_space()?;
                 formatter.write_dreg(*dd)?;
-                formatter.write_separator()?;
-                formatter.write_vcmp_f64_op2(*op2)?;
+                if formatter.options().ual || *op2 != VcmpF64Op2::Zero {
+                    formatter.write_separator()?;
+                    formatter.write_vcmp_f64_op2(*op2)?;
+                } else {}
             }
             Ins::VcvtF32F64 { cond, sd, dm } => {
                 formatter.write_space()?;

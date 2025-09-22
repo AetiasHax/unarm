@@ -353,9 +353,9 @@ impl Dreg {
 impl VcmpF32Op2 {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        if (value & 0x3f) == 0x0 {
+        if (value & 0x1003f) == 0x10000 {
             Some(Self::Zero)
-        } else if (value & 0x10) == 0x0 {
+        } else if (value & 0x10010) == 0x0 {
             Some(
                 Self::Reg(
                     Sreg::parse((((value) & 0xf) << 1) | (((value) >> 5) & 0x1), pc),
@@ -369,9 +369,9 @@ impl VcmpF32Op2 {
 impl VcmpF64Op2 {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        if (value & 0x3f) == 0x0 {
+        if (value & 0x1003f) == 0x10000 {
             Some(Self::Zero)
-        } else if (value & 0x10) == 0x0 {
+        } else if (value & 0x10010) == 0x0 {
             Some(
                 Self::Reg(
                     Dreg::parse(((((value) >> 5) & 0x1) << 4) | ((value) & 0xf), pc),
@@ -1443,24 +1443,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x426 | 0x427 | 0x432 | 0x433 | 0x436 | 0x437 | 0x501 | 0x502 | 0x503 | 0x504
         | 0x506 | 0x507 | 0x511 | 0x512 | 0x513 | 0x514 | 0x516 | 0x517 | 0x521 | 0x522
         | 0x523 | 0x524 | 0x526 | 0x527 | 0x531 | 0x532 | 0x533 | 0x534 | 0x536 | 0x537
-        | 0x6a1 | 0x6a2 | 0x6a3 | 0x6a4 | 0x6a5 | 0x6a7 | 0x6a8 | 0x6aa | 0x6ac | 0x6ae
-        | 0x6b0 | 0x6b1 | 0x6b2 | 0x6b3 | 0x6b4 | 0x6b5 | 0x6b6 | 0x6b7 | 0x6b8 | 0x6ba
-        | 0x6bc | 0x6be | 0x6e1 | 0x6e2 | 0x6e3 | 0x6e4 | 0x6e5 | 0x6e7 | 0x6e8 | 0x6ea
-        | 0x6ec | 0x6ee | 0x6f0 | 0x6f1 | 0x6f2 | 0x6f3 | 0x6f4 | 0x6f5 | 0x6f6 | 0x6f7
-        | 0x6f8 | 0x6fa | 0x6fc | 0x6fe | 0xc00 | 0xc01 | 0xc02 | 0xc03 | 0xc04 | 0xc05
-        | 0xc06 | 0xc07 | 0xc08 | 0xc09 | 0xc0a | 0xc0b | 0xc0c | 0xc0d | 0xc0e | 0xc0f
-        | 0xc10 | 0xc11 | 0xc12 | 0xc13 | 0xc14 | 0xc15 | 0xc16 | 0xc17 | 0xc18 | 0xc19
-        | 0xc1a | 0xc1b | 0xc1c | 0xc1d | 0xc1e | 0xc1f | 0xc20 | 0xc21 | 0xc22 | 0xc23
-        | 0xc24 | 0xc25 | 0xc26 | 0xc27 | 0xc28 | 0xc29 | 0xc2a | 0xc2b | 0xc2c | 0xc2d
-        | 0xc2e | 0xc2f | 0xc30 | 0xc31 | 0xc32 | 0xc33 | 0xc34 | 0xc35 | 0xc36 | 0xc37
-        | 0xc38 | 0xc39 | 0xc3a | 0xc3b | 0xc3c | 0xc3d | 0xc3e | 0xc3f | 0xd00 | 0xd01
-        | 0xd02 | 0xd03 | 0xd04 | 0xd05 | 0xd06 | 0xd07 | 0xd08 | 0xd09 | 0xd0a | 0xd0b
-        | 0xd0c | 0xd0d | 0xd0e | 0xd0f | 0xd10 | 0xd11 | 0xd12 | 0xd13 | 0xd14 | 0xd15
-        | 0xd16 | 0xd17 | 0xd18 | 0xd19 | 0xd1a | 0xd1b | 0xd1c | 0xd1d | 0xd1e | 0xd1f
-        | 0xd20 | 0xd21 | 0xd22 | 0xd23 | 0xd24 | 0xd25 | 0xd26 | 0xd27 | 0xd28 | 0xd29
-        | 0xd2a | 0xd2b | 0xd2c | 0xd2d | 0xd2e | 0xd2f | 0xd30 | 0xd31 | 0xd32 | 0xd33
-        | 0xd34 | 0xd35 | 0xd36 | 0xd37 | 0xd38 | 0xd39 | 0xd3a | 0xd3b | 0xd3c | 0xd3d
-        | 0xd3e | 0xd3f => None,
+        | 0xc00 | 0xc01 | 0xc02 | 0xc03 | 0xc04 | 0xc05 | 0xc06 | 0xc07 | 0xc08 | 0xc09
+        | 0xc0a | 0xc0b | 0xc0c | 0xc0d | 0xc0e | 0xc0f | 0xc10 | 0xc11 | 0xc12 | 0xc13
+        | 0xc14 | 0xc15 | 0xc16 | 0xc17 | 0xc18 | 0xc19 | 0xc1a | 0xc1b | 0xc1c | 0xc1d
+        | 0xc1e | 0xc1f | 0xc20 | 0xc21 | 0xc22 | 0xc23 | 0xc24 | 0xc25 | 0xc26 | 0xc27
+        | 0xc28 | 0xc29 | 0xc2a | 0xc2b | 0xc2c | 0xc2d | 0xc2e | 0xc2f | 0xc30 | 0xc31
+        | 0xc32 | 0xc33 | 0xc34 | 0xc35 | 0xc36 | 0xc37 | 0xc38 | 0xc39 | 0xc3a | 0xc3b
+        | 0xc3c | 0xc3d | 0xc3e | 0xc3f | 0xd00 | 0xd01 | 0xd02 | 0xd03 | 0xd04 | 0xd05
+        | 0xd06 | 0xd07 | 0xd08 | 0xd09 | 0xd0a | 0xd0b | 0xd0c | 0xd0d | 0xd0e | 0xd0f
+        | 0xd10 | 0xd11 | 0xd12 | 0xd13 | 0xd14 | 0xd15 | 0xd16 | 0xd17 | 0xd18 | 0xd19
+        | 0xd1a | 0xd1b | 0xd1c | 0xd1d | 0xd1e | 0xd1f | 0xd20 | 0xd21 | 0xd22 | 0xd23
+        | 0xd24 | 0xd25 | 0xd26 | 0xd27 | 0xd28 | 0xd29 | 0xd2a | 0xd2b | 0xd2c | 0xd2d
+        | 0xd2e | 0xd2f | 0xd30 | 0xd31 | 0xd32 | 0xd33 | 0xd34 | 0xd35 | 0xd36 | 0xd37
+        | 0xd38 | 0xd39 | 0xd3a | 0xd3b | 0xd3c | 0xd3d | 0xd3e | 0xd3f => None,
         0x405 | 0x415 | 0x425 | 0x435 => {
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
@@ -1503,7 +1498,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         0x40a | 0x40e | 0x41a | 0x41e | 0x42a | 0x42e | 0x43a | 0x43e => {
             parse_arm_smla_0(ins, pc, options)
         }
-        0x40b | 0x41b | 0x42b | 0x43b | 0x50b | 0x51b | 0x52b | 0x53b | 0x6ab | 0x6bb => {
+        0x40b | 0x41b | 0x42b | 0x43b | 0x50b | 0x51b | 0x52b | 0x53b => {
             parse_arm_strh_0(ins, pc, options)
         }
         0x40d | 0x41d | 0x42d | 0x43d => {
@@ -1519,7 +1514,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 None
             }
         }
-        0x40f | 0x41f | 0x42f | 0x43f | 0x50f | 0x51f | 0x52f | 0x53f | 0x6af | 0x6bf => {
+        0x40f | 0x41f | 0x42f | 0x43f | 0x50f | 0x51f | 0x52f | 0x53f => {
             parse_arm_strd_0(ins, pc, options)
         }
         0x440 | 0x441 | 0x442 | 0x443 | 0x444 | 0x445 | 0x446 | 0x447 | 0x448 | 0x449
@@ -1784,7 +1779,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             parse_arm_smlal_half_0(ins, pc, options)
         }
         0x509 | 0x519 | 0x529 | 0x539 => parse_arm_swpb_0(ins, pc, options),
-        0x50d | 0x51d | 0x6ad | 0x6bd => parse_arm_ldrd_0(ins, pc, options),
+        0x50d | 0x51d => parse_arm_ldrd_0(ins, pc, options),
         0x52d | 0x53d => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -2097,17 +2092,55 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
                 Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
             } else {
                 None
             }
         }
         0x681 | 0x688 | 0x690 | 0x691 | 0x698 | 0x6c1 | 0x6c8 | 0x6d0 | 0x6d1 | 0x6d8 => {
-            parse_arm_lsl_0(ins, pc, options)
+            if (ins & 0xfef0060) == 0x1a00000
+                && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
         }
         0x682 | 0x683 | 0x68a | 0x692 | 0x693 | 0x69a | 0x6c2 | 0x6c3 | 0x6ca | 0x6d2
-        | 0x6d3 | 0x6da => parse_arm_lsr_0(ins, pc, options),
+        | 0x6d3 | 0x6da => {
+            if (ins & 0xfef0060) == 0x1a00020
+                && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
         0x684 | 0x685 | 0x68c | 0x694 | 0x695 | 0x69c | 0x6c4 | 0x6c5 | 0x6cc | 0x6d4
-        | 0x6d5 | 0x6dc => parse_arm_asr_0(ins, pc, options),
+        | 0x6d5 | 0x6dc => {
+            if (ins & 0xfef0060) == 0x1a00040
+                && let Some(ins) = parse_arm_asr_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
         0x686 | 0x6c6 => {
             if (ins & 0xfe00ff0) == 0x1a00060
                 && let Some(ins) = parse_arm_rrx_0(ins, pc, options)
@@ -2117,12 +2150,26 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
                 Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
             } else {
                 None
             }
         }
         0x687 | 0x68e | 0x696 | 0x697 | 0x69e | 0x6c7 | 0x6ce | 0x6d6 | 0x6d7 | 0x6de => {
-            parse_arm_ror_0(ins, pc, options)
+            if (ins & 0xfef0060) == 0x1a00060
+                && let Some(ins) = parse_arm_ror_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
         }
         0x689 | 0x699 => {
             if (ins & 0xfef0060) == 0x1a00000
@@ -2131,6 +2178,10 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 Some(ins)
             } else if (ins & 0xff000f0) == 0x1a00090
                 && let Some(ins) = parse_arm_strexd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
                 Some(ins)
             } else {
@@ -2146,6 +2197,10 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
             } else {
                 None
             }
@@ -2157,6 +2212,10 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 Some(ins)
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
                 Some(ins)
             } else {
@@ -2172,13 +2231,97 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
             } else {
                 None
             }
         }
-        0x6a0 | 0x6e0 => parse_arm_mov_1(ins, pc, options),
-        0x6a6 | 0x6e6 => parse_arm_rrx_0(ins, pc, options),
-        0x6a9 | 0x6b9 => parse_arm_strexd_0(ins, pc, options),
+        0x6a0 | 0x6e0 => {
+            if (ins & 0xfe00ff0) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_1(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6a1 | 0x6a2 | 0x6a3 | 0x6a4 | 0x6a5 | 0x6a7 | 0x6a8 | 0x6aa | 0x6ac | 0x6ae
+        | 0x6b0 | 0x6b1 | 0x6b2 | 0x6b3 | 0x6b4 | 0x6b5 | 0x6b6 | 0x6b7 | 0x6b8 | 0x6ba
+        | 0x6bc | 0x6be | 0x6e1 | 0x6e2 | 0x6e3 | 0x6e4 | 0x6e5 | 0x6e7 | 0x6e8 | 0x6ea
+        | 0x6ec | 0x6ee | 0x6f0 | 0x6f1 | 0x6f2 | 0x6f3 | 0x6f4 | 0x6f5 | 0x6f6 | 0x6f7
+        | 0x6f8 | 0x6fa | 0x6fc | 0x6fe => parse_arm_mov_2(ins, pc, options),
+        0x6a6 | 0x6e6 => {
+            if (ins & 0xfe00ff0) == 0x1a00060
+                && let Some(ins) = parse_arm_rrx_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6a9 | 0x6b9 => {
+            if (ins & 0xff000f0) == 0x1a00090
+                && let Some(ins) = parse_arm_strexd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6ab | 0x6bb => {
+            if (ins & 0xe1000f0) == 0xb0
+                && let Some(ins) = parse_arm_strh_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6ad | 0x6bd => {
+            if (ins & 0xe1000f0) == 0xd0
+                && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6af | 0x6bf => {
+            if (ins & 0xe1000f0) == 0xf0
+                && let Some(ins) = parse_arm_strd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
         0x6c9 | 0x6d9 => {
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
@@ -2186,6 +2329,10 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 Some(ins)
             } else if (ins & 0xff000f0) == 0x1b00090
                 && let Some(ins) = parse_arm_ldrexd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
                 Some(ins)
             } else {
@@ -2201,6 +2348,10 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
             } else {
                 None
             }
@@ -2212,6 +2363,10 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 Some(ins)
             } else if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
                 Some(ins)
             } else {
@@ -2227,14 +2382,66 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
             } else {
                 None
             }
         }
-        0x6e9 | 0x6f9 => parse_arm_ldrexd_0(ins, pc, options),
-        0x6eb | 0x6fb => parse_arm_ldrh_0(ins, pc, options),
-        0x6ed | 0x6fd => parse_arm_ldrsb_0(ins, pc, options),
-        0x6ef | 0x6ff => parse_arm_ldrsh_0(ins, pc, options),
+        0x6e9 | 0x6f9 => {
+            if (ins & 0xff000f0) == 0x1b00090
+                && let Some(ins) = parse_arm_ldrexd_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6eb | 0x6fb => {
+            if (ins & 0xe1000f0) == 0x1000b0
+                && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6ed | 0x6fd => {
+            if (ins & 0xe1000f0) == 0x1000d0
+                && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x6ef | 0x6ff => {
+            if (ins & 0xe1000f0) == 0x1000f0
+                && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
         0x700 | 0x701 | 0x702 | 0x703 | 0x704 | 0x705 | 0x706 | 0x707 | 0x708 | 0x70a
         | 0x70c | 0x70e | 0x710 | 0x711 | 0x712 | 0x713 | 0x714 | 0x715 | 0x716 | 0x717
         | 0x718 | 0x71a | 0x71c | 0x71e | 0x720 | 0x721 | 0x722 | 0x723 | 0x724 | 0x725
@@ -2578,7 +2785,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xee4 | 0xee5 | 0xee6 | 0xee7 | 0xee8 | 0xee9 | 0xeea | 0xeeb | 0xeec | 0xeed
         | 0xeee | 0xeef | 0xef0 | 0xef1 | 0xef2 | 0xef3 | 0xef4 | 0xef5 | 0xef6 | 0xef7
         | 0xef8 | 0xef9 | 0xefa | 0xefb | 0xefc | 0xefd | 0xefe | 0xeff => {
-            parse_arm_mov_0(ins, pc, options)
+            if (ins & 0xfe00000) == 0x3a00000
+                && let Some(ins) = parse_arm_mov_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
         }
         0x1000 | 0x1001 | 0x1002 | 0x1003 | 0x1004 | 0x1005 | 0x1006 | 0x1007 | 0x1008
         | 0x1009 | 0x100a | 0x100b | 0x100c | 0x100d | 0x100e | 0x100f | 0x1010 | 0x1011
@@ -5933,7 +6150,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_vneg_f32_0(ins, pc, options)
             {
                 Some(ins)
-            } else if (ins & 0xfbf0f50) == 0xeb40a40
+            } else if (ins & 0xfbe0f50) == 0xeb40a40
                 && let Some(ins) = parse_arm_vcmp_f32_0(ins, pc, options)
             {
                 Some(ins)
@@ -5962,7 +6179,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_vsqrt_f32_0(ins, pc, options)
             {
                 Some(ins)
-            } else if (ins & 0xfbf0f50) == 0xeb40a40
+            } else if (ins & 0xfbe0f50) == 0xeb40a40
                 && let Some(ins) = parse_arm_vcmp_f32_0(ins, pc, options)
             {
                 Some(ins)
@@ -5987,7 +6204,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_vneg_f64_0(ins, pc, options)
             {
                 Some(ins)
-            } else if (ins & 0xfbf0f50) == 0xeb40b40
+            } else if (ins & 0xfbe0f50) == 0xeb40b40
                 && let Some(ins) = parse_arm_vcmp_f64_0(ins, pc, options)
             {
                 Some(ins)
@@ -6016,7 +6233,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 && let Some(ins) = parse_arm_vsqrt_f64_0(ins, pc, options)
             {
                 Some(ins)
-            } else if (ins & 0xfbf0f50) == 0xeb40b40
+            } else if (ins & 0xfbe0f50) == 0xeb40b40
                 && let Some(ins) = parse_arm_vcmp_f64_0(ins, pc, options)
             {
                 Some(ins)
@@ -6319,7 +6536,20 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         0x68 | 0x69 | 0x6a | 0x6b | 0x6c | 0x6d | 0x6e | 0x6f => {
             parse_thumb_sub_2(ins, pc, options)
         }
-        0x70 | 0x71 | 0x72 | 0x73 | 0x74 | 0x75 | 0x76 | 0x77 => {
+        0x70 => {
+            if (ins & 0xffc0) == 0x1c00
+                && let Some(ins) = parse_thumb_mov_3(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xfe00) == 0x1c00
+                && let Some(ins) = parse_thumb_add_0(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
+        0x71 | 0x72 | 0x73 | 0x74 | 0x75 | 0x76 | 0x77 => {
             parse_thumb_add_0(ins, pc, options)
         }
         0x78 | 0x79 | 0x7a | 0x7b | 0x7c | 0x7d | 0x7e | 0x7f => {
@@ -6354,7 +6584,19 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         0x106 => parse_thumb_sbc_0(ins, pc, options),
         0x107 => parse_thumb_ror_0(ins, pc, options),
         0x108 => parse_thumb_tst_0(ins, pc, options),
-        0x109 => parse_thumb_rsb_0(ins, pc, options),
+        0x109 => {
+            if (ins & 0xffc0) == 0x4240
+                && let Some(ins) = parse_thumb_neg_0(ins, pc, options)
+            {
+                Some(ins)
+            } else if (ins & 0xffc0) == 0x4240
+                && let Some(ins) = parse_thumb_rsb_0(ins, pc, options)
+            {
+                Some(ins)
+            } else {
+                None
+            }
+        }
         0x10a => parse_thumb_cmp_1(ins, pc, options),
         0x10b => parse_thumb_cmn_0(ins, pc, options),
         0x10c => parse_thumb_orr_0(ins, pc, options),
@@ -6587,11 +6829,19 @@ fn parse_arm_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Adc { s, cond, rd, rn, op2 })
+    Some(Ins::Adc {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6608,6 +6858,7 @@ fn parse_thumb_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
@@ -6616,18 +6867,33 @@ fn parse_thumb_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Adc { s, cond, rd, rn, op2 })
+    Some(Ins::Adc {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_add_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6644,11 +6910,19 @@ fn parse_thumb_add_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
     let op2 = Op2::Imm(((value) >> 6) & 0x7);
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6665,11 +6939,19 @@ fn parse_thumb_add_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
     let op2 = Op2::Imm((value) & 0xff);
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6686,6 +6968,7 @@ fn parse_thumb_add_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
@@ -6694,7 +6977,14 @@ fn parse_thumb_add_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_3(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6711,6 +7001,7 @@ fn parse_thumb_add_3(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
     let rn = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
@@ -6719,7 +7010,14 @@ fn parse_thumb_add_3(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_4(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6736,11 +7034,19 @@ fn parse_thumb_add_4(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(13, pc);
     let op2 = Op2::Imm(((value) & 0xff) << 2);
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_5(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6757,11 +7063,19 @@ fn parse_thumb_add_5(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
     let op2 = Op2::Imm(((value) & 0x7f) << 2);
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_6(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6778,6 +7092,7 @@ fn parse_thumb_add_6(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
     let rn = Reg::parse(13, pc);
@@ -6786,7 +7101,14 @@ fn parse_thumb_add_6(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_7(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6803,6 +7125,7 @@ fn parse_thumb_add_7(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
@@ -6811,7 +7134,14 @@ fn parse_thumb_add_7(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_add_8(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6828,22 +7158,38 @@ fn parse_thumb_add_8(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(15, pc);
     let op2 = Op2::Imm(((value) & 0xff) << 2);
-    Some(Ins::Add { s, cond, rd, rn, op2 })
+    Some(Ins::Add {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::And { s, cond, rd, rn, op2 })
+    Some(Ins::And {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6860,6 +7206,7 @@ fn parse_thumb_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
@@ -6868,20 +7215,38 @@ fn parse_thumb_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::And { s, cond, rd, rn, op2 })
+    Some(Ins::And {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_asr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse((value) & 0xf, pc);
     let Some(op2) = Op2Shift::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
-    Some(Ins::Asr { s, cond, rd, rn, op2 })
+    Some(Ins::Asr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_asr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6898,13 +7263,21 @@ fn parse_thumb_asr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
     let op2 = Op2Shift::Imm(
         if (((value) >> 6) & 0x1f) != 0 { (((value) >> 6) & 0x1f) } else { 32 },
     );
-    Some(Ins::Asr { s, cond, rd, rn, op2 })
+    Some(Ins::Asr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_asr_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -6921,11 +7294,19 @@ fn parse_thumb_asr_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
     let op2 = Op2Shift::Reg(Reg::parse(((value) >> 3) & 0x7, pc));
-    Some(Ins::Asr { s, cond, rd, rn, op2 })
+    Some(Ins::Asr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_b_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
@@ -6988,11 +7369,19 @@ fn parse_arm_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Bic { s, cond, rd, rn, op2 })
+    Some(Ins::Bic {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -7009,6 +7398,7 @@ fn parse_thumb_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
@@ -7017,7 +7407,14 @@ fn parse_thumb_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Bic { s, cond, rd, rn, op2 })
+    Some(Ins::Bic {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_bkpt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -7415,11 +7812,19 @@ fn parse_arm_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Eor { s, cond, rd, rn, op2 })
+    Some(Ins::Eor {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -7436,6 +7841,7 @@ fn parse_thumb_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
@@ -7444,7 +7850,14 @@ fn parse_thumb_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Eor { s, cond, rd, rn, op2 })
+    Some(Ins::Eor {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_ldc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
@@ -8005,17 +8418,28 @@ fn parse_arm_ldrt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Ldrt { cond, rd, addr })
 }
 fn parse_arm_lsl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse((value) & 0xf, pc);
     let Some(op2) = Op2Shift::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
-    Some(Ins::Lsl { s, cond, rd, rn, op2 })
+    Some(Ins::Lsl {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_lsl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8032,11 +8456,19 @@ fn parse_thumb_lsl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
     let op2 = Op2Shift::Imm(((value) >> 6) & 0x1f);
-    Some(Ins::Lsl { s, cond, rd, rn, op2 })
+    Some(Ins::Lsl {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_lsl_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8053,24 +8485,43 @@ fn parse_thumb_lsl_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
     let op2 = Op2Shift::Reg(Reg::parse(((value) >> 3) & 0x7, pc));
-    Some(Ins::Lsl { s, cond, rd, rn, op2 })
+    Some(Ins::Lsl {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_lsr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse((value) & 0xf, pc);
     let Some(op2) = Op2Shift::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
-    Some(Ins::Lsr { s, cond, rd, rn, op2 })
+    Some(Ins::Lsr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_lsr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8087,13 +8538,21 @@ fn parse_thumb_lsr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
     let op2 = Op2Shift::Imm(
         if (((value) >> 6) & 0x1f) != 0 { (((value) >> 6) & 0x1f) } else { 32 },
     );
-    Some(Ins::Lsr { s, cond, rd, rn, op2 })
+    Some(Ins::Lsr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_lsr_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8110,11 +8569,19 @@ fn parse_thumb_lsr_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
     let op2 = Op2Shift::Reg(Reg::parse(((value) >> 3) & 0x7, pc));
-    Some(Ins::Lsr { s, cond, rd, rn, op2 })
+    Some(Ins::Lsr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_mcr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
@@ -8224,6 +8691,9 @@ fn parse_arm_mla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000 != 0 {
         return Some(Ins::Illegal);
     }
@@ -8231,12 +8701,22 @@ fn parse_arm_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Mov { s, cond, rd, op2 })
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
 }
 fn parse_arm_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000 != 0 {
         return Some(Ins::Illegal);
     }
@@ -8244,10 +8724,40 @@ fn parse_arm_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Mov { s, cond, rd, op2 })
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
+}
+fn parse_arm_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if options.ual {
+        return None;
+    }
+    if value & 0xf0000 != 0 {
+        return Some(Ins::Illegal);
+    }
+    if value & 0xf0000000 == 0xf0000000 {
+        return Some(Ins::Illegal);
+    }
+    let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
+    let cond = Cond::parse(((value) >> 28) & 0xf, pc);
+    let rd = Reg::parse(((value) >> 12) & 0xf, pc);
+    let op2 = Op2::parse(value, pc);
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
 }
 fn parse_thumb_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8264,10 +8774,17 @@ fn parse_thumb_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let op2 = Op2::Imm((value) & 0xff);
-    Some(Ins::Mov { s, cond, rd, op2 })
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
 }
 fn parse_thumb_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8284,6 +8801,7 @@ fn parse_thumb_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (0) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((((value) >> 7) & 0x1) << 3) | ((value) & 0x7), pc);
     let op2 = Op2::ShiftImm(ShiftImm {
@@ -8291,7 +8809,13 @@ fn parse_thumb_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Mov { s, cond, rd, op2 })
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
 }
 fn parse_thumb_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8307,7 +8831,11 @@ fn parse_thumb_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !VERSIONS.has(options.version) {
         return None;
     }
+    if !options.ual {
+        return None;
+    }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let op2 = Op2::ShiftImm(ShiftImm {
@@ -8315,7 +8843,47 @@ fn parse_thumb_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Mov { s, cond, rd, op2 })
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
+}
+fn parse_thumb_mov_3(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[
+            Version::V4T,
+            Version::V5T,
+            Version::V5Te,
+            Version::V5Tej,
+            Version::V6,
+            Version::V6K,
+        ],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
+    if options.ual {
+        return None;
+    }
+    let s = (1) != 0;
+    let thumb = (1) != 0;
+    let cond = Cond::default();
+    let rd = Reg::parse((value) & 0x7, pc);
+    let op2 = Op2::ShiftImm(ShiftImm {
+        rm: Reg::parse(((value) >> 3) & 0x7, pc),
+        shift_op: ShiftOp::default(),
+        imm: 0,
+    });
+    Some(Ins::Mov {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
 }
 fn parse_arm_mrc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
@@ -8443,11 +9011,19 @@ fn parse_arm_mul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 16) & 0xf, pc);
     let rn = Reg::parse((value) & 0xf, pc);
     let rm = Reg::parse(((value) >> 8) & 0xf, pc);
-    Some(Ins::Mul { s, cond, rd, rn, rm })
+    Some(Ins::Mul {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        rm,
+    })
 }
 fn parse_thumb_mul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8464,11 +9040,19 @@ fn parse_thumb_mul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
     let rm = Reg::parse((value) & 0x7, pc);
-    Some(Ins::Mul { s, cond, rd, rn, rm })
+    Some(Ins::Mul {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        rm,
+    })
 }
 fn parse_arm_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000 != 0 {
@@ -8478,10 +9062,17 @@ fn parse_arm_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Mvn { s, cond, rd, op2 })
+    Some(Ins::Mvn {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
 }
 fn parse_thumb_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8498,6 +9089,7 @@ fn parse_thumb_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let op2 = Op2::ShiftImm(ShiftImm {
@@ -8505,7 +9097,34 @@ fn parse_thumb_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Mvn { s, cond, rd, op2 })
+    Some(Ins::Mvn {
+        s,
+        thumb,
+        cond,
+        rd,
+        op2,
+    })
+}
+fn parse_thumb_neg_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[
+            Version::V4T,
+            Version::V5T,
+            Version::V5Te,
+            Version::V5Tej,
+            Version::V6,
+            Version::V6K,
+        ],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
+    if options.ual {
+        return None;
+    }
+    let rd = Reg::parse((value) & 0x7, pc);
+    let rm = Reg::parse(((value) >> 3) & 0x7, pc);
+    Some(Ins::Neg { rd, rm })
 }
 fn parse_arm_nop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xff00 != 0xf000 {
@@ -8539,11 +9158,19 @@ fn parse_arm_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Orr { s, cond, rd, rn, op2 })
+    Some(Ins::Orr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -8560,6 +9187,7 @@ fn parse_thumb_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
@@ -8568,7 +9196,14 @@ fn parse_thumb_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Orr { s, cond, rd, rn, op2 })
+    Some(Ins::Orr {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_pkhbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[Version::V6, Version::V6K]);
@@ -8632,6 +9267,9 @@ fn parse_arm_pld_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Pld { addr })
 }
 fn parse_arm_pop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xffff == 0 {
         return Some(Ins::Illegal);
     }
@@ -8643,6 +9281,9 @@ fn parse_arm_pop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Pop { cond, regs })
 }
 fn parse_arm_pop_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
@@ -8672,6 +9313,9 @@ fn parse_thumb_pop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Pop { cond, regs })
 }
 fn parse_arm_push_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xffff == 0 {
         return Some(Ins::Illegal);
     }
@@ -8683,6 +9327,9 @@ fn parse_arm_push_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Push { cond, regs })
 }
 fn parse_arm_push_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
@@ -8985,17 +9632,28 @@ fn parse_arm_rfe_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_ror_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse((value) & 0xf, pc);
     let Some(op2) = Op2Shift::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
-    Some(Ins::Ror { s, cond, rd, rn, op2 })
+    Some(Ins::Ror {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_ror_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -9012,13 +9670,24 @@ fn parse_thumb_ror_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
     let op2 = Op2Shift::Reg(Reg::parse(((value) >> 3) & 0x7, pc));
-    Some(Ins::Ror { s, cond, rd, rn, op2 })
+    Some(Ins::Ror {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_rrx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000 != 0 {
         return Some(Ins::Illegal);
     }
@@ -9054,6 +9723,9 @@ fn parse_thumb_rsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ],
     );
     if !VERSIONS.has(options.version) {
+        return None;
+    }
+    if !options.ual {
         return None;
     }
     let s = (1) != 0;
@@ -9130,11 +9802,19 @@ fn parse_arm_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Sbc { s, cond, rd, rn, op2 })
+    Some(Ins::Sbc {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -9151,6 +9831,7 @@ fn parse_thumb_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse((value) & 0x7, pc);
@@ -9159,7 +9840,14 @@ fn parse_thumb_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Sbc { s, cond, rd, rn, op2 })
+    Some(Ins::Sbc {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_sel_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[Version::V6, Version::V6K]);
@@ -10197,11 +10885,19 @@ fn parse_arm_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     let s = (((value) >> 20) & 0x1) != 0;
+    let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     let op2 = Op2::parse(value, pc);
-    Some(Ins::Sub { s, cond, rd, rn, op2 })
+    Some(Ins::Sub {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -10218,11 +10914,19 @@ fn parse_thumb_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
     let op2 = Op2::Imm(((value) >> 6) & 0x7);
-    Some(Ins::Sub { s, cond, rd, rn, op2 })
+    Some(Ins::Sub {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_sub_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -10239,11 +10943,19 @@ fn parse_thumb_sub_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
     let op2 = Op2::Imm((value) & 0xff);
-    Some(Ins::Sub { s, cond, rd, rn, op2 })
+    Some(Ins::Sub {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_sub_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -10260,6 +10972,7 @@ fn parse_thumb_sub_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = (1) != 0;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
@@ -10268,7 +10981,14 @@ fn parse_thumb_sub_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift_op: ShiftOp::default(),
         imm: 0,
     });
-    Some(Ins::Sub { s, cond, rd, rn, op2 })
+    Some(Ins::Sub {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_thumb_sub_3(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
@@ -10285,11 +11005,19 @@ fn parse_thumb_sub_3(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return None;
     }
     let s = false;
+    let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
     let op2 = Op2::Imm(((value) & 0x7f) << 2);
-    Some(Ins::Sub { s, cond, rd, rn, op2 })
+    Some(Ins::Sub {
+        s,
+        thumb,
+        cond,
+        rd,
+        rn,
+        op2,
+    })
 }
 fn parse_arm_svc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
@@ -11250,7 +11978,7 @@ fn parse_arm_vcmp_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let quiet_nan_exc = (((value) >> 7) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let sd = Sreg::parse(((((value) >> 12) & 0xf) << 1) | (((value) >> 22) & 0x1), pc);
-    let Some(op2) = VcmpF32Op2::parse((value) & 0x3f, pc) else {
+    let Some(op2) = VcmpF32Op2::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
     Some(Ins::VcmpF32 {
@@ -11277,7 +12005,7 @@ fn parse_arm_vcmp_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let quiet_nan_exc = (((value) >> 7) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let dd = Dreg::parse(((((value) >> 12) & 0xf) << 1) | (((value) >> 22) & 0x1), pc);
-    let Some(op2) = VcmpF64Op2::parse((value) & 0x3f, pc) else {
+    let Some(op2) = VcmpF64Op2::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
     Some(Ins::VcmpF64 {
@@ -12232,6 +12960,9 @@ fn parse_arm_vpop_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !EXTENSIONS.has_all(options.extensions) {
         return None;
     }
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
@@ -12248,6 +12979,9 @@ fn parse_arm_vpop_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     const EXTENSIONS: Extensions = Extensions::of(&[Extension::VfpV2]);
     if !EXTENSIONS.has_all(options.extensions) {
+        return None;
+    }
+    if !options.ual {
         return None;
     }
     if value & 0xf0000000 == 0xf0000000 {
@@ -12268,6 +13002,9 @@ fn parse_arm_vpush_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
     if !EXTENSIONS.has_all(options.extensions) {
         return None;
     }
+    if !options.ual {
+        return None;
+    }
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
@@ -12284,6 +13021,9 @@ fn parse_arm_vpush_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
     }
     const EXTENSIONS: Extensions = Extensions::of(&[Extension::VfpV2]);
     if !EXTENSIONS.has_all(options.extensions) {
+        return None;
+    }
+    if !options.ual {
         return None;
     }
     if value & 0xf0000000 == 0xf0000000 {

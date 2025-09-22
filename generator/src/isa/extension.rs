@@ -54,11 +54,11 @@ impl IsaExtensions {
             pub struct Extensions(#inner_type);
 
             impl Extensions {
-                pub fn none() -> Self {
+                pub const fn none() -> Self {
                     Self(0)
                 }
 
-                pub fn all() -> Self {
+                pub const fn all() -> Self {
                     Self(#inner_type::MAX)
                 }
 

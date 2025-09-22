@@ -76,6 +76,7 @@ impl Isa {
 
             #![allow(clippy::collapsible_else_if)]
             #![allow(clippy::needless_else)]
+            #![allow(clippy::explicit_auto_deref)]
             #![allow(unused_variables)]
 
             use crate::*;

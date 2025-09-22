@@ -52,13 +52,15 @@ types:
   kind: !bool
 - name: wb
   kind: !bool
-    write: "!"
+    format: !fmt "!"
 - name: user_mode
   kind: !bool
-    write: ^
+    format: !fmt ^
 - name: subtract
   kind: !bool
-    write: "-"
+    format: !fmt "-"
+- name: thumb
+  kind: !bool
 - name: uimm
   kind: !uint bits(0..32)
 - name: simm
@@ -612,11 +614,18 @@ types:
 - name: swap_rm
   kind: !bool
     bits: 0
-    write: x
+    format: !fmt x
 - name: round
   kind: !bool
     bits: 0
-    write: r
+    format: !fmt r
+- name: round_zero
+  kind: !bool
+    bits: 0
+    format: !if
+      cond: option(ual)
+      then: !fmt r
+      else: !fmt z
 - name: sreg
   kind: !enum
     bits: 0..5
@@ -692,15 +701,16 @@ types:
 - name: quiet_nan_exc
   kind: !bool
     bits: 0
-    write: e
+    format: !fmt e
 - name: vcmp_f32_op2
   kind: !union
     bits: 0..6
     variants:
-      000000:
+      xxxx_xxxx_xxxx_xxx1_xxxx_xxxx_xx00_0000:
         name: zero
         description: Compare with zero
-      x0xxxx:
+        format: !fmt "#0.0"
+      xxxx_xxxx_xxxx_xxx0_xxxx_xxxx_xxx0_xxxx:
         name: reg
         description: Compare with register
         data:
@@ -708,12 +718,13 @@ types:
           kind: !type [sreg, (bits(0..4) << 1) | bit(5)]
 - name: vcmp_f64_op2
   kind: !union
-    bits: 0..6
+    bits: 0..32
     variants:
-      000000:
+      xxxx_xxxx_xxxx_xxx1_xxxx_xxxx_xx00_0000:
         name: zero
         description: Compare with zero
-      x0xxxx:
+        format: !fmt "#0.0"
+      xxxx_xxxx_xxxx_xxx0_xxxx_xxxx_xxx0_xxxx:
         name: reg
         description: Compare with register
         data:
@@ -725,7 +736,10 @@ types:
   kind: !custom
 - name: dreg_index
   kind: !struct
-    format: !fmt (dreg)[(index)]
+    format: !if
+      cond: option(ual)
+      then: !fmt (dreg)[(index)]
+      else: !fmt (dreg) # index is decided by the opcode mnemonic (e.g. fmdhr or fmdlr)
     fields:
     - name: dreg
       kind: !type [dreg, (bit(7) << 4) | bits(16..20)]
@@ -751,13 +765,20 @@ types:
 opcodes:
 - mnemonic: adc
   description: Add with Carry
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt adc(s)(cond)
-      else: !fmt adc(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt adc(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5*, v6*, v7]
     pattern: xxxx_00x0_101x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -774,19 +795,27 @@ opcodes:
     pattern: 0100_0001_01xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
 - mnemonic: add
   description: Add
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt add(s)(cond)
-      else: !fmt add(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt add(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_100x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -803,6 +832,7 @@ opcodes:
     pattern: 0001_110x_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [imm, !bits 6..9]
@@ -810,6 +840,7 @@ opcodes:
     pattern: 0011_0xxx_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 8..11
       rn: !bits 8..11
       op2: !enum [imm, !bits 0..8]
@@ -817,55 +848,69 @@ opcodes:
     pattern: 0001_100x_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [shift_imm, !struct { rm: !bits 6..9 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0100_xxxx_xxxx
     params:
+      thumb: !const 1
       rd: !expr (bit(7) << 3) | bits(0..3)
       rn: !expr (bit(7) << 3) | bits(0..3)
       op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
   - version: [v4t, v5t*, v6*]
     pattern: 1010_1xxx_xxxx_xxxx
     params:
+      thumb: !const 1
       rd: !bits 8..11
       rn: !const 13 # sp
       op2: !enum [imm, !expr bits(0..8) << 2]
   - version: [v4t, v5t*, v6*]
     pattern: 1011_0000_0xxx_xxxx
     params:
+      thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
       op2: !enum [imm, !expr bits(0..7) << 2]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0100_x110_1xxx
     params:
+      thumb: !const 1
       rd: !expr (bit(7) << 3) | bits(0..3)
       rn: !const 13 # sp
       op2: !enum [shift_imm, !struct { rm: !expr (bit(7) << 3) | bits(0..3) }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0100_1xxx_x101
     params:
+      thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
       op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
   - version: [v4t, v5t*, v6*]
     pattern: 1010_0xxx_xxxx_xxxx
     params:
+      thumb: !const 1
       rd: !bits 8..11
       rn: !const 15 # pc
       op2: !enum [imm, !expr bits(0..8) << 2]
 
 - mnemonic: and
   description: Bitwise AND
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt and(s)(cond)
-      else: !fmt and(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt and(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_000x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -882,19 +927,27 @@ opcodes:
     pattern: 0100_0000_00xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
 - mnemonic: asr
   description: Arithmetic Shift Right
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
-    opcode: !fmt asr(s)(cond)
-    params: !fmt (rd), (rn), (op2)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt asr(s)(cond)
+      else: !fmt asr(cond)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x10x_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -908,6 +961,7 @@ opcodes:
     pattern: 0001_0xxx_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
@@ -915,6 +969,7 @@ opcodes:
     pattern: 0100_0001_00xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [reg, !bits 3..6]
@@ -948,13 +1003,20 @@ opcodes:
 
 - mnemonic: bic
   description: Bit Clear
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt bic(s)(cond)
-      else: !fmt bic(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt bic(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_110x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -971,6 +1033,7 @@ opcodes:
     pattern: 0100_0011_10xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
@@ -1246,13 +1309,20 @@ opcodes:
 
 - mnemonic: eor
   description: Bitwise Exclusive OR
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt eor(s)(cond)
-      else: !fmt eor(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt eor(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_001x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1269,6 +1339,7 @@ opcodes:
     pattern: 0100_0000_01xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
@@ -1406,7 +1477,10 @@ opcodes:
   description: Load Register Byte
   params: { cond: cond, rd: reg, addr: addr_ldr_str }
   format:
-    opcode: !fmt ldrb(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrb(cond)
+      else: !fmt ldr(cond)b
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -1433,7 +1507,10 @@ opcodes:
   description: Load Register Byte with Translation
   params: { cond: cond, rd: reg, addr: addr_ldr_str }
   format:
-    opcode: !fmt ldrbt(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrbt(cond)
+      else: !fmt ldr(cond)bt
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -1449,7 +1526,10 @@ opcodes:
   description: Load Register Dual
   params: { cond: cond, rd: reg, rd2: reg, addr: addr_misc_load }
   format:
-    opcode: !fmt ldrd(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrd(cond)
+      else: !fmt ldr(cond)d
     params: !if
       cond: option(ual)
       then: !fmt (rd), (rd2), (addr)
@@ -1549,7 +1629,10 @@ opcodes:
   description: Load Register Halfword
   params: { cond: cond, rd: reg, addr: addr_misc_load }
   format:
-    opcode: !fmt ldrh(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrh(cond)
+      else: !fmt ldr(cond)h
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -1576,7 +1659,10 @@ opcodes:
   description: Load Register Signed Byte
   params: { cond: cond, rd: reg, addr: addr_misc_load }
   format:
-    opcode: !fmt ldrsb(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrsb(cond)
+      else: !fmt ldr(cond)sb
     params: !fmt (rd), (addr)
   arm:
   - version: [v5te*, v6*]
@@ -1598,7 +1684,10 @@ opcodes:
   description: Load Register Signed Halfword
   params: { cond: cond, rd: reg, addr: addr_misc_load }
   format:
-    opcode: !fmt ldrsh(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrsh(cond)
+      else: !fmt ldr(cond)sh
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -1620,7 +1709,10 @@ opcodes:
   description: Load Register with Translation
   params: { cond: cond, rd: reg, addr: addr_ldr_str }
   format:
-    opcode: !fmt ldrt(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrt(cond)
+      else: !fmt ldr(cond)t
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -1634,13 +1726,20 @@ opcodes:
 
 - mnemonic: lsl
   description: Logical Shift Left
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
-    opcode: !fmt lsl(s)(cond)
-    params: !fmt (rd), (rn), (op2)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt lsl(s)(cond)
+      else: !fmt lsl(cond)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x00x_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -1654,6 +1753,7 @@ opcodes:
     pattern: 0000_0xxx_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [imm, !bits 6..11]
@@ -1661,19 +1761,24 @@ opcodes:
     pattern: 0100_0000_10xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [reg, !bits 3..6]
 
 - mnemonic: lsr
   description: Logical Shift Right
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
     opcode: !fmt lsr(s)(cond)
-    params: !fmt (rd), (rn), (op2)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x01x_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -1687,6 +1792,7 @@ opcodes:
     pattern: 0000_1xxx_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
@@ -1694,6 +1800,7 @@ opcodes:
     pattern: 0100_0000_11xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [reg, !bits 3..6]
@@ -1794,16 +1901,21 @@ opcodes:
 
 - mnemonic: mov
   description: Move
-  params: { s: s, cond: cond, rd: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt mov(s)(cond)
-      else: !fmt mov(cond)(s)
+      else: !seq
+      - !fmt mov(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
     params: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0011_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -1814,6 +1926,18 @@ opcodes:
       op2: !bits 0..32
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_xxxx_xxxx_0000_0000_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    ignore: "option(ual)"
     illegal:
     - ins() & 0xf0000 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -1827,18 +1951,30 @@ opcodes:
     pattern: 0010_0xxx_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 8..11
       op2: !enum [imm, !bits 0..8]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0110_xxxx_xxxx
     params:
       s: !const 0
+      thumb: !const 1
       rd: !expr (bit(7) << 3) | bits(0..3)
       op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0000_0000_00xx_xxxx
+    ignore: "!option(ual)"
     params:
       s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_1100_00xx_xxxx
+    ignore: option(ual)
+    params:
+      s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
 
@@ -1950,13 +2086,20 @@ opcodes:
 
 - mnemonic: mul
   description: Multiply
-  params: { s: s, cond: cond, rd: reg, rn: reg, rm: reg }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt mul(s)(cond)
-      else: !fmt mul(cond)(s)
-    params: !fmt (rd), (rn), (rm)
+      else: !seq
+      - !fmt mul(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (rm)
+      else: !fmt (rd), (rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_000x_xxxx_xxxx_xxxx_1001_xxxx
@@ -1974,18 +2117,23 @@ opcodes:
     pattern: 0100_0011_01xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       rm: !bits 0..3
 
 - mnemonic: mvn
   description: Move Negative
-  params: { s: s, cond: cond, rd: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt mvn(s)(cond)
-      else: !fmt mvn(cond)(s)
+      else: !seq
+      - !fmt mvn(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
     params: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -2003,8 +2151,23 @@ opcodes:
     pattern: 0100_0011_11xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: neg
+  description: Negate
+  params: { rd: reg, rm: reg }
+  format:
+    opcode: !fmt neg
+    params: !fmt (rd), (rm)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_01xx_xxxx
+    ignore: option(ual)
+    params:
+      rd: !bits 0..3
+      rm: !bits 3..6
 
 - mnemonic: nop
   description: No Operation
@@ -2027,13 +2190,20 @@ opcodes:
 
 - mnemonic: orr
   description: Bitwise OR
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt orr(s)(cond)
-      else: !fmt orr(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt orr(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_100x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2050,6 +2220,7 @@ opcodes:
     pattern: 0100_0011_00xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
@@ -2064,7 +2235,6 @@ opcodes:
     - !if
       cond: field(shift) != 0
       then: !fmt ", (shift_op) #(shift)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x001_xxxx
@@ -2124,6 +2294,7 @@ opcodes:
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1000_1011_1101_xxxx_xxxx_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xffff == 0 # empty register list
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -2132,6 +2303,7 @@ opcodes:
       regs: !bits 0..16
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0100_1001_1101_xxxx_0000_0000_0100
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -2155,6 +2327,7 @@ opcodes:
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1001_0010_1101_xxxx_xxxx_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xffff == 0 # empty register list
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -2163,6 +2336,7 @@ opcodes:
       regs: !bits 0..16
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0101_0010_1101_xxxx_0000_0000_0100
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -2235,7 +2409,10 @@ opcodes:
   description: Saturating Add and Subtract with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt qasx(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt qasx(cond)
+      else: !fmt qaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -2289,7 +2466,10 @@ opcodes:
   description: Saturating Subtract and Add with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt qsax(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt qsax(cond)
+      else: !fmt qsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -2447,13 +2627,20 @@ opcodes:
 
 - mnemonic: ror
   description: Rotate Right
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
-    opcode: !fmt ror(s)(cond)
-    params: !fmt (rd), (rn), (op2)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ror(s)(cond)
+      else: !fmt ror(cond)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x11x_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -2467,6 +2654,7 @@ opcodes:
     pattern: 0100_0001_11xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [reg, !bits 3..6]
@@ -2480,6 +2668,7 @@ opcodes:
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_xxxx_xxxx_0000_0110_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -2512,6 +2701,7 @@ opcodes:
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0010_01xx_xxxx
+    ignore: "!option(ual)"
     params:
       s: !const 1
       rd: !bits 0..3
@@ -2579,7 +2769,10 @@ opcodes:
   description: Signed Add and Subtract with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt sasx(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt sasx(cond)
+      else: !fmt saddsubx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -2595,13 +2788,20 @@ opcodes:
 
 - mnemonic: sbc
   description: Subtract with Carry
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt sbc(s)(cond)
-      else: !fmt sbc(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt sbc(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_110x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2618,6 +2818,7 @@ opcodes:
     pattern: 0100_0001_10xx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 0..3
       op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
@@ -2716,7 +2917,10 @@ opcodes:
   description: Signed Halving Add and Subtract with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt shasx(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt shasx(cond)
+      else: !fmt shaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -2734,7 +2938,10 @@ opcodes:
   description: Signed Halving Subtract and Add with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt shsax(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt shsax(cond)
+      else: !fmt shsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -3150,7 +3357,10 @@ opcodes:
   description: Signed Subtract and Add with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt ssax(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ssax(cond)
+      else: !fmt ssubaddx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -3243,7 +3453,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt stm(mode)(cond)
-      else: !fmt ldm(cond)(mode)
+      else: !fmt stm(cond)(mode)
     params: !fmt (rn)(writeback), (regs)(user_mode)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -3305,7 +3515,10 @@ opcodes:
   description: Store Register Byte
   params: { cond: cond, rd: reg, addr: addr_ldr_str }
   format:
-    opcode: !fmt strb(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strb(cond)
+      else: !fmt str(cond)b
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -3332,7 +3545,10 @@ opcodes:
   description: Store Register Byte with Translation
   params: { cond: cond, rd: reg, addr: addr_ldr_str }
   format:
-    opcode: !fmt strbt(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strbt(cond)
+      else: !fmt str(cond)bt
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -3348,7 +3564,10 @@ opcodes:
   description: Store Register Dual
   params: { cond: cond, rd: reg, rd2: reg, addr: addr_misc_load }
   format:
-    opcode: !fmt strd(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strd(cond)
+      else: !fmt str(cond)d
     params: !if
       cond: option(ual)
       then: !fmt (rd), (rd2), (addr)
@@ -3442,7 +3661,10 @@ opcodes:
   description: Store Register Halfword
   params: { cond: cond, rd: reg, addr: addr_misc_load }
   format:
-    opcode: !fmt strh(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strh(cond)
+      else: !fmt str(cond)h
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -3469,7 +3691,10 @@ opcodes:
   description: Store Register with Translation
   params: { cond: cond, rd: reg, addr: addr_ldr_str }
   format:
-    opcode: !fmt strt(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strt(cond)
+      else: !fmt str(cond)t
     params: !fmt (rd), (addr)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -3483,13 +3708,20 @@ opcodes:
 
 - mnemonic: sub
   description: Subtract
-  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
       cond: option(ual)
       then: !fmt sub(s)(cond)
-      else: !fmt sub(cond)(s)
-    params: !fmt (rd), (rn), (op2)
+      else: !seq
+      - !fmt sub(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_010x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3506,6 +3738,7 @@ opcodes:
     pattern: 0001_111x_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [imm, !bits 6..9]
@@ -3513,6 +3746,7 @@ opcodes:
     pattern: 0011_1xxx_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 8..11
       rn: !bits 8..11
       op2: !enum [imm, !bits 0..8]
@@ -3520,12 +3754,14 @@ opcodes:
     pattern: 0001_101x_xxxx_xxxx
     params:
       s: !const 1
+      thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
       op2: !enum [shift_imm, !struct { rm: !bits 6..9 }]
   - version: [v4t, v5t*, v6*]
     pattern: 1011_0000_1xxx_xxxx
     params:
+      thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
       op2: !enum [imm, !expr bits(0..7) << 2]
@@ -3599,7 +3835,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1010_xxxx_xxxx_xxxx_0111_xxxx
@@ -3623,7 +3858,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1000_xxxx_xxxx_xxxx_0111_xxxx
@@ -3647,7 +3881,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1011_xxxx_xxxx_xxxx_0111_xxxx
@@ -3671,7 +3904,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1010_1111_xxxx_xxxx_0111_xxxx
@@ -3701,7 +3933,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1000_1111_xxxx_xxxx_0111_xxxx
@@ -3724,7 +3955,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1011_1111_xxxx_xxxx_0111_xxxx
@@ -3895,7 +4125,10 @@ opcodes:
   description: Unsigned Halving Add and Subtract with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt uhasx(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uhasx(cond)
+      else: !fmt uhaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -3913,7 +4146,10 @@ opcodes:
   description: Unsigned Halving Subtract and Add with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt uhsax(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uhsax(cond)
+      else: !fmt uhsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -4065,7 +4301,10 @@ opcodes:
   description: Unsigned Saturating Add and Subtract with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt uqasx(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uqasx(cond)
+      else: !fmt uqaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -4083,7 +4322,10 @@ opcodes:
   description: Unsigned Saturating Subtract and Add with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt uqsax(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uqsax(cond)
+      else: !fmt uqsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -4207,7 +4449,10 @@ opcodes:
   description: Unsigned Subtract and Add with Exchange
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
-    opcode: !fmt usax(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt usax(cond)
+      else: !fmt usubaddx(cond)
     params: !fmt (rd), (rn), (rm)
   arm:
   - version: [v6*]
@@ -4267,7 +4512,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1110_xxxx_xxxx_xxxx_0111_xxxx
@@ -4291,7 +4535,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1100_xxxx_xxxx_xxxx_0111_xxxx
@@ -4315,7 +4558,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1111_xxxx_xxxx_xxxx_0111_xxxx
@@ -4339,7 +4581,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1110_1111_xxxx_xxxx_0111_xxxx
@@ -4369,7 +4610,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1100_1111_xxxx_xxxx_0111_xxxx
@@ -4392,7 +4632,6 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
-      else: !fmt ""
   arm:
   - version: [v6*]
     pattern: xxx_0110_1111_1111_xxxx_xxxx_0111_xxxx
@@ -4416,7 +4655,10 @@ opcodes:
   description: Vector Absolute 32-bit
   params: { cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vabs(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vabs(cond).f32
+      else: !fmt fabss(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4433,7 +4675,10 @@ opcodes:
   description: Vector Absolute 64-bit
   params: { cond: cond, dd: dreg, dm: dreg }
   format:
-    opcode: !fmt vabs(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vabs(cond).f64
+      else: !fmt fabsd(cond)
     params: !fmt (dd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4450,7 +4695,10 @@ opcodes:
   description: Vector Add 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vadd(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vadd(cond).f32
+      else: !fmt fadds(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4468,7 +4716,10 @@ opcodes:
   description: Vector Add 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vadd(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vadd(cond).f64
+      else: !fmt faddd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4486,43 +4737,70 @@ opcodes:
   description: Vector Compare 32-bit
   params: { quiet_nan_exc: quiet_nan_exc, cond: cond, sd: sreg, op2: vcmp_f32_op2 }
   format:
-    opcode: !fmt vcmp(quiet_nan_exc)(cond).f32
-    params: !fmt (sd), (op2)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcmp(quiet_nan_exc)(cond).f32
+      else: !seq
+      - !fmt fcmp(quiet_nan_exc)
+      - !if
+        cond: option(ual) && field(op2) == enum_variant(vcmp_f32_op2, zero)
+        then: !fmt z
+      - !fmt s(cond)
+    params: !seq
+    - !fmt (sd)
+    - !if
+      cond: option(ual) || field(op2) != enum_variant(vcmp_f32_op2, zero)
+      then: !fmt ", (op2)"
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
-    pattern: xxxx_1110_1x11_0100_xxxx_1010_x1x0_xxxx
+    pattern: xxxx_1110_1x11_010x_xxxx_1010_x1x0_xxxx
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       quiet_nan_exc: !bits 7
       cond: !bits 28..32
       sd: !expr (bits(12..16) << 1) | bit(22)
-      op2: !bits 0..6
+      op2: !bits 0..32
 
 - mnemonic: vcmp_f64
   description: Vector Compare 64-bit
   params: { quiet_nan_exc: quiet_nan_exc, cond: cond, dd: dreg, op2: vcmp_f64_op2 }
   format:
-    opcode: !fmt vcmp(quiet_nan_exc)(cond).f64
-    params: !fmt (dd), (op2)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcmp(quiet_nan_exc)(cond).f64
+      else: !seq
+      - !fmt fcmp(quiet_nan_exc)
+      - !if
+        cond: option(ual) && field(op2) == enum_variant(vcmp_f64_op2, zero)
+        then: !fmt z
+      - !fmt d(cond)
+    params: !seq
+    - !fmt (dd)
+    - !if
+      cond: option(ual) || field(op2) != enum_variant(vcmp_f64_op2, zero)
+      then: !fmt ", (op2)"
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
-    pattern: xxxx_1110_1x11_0100_xxxx_1011_x1x0_xxxx
+    pattern: xxxx_1110_1x11_010x_xxxx_1011_x1x0_xxxx
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       quiet_nan_exc: !bits 7
       cond: !bits 28..32
       dd: !expr (bits(12..16) << 1) | bit(22)
-      op2: !bits 0..6
+      op2: !bits 0..32
 
 - mnemonic: vcvt_f32_f64
   description: Vector Convert to Floating-point 32-bit from Floating-point 64-bit
   params: { cond: cond, sd: sreg, dm: dreg }
   format:
-    opcode: !fmt vcvt(cond).f32.f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f32.f64
+      else: !fmt fcvtsd(cond)
     params: !fmt (sd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4539,7 +4817,10 @@ opcodes:
   description: Vector Convert to Floating-point 32-bit from Signed 32-bit integer
   params: { cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(cond).f32.s32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f32.s32
+      else: !fmt fsitos(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4556,7 +4837,10 @@ opcodes:
   description: Vector Convert to Floating-point 32-bit from Unsigned 32-bit integer
   params: { cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(cond).f32.u32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f32.u32
+      else: !fmt fuitos(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4573,7 +4857,10 @@ opcodes:
   description: Vector Convert to Floating-point 64-bit from Floating-point 32-bit
   params: { cond: cond, dd: dreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(cond).f64.f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f64.f32
+      else: !fmt fcvtds(cond)
     params: !fmt (dd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4590,7 +4877,10 @@ opcodes:
   description: Vector Convert to Floating-point 64-bit from Signed 32-bit integer
   params: { cond: cond, dd: dreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(cond).f64.s32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f64.s32
+      else: !fmt fsitod(cond)
     params: !fmt (dd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4607,7 +4897,10 @@ opcodes:
   description: Vector Convert to Floating-point 64-bit from Unsigned 32-bit integer
   params: { cond: cond, dd: dreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(cond).f64.u32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f64.u32
+      else: !fmt fuitod(cond)
     params: !fmt (dd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4622,9 +4915,12 @@ opcodes:
 
 - mnemonic: vcvt_s32_f32
   description: Vector Convert to Signed 32-bit integer from Floating-point 32-bit
-  params: { round_zero: round, cond: cond, sd: sreg, sm: sreg }
+  params: { round_zero: round_zero, cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(round_zero)(cond).s32.f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).s32.f32
+      else: !fmt ftosi(round_zero)s(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4640,9 +4936,12 @@ opcodes:
 
 - mnemonic: vcvt_s32_f64
   description: Vector Convert to Signed 32-bit integer from Floating-point 64-bit
-  params: { round_zero: round, cond: cond, sd: sreg, dm: dreg }
+  params: { round_zero: round_zero, cond: cond, sd: sreg, dm: dreg }
   format:
-    opcode: !fmt vcvt(round_zero)(cond).s32.f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).s32.f64
+      else: !fmt ftosi(round_zero)d(cond)
     params: !fmt (sd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4658,9 +4957,12 @@ opcodes:
 
 - mnemonic: vcvt_u32_f32
   description: Vector Convert to Unsigned 32-bit integer from Floating-point 32-bit
-  params: { round_zero: round, cond: cond, sd: sreg, sm: sreg }
+  params: { round_zero: round_zero, cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vcvt(round_zero)(cond).u32.f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).u32.f32
+      else: !fmt ftoui(round_zero)s(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4676,9 +4978,12 @@ opcodes:
 
 - mnemonic: vcvt_u32_f64
   description: Vector Convert to Unsigned 32-bit integer from Floating-point 64-bit
-  params: { round_zero: round, cond: cond, sd: sreg, dm: dreg }
+  params: { round_zero: round_zero, cond: cond, sd: sreg, dm: dreg }
   format:
-    opcode: !fmt vcvt(round_zero)(cond).u32.f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).u32.f64
+      else: !fmt ftoui(round_zero)d(cond)
     params: !fmt (sd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4696,7 +5001,10 @@ opcodes:
   description: Vector Divide Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vdiv(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vdiv(cond).f32
+      else: !fmt fdivs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4714,7 +5022,10 @@ opcodes:
   description: Vector Divide Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vdiv(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vdiv(cond).f64
+      else: !fmt fdivd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4732,7 +5043,10 @@ opcodes:
   description: Vector Load Multiple Floating-point 32-bit
   params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: sreg_list }
   format:
-    opcode: !fmt vldm(mode)(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldm(mode)(cond)
+      else: !fmt fldm(mode)s(cond)
     params: !fmt (rn)(writeback), (regs)
   arm:
   - version: [v5te*, v6*]
@@ -4751,7 +5065,10 @@ opcodes:
   description: Vector Load Multiple Floating-point 64-bit
   params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: dreg_list }
   format:
-    opcode: !fmt vldm(mode)(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldm(mode)(cond)
+      else: !fmt fldm(mode)d(cond)
     params: !fmt (rn)(writeback), (regs)
   arm:
   - version: [v5te*, v6*]
@@ -4770,7 +5087,10 @@ opcodes:
   description: Vector Load Register Floating-point 32-bit
   params: { cond: cond, sd: sreg, addr: addr_ldr_str }
   format:
-    opcode: !fmt vldr(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldr(cond)
+      else: !fmt flds(cond)
     params: !fmt (sd), (addr)
   arm:
   - version: [v5te*, v6*]
@@ -4787,7 +5107,10 @@ opcodes:
   description: Vector Load Register Floating-point 64-bit
   params: { cond: cond, dd: dreg, addr: addr_ldr_str }
   format:
-    opcode: !fmt vldr(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldr(cond)
+      else: !fmt fldd(cond)
     params: !fmt (dd), (addr)
   arm:
   - version: [v5te*, v6*]
@@ -4804,7 +5127,10 @@ opcodes:
   description: Vector Multiply Accumulate Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vmla(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmla(cond).f32
+      else: !fmt fmacs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4822,7 +5148,10 @@ opcodes:
   description: Vector Multiply Accumulate Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vmla(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmla(cond).f64
+      else: !fmt fmacd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4840,7 +5169,10 @@ opcodes:
   description: Vector Multiply Subtract Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vmls(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmls(cond).f32
+      else: !fmt fmscs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4858,7 +5190,10 @@ opcodes:
   description: Vector Multiply Subtract Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vmls(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmls(cond).f64
+      else: !fmt fmscd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4876,7 +5211,13 @@ opcodes:
   description: Vector Move to 32-bit scalar from register
   params: { cond: cond, dd: dreg_index, rt: reg }
   format:
-    opcode: !fmt vmov(cond).32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).32
+      else: !if
+        cond: field(dd).index == 0
+        then: !fmt fmdlr(cond)
+        else: !fmt fmdhr(cond)
     params: !fmt (dd), (rt)
   arm:
   - version: [v5te*, v6*]
@@ -4894,7 +5235,10 @@ opcodes:
   description: Vector Move Floating-point 32-bit
   params: { cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vmov(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).f32
+      else: !fmt fcpys(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -4911,7 +5255,10 @@ opcodes:
   description: Vector Move to Floating-point 32-bit from register
   params: { cond: cond, sn: sreg, rt: reg }
   format:
-    opcode: !fmt vmov(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmsr(cond)
     params: !fmt (sn), (rt)
   arm:
   - version: [v5te*, v6*]
@@ -4929,7 +5276,10 @@ opcodes:
   description: Vector Move Floating-point 64-bit
   params: { cond: cond, dd: dreg, dm: dreg }
   format:
-    opcode: !fmt vmov(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).f64
+      else: !fmt fcpyd(cond)
     params: !fmt (dd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -4946,7 +5296,13 @@ opcodes:
   description: Vector Move to register from 32-bit scalar
   params: { cond: cond, rt: reg, dn: dreg_index }
   format:
-    opcode: !fmt vmov(cond).32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).32
+      else: !if
+        cond: field(dn).index == 0
+        then: !fmt fmrdl(cond)
+        else: !fmt fmrdh(cond)
     params: !fmt (rt), (dn)
   arm:
   - version: [v5te*, v6*]
@@ -4964,7 +5320,10 @@ opcodes:
   description: Vector Move to register from floating-point 32-bit
   params: { cond: cond, rt: reg, sn: sreg }
   format:
-    opcode: !fmt vmov(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmrs(cond)
     params: !fmt (rt), (sn)
   arm:
   - version: [v5te*, v6*]
@@ -4982,7 +5341,10 @@ opcodes:
   description: Vector Move to two registers from two floating-point 32-bit
   params: { cond: cond, rt: reg, rt2: reg, sm: sreg, sm2: sreg }
   format:
-    opcode: !fmt vmov(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmrrs(cond)
     params: !fmt (rt), (rt2), (sm), (sm2)
   arm:
   - version: [v5te*, v6*]
@@ -5002,7 +5364,10 @@ opcodes:
   description: Vector Move to two floating-point 32-bit from two registers
   params: { cond: cond, sm: sreg, sm2: sreg, rt: reg, rt2: reg }
   format:
-    opcode: !fmt vmov(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmsrr(cond)
     params: !fmt (sm), (sm2), (rt), (rt2)
   arm:
   - version: [v5te*, v6*]
@@ -5022,7 +5387,10 @@ opcodes:
   description: Vector Move to two registers from one floating-point 64-bit
   params: { cond: cond, rt: reg, rt2: reg, dm: dreg }
   format:
-    opcode: !fmt vmov(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmrrd(cond)
     params: !fmt (rt), (rt2), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5040,7 +5408,10 @@ opcodes:
   description: Vector Move to one floating-point 64-bit from two registers
   params: { cond: cond, dm: dreg, rt: reg, rt2: reg }
   format:
-    opcode: !fmt vmov(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmdrr(cond)
     params: !fmt (dm), (rt), (rt2)
   arm:
   - version: [v5te*, v6*]
@@ -5058,7 +5429,10 @@ opcodes:
   description: Vector Move to Register from Status register
   params: { cond: cond, rd: reg, fpscr: fpscr }
   format:
-    opcode: !fmt vmrs(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmrs(cond)
+      else: !fmt fmrx(cond)
     params: !fmt (rd), (fpscr)
   arm:
   - version: [v5te*, v6*]
@@ -5075,7 +5449,10 @@ opcodes:
   description: Vector Move to Status register from Register
   params: { cond: cond, fpscr: fpscr, rd: reg }
   format:
-    opcode: !fmt vmsr(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmsr(cond)
+      else: !fmt fmxr(cond)
     params: !fmt (fpscr), (rd)
   arm:
   - version: [v5te*, v6*]
@@ -5092,7 +5469,10 @@ opcodes:
   description: Vector Multiply Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vmul(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmul(cond).f32
+      else: !fmt fmuls(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5110,7 +5490,10 @@ opcodes:
   description: Vector Multiply Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vmul(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmul(cond).f64
+      else: !fmt fmuld(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5128,7 +5511,10 @@ opcodes:
   description: Vector Negate Floating-point 32-bit
   params: { cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vneg(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vneg(cond).f32
+      else: !fmt fnegs(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5145,7 +5531,10 @@ opcodes:
   description: Vector Negate Floating-point 64-bit
   params: { cond: cond, dd: dreg, dm: dreg }
   format:
-    opcode: !fmt vneg(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vneg(cond).f64
+      else: !fmt fnegd(cond)
     params: !fmt (dd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5162,7 +5551,10 @@ opcodes:
   description: Vector Negate Multiply Accumulate Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vnmla(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmla(cond).f32
+      else: !fmt fnmacs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5180,7 +5572,10 @@ opcodes:
   description: Vector Negate Multiply Accumulate Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vnmla(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmla(cond).f64
+      else: !fmt fnmacd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5198,7 +5593,10 @@ opcodes:
   description: Vector Negate Multiply Subtract Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vnmls(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmls(cond).f32
+      else: !fmt fnmscs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5216,7 +5614,10 @@ opcodes:
   description: Vector Negate Multiply Subtract Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vnmls(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmls(cond).f64
+      else: !fmt fnmscd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5234,7 +5635,10 @@ opcodes:
   description: Vector Negate Multiply Floating-point 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vnmul(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmul(cond).f32
+      else: !fmt fnmuls(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5252,12 +5656,16 @@ opcodes:
   description: Vector Negate Multiply Floating-point 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vnmul(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmul(cond).f64
+      else: !fmt fnmuld(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
     pattern: xxxx_1110_0x10_xxxx_xxxx_1011_x1x0_xxxx
+
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -5276,6 +5684,7 @@ opcodes:
   - version: [v5te*, v6*]
     extensions: [vfp*]
     pattern: xxxx_1100_1x11_1101_xxxx_1010_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -5292,6 +5701,7 @@ opcodes:
   - version: [v5te*, v6*]
     extensions: [vfp*]
     pattern: xxxx_1100_1x11_1101_xxxx_1011_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -5308,6 +5718,7 @@ opcodes:
   - version: [v5te*, v6*]
     extensions: [vfp*]
     pattern: xxxx_1101_0x10_1101_xxxx_1010_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -5324,6 +5735,7 @@ opcodes:
   - version: [v5te*, v6*]
     extensions: [vfp*]
     pattern: xxxx_1101_0x10_1101_xxxx_1011_xxxx_xxxx
+    ignore: "!option(ual)"
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
@@ -5334,7 +5746,10 @@ opcodes:
   description: Vector Square Root Floating-point 32-bit
   params: { cond: cond, sd: sreg, sm: sreg }
   format:
-    opcode: !fmt vsqrt(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsqrt(cond).f32
+      else: !fmt fsqrts(cond).f32
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5351,7 +5766,10 @@ opcodes:
   description: Vector Square Root Floating-point 64-bit
   params: { cond: cond, dd: dreg, dm: dreg }
   format:
-    opcode: !fmt vsqrt(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsqrt(cond).f64
+      else: !fmt fsqrtd(cond).f64
     params: !fmt (dd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5368,7 +5786,10 @@ opcodes:
   description: Vector Store Multiple Floating-point 32-bit
   params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: sreg_list }
   format:
-    opcode: !fmt vstm(mode)(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstm(mode)(cond)
+      else: !fmt fstm(mode)s(cond)
     params: !fmt (rn)(writeback), (regs)
   arm:
   - version: [v5te*, v6*]
@@ -5387,7 +5808,10 @@ opcodes:
   description: Vector Store Multiple Floating-point 64-bit
   params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: dreg_list }
   format:
-    opcode: !fmt vstm(mode)(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstm(mode)(cond)
+      else: !fmt fstm(mode)d(cond)
     params: !fmt (rn)(writeback), (regs)
   arm:
   - version: [v5te*, v6*]
@@ -5406,7 +5830,10 @@ opcodes:
   description: Vector Store Register Floating-point 32-bit
   params: { cond: cond, sd: sreg, addr: addr_ldr_str }
   format:
-    opcode: !fmt vstr(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstr(cond)
+      else: !fmt fsts(cond)
     params: !fmt (sd), (addr)
   arm:
   - version: [v5te*, v6*]
@@ -5423,7 +5850,10 @@ opcodes:
   description: Vector Store Register Floating-point 64-bit
   params: { cond: cond, dd: dreg, addr: addr_ldr_str }
   format:
-    opcode: !fmt vstr(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstr(cond)
+      else: !fmt fstd(cond)
     params: !fmt (dd), (addr)
   arm:
   - version: [v5te*, v6*]
@@ -5440,7 +5870,10 @@ opcodes:
   description: Vector Subtract 32-bit
   params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
   format:
-    opcode: !fmt vsub(cond).f32
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsub(cond).f32
+      else: !fmt fsubs(cond).f32
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5458,7 +5891,10 @@ opcodes:
   description: Vector Subtract 64-bit
   params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
   format:
-    opcode: !fmt vsub(cond).f64
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsub(cond).f64
+      else: !fmt fsubd(cond).f64
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]

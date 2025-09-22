@@ -1141,8 +1141,10 @@ mod tests {
     fn test_vcmp() {
         assert_asm!(0xeef4fae9, "vcmpe.f32 s31, s19");
         assert_asm!(0xeef4fa69, "vcmp.f32 s31, s19");
+        assert_asm!(0xeef5fa40, "vcmp.f32 s31, #0.0");
         assert_asm!(0x0ef4fbe9, "vcmpeeq.f64 d31, d25");
         assert_asm!(0x0ef4fb69, "vcmpeq.f64 d31, d25");
+        assert_asm!(0x0ef5fb40, "vcmpeq.f64 d31, #0.0");
     }
 
     #[test]

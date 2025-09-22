@@ -10,8 +10,8 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatParams, Isa, IsaExtensionPatterns, IsaVersionPatterns, OpcodeLookupTable,
-        OpcodePattern,
+        Format, FormatCond, FormatParams, Isa, IsaExtensionPatterns, IsaVersionPatterns,
+        OpcodeLookupTable, OpcodePattern,
     },
     util::str::snake_to_pascal_case,
 };
@@ -169,14 +169,14 @@ impl Opcode {
 
     fn write_opcode_tokens(&self, isa: &Isa) -> TokenStream {
         let params = self.format_params(isa);
-        let display_expr = self.format.opcode.fmt_expr_tokens(isa, &params);
+        let display_expr = self.format.opcode.fmt_expr_tokens(isa, &params, None);
         self.write_variant_tokens(display_expr)
     }
 
     fn write_params_tokens(&self, isa: &Isa) -> TokenStream {
         let params = self.format_params(isa);
         let display_expr = if !self.format.params.is_empty() {
-            let display_expr = self.format.params.fmt_expr_tokens(isa, &params);
+            let display_expr = self.format.params.fmt_expr_tokens(isa, &params, None);
             quote! {
                 formatter.write_space()?;
                 #display_expr
@@ -228,6 +228,7 @@ pub struct OpcodeEncoding {
     #[serde(default)]
     extensions: IsaExtensionPatterns,
     pattern: OpcodePattern,
+    ignore: Option<FormatCond>,
     #[serde(default)]
     illegal: Vec<DataExpr>,
     params: IndexMap<OpcodeParamName, OpcodeParamValue>,
@@ -321,10 +322,20 @@ impl OpcodeEncoding {
             }
         };
 
+        let ignore_check = self.ignore.as_ref().map(|ignore| {
+            let ignore_expr = ignore.as_tokens(Some(quote!(options)));
+            quote! {
+                if #ignore_expr {
+                    return None;
+                }
+            }
+        });
+
         quote! {
             fn #fn_ident(value: u32, pc: u32, options: &Options) -> Option<Ins> {
                 #version_check
                 #extensions_check
+                #ignore_check
                 #(#illegal_checks)*
                 #(#params)*
                 Some(Ins::#variant_ident { #(#param_names),* })

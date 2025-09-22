@@ -37,10 +37,10 @@ impl Version {
 #[derive(Clone, Copy)]
 pub struct Versions(u8);
 impl Versions {
-    pub fn none() -> Self {
+    pub const fn none() -> Self {
         Self(0)
     }
-    pub fn all() -> Self {
+    pub const fn all() -> Self {
         Self(u8::MAX)
     }
     pub fn with(self, version: Version) -> Self {
@@ -74,10 +74,10 @@ impl Extension {
 #[derive(Clone, Copy)]
 pub struct Extensions(u8);
 impl Extensions {
-    pub fn none() -> Self {
+    pub const fn none() -> Self {
         Self(0)
     }
-    pub fn all() -> Self {
+    pub const fn all() -> Self {
         Self(u8::MAX)
     }
     pub fn with(self, extension: Extension) -> Self {
@@ -475,17 +475,17 @@ pub enum VldmVstmMode {
 pub enum Ins {
     Illegal,
     ///Add with Carry
-    Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Adc { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Add
-    Add { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Add { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Bitwise AND
-    And { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    And { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Arithmetic Shift Right
-    Asr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    Asr { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Branch
     B { cond: Cond, target: BranchTarget },
     ///Bit Clear
-    Bic { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Bic { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Breakpoint
     Bkpt { imm: u32 },
     ///Branch with Link
@@ -521,7 +521,7 @@ pub enum Ins {
     ///Consume of Speculative Data Barrier
     Csdb { cond: Cond },
     ///Bitwise Exclusive OR
-    Eor { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Eor { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Load Coprocessor
     Ldc { l: bool, cond: Cond, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
     ///Load Coprocessor (extended)
@@ -560,9 +560,9 @@ pub enum Ins {
     ///Load Register with Translation
     Ldrt { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Logical Shift Left
-    Lsl { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    Lsl { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Logical Shift Right
-    Lsr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    Lsr { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Move to Coprocessor from ARM Register
     Mcr {
         cond: Cond,
@@ -582,7 +582,7 @@ pub enum Ins {
     ///Multiply Accumulate
     Mla { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
     ///Move
-    Mov { s: bool, cond: Cond, rd: Reg, op2: Op2 },
+    Mov { s: bool, thumb: bool, cond: Cond, rd: Reg, op2: Op2 },
     ///Move to ARM Register from Coprocessor
     Mrc {
         cond: Cond,
@@ -604,13 +604,15 @@ pub enum Ins {
     ///Move to Status register
     Msr { cond: Cond, status_fields: StatusFields, op2: MsrOp2 },
     ///Multiply
-    Mul { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    Mul { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     ///Move Negative
-    Mvn { s: bool, cond: Cond, rd: Reg, op2: Op2 },
+    Mvn { s: bool, thumb: bool, cond: Cond, rd: Reg, op2: Op2 },
+    ///Negate
+    Neg { rd: Reg, rm: Reg },
     ///No Operation
     Nop { cond: Cond },
     ///Bitwise OR
-    Orr { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Orr { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Pack Halfword Bottom Top
     Pkhbt { cond: Cond, rd: Reg, rn: Reg, rm: Reg, shift_op: ShiftOp, shift: u32 },
     ///Pack Halfword Top Bottom
@@ -650,7 +652,7 @@ pub enum Ins {
     ///Return From Exception
     Rfe { addr_mode: SrsRfeMode, rn: Reg, writeback: bool },
     ///Rotate Right
-    Ror { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    Ror { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Rotate Right with Extend
     Rrx { s: bool, cond: Cond, rd: Reg, rm: Reg },
     ///Reverse Subtract
@@ -664,7 +666,7 @@ pub enum Ins {
     ///Signed Add and Subtract with Exchange
     Sasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     ///Subtract with Carry
-    Sbc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Sbc { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Select
     Sel { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     ///Set Endianness
@@ -777,7 +779,7 @@ pub enum Ins {
     ///Store Register with Translation
     Strt { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Subtract
-    Sub { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    Sub { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Supervisor Call
     Svc { cond: Cond, imm: u32 },
     ///Swap

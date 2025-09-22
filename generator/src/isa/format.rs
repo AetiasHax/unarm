@@ -23,12 +23,19 @@ pub enum Format {
 pub type FormatParams = HashMap<String, DataType>;
 
 impl Format {
-    pub fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
+    pub fn fmt_expr_tokens(
+        &self,
+        isa: &Isa,
+        params: &FormatParams,
+        formatter: Option<TokenStream>,
+    ) -> TokenStream {
         match self {
-            Format::If(if_format) => if_format.fmt_expr_tokens(isa, params),
-            Format::Fragments(fragments_format) => fragments_format.fmt_expr_tokens(params),
+            Format::If(if_format) => if_format.fmt_expr_tokens(isa, params, formatter),
+            Format::Fragments(fragments_format) => {
+                fragments_format.fmt_expr_tokens(isa, params, formatter)
+            }
             Format::Sequence(formats) => {
-                formats.iter().map(|f| f.fmt_expr_tokens(isa, params)).collect()
+                formats.iter().map(|f| f.fmt_expr_tokens(isa, params, formatter.clone())).collect()
             }
         }
     }
@@ -42,20 +49,32 @@ impl Format {
     }
 }
 
+impl Default for Format {
+    fn default() -> Self {
+        Self::Fragments(FragmentsFormat { fragments: vec![] })
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct IfFormat {
     cond: FormatCond,
     #[serde(rename = "then")]
     if_true: Box<Format>,
-    #[serde(rename = "else")]
+    #[serde(rename = "else", default)]
     if_false: Box<Format>,
 }
 
 impl IfFormat {
-    fn fmt_expr_tokens(&self, isa: &Isa, params: &FormatParams) -> TokenStream {
-        let condition = self.cond.as_tokens();
-        let fmt_true = self.if_true.fmt_expr_tokens(isa, params);
-        let fmt_false = self.if_false.fmt_expr_tokens(isa, params);
+    fn fmt_expr_tokens(
+        &self,
+        isa: &Isa,
+        params: &FormatParams,
+        formatter: Option<TokenStream>,
+    ) -> TokenStream {
+        let options = formatter.clone().map(|f| quote!(#f.options()));
+        let condition = self.cond.as_tokens(options);
+        let fmt_true = self.if_true.fmt_expr_tokens(isa, params, formatter.clone());
+        let fmt_false = self.if_false.fmt_expr_tokens(isa, params, formatter);
         quote! {
             if #condition {
                 #fmt_true
@@ -67,18 +86,22 @@ impl IfFormat {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-struct FormatCond(SynExpr);
+pub struct FormatCond(SynExpr);
 
 impl FormatCond {
-    fn as_tokens(&self) -> TokenStream {
-        let mut replace = FormatCondReplace;
+    pub fn as_tokens(&self, options_tokens: Option<TokenStream>) -> TokenStream {
+        let mut replace = FormatCondReplace {
+            options_tokens: options_tokens.unwrap_or_else(|| quote!(formatter.options())),
+        };
         let mut expr = self.0.0.clone();
         replace.visit_expr_mut(&mut expr);
         expr.into_token_stream()
     }
 }
 
-struct FormatCondReplace;
+struct FormatCondReplace {
+    options_tokens: TokenStream,
+}
 
 impl VisitMut for FormatCondReplace {
     fn visit_expr_mut(&mut self, node: &mut syn::Expr) {
@@ -90,7 +113,8 @@ impl VisitMut for FormatCondReplace {
                         panic!("option function takes one argument");
                     }
                     let option = &call.args[0];
-                    *node = syn::parse2(quote!(formatter.options().#option)).unwrap();
+                    let options = &self.options_tokens;
+                    *node = syn::parse2(quote!(#options.#option)).unwrap();
                 }
                 "field" => {
                     if call.args.len() != 1 {
@@ -124,8 +148,14 @@ pub struct FragmentsFormat {
 }
 
 impl FragmentsFormat {
-    fn fmt_expr_tokens(&self, params: &FormatParams) -> TokenStream {
-        let fragments = self.fragments.iter().map(|f| f.fmt_expr_tokens(params));
+    fn fmt_expr_tokens(
+        &self,
+        isa: &Isa,
+        params: &FormatParams,
+        formatter: Option<TokenStream>,
+    ) -> TokenStream {
+        let fragments =
+            self.fragments.iter().map(|f| f.fmt_expr_tokens(isa, params, formatter.clone()));
         quote!(#(#fragments)*)
     }
 
@@ -143,17 +173,23 @@ enum FormatFragment {
 }
 
 impl FormatFragment {
-    fn fmt_expr_tokens(&self, params: &FormatParams) -> TokenStream {
+    fn fmt_expr_tokens(
+        &self,
+        isa: &Isa,
+        params: &FormatParams,
+        formatter: Option<TokenStream>,
+    ) -> TokenStream {
+        let formatter = formatter.unwrap_or_else(|| quote!(formatter));
         match self {
-            FormatFragment::Text(text) => quote!(formatter.write_str(#text)?;),
-            FormatFragment::Space => quote!(formatter.write_space()?;),
-            FormatFragment::Separator => quote!(formatter.write_separator()?;),
+            FormatFragment::Text(text) => quote!(#formatter.write_str(#text)?;),
+            FormatFragment::Space => quote!(#formatter.write_space()?;),
+            FormatFragment::Separator => quote!(#formatter.write_separator()?;),
             FormatFragment::Param(param_name) => {
                 let Some(param) = params.get(param_name) else {
                     panic!("Parameter {param_name} in format does not exist");
                 };
                 let param_ident = Ident::new(param_name, Span::call_site());
-                param.fmt_expr_tokens(quote!(#param_ident))
+                param.fmt_expr_tokens(isa, quote!(#param_ident), Some(formatter))
             }
         }
     }

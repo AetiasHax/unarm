@@ -9,9 +9,9 @@ mod tests {
         }};
     }
 
-    macro_rules! assert_arm {
-        ($code:literal, $pc:literal, $disasm:literal) => {{
-            let options = Options {
+    macro_rules! options {
+        () => {{
+            Options {
                 version: unarm::Version::V6K,
                 extensions: unarm::Extensions::all(),
                 av: false,
@@ -20,7 +20,13 @@ mod tests {
                 fp: false,
                 ip: false,
                 ual: true,
-            };
+            }
+        }};
+    }
+
+    macro_rules! assert_arm {
+        ($code:literal, $pc:literal, $disasm:literal) => {{
+            let options = options!();
             let ins = parse_arm($code, $pc, &options).expect("Illegal instruction");
             assert_ins!(ins, $disasm, options)
         }};
@@ -28,16 +34,7 @@ mod tests {
 
     macro_rules! assert_thumb {
         ($code:literal, $pc:literal, $disasm:literal) => {{
-            let options = Options {
-                version: unarm::Version::V6K,
-                extensions: unarm::Extensions::all(),
-                av: false,
-                r9_use: unarm::R9Use::R9,
-                sl: false,
-                fp: false,
-                ip: false,
-                ual: true,
-            };
+            let options = options!();
             let ins = parse_thumb($code, $pc, &options).expect("Illegal instruction");
             assert_ins!(ins, $disasm, options)
         }};

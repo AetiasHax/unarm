@@ -114,7 +114,7 @@ pub enum DataTypeKind {
     Bool {
         #[serde(default)]
         bits: BitRange,
-        write: Option<String>,
+        format: Option<Format>,
     },
     #[serde(rename = "uint")]
     UInt(DataExpr),
@@ -386,14 +386,20 @@ impl DataType {
         })
     }
 
-    pub fn fmt_expr_tokens(&self, value: TokenStream) -> TokenStream {
+    pub fn fmt_expr_tokens(
+        &self,
+        isa: &Isa,
+        value: TokenStream,
+        formatter: Option<TokenStream>,
+    ) -> TokenStream {
+        let formatter = formatter.unwrap_or_else(|| quote!(formatter));
         match &self.kind {
             DataTypeKind::Bool { .. } if !self.top_level => {
-                self.write_expr_tokens(quote!(*#value), quote!(formatter))
+                self.write_expr_tokens(isa, quote!(*#value), formatter)
             }
             _ => {
                 let write_fn_ident = self.trait_write_fn_ident();
-                quote!(formatter.#write_fn_ident(*#value)?;)
+                quote!(#formatter.#write_fn_ident(*#value)?;)
             }
         }
     }
@@ -402,7 +408,7 @@ impl DataType {
         if let DataTypeKind::Struct(data_type_struct) = &self.kind {
             data_type_struct.fmt_expr_tokens(isa)
         } else {
-            self.fmt_expr_tokens(value)
+            self.fmt_expr_tokens(isa, value, None)
         }
     }
 
@@ -421,13 +427,23 @@ impl DataType {
         Ident::new(&fn_name, Span::call_site())
     }
 
-    fn write_expr_tokens(&self, value: TokenStream, formatter: TokenStream) -> TokenStream {
+    fn write_expr_tokens(
+        &self,
+        isa: &Isa,
+        value: TokenStream,
+        formatter: TokenStream,
+    ) -> TokenStream {
         match &self.kind {
-            DataTypeKind::Bool { write, .. } => {
-                let write = write.as_ref().unwrap_or(&self.name.0);
+            DataTypeKind::Bool { format, .. } => {
+                let write = if let Some(format) = &format {
+                    format.fmt_expr_tokens(isa, &HashMap::new(), Some(formatter))
+                } else {
+                    let name = &self.name.0;
+                    quote!(#formatter.write_str(#name)?;)
+                };
                 quote! {
                     if #value {
-                        #formatter.write_str(#write)?;
+                        #write
                     }
                 }
             }
@@ -456,7 +472,7 @@ impl DataType {
         let value = self.name.as_ident();
         let type_tokens = self.type_tokens(isa);
 
-        let write_expr = self.write_expr_tokens(value.to_token_stream(), quote!(self));
+        let write_expr = self.write_expr_tokens(isa, value.to_token_stream(), quote!(self));
 
         quote! {
             fn #fn_ident(&mut self, #value: #type_tokens) -> core::fmt::Result {
@@ -882,7 +898,7 @@ impl DataTypeEnumVariant {
             params.insert(data.name.0.clone(), data.clone());
         };
         let fmt_expr = if let Some(format) = &self.format {
-            format.fmt_expr_tokens(isa, &params)
+            format.fmt_expr_tokens(isa, &params, None)
         } else if let Some(data) = &self.data {
             let value = data.name.as_ident().into_token_stream();
             data.fmt_expr_in_enum_variant_tokens(isa, value)
@@ -1066,7 +1082,7 @@ impl DataTypeStruct {
         for field in &self.fields {
             params.insert(field.name.0.clone(), field.clone());
         }
-        self.format.fmt_expr_tokens(isa, &params)
+        self.format.fmt_expr_tokens(isa, &params, None)
     }
 }
 
