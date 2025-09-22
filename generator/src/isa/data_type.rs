@@ -256,22 +256,13 @@ impl DataType {
                 quote!((#expr) as i32)
             }
             DataTypeKind::Enum(data_type_enum) => {
-                let expr = data_type_enum.parse_expr_tokens(&self.name, value);
-                quote!(#expr)
+                data_type_enum.parse_expr_tokens(&self.name, value)
             }
             DataTypeKind::Union(data_type_union) => {
-                let expr = data_type_union.parse_expr_tokens(&self.name, value);
-                let try_op = if data_type_union.can_be_illegal() {
-                    quote!(?)
-                } else {
-                    quote!()
-                };
-                quote!(#expr #try_op)
+                data_type_union.parse_expr_tokens(&self.name, value)
             }
             DataTypeKind::Struct(data_type_struct) => {
-                let expr = data_type_struct.parse_expr_tokens(&self.name, value);
-                let illegal_try = data_type_struct.can_be_illegal(isa).then(|| quote!(?));
-                quote!(#expr #illegal_try)
+                data_type_struct.parse_expr_tokens(&self.name, value)
             }
             DataTypeKind::Type(data_type_name, data_expr) => {
                 let Some(inner_type) = isa.types().get(data_type_name) else {
@@ -289,7 +280,7 @@ impl DataType {
         }
     }
 
-    fn can_be_illegal(&self, isa: &Isa) -> bool {
+    pub fn can_be_illegal(&self, isa: &Isa) -> bool {
         match &self.kind {
             DataTypeKind::Bool { .. } => false,
             DataTypeKind::UInt(_) => false,
@@ -775,7 +766,8 @@ impl DataTypeEnumVariant {
                 quote!(Self::#variant_ident #record)
             } else {
                 let parse_expr = data.parse_expr_tokens(isa, None);
-                quote!(Self::#variant_ident(#parse_expr))
+                let try_op = data.can_be_illegal(isa).then(|| quote!(?));
+                quote!(Self::#variant_ident(#parse_expr #try_op))
             }
         } else {
             quote!(Self::#variant_ident)
@@ -976,7 +968,8 @@ impl DataTypeStruct {
         let fields = self.fields.iter().map(|field| {
             let field_ident = field.name.as_ident();
             let parse_expr = field.parse_expr_tokens(isa, None);
-            quote!(#field_ident: #parse_expr)
+            let try_op = field.can_be_illegal(isa).then(|| quote!(?));
+            quote!(#field_ident: #parse_expr #try_op)
         });
         quote!({ #(#fields),* })
     }

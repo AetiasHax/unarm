@@ -4,7 +4,6 @@ mod tests {
 
     macro_rules! assert_asm {
         ($code:literal, $disasm:literal) => {{
-            let ins = parse_arm($code, 0).expect("Illegal instruction");
             let options = Options {
                 version: unarm::Version::V6K,
                 extensions: unarm::Extensions::all(),
@@ -15,6 +14,7 @@ mod tests {
                 ip: false,
                 ual: true,
             };
+            let ins = parse_arm($code, 0, &options).expect("Illegal instruction");
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};

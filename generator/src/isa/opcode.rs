@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
@@ -10,10 +10,10 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatParams, Isa, IsaExtensionPattern, OpcodeLookupTable, OpcodeParseTree,
+        Format, FormatParams, Isa, IsaExtensionPatterns, IsaVersionPatterns, OpcodeLookupTable,
         OpcodePattern,
     },
-    util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
+    util::str::snake_to_pascal_case,
 };
 
 #[derive(Deserialize, Debug)]
@@ -28,6 +28,7 @@ impl Opcodes {
         let opcodes = self.iter().map(|o| o.ins_variant_tokens(isa));
         quote! {
             pub enum Ins {
+                Illegal,
                 #(#opcodes),*,
             }
         }
@@ -48,6 +49,7 @@ impl Opcodes {
                     F: Write + ?Sized
                 {
                     match self {
+                        Ins::Illegal => formatter.write_str("<illegal>")?,
                         #(#opcodes)*
                     }
                     Ok(())
@@ -58,6 +60,7 @@ impl Opcodes {
                     F: Write + ?Sized
                 {
                     match self {
+                        Ins::Illegal => {},
                         #(#params)*
                     }
                     Ok(())
@@ -66,85 +69,12 @@ impl Opcodes {
         }
     }
 
-    pub fn parse_arm_ifchain_fn_tokens(&self) -> TokenStream {
-        let mut encodings = self
-            .0
-            .iter()
-            .flat_map(|o| o.parse_arm_ifchain_tokens())
-            .map(Reverse)
-            .collect::<Vec<_>>();
-        encodings.sort_unstable();
-        let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
-        quote! {
-            pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
-                #(#encodings_tokens)else*
-                else {
-                    None
-                }
-            }
-        }
-    }
-
-    pub fn parse_arm_matchtree_fn_tokens(&self, isa: &Isa) -> TokenStream {
-        let tree = OpcodeParseTree::new_arm(isa);
-        let body = tree.parse_expr_tokens();
-        quote! {
-            pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
-                #body
-            }
-        }
-    }
-
     pub fn parse_arm_lookup_match_tokens(&self, isa: &Isa) -> TokenStream {
         let lookup_table = OpcodeLookupTable::new_arm(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         quote! {
-            pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
+            pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 #parse_fn_body
-            }
-        }
-    }
-
-    pub fn parse_arm_lookup_table_tokens(&self, isa: &Isa) -> TokenStream {
-        let lookup_table = OpcodeLookupTable::new_arm(isa);
-        let parse_fn_body = lookup_table.parse_table_fn_body_tokens();
-        let table = lookup_table.buckets_table_array_tokens();
-        let encodings = lookup_table.encoding_array_tokens();
-        quote! {
-            pub fn parse_arm(ins: u32, pc: u32) -> Option<Ins> {
-                #parse_fn_body
-            }
-
-            #table
-            #encodings
-        }
-    }
-
-    pub fn parse_thumb_ifchain_fn_tokens(&self) -> TokenStream {
-        let mut encodings = self
-            .0
-            .iter()
-            .flat_map(|o| o.parse_thumb_ifchain_tokens())
-            .map(Reverse)
-            .collect::<Vec<_>>();
-        encodings.sort_unstable();
-        let encodings_tokens = encodings.iter().map(|e| e.0.parse_ifchain_tokens());
-        quote! {
-            pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
-                #(#encodings_tokens)else*
-                else {
-                    None
-                }
-            }
-        }
-    }
-
-    pub fn parse_thumb_matchtree_fn_tokens(&self, isa: &Isa) -> TokenStream {
-        let tree = OpcodeParseTree::new_thumb(isa);
-        let body = tree.parse_expr_tokens();
-        quote! {
-            pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
-                #body
             }
         }
     }
@@ -153,7 +83,7 @@ impl Opcodes {
         let lookup_table = OpcodeLookupTable::new_thumb(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         quote! {
-            pub fn parse_thumb(ins: u32, pc: u32) -> Option<Ins> {
+            pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
                 #parse_fn_body
             }
         }
@@ -210,10 +140,7 @@ impl Opcode {
     }
 
     pub fn parse_fn_name(&self, arch: Arch, index: usize) -> String {
-        match arch {
-            Arch::Arm => format!("parse_arm_{}_{}", self.mnemonic, index),
-            Arch::Thumb => format!("parse_thumb_{}_{}", self.mnemonic, index),
-        }
+        format!("parse_{}_{}_{}", arch, self.mnemonic, index)
     }
 
     fn parse_fns_tokens(&self, isa: &Isa) -> TokenStream {
@@ -271,20 +198,6 @@ impl Opcode {
         }
     }
 
-    fn parse_arm_ifchain_tokens(&self) -> impl Iterator<Item = ParseOpcodeEncoding> {
-        self.arm.iter().flatten().enumerate().map(|(i, encoding)| {
-            let parse_fn_name = self.parse_fn_name(Arch::Arm, i);
-            encoding.as_parse_encoding(parse_fn_name)
-        })
-    }
-
-    fn parse_thumb_ifchain_tokens(&self) -> impl Iterator<Item = ParseOpcodeEncoding> {
-        self.thumb.iter().flatten().enumerate().map(|(i, encoding)| {
-            let parse_fn_name = self.parse_fn_name(Arch::Thumb, i);
-            encoding.as_parse_encoding(parse_fn_name)
-        })
-    }
-
     pub fn arm_encodings(&self) -> Option<&[OpcodeEncoding]> {
         self.arm.as_deref()
     }
@@ -311,9 +224,9 @@ pub struct OpcodeFormat {
 
 #[derive(Deserialize, Debug)]
 pub struct OpcodeEncoding {
-    version: Vec<IsaExtensionPattern>,
+    version: IsaVersionPatterns,
     #[serde(default)]
-    extensions: Vec<IsaExtensionPattern>,
+    extensions: IsaExtensionPatterns,
     pattern: OpcodePattern,
     #[serde(default)]
     illegal: Vec<DataExpr>,
@@ -329,7 +242,8 @@ impl OpcodeEncoding {
 
         let params = opcode.params().iter().map(|(param_name, type_name)| {
             let data_type = isa.types().get(type_name).unwrap();
-            let parse_expr = if let Some(value) = self.get_param(param_name) {
+            let value = self.get_param(param_name);
+            let parse_expr = if let Some(value) = value {
                 value.parse_expr_tokens(isa, data_type)
             } else {
                 data_type.default_expr_tokens(isa).unwrap_or_else(|| {
@@ -341,7 +255,26 @@ impl OpcodeEncoding {
             };
 
             let name_ident = Ident::new(&param_name.0, Span::call_site());
-            quote!(let #name_ident = #parse_expr;)
+            if data_type.can_be_illegal(isa)
+                && matches!(
+                    value,
+                    Some(
+                        OpcodeParamValue::Bits(_)
+                            | OpcodeParamValue::Const(_)
+                            | OpcodeParamValue::Expr(_)
+                    )
+                )
+            {
+                let x = quote! {
+                    let Some(#name_ident) = #parse_expr else {
+                        return Some(Ins::Illegal);
+                    };
+                };
+                // println!("{x}");
+                x
+            } else {
+                quote!(let #name_ident = #parse_expr;)
+            }
         });
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
@@ -351,13 +284,47 @@ impl OpcodeEncoding {
             let illegal_expr = illegal.as_tokens(ident);
             quote! {
                 if #illegal_expr {
-                    return None;
+                    return Some(Ins::Illegal);
                 }
             }
         });
 
+        let version_check = if isa.versions().matches_all(&self.version) {
+            quote!()
+        } else {
+            let versions = self.version.versions(isa);
+            let versions = versions.iter().map(|version| {
+                let ident = version.as_ident();
+                quote!(Version::#ident)
+            });
+            quote! {
+                const VERSIONS: Versions = Versions::of(&[#(#versions),*]);
+                if !VERSIONS.has(options.version) {
+                    return None;
+                }
+            }
+        };
+
+        let extensions_check = if self.extensions.is_empty() {
+            quote!()
+        } else {
+            let extensions = self.extensions.extensions(isa);
+            let extensions = extensions.iter().map(|extension| {
+                let ident = extension.as_ident();
+                quote!(Extension::#ident)
+            });
+            quote! {
+                const EXTENSIONS: Extensions = Extensions::of(&[#(#extensions),*]);
+                if !EXTENSIONS.has_all(options.extensions) {
+                    return None;
+                }
+            }
+        };
+
         quote! {
-            fn #fn_ident(value: u32, pc: u32) -> Option<Ins> {
+            fn #fn_ident(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+                #version_check
+                #extensions_check
                 #(#illegal_checks)*
                 #(#params)*
                 Some(Ins::#variant_ident { #(#param_names),* })
@@ -365,45 +332,8 @@ impl OpcodeEncoding {
         }
     }
 
-    fn as_parse_encoding(&self, parse_fn_name: String) -> ParseOpcodeEncoding {
-        ParseOpcodeEncoding { pattern: self.pattern.clone(), parse_fn_name }
-    }
-
     pub fn pattern(&self) -> &OpcodePattern {
         &self.pattern
-    }
-}
-
-#[derive(PartialEq, Eq)]
-struct ParseOpcodeEncoding {
-    pattern: OpcodePattern,
-    parse_fn_name: String,
-}
-
-impl PartialOrd for ParseOpcodeEncoding {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ParseOpcodeEncoding {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.pattern.num_bits().cmp(&other.pattern.num_bits())
-    }
-}
-
-impl ParseOpcodeEncoding {
-    fn parse_ifchain_tokens(&self) -> TokenStream {
-        let parse_fn_ident = Ident::new(&self.parse_fn_name, Span::call_site());
-
-        let combined_pattern = self.pattern.combined();
-        let bitmask = HexLiteral(combined_pattern.bitmask());
-        let pattern = HexLiteral(combined_pattern.pattern());
-        quote! {
-            if (ins & #bitmask) == #pattern {
-                #parse_fn_ident(ins as u32, pc)
-            }
-        }
     }
 }
 

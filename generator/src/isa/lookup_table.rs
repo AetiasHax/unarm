@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use proc_macro2::{Literal, Span, TokenStream};
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::Ident;
 
@@ -130,10 +130,6 @@ impl<'a> OpcodeLookupTable<'a> {
         let cases = self.bucket_parse_map_rev.iter().map(|(key, clones)| {
             let pattern_literals = clones.iter().map(|k| HexLiteral(*k));
 
-            let mapped_key = self.bucket_parse_map.get(key).unwrap();
-            let fn_name = format!("parse_{}_{mapped_key:x}", self.arch);
-            let fn_ident = Ident::new(&fn_name, Span::call_site());
-
             let bucket = self.buckets.get(*key).unwrap();
             let body_tokens = bucket.parse_bucket_tokens(self.arch);
 
@@ -150,63 +146,6 @@ impl<'a> OpcodeLookupTable<'a> {
             }
         }
     }
-
-    pub fn parse_table_fn_body_tokens(&self) -> TokenStream {
-        let bit_ranges = BitRanges::from_mask(self.bitmask);
-        let index_expr = bit_ranges.shift_mask_tokens(Some(Ident::new("ins", Span::call_site())));
-        let lookup_table_ident = self.lookup_table_ident();
-        let encoding_array_ident = self.encoding_array_ident();
-        quote! {
-            let index = #index_expr;
-            let encodings = #lookup_table_ident[index as usize];
-            for encoding_index in encodings {
-                let (bitmask, pattern, parse_fn) = #encoding_array_ident[*encoding_index as usize];
-                if (ins & bitmask) == pattern {
-                    return parse_fn(ins, pc);
-                }
-            }
-            None
-        }
-    }
-
-    pub fn buckets_table_array_tokens(&self) -> TokenStream {
-        let ident = self.lookup_table_ident();
-        let buckets = self.buckets.iter().map(|bucket| bucket.table_entry_tokens(self.arch));
-
-        quote! {
-            const #ident: &[&[u16]] = &[
-                #(#buckets),*
-            ];
-        }
-    }
-
-    fn lookup_table_ident(&self) -> Ident {
-        let name = match self.arch {
-            Arch::Arm => "ARM_LOOKUP_TABLE",
-            Arch::Thumb => "THUMB_LOOKUP_TABLE",
-        };
-        Ident::new(name, Span::call_site())
-    }
-
-    pub fn encoding_array_tokens(&self) -> TokenStream {
-        let ident = self.encoding_array_ident();
-        let encodings =
-            self.all_encodings.iter().map(|encoding| encoding.table_tuple_tokens(self.arch));
-
-        quote! {
-            const #ident: &[(u32, u32, fn (u32, u32) -> Option<Ins>)] = &[
-                #(#encodings),*
-            ];
-        }
-    }
-
-    fn encoding_array_ident(&self) -> Ident {
-        let name = match self.arch {
-            Arch::Arm => "ARM_ENCODINGS",
-            Arch::Thumb => "THUMB_ENCODINGS",
-        };
-        Ident::new(name, Span::call_site())
-    }
 }
 
 impl<'a> Bucket<'a> {
@@ -217,7 +156,7 @@ impl<'a> Bucket<'a> {
             let encoding = &self.encodings[0];
             let parse_fn_name = encoding.opcode.parse_fn_name(arch, encoding.index_opcode);
             let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
-            quote!(#parse_fn_ident(ins, pc))
+            quote!(#parse_fn_ident(ins, pc, options))
         } else {
             let parse_ifs = self.encodings.iter().map(|encoding| {
                 let pattern = encoding.encoding.pattern().combined();
@@ -226,8 +165,8 @@ impl<'a> Bucket<'a> {
                 let parse_fn_name = encoding.opcode.parse_fn_name(arch, encoding.index_opcode);
                 let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
                 quote! {
-                    if (ins & #bitmask_literal) == #pattern_literal {
-                        #parse_fn_ident(ins, pc)
+                    if (ins & #bitmask_literal) == #pattern_literal && let Some(ins) = #parse_fn_ident(ins, pc, options) {
+                        Some(ins)
                     }
                 }
             });
@@ -238,24 +177,6 @@ impl<'a> Bucket<'a> {
                 }
             }
         }
-    }
-
-    fn table_entry_tokens(&self, arch: Arch) -> TokenStream {
-        // let encodings = self.encodings.iter().map(|encoding| encoding.table_tuple_tokens(arch));
-        let encodings =
-            self.encodings.iter().map(|encoding| Literal::usize_unsuffixed(encoding.index_all));
-        quote!(&[#(#encodings),*])
-    }
-}
-
-impl<'a> Encoding<'a> {
-    fn table_tuple_tokens(&self, arch: Arch) -> TokenStream {
-        let parse_fn_name = self.opcode.parse_fn_name(arch, self.index_opcode);
-        let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
-        let pattern = self.encoding.pattern().combined();
-        let bitmask = HexLiteral(pattern.bitmask());
-        let pattern = HexLiteral(pattern.pattern());
-        quote!((#bitmask, #pattern, #parse_fn_ident))
     }
 }
 

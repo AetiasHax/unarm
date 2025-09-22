@@ -1263,6 +1263,7 @@ impl Ins {
         F: Write + ?Sized,
     {
         match self {
+            Ins::Illegal => formatter.write_str("<illegal>")?,
             Ins::Adc { s, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("adc")?;
@@ -2416,6 +2417,7 @@ impl Ins {
         F: Write + ?Sized,
     {
         match self {
+            Ins::Illegal => {}
             Ins::Adc { s, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;

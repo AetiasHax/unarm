@@ -29,6 +29,48 @@ pub enum Version {
     V6,
     V6K,
 }
+impl Version {
+    pub const fn bit(self) -> u8 {
+        1 << self as u8
+    }
+}
+#[derive(Clone, Copy)]
+pub struct Versions(u8);
+impl Versions {
+    pub fn none() -> Self {
+        Self(0)
+    }
+    pub fn all() -> Self {
+        Self(u8::MAX)
+    }
+    pub fn with(self, version: Version) -> Self {
+        Self(self.0 | version.bit())
+    }
+    pub const fn of(versions: &[Version]) -> Self {
+        let mut mask = 0;
+        let mut i = 0;
+        loop {
+            if i >= versions.len() {
+                break;
+            }
+            mask |= versions[i].bit();
+            i += 1;
+        }
+        Self(mask)
+    }
+    pub fn has(self, version: Version) -> bool {
+        (self.0 & version.bit()) != 0
+    }
+}
+#[derive(Clone, Copy)]
+pub enum Extension {
+    VfpV2,
+}
+impl Extension {
+    pub const fn bit(self) -> u8 {
+        1 << self as u8
+    }
+}
 #[derive(Clone, Copy)]
 pub struct Extensions(u8);
 impl Extensions {
@@ -38,8 +80,23 @@ impl Extensions {
     pub fn all() -> Self {
         Self(u8::MAX)
     }
-    pub fn with_vfp_v2(self) -> Self {
-        Self(self.0 | 1)
+    pub fn with(self, extension: Extension) -> Self {
+        Self(self.0 | extension.bit())
+    }
+    pub const fn of(extensions: &[Extension]) -> Self {
+        let mut mask = 0;
+        let mut i = 0;
+        loop {
+            if i >= extensions.len() {
+                break;
+            }
+            mask |= extensions[i].bit();
+            i += 1;
+        }
+        Self(mask)
+    }
+    pub fn has_all(self, extensions: Extensions) -> bool {
+        (self.0 & extensions.0) == self.0
     }
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -416,6 +473,7 @@ pub enum VldmVstmMode {
     Db,
 }
 pub enum Ins {
+    Illegal,
     ///Add with Carry
     Adc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Add

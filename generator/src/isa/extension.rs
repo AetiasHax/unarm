@@ -1,12 +1,18 @@
-use proc_macro2::{Literal, Span, TokenStream};
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use serde::{Deserialize, de};
 use syn::Ident;
+
+use crate::{isa::Isa, util::str::snake_to_pascal_case};
 
 #[derive(Deserialize, Debug)]
 pub struct IsaExtensions(Vec<IsaExtension>);
 
 impl IsaExtensions {
+    pub fn iter(&self) -> impl Iterator<Item = &IsaExtension> {
+        self.0.iter()
+    }
+
     pub fn get_matches(
         &self,
         pattern: &IsaExtensionPattern,
@@ -16,12 +22,28 @@ impl IsaExtensions {
 
     fn struct_inner_type(&self) -> TokenStream {
         match self.0.len() {
-            0 => quote!(()),
-            1..=8 => quote!(u8),
-            9..=16 => quote!(u16),
-            17..=32 => quote!(u32),
-            33..=64 => quote!(u64),
+            0..8 => quote!(u8),
+            8..16 => quote!(u16),
+            16..32 => quote!(u32),
+            32..64 => quote!(u64),
             _ => panic!("Too many extensions"),
+        }
+    }
+
+    pub fn enum_tokens(&self) -> TokenStream {
+        let extensions = self.0.iter().map(|e| e.as_ident());
+        let inner_type = self.struct_inner_type();
+        quote! {
+            #[derive(Clone, Copy)]
+            pub enum Extension {
+                #(#extensions),*
+            }
+
+            impl Extension {
+                pub const fn bit(self) -> #inner_type {
+                    1 << self as #inner_type
+                }
+            }
         }
     }
 
@@ -30,13 +52,7 @@ impl IsaExtensions {
         quote! {
             #[derive(Clone, Copy)]
             pub struct Extensions(#inner_type);
-        }
-    }
 
-    pub fn struct_impl_tokens(&self) -> TokenStream {
-        let inner_type = self.struct_inner_type();
-        let with_fns = self.0.iter().enumerate().map(|(i, e)| e.with_fn_tokens(i));
-        quote! {
             impl Extensions {
                 pub fn none() -> Self {
                     Self(0)
@@ -46,7 +62,26 @@ impl IsaExtensions {
                     Self(#inner_type::MAX)
                 }
 
-                #(#with_fns)*
+                pub fn with(self, extension: Extension) -> Self {
+                    Self(self.0 | extension.bit())
+                }
+
+                pub const fn of(extensions: &[Extension]) -> Self {
+                    let mut mask = 0;
+                    let mut i = 0;
+                    loop {
+                        if i >= extensions.len() {
+                            break;
+                        }
+                        mask |= extensions[i].bit();
+                        i += 1;
+                    }
+                    Self(mask)
+                }
+
+                pub fn has_all(self, extensions: Extensions) -> bool {
+                    (self.0 & extensions.0) == self.0
+                }
             }
         }
     }
@@ -60,19 +95,8 @@ impl IsaExtension {
         &self.0
     }
 
-    fn as_ident(&self) -> Ident {
-        Ident::new(&self.0, Span::call_site())
-    }
-
-    fn with_fn_tokens(&self, index: usize) -> TokenStream {
-        let fn_name = format!("with_{}", self.0);
-        let fn_ident = Ident::new(&fn_name, Span::call_site());
-        let flag = Literal::usize_unsuffixed(1 << index);
-        quote! {
-            pub fn #fn_ident(self) -> Self {
-                Self(self.0 | #flag)
-            }
-        }
+    pub fn as_ident(&self) -> Ident {
+        Ident::new(&snake_to_pascal_case(&self.0), Span::call_site())
     }
 }
 
@@ -105,5 +129,25 @@ impl<'de> Deserialize<'de> for IsaExtensionPattern {
         } else {
             Ok(IsaExtensionPattern { prefix: s, wildcard: false })
         }
+    }
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct IsaExtensionPatterns(Vec<IsaExtensionPattern>);
+
+impl IsaExtensionPatterns {
+    pub fn iter(&self) -> impl Iterator<Item = &IsaExtensionPattern> {
+        self.0.iter()
+    }
+
+    pub fn extensions<'a>(&self, isa: &'a Isa) -> Vec<&'a IsaExtension> {
+        isa.extensions()
+            .iter()
+            .filter(|&version| self.0.iter().any(|pattern| pattern.matches(version)))
+            .collect()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }

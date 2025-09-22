@@ -38,10 +38,11 @@ impl Fuzzer {
     fn parse(&self) -> std::thread::JoinHandle<()> {
         let range = self.range.clone();
         let iterations = self.iterations;
+        let options = self.options.clone();
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
-                    black_box(parse_thumb(code, 0));
+                    black_box(parse_thumb(code, 0, &options));
                 }
             }
         })
@@ -50,13 +51,14 @@ impl Fuzzer {
     fn parse_random(&self) -> std::thread::JoinHandle<()> {
         let range = self.range.clone();
         let iterations = self.iterations;
+        let options = self.options.clone();
         std::thread::spawn(move || {
             let mut rng = rand::rng();
             for _ in 0..iterations {
                 for _ in range.clone() {
                     let code = rng.next_u32();
                     #[allow(clippy::unit_arg)]
-                    black_box(parse_thumb(code, 0));
+                    black_box(parse_thumb(code, 0, &options));
                 }
             }
         })
@@ -69,7 +71,7 @@ impl Fuzzer {
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
-                    let Some(ins) = parse_thumb(code, 0) else { continue };
+                    let Some(ins) = parse_thumb(code, 0, &options) else { continue };
                     black_box(ins.display(&options).to_string());
                 }
             }
