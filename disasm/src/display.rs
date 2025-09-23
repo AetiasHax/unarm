@@ -2344,7 +2344,7 @@ impl Ins {
                 } else {
                     formatter.write_str("fcmp")?;
                     formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
-                    if formatter.options().ual && *op2 == VcmpF32Op2::Zero {
+                    if *op2 == VcmpF32Op2::Zero {
                         formatter.write_str("z")?;
                     } else {}
                     formatter.write_str("s")?;
@@ -2360,7 +2360,7 @@ impl Ins {
                 } else {
                     formatter.write_str("fcmp")?;
                     formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
-                    if formatter.options().ual && *op2 == VcmpF64Op2::Zero {
+                    if *op2 == VcmpF64Op2::Zero {
                         formatter.write_str("z")?;
                     } else {}
                     formatter.write_str("d")?;
@@ -2827,7 +2827,6 @@ impl Ins {
                 } else {
                     formatter.write_str("fsqrts")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_str(".f32")?;
                 }
             }
             Ins::VsqrtF64 { cond, dd, dm } => {
@@ -2838,7 +2837,6 @@ impl Ins {
                 } else {
                     formatter.write_str("fsqrtd")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_str(".f64")?;
                 }
             }
             Ins::VstmF32 { mode, cond, rn, writeback, regs } => {
@@ -2891,7 +2889,6 @@ impl Ins {
                 } else {
                     formatter.write_str("fsubs")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_str(".f32")?;
                 }
             }
             Ins::VsubF64 { cond, dd, dn, dm } => {
@@ -2902,7 +2899,6 @@ impl Ins {
                 } else {
                     formatter.write_str("fsubd")?;
                     formatter.write_cond(*cond)?;
-                    formatter.write_str(".f64")?;
                 }
             }
             Ins::Wfe { cond } => {

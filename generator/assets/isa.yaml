@@ -4743,7 +4743,7 @@ opcodes:
       else: !seq
       - !fmt fcmp(quiet_nan_exc)
       - !if
-        cond: option(ual) && field(op2) == enum_variant(vcmp_f32_op2, zero)
+        cond: field(op2) == enum_variant(vcmp_f32_op2, zero)
         then: !fmt z
       - !fmt s(cond)
     params: !seq
@@ -4773,7 +4773,7 @@ opcodes:
       else: !seq
       - !fmt fcmp(quiet_nan_exc)
       - !if
-        cond: option(ual) && field(op2) == enum_variant(vcmp_f64_op2, zero)
+        cond: field(op2) == enum_variant(vcmp_f64_op2, zero)
         then: !fmt z
       - !fmt d(cond)
     params: !seq
@@ -5749,7 +5749,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsqrt(cond).f32
-      else: !fmt fsqrts(cond).f32
+      else: !fmt fsqrts(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5769,7 +5769,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsqrt(cond).f64
-      else: !fmt fsqrtd(cond).f64
+      else: !fmt fsqrtd(cond)
     params: !fmt (dd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5873,7 +5873,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsub(cond).f32
-      else: !fmt fsubs(cond).f32
+      else: !fmt fsubs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5894,7 +5894,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsub(cond).f64
-      else: !fmt fsubd(cond).f64
+      else: !fmt fsubd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]
