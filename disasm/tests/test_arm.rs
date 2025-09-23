@@ -269,6 +269,24 @@ mod tests {
     }
 
     #[test]
+    fn test_ldrexb() {
+        assert_asm!(0xe1d12f9f, "ldrexb r2, [r1]");
+        assert_asm!(0x21d12f9f, "ldrexbhs r2, [r1]");
+    }
+
+    #[test]
+    fn test_ldrexd() {
+        assert_asm!(0xe1b12f9f, "ldrexd r2, r3, [r1]");
+        assert_asm!(0x21b12f9f, "ldrexdhs r2, r3, [r1]");
+    }
+
+    #[test]
+    fn test_ldrexh() {
+        assert_asm!(0xe1f12f9f, "ldrexh r2, [r1]");
+        assert_asm!(0x21f12f9f, "ldrexhhs r2, [r1]");
+    }
+
+    #[test]
     fn test_ldrh() {
         assert_asm!(0xe1d12fbf, "ldrh r2, [r1, #0xff]");
         assert_asm!(0xe11120b3, "ldrh r2, [r1, -r3]");
@@ -848,6 +866,24 @@ mod tests {
     fn test_strex() {
         assert_asm!(0xe1812f93, "strex r2, r3, [r1]");
         assert_asm!(0x21812f93, "strexhs r2, r3, [r1]");
+    }
+
+    #[test]
+    fn test_strexb() {
+        assert_asm!(0xe1c12f93, "strexb r2, r3, [r1]");
+        assert_asm!(0x21c12f93, "strexbhs r2, r3, [r1]");
+    }
+
+    #[test]
+    fn test_strexd() {
+        assert_asm!(0xe1a12f94, "strexd r2, r4, r5, [r1]");
+        assert_asm!(0x21a12f94, "strexdhs r2, r4, r5, [r1]");
+    }
+
+    #[test]
+    fn test_strexh() {
+        assert_asm!(0xe1e12f93, "strexh r2, r3, [r1]");
+        assert_asm!(0x21e12f93, "strexhhs r2, r3, [r1]");
     }
 
     #[test]
