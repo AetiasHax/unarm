@@ -10,8 +10,8 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatCond, FormatParams, Isa, IsaExtensionPatterns, IsaVersionPatterns,
-        OpcodeLookupTable, OpcodePattern,
+        Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtensionPatterns,
+        IsaVersionPatterns, OpcodeLookupTable, OpcodePattern,
     },
     util::str::snake_to_pascal_case,
 };
@@ -73,7 +73,7 @@ impl Opcodes {
         let lookup_table = OpcodeLookupTable::new_arm(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         quote! {
-            pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
+            pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 #parse_fn_body
             }
         }
@@ -83,7 +83,7 @@ impl Opcodes {
         let lookup_table = OpcodeLookupTable::new_thumb(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         quote! {
-            pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
+            pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Ins {
                 #parse_fn_body
             }
         }
@@ -230,7 +230,7 @@ pub struct OpcodeEncoding {
     pattern: OpcodePattern,
     ignore: Option<FormatCond>,
     #[serde(default)]
-    illegal: Vec<DataExpr>,
+    illegal: IllegalChecks,
     params: IndexMap<OpcodeParamName, OpcodeParamValue>,
 }
 impl OpcodeEncoding {
@@ -280,15 +280,7 @@ impl OpcodeEncoding {
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
 
-        let illegal_checks = self.illegal.iter().map(|illegal| {
-            let ident = Ident::new("value", Span::call_site());
-            let illegal_expr = illegal.as_tokens(ident);
-            quote! {
-                if #illegal_expr {
-                    return Some(Ins::Illegal);
-                }
-            }
-        });
+        let illegal_checks = self.illegal.checks_tokens(None);
 
         let version_check = if isa.versions().matches_all(&self.version) {
             quote!()
@@ -336,7 +328,7 @@ impl OpcodeEncoding {
                 #version_check
                 #extensions_check
                 #ignore_check
-                #(#illegal_checks)*
+                #illegal_checks
                 #(#params)*
                 Some(Ins::#variant_ident { #(#param_names),* })
             }

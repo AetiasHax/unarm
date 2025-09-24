@@ -310,7 +310,6 @@ types:
 - name: op2
   kind: !union
     bits: 0..32
-    complete: true
     variants:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
@@ -319,21 +318,26 @@ types:
         data:
           name: imm
           kind: !uint bits(0..8).rotate_right(bits(8..12) << 1)
-      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx1_xxxx:
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
         name: shift_reg
         description: Register shifted by register
         data:
           name: shift_reg
-          kind: !type [shift_reg, bits(0..12)]
+          kind: !type [shift_reg, bits(0..32)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: shift_imm
         description: Register shifted by immediate
         data:
           name: shift_imm
-          kind: !type [shift_imm, bits(0..12)]
+          kind: !type [shift_imm, bits(0..32)]
 - name: shift_reg
   kind: !struct
     format: !fmt (rm), (shift_op) (rs)
+    illegal:
+    - ins() & 0xf == 0xf # rm == pc
+    - ins() & 0xf00 == 0xf00 # rs == pc
+    - ins() & 0xf000 == 0xf000 # rd == pc
+    - ins() & 0xf0000 == 0xf0000 # rn == pc
     fields:
     - name: rm
       kind: !type [reg, bits(0..4)]
@@ -495,7 +499,6 @@ types:
 - name: ldr_str_offset
   kind: !union
     bits: 0..32
-    complete: true
     variants:
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
@@ -504,7 +507,7 @@ types:
         data:
           name: offset
           kind: !int bits(0..12).negate_if(bit(23) == 0)
-      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: reg
         description: Register offset
         data:
@@ -1868,7 +1871,7 @@ opcodes:
     opcode: !fmt mcrr2
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
   arm:
-  - version: [v5te*, v6*]
+  - version: [v6*]
     pattern: 1111_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       coproc: !bits 8..12
@@ -2041,7 +2044,7 @@ opcodes:
     opcode: !fmt mrrc2
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
   arm:
-  - version: [v5te*, v6*]
+  - version: [v6*]
     pattern: 1111_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       coproc: !bits 8..12
@@ -2176,7 +2179,7 @@ opcodes:
     opcode: !fmt nop(cond)
     params: !fmt ""
   arm:
-  - version: [v4*, v5t*, v6*]
+  - version: [v6k]
     pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0000
     illegal:
     - ins() & 0xff00 != 0xf000

@@ -71,7 +71,7 @@ impl Fuzzer {
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
-                    let Some(ins) = parse_thumb(code, 0, &options) else { continue };
+                    let ins = parse_thumb(code, 0, &options);
                     black_box(ins.display(&options).to_string());
                 }
             }

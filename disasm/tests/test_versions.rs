@@ -27,7 +27,7 @@ mod tests {
     macro_rules! assert_arm {
         ($code:literal, $version:expr, $disasm:literal) => {{
             let options = options!($version);
-            let ins = parse_arm($code, 0, &options).expect("Illegal instruction");
+            let ins = parse_arm($code, 0, &options);
             assert_ins!(ins, $disasm, options)
         }};
     }
@@ -35,12 +35,12 @@ mod tests {
     macro_rules! assert_thumb {
         ($code:literal, $version:expr, $disasm:literal) => {{
             let options = options!($version);
-            let ins = parse_thumb($code, 0, &options).expect("Illegal instruction");
+            let ins = parse_thumb($code, 0, &options);
             assert_ins!(ins, $disasm, options)
         }};
         ($code:literal, $next:literal, $version:expr, $disasm:literal) => {{
             let options = options!($version);
-            let ins = parse_thumb($code | ($next << 16), 0, &options).expect("Illegal instruction");
+            let ins = parse_thumb($code | ($next << 16), 0, &options);
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn test_v5te() {
         assert_arm!(0xe1c12fdf, Version::V5Te, "ldrd r2, r3, [r1, #0xff]");
-        assert_arm!(0xe1c12fdf, Version::V5Te, "<illegal>");
+        assert_arm!(0xe1c12fdf, Version::V5T, "<illegal>");
 
         assert_arm!(0xec412345, Version::V5Te, "mcrr p3, #0x4, r2, r1, c5");
         assert_arm!(0xec412345, Version::V5T, "<illegal>");

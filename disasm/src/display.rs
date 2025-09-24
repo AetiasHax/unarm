@@ -3139,7 +3139,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_addr_ldr_str(*addr)?;
+                formatter.write_addr_ldr_str_post(*addr)?;
             }
             Ins::Ldrd { cond, rd, rd2, addr } => {
                 formatter.write_space()?;
@@ -3211,7 +3211,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_addr_ldr_str(*addr)?;
+                formatter.write_addr_ldr_str_post(*addr)?;
             }
             Ins::Lsl { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
@@ -3944,7 +3944,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_addr_ldr_str(*addr)?;
+                formatter.write_addr_ldr_str_post(*addr)?;
             }
             Ins::Strd { cond, rd, rd2, addr } => {
                 formatter.write_space()?;
@@ -4012,7 +4012,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_addr_ldr_str(*addr)?;
+                formatter.write_addr_ldr_str_post(*addr)?;
             }
             Ins::Sub { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;

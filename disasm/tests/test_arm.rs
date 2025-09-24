@@ -14,7 +14,7 @@ mod tests {
                 ip: false,
                 ual: true,
             };
-            let ins = parse_arm($code, 0, &options).expect("Illegal instruction");
+            let ins = parse_arm($code, 0, &options);
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};
