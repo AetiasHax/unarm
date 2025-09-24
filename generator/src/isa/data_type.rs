@@ -8,7 +8,7 @@ use serde::Deserialize;
 use syn::{Ident, visit_mut::VisitMut};
 
 use crate::{
-    isa::{BitRange, Format, FormatParams, Isa, OpcodeParamValue, Pattern, SynExpr},
+    isa::{BitRange, Format, FormatParams, IllegalChecks, Isa, OpcodeParamValue, Pattern, SynExpr},
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
 
@@ -937,6 +937,8 @@ impl Display for DataTypeEnumVariantName {
 #[derive(Deserialize, Debug, Clone)]
 pub struct DataTypeStruct {
     format: Format,
+    #[serde(default)]
+    illegal: IllegalChecks,
     fields: Vec<DataType>,
 }
 
@@ -970,10 +972,13 @@ impl DataTypeStruct {
             quote!(Self #record)
         };
 
+        let illegal_checks = self.illegal.checks_tokens(Some(quote!(None)));
+
         quote! {
             impl #name_ident {
                 #[inline(always)]
                 pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
+                    #illegal_checks
                     #return_value
                 }
             }
@@ -997,7 +1002,7 @@ impl DataTypeStruct {
     }
 
     fn can_be_illegal(&self, isa: &Isa) -> bool {
-        self.fields.iter().any(|field| field.can_be_illegal(isa))
+        !self.illegal.is_empty() || self.fields.iter().any(|field| field.can_be_illegal(isa))
     }
 
     fn default_fields(&self, isa: &Isa) -> Option<Vec<TokenStream>> {

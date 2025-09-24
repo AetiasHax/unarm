@@ -310,7 +310,6 @@ types:
 - name: op2
   kind: !union
     bits: 0..32
-    complete: true
     variants:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
@@ -319,21 +318,26 @@ types:
         data:
           name: imm
           kind: !uint bits(0..8).rotate_right(bits(8..12) << 1)
-      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx1_xxxx:
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
         name: shift_reg
         description: Register shifted by register
         data:
           name: shift_reg
-          kind: !type [shift_reg, bits(0..12)]
+          kind: !type [shift_reg, bits(0..32)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: shift_imm
         description: Register shifted by immediate
         data:
           name: shift_imm
-          kind: !type [shift_imm, bits(0..12)]
+          kind: !type [shift_imm, bits(0..32)]
 - name: shift_reg
   kind: !struct
     format: !fmt (rm), (shift_op) (rs)
+    illegal:
+    - ins() & 0xf == 0xf # rm == pc
+    - ins() & 0xf00 == 0xf00 # rs == pc
+    - ins() & 0xf000 == 0xf000 # rd == pc
+    - ins() & 0xf0000 == 0xf0000 # rn == pc
     fields:
     - name: rm
       kind: !type [reg, bits(0..4)]
@@ -495,7 +499,6 @@ types:
 - name: ldr_str_offset
   kind: !union
     bits: 0..32
-    complete: true
     variants:
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
@@ -504,7 +507,7 @@ types:
         data:
           name: offset
           kind: !int bits(0..12).negate_if(bit(23) == 0)
-      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: reg
         description: Register offset
         data:
@@ -1168,7 +1171,7 @@ opcodes:
     opcode: !fmt cdp2
     params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
   arm:
-  - version: [v4*, v5t*, v6*]
+  - version: [v5t*, v6*]
     pattern: 1111_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
     params:
       coproc: !bits 8..12
@@ -1388,7 +1391,7 @@ opcodes:
     opcode: !fmt ldc2(l)
     params: !fmt (coproc), (crd), (dest)
   arm:
-  - version: [v4*, v5t*, v6*]
+  - version: [v5t*, v6*]
     pattern: 1111_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       l: !bits 22
@@ -1521,7 +1524,7 @@ opcodes:
 
 - mnemonic: ldrbt
   description: Load Register Byte with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -1536,7 +1539,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: ldrd
   description: Load Register Dual
@@ -1723,7 +1726,7 @@ opcodes:
 
 - mnemonic: ldrt
   description: Load Register with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -1738,7 +1741,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: lsl
   description: Logical Shift Left
@@ -1884,7 +1887,7 @@ opcodes:
     opcode: !fmt mcrr2
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
   arm:
-  - version: [v5te*, v6*]
+  - version: [v6*]
     pattern: 1111_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       coproc: !bits 8..12
@@ -2057,7 +2060,7 @@ opcodes:
     opcode: !fmt mrrc2
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
   arm:
-  - version: [v5te*, v6*]
+  - version: [v6*]
     pattern: 1111_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       coproc: !bits 8..12
@@ -2095,6 +2098,7 @@ opcodes:
     illegal:
     - ins() & 0xf000 != 0xf000
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    - ins() & 0x4f0000 == 0 # cpsr with no masks
     params:
       cond: !bits 28..32
       status_fields: !bits 0..32
@@ -2192,7 +2196,7 @@ opcodes:
     opcode: !fmt nop(cond)
     params: !fmt ""
   arm:
-  - version: [v4*, v5t*, v6*]
+  - version: [v6k]
     pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0000
     illegal:
     - ins() & 0xff00 != 0xf000
@@ -2885,7 +2889,7 @@ opcodes:
     opcode: !fmt sev(cond)
     params: !fmt ""
   arm:
-  - version: [v6*]
+  - version: [v6k]
     pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0100
     illegal:
     - ins() & 0xff00 != 0xf000
@@ -3454,7 +3458,7 @@ opcodes:
     opcode: !fmt stc2(l)
     params: !fmt (coproc), (crd), (dest)
   arm:
-  - version: [v4*, v5t*, v6*]
+  - version: [v5t*, v6*]
     pattern: 1111_110x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
       l: !bits 22
@@ -3559,7 +3563,7 @@ opcodes:
 
 - mnemonic: strbt
   description: Store Register Byte with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -3574,7 +3578,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: strd
   description: Store Register Dual
@@ -3705,7 +3709,7 @@ opcodes:
 
 - mnemonic: strt
   description: Store Register with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -3720,7 +3724,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: sub
   description: Subtract
@@ -4759,7 +4763,7 @@ opcodes:
       else: !seq
       - !fmt fcmp(quiet_nan_exc)
       - !if
-        cond: option(ual) && field(op2) == enum_variant(vcmp_f32_op2, zero)
+        cond: field(op2) == enum_variant(vcmp_f32_op2, zero)
         then: !fmt z
       - !fmt s(cond)
     params: !seq
@@ -4789,7 +4793,7 @@ opcodes:
       else: !seq
       - !fmt fcmp(quiet_nan_exc)
       - !if
-        cond: option(ual) && field(op2) == enum_variant(vcmp_f64_op2, zero)
+        cond: field(op2) == enum_variant(vcmp_f64_op2, zero)
         then: !fmt z
       - !fmt d(cond)
     params: !seq
@@ -5765,7 +5769,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsqrt(cond).f32
-      else: !fmt fsqrts(cond).f32
+      else: !fmt fsqrts(cond)
     params: !fmt (sd), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5785,7 +5789,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsqrt(cond).f64
-      else: !fmt fsqrtd(cond).f64
+      else: !fmt fsqrtd(cond)
     params: !fmt (dd), (dm)
   arm:
   - version: [v5te*, v6*]
@@ -5889,7 +5893,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsub(cond).f32
-      else: !fmt fsubs(cond).f32
+      else: !fmt fsubs(cond)
     params: !fmt (sd), (sn), (sm)
   arm:
   - version: [v5te*, v6*]
@@ -5910,7 +5914,7 @@ opcodes:
     opcode: !if
       cond: option(ual)
       then: !fmt vsub(cond).f64
-      else: !fmt fsubd(cond).f64
+      else: !fmt fsubd(cond)
     params: !fmt (dd), (dn), (dm)
   arm:
   - version: [v5te*, v6*]

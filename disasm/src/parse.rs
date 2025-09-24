@@ -106,26 +106,38 @@ impl CoReg {
 }
 impl Op2 {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
         if (value & 0x2000000) == 0x2000000 {
-            Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1))
-        } else if (value & 0x2000010) == 0x10 {
-            Self::ShiftReg(ShiftReg::parse(((value) & 0xfff), pc))
+            Some(Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1)))
+        } else if (value & 0x2000090) == 0x10 {
+            Some(Self::ShiftReg(ShiftReg::parse((value), pc)?))
         } else if (value & 0x2000010) == 0x0 {
-            Self::ShiftImm(ShiftImm::parse(((value) & 0xfff), pc))
+            Some(Self::ShiftImm(ShiftImm::parse((value), pc)))
         } else {
-            unreachable!()
+            None
         }
     }
 }
 impl ShiftReg {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+        if value & 0xf == 0xf {
+            return None;
+        }
+        if value & 0xf00 == 0xf00 {
+            return None;
+        }
+        if value & 0xf000 == 0xf000 {
+            return None;
+        }
+        if value & 0xf0000 == 0xf0000 {
+            return None;
+        }
+        Some(Self {
             rm: Reg::parse(((value) & 0xf), pc),
             shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
             rs: Reg::parse((((value) >> 8) & 0xf), pc),
-        }
+        })
     }
 }
 impl ShiftImm {
@@ -224,11 +236,11 @@ impl AddrLdrStr {
         if (value & 0x1000000) == 0x1000000 {
             Some(Self::Pre {
                 rn: Reg::parse((((value) >> 16) & 0xf), pc),
-                offset: LdrStrOffset::parse((value), pc),
+                offset: LdrStrOffset::parse((value), pc)?,
                 writeback: ((((value) >> 21) & 0x1)) != 0,
             })
         } else if (value & 0x1200000) == 0x0 {
-            Some(Self::Post(AddrLdrStrPost::parse((value), pc)))
+            Some(Self::Post(AddrLdrStrPost::parse((value), pc)?))
         } else {
             None
         }
@@ -236,26 +248,28 @@ impl AddrLdrStr {
 }
 impl AddrLdrStrPost {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
+        Some(Self {
             rn: Reg::parse((((value) >> 16) & 0xf), pc),
-            offset: LdrStrOffset::parse((value), pc),
-        }
+            offset: LdrStrOffset::parse((value), pc)?,
+        })
     }
 }
 impl LdrStrOffset {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
         if (value & 0x2000000) == 0x0 {
-            Self::Imm(
-                ((if (((value) >> 23) & 0x1) == 0 {
-                    -(((value) & 0xfff) as i32)
-                } else {
-                    ((value) & 0xfff) as i32
-                })) as i32,
+            Some(
+                Self::Imm(
+                    ((if (((value) >> 23) & 0x1) == 0 {
+                        -(((value) & 0xfff) as i32)
+                    } else {
+                        ((value) & 0xfff) as i32
+                    })) as i32,
+                ),
             )
-        } else if (value & 0x2000000) == 0x2000000 {
-            Self::Reg {
+        } else if (value & 0x2000010) == 0x2000000 {
+            Some(Self::Reg {
                 subtract: ((((value) >> 23) & 0x1) ^ 1) != 0,
                 rm: Reg::parse(((value) & 0xf), pc),
                 shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
@@ -264,9 +278,9 @@ impl LdrStrOffset {
                 } else {
                     (((value) >> 7) & 0x1f)
                 },
-            }
+            })
         } else {
-            unreachable!()
+            None
         }
     }
 }
@@ -449,7 +463,7 @@ impl Default for Fpscr {
         Self {}
     }
 }
-pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
+pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
     match (((ins) & 0x1f0) >> 4) | (((ins) & 0xff80000) >> 14) {
         0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0xa | 0xc | 0xe | 0x10
         | 0x11 | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x1a | 0x1c | 0x1e
@@ -472,96 +486,98 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x85f | 0x860 | 0x861 | 0x862 | 0x863 | 0x864 | 0x865 | 0x866 | 0x867 | 0x868
         | 0x869 | 0x86a | 0x86b | 0x86c | 0x86d | 0x86e | 0x86f | 0x870 | 0x871 | 0x872
         | 0x873 | 0x874 | 0x875 | 0x876 | 0x877 | 0x878 | 0x879 | 0x87a | 0x87b | 0x87c
-        | 0x87d | 0x87e | 0x87f => parse_arm_and_0(ins, pc, options),
+        | 0x87d | 0x87e | 0x87f => {
+            parse_arm_and_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x9 | 0x19 | 0x29 | 0x39 | 0x49 | 0x59 | 0x69 | 0x79 => {
             if (ins & 0xfe000f0) == 0x90
                 && let Some(ins) = parse_arm_mul_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xb | 0x1b | 0x2b | 0x3b => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xd | 0x1d | 0x2d | 0x3d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xf | 0x1f | 0x2f | 0x3f => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x4b | 0x5b | 0x6b | 0x7b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x4d | 0x5d | 0x6d | 0x7d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x4f | 0x5f | 0x6f | 0x7f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x80 | 0x81 | 0x82 | 0x83 | 0x84 | 0x85 | 0x86 | 0x87 | 0x88 | 0x8a | 0x8c | 0x8e
@@ -585,96 +601,98 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x8de | 0x8df | 0x8e0 | 0x8e1 | 0x8e2 | 0x8e3 | 0x8e4 | 0x8e5 | 0x8e6 | 0x8e7
         | 0x8e8 | 0x8e9 | 0x8ea | 0x8eb | 0x8ec | 0x8ed | 0x8ee | 0x8ef | 0x8f0 | 0x8f1
         | 0x8f2 | 0x8f3 | 0x8f4 | 0x8f5 | 0x8f6 | 0x8f7 | 0x8f8 | 0x8f9 | 0x8fa | 0x8fb
-        | 0x8fc | 0x8fd | 0x8fe | 0x8ff => parse_arm_eor_0(ins, pc, options),
+        | 0x8fc | 0x8fd | 0x8fe | 0x8ff => {
+            parse_arm_eor_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x89 | 0x99 | 0xa9 | 0xb9 | 0xc9 | 0xd9 | 0xe9 | 0xf9 => {
             if (ins & 0xfe000f0) == 0x200090
                 && let Some(ins) = parse_arm_mla_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x8b | 0x9b | 0xab | 0xbb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x8d | 0x9d | 0xad | 0xbd => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x8f | 0x9f | 0xaf | 0xbf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xcb | 0xdb | 0xeb | 0xfb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xcd | 0xdd | 0xed | 0xfd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xcf | 0xdf | 0xef | 0xff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x100 | 0x101 | 0x102 | 0x103 | 0x104 | 0x105 | 0x106 | 0x107 | 0x108 | 0x10a
@@ -700,114 +718,114 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x964 | 0x965 | 0x966 | 0x967 | 0x968 | 0x969 | 0x96a | 0x96b | 0x96c | 0x96d
         | 0x96e | 0x96f | 0x970 | 0x971 | 0x972 | 0x973 | 0x974 | 0x975 | 0x976 | 0x977
         | 0x978 | 0x979 | 0x97a | 0x97b | 0x97c | 0x97d | 0x97e | 0x97f => {
-            parse_arm_sub_0(ins, pc, options)
+            parse_arm_sub_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x109 | 0x119 | 0x129 | 0x139 => {
             if (ins & 0xff000f0) == 0x400090
                 && let Some(ins) = parse_arm_umaal_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x10b | 0x11b | 0x12b | 0x13b => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x10d | 0x11d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x10f | 0x11f | 0x12f | 0x13f => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x12d | 0x13d => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x14b | 0x15b | 0x16b | 0x17b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x14d | 0x15d | 0x16d | 0x17d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x14f | 0x15f | 0x16f | 0x17f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x180 | 0x181 | 0x182 | 0x183 | 0x184 | 0x185 | 0x186 | 0x187 | 0x188 | 0x189
@@ -833,100 +851,100 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x9e0 | 0x9e1 | 0x9e2 | 0x9e3 | 0x9e4 | 0x9e5 | 0x9e6 | 0x9e7 | 0x9e8 | 0x9e9
         | 0x9ea | 0x9eb | 0x9ec | 0x9ed | 0x9ee | 0x9ef | 0x9f0 | 0x9f1 | 0x9f2 | 0x9f3
         | 0x9f4 | 0x9f5 | 0x9f6 | 0x9f7 | 0x9f8 | 0x9f9 | 0x9fa | 0x9fb | 0x9fc | 0x9fd
-        | 0x9fe | 0x9ff => parse_arm_rsb_0(ins, pc, options),
+        | 0x9fe | 0x9ff => parse_arm_rsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x18b | 0x19b | 0x1ab | 0x1bb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18d | 0x19d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18f | 0x19f | 0x1af | 0x1bf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1ad | 0x1bd => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1cb | 0x1db | 0x1eb | 0x1fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1cd | 0x1dd | 0x1ed | 0x1fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1cf | 0x1df | 0x1ef | 0x1ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x200 | 0x201 | 0x202 | 0x203 | 0x204 | 0x205 | 0x206 | 0x207 | 0x208 | 0x20a
@@ -951,96 +969,98 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xa5e | 0xa5f | 0xa60 | 0xa61 | 0xa62 | 0xa63 | 0xa64 | 0xa65 | 0xa66 | 0xa67
         | 0xa68 | 0xa69 | 0xa6a | 0xa6b | 0xa6c | 0xa6d | 0xa6e | 0xa6f | 0xa70 | 0xa71
         | 0xa72 | 0xa73 | 0xa74 | 0xa75 | 0xa76 | 0xa77 | 0xa78 | 0xa79 | 0xa7a | 0xa7b
-        | 0xa7c | 0xa7d | 0xa7e | 0xa7f => parse_arm_add_0(ins, pc, options),
+        | 0xa7c | 0xa7d | 0xa7e | 0xa7f => {
+            parse_arm_add_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x209 | 0x219 | 0x229 | 0x239 | 0x249 | 0x259 | 0x269 | 0x279 => {
             if (ins & 0xfe000f0) == 0x800090
                 && let Some(ins) = parse_arm_umull_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x20b | 0x21b | 0x22b | 0x23b => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x20d | 0x21d | 0x22d | 0x23d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x20f | 0x21f | 0x22f | 0x23f => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x24b | 0x25b | 0x26b | 0x27b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x24d | 0x25d | 0x26d | 0x27d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x24f | 0x25f | 0x26f | 0x27f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x280 | 0x281 | 0x282 | 0x283 | 0x284 | 0x285 | 0x286 | 0x287 | 0x288 | 0x28a
@@ -1065,96 +1085,98 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xade | 0xadf | 0xae0 | 0xae1 | 0xae2 | 0xae3 | 0xae4 | 0xae5 | 0xae6 | 0xae7
         | 0xae8 | 0xae9 | 0xaea | 0xaeb | 0xaec | 0xaed | 0xaee | 0xaef | 0xaf0 | 0xaf1
         | 0xaf2 | 0xaf3 | 0xaf4 | 0xaf5 | 0xaf6 | 0xaf7 | 0xaf8 | 0xaf9 | 0xafa | 0xafb
-        | 0xafc | 0xafd | 0xafe | 0xaff => parse_arm_adc_0(ins, pc, options),
+        | 0xafc | 0xafd | 0xafe | 0xaff => {
+            parse_arm_adc_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x289 | 0x299 | 0x2a9 | 0x2b9 | 0x2c9 | 0x2d9 | 0x2e9 | 0x2f9 => {
             if (ins & 0xfe000f0) == 0xa00090
                 && let Some(ins) = parse_arm_umlal_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x28b | 0x29b | 0x2ab | 0x2bb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x28d | 0x29d | 0x2ad | 0x2bd => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x28f | 0x29f | 0x2af | 0x2bf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2cb | 0x2db | 0x2eb | 0x2fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2cd | 0x2dd | 0x2ed | 0x2fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2cf | 0x2df | 0x2ef | 0x2ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x300 | 0x301 | 0x302 | 0x303 | 0x304 | 0x305 | 0x306 | 0x307 | 0x308 | 0x30a
@@ -1179,113 +1201,115 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xb5e | 0xb5f | 0xb60 | 0xb61 | 0xb62 | 0xb63 | 0xb64 | 0xb65 | 0xb66 | 0xb67
         | 0xb68 | 0xb69 | 0xb6a | 0xb6b | 0xb6c | 0xb6d | 0xb6e | 0xb6f | 0xb70 | 0xb71
         | 0xb72 | 0xb73 | 0xb74 | 0xb75 | 0xb76 | 0xb77 | 0xb78 | 0xb79 | 0xb7a | 0xb7b
-        | 0xb7c | 0xb7d | 0xb7e | 0xb7f => parse_arm_sbc_0(ins, pc, options),
+        | 0xb7c | 0xb7d | 0xb7e | 0xb7f => {
+            parse_arm_sbc_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x309 | 0x319 | 0x329 | 0x339 | 0x349 | 0x359 | 0x369 | 0x379 => {
             if (ins & 0xfe000f0) == 0xc00090
                 && let Some(ins) = parse_arm_smull_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x30b | 0x31b | 0x32b | 0x33b => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x30d | 0x31d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x30f | 0x31f | 0x32f | 0x33f => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x32d | 0x33d => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x34b | 0x35b | 0x36b | 0x37b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x34d | 0x35d | 0x36d | 0x37d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x34f | 0x35f | 0x36f | 0x37f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x380 | 0x381 | 0x382 | 0x383 | 0x384 | 0x385 | 0x386 | 0x387 | 0x388 | 0x38a
@@ -1310,134 +1334,136 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xbde | 0xbdf | 0xbe0 | 0xbe1 | 0xbe2 | 0xbe3 | 0xbe4 | 0xbe5 | 0xbe6 | 0xbe7
         | 0xbe8 | 0xbe9 | 0xbea | 0xbeb | 0xbec | 0xbed | 0xbee | 0xbef | 0xbf0 | 0xbf1
         | 0xbf2 | 0xbf3 | 0xbf4 | 0xbf5 | 0xbf6 | 0xbf7 | 0xbf8 | 0xbf9 | 0xbfa | 0xbfb
-        | 0xbfc | 0xbfd | 0xbfe | 0xbff => parse_arm_rsc_0(ins, pc, options),
+        | 0xbfc | 0xbfd | 0xbfe | 0xbff => {
+            parse_arm_rsc_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x389 | 0x399 | 0x3a9 | 0x3b9 | 0x3c9 | 0x3d9 | 0x3e9 | 0x3f9 => {
             if (ins & 0xfe000f0) == 0xe00090
                 && let Some(ins) = parse_arm_smlal_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38b | 0x39b | 0x3ab | 0x3bb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38d | 0x39d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38f | 0x39f | 0x3af | 0x3bf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3ad | 0x3bd => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3cb | 0x3db | 0x3eb | 0x3fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3cd | 0x3dd | 0x3ed | 0x3fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3cf | 0x3df | 0x3ef | 0x3ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x400 | 0x410 | 0x420 | 0x430 => {
             if (ins & 0xfff100f0) == 0xf1010000
                 && let Some(ins) = parse_arm_setend_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfb002f0) == 0x1000000
                 && let Some(ins) = parse_arm_mrs_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x401 | 0x404 | 0x411 | 0x414 | 0x421 | 0x424 | 0x431 | 0x434 => {
-            parse_arm_cps_0(ins, pc, options)
+            parse_arm_cps_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x402 | 0x403 | 0x406 | 0x407 | 0x412 | 0x413 | 0x416 | 0x417 | 0x422 | 0x423
         | 0x426 | 0x427 | 0x432 | 0x433 | 0x436 | 0x437 | 0x501 | 0x502 | 0x503 | 0x504
@@ -1455,67 +1481,67 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xd1a | 0xd1b | 0xd1c | 0xd1d | 0xd1e | 0xd1f | 0xd20 | 0xd21 | 0xd22 | 0xd23
         | 0xd24 | 0xd25 | 0xd26 | 0xd27 | 0xd28 | 0xd29 | 0xd2a | 0xd2b | 0xd2c | 0xd2d
         | 0xd2e | 0xd2f | 0xd30 | 0xd31 | 0xd32 | 0xd33 | 0xd34 | 0xd35 | 0xd36 | 0xd37
-        | 0xd38 | 0xd39 | 0xd3a | 0xd3b | 0xd3c | 0xd3d | 0xd3e | 0xd3f => None,
+        | 0xd38 | 0xd39 | 0xd3a | 0xd3b | 0xd3c | 0xd3d | 0xd3e | 0xd3f => Ins::Illegal,
         0x405 | 0x415 | 0x425 | 0x435 => {
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x1000050
                 && let Some(ins) = parse_arm_qadd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x408 | 0x40c | 0x418 | 0x41c | 0x428 | 0x42c | 0x438 | 0x43c => {
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00090) == 0x1000080
                 && let Some(ins) = parse_arm_smla_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x409 | 0x419 | 0x429 | 0x439 => {
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x1000090
                 && let Some(ins) = parse_arm_swp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x40a | 0x40e | 0x41a | 0x41e | 0x42a | 0x42e | 0x43a | 0x43e => {
-            parse_arm_smla_0(ins, pc, options)
+            parse_arm_smla_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x40b | 0x41b | 0x42b | 0x43b | 0x50b | 0x51b | 0x52b | 0x53b => {
-            parse_arm_strh_0(ins, pc, options)
+            parse_arm_strh_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x40d | 0x41d | 0x42d | 0x43d => {
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x40f | 0x41f | 0x42f | 0x43f | 0x50f | 0x51f | 0x52f | 0x53f => {
-            parse_arm_strd_0(ins, pc, options)
+            parse_arm_strd_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x440 | 0x441 | 0x442 | 0x443 | 0x444 | 0x445 | 0x446 | 0x447 | 0x448 | 0x449
         | 0x44a | 0x44c | 0x44e | 0x450 | 0x451 | 0x452 | 0x453 | 0x454 | 0x455 | 0x456
@@ -1529,45 +1555,45 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xc66 | 0xc67 | 0xc68 | 0xc69 | 0xc6a | 0xc6b | 0xc6c | 0xc6d | 0xc6e | 0xc6f
         | 0xc70 | 0xc71 | 0xc72 | 0xc73 | 0xc74 | 0xc75 | 0xc76 | 0xc77 | 0xc78 | 0xc79
         | 0xc7a | 0xc7b | 0xc7c | 0xc7d | 0xc7e | 0xc7f => {
-            parse_arm_tst_0(ins, pc, options)
+            parse_arm_tst_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x44b | 0x45b | 0x46b | 0x47b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1100000
                 && let Some(ins) = parse_arm_tst_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x44d | 0x45d | 0x46d | 0x47d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1100000
                 && let Some(ins) = parse_arm_tst_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x44f | 0x45f | 0x46f | 0x47f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1100000
                 && let Some(ins) = parse_arm_tst_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x480 | 0x484 | 0x486 | 0x489 | 0x490 | 0x494 | 0x496 | 0x499 | 0x4a0 | 0x4a4
@@ -1587,136 +1613,136 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xda6 | 0xda7 | 0xda8 | 0xda9 | 0xdaa | 0xdab | 0xdac | 0xdad | 0xdae | 0xdaf
         | 0xdb0 | 0xdb1 | 0xdb2 | 0xdb3 | 0xdb4 | 0xdb5 | 0xdb6 | 0xdb7 | 0xdb8 | 0xdb9
         | 0xdba | 0xdbb | 0xdbc | 0xdbd | 0xdbe | 0xdbf => {
-            parse_arm_msr_0(ins, pc, options)
+            parse_arm_msr_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x481 | 0x491 | 0x4a1 | 0x4b1 => {
             if (ins & 0xff000f0) == 0x1200010
                 && let Some(ins) = parse_arm_bx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x482 | 0x492 | 0x4a2 | 0x4b2 => {
             if (ins & 0xff000f0) == 0x1200020
                 && let Some(ins) = parse_arm_bxj_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x483 | 0x493 | 0x4a3 | 0x4b3 => {
             if (ins & 0xff000f0) == 0x1200030
                 && let Some(ins) = parse_arm_blx_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x485 | 0x495 | 0x4a5 | 0x4b5 => {
             if (ins & 0xff000f0) == 0x1200050
                 && let Some(ins) = parse_arm_qsub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x487 | 0x497 | 0x4a7 | 0x4b7 => {
             if (ins & 0xfff000f0) == 0xe1200070
                 && let Some(ins) = parse_arm_bkpt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x488 | 0x48c | 0x498 | 0x49c | 0x4a8 | 0x4ac | 0x4b8 | 0x4bc => {
             if (ins & 0xff000b0) == 0x1200080
                 && let Some(ins) = parse_arm_smlaw_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x48a | 0x48e | 0x49a | 0x49e | 0x4aa | 0x4ae | 0x4ba | 0x4be => {
             if (ins & 0xff000b0) == 0x12000a0
                 && let Some(ins) = parse_arm_smulw_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x48b | 0x49b | 0x4ab | 0x4bb | 0x58b | 0x59b | 0x5ab | 0x5bb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x48d | 0x49d | 0x4ad | 0x4bd | 0x58d | 0x59d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x48f | 0x49f | 0x4af | 0x4bf | 0x58f | 0x59f | 0x5af | 0x5bf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x4c0 | 0x4c1 | 0x4c2 | 0x4c3 | 0x4c4 | 0x4c5 | 0x4c6 | 0x4c7 | 0x4c8 | 0x4c9
@@ -1731,66 +1757,72 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xce6 | 0xce7 | 0xce8 | 0xce9 | 0xcea | 0xceb | 0xcec | 0xced | 0xcee | 0xcef
         | 0xcf0 | 0xcf1 | 0xcf2 | 0xcf3 | 0xcf4 | 0xcf5 | 0xcf6 | 0xcf7 | 0xcf8 | 0xcf9
         | 0xcfa | 0xcfb | 0xcfc | 0xcfd | 0xcfe | 0xcff => {
-            parse_arm_teq_0(ins, pc, options)
+            parse_arm_teq_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x4cb | 0x4db | 0x4eb | 0x4fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1300000
                 && let Some(ins) = parse_arm_teq_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x4cd | 0x4dd | 0x4ed | 0x4fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1300000
                 && let Some(ins) = parse_arm_teq_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x4cf | 0x4df | 0x4ef | 0x4ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1300000
                 && let Some(ins) = parse_arm_teq_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
-        0x500 | 0x510 | 0x520 | 0x530 => parse_arm_mrs_0(ins, pc, options),
-        0x505 | 0x515 | 0x525 | 0x535 => parse_arm_qdadd_0(ins, pc, options),
+        0x500 | 0x510 | 0x520 | 0x530 => {
+            parse_arm_mrs_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
+        0x505 | 0x515 | 0x525 | 0x535 => {
+            parse_arm_qdadd_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x508 | 0x50a | 0x50c | 0x50e | 0x518 | 0x51a | 0x51c | 0x51e | 0x528 | 0x52a
         | 0x52c | 0x52e | 0x538 | 0x53a | 0x53c | 0x53e => {
-            parse_arm_smlal_half_0(ins, pc, options)
+            parse_arm_smlal_half_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
-        0x509 | 0x519 | 0x529 | 0x539 => parse_arm_swpb_0(ins, pc, options),
-        0x50d | 0x51d => parse_arm_ldrd_0(ins, pc, options),
+        0x509 | 0x519 | 0x529 | 0x539 => {
+            parse_arm_swpb_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
+        0x50d | 0x51d => parse_arm_ldrd_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x52d | 0x53d => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x540 | 0x541 | 0x542 | 0x543 | 0x544 | 0x545 | 0x546 | 0x547 | 0x548 | 0x549
@@ -1805,71 +1837,71 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xd66 | 0xd67 | 0xd68 | 0xd69 | 0xd6a | 0xd6b | 0xd6c | 0xd6d | 0xd6e | 0xd6f
         | 0xd70 | 0xd71 | 0xd72 | 0xd73 | 0xd74 | 0xd75 | 0xd76 | 0xd77 | 0xd78 | 0xd79
         | 0xd7a | 0xd7b | 0xd7c | 0xd7d | 0xd7e | 0xd7f => {
-            parse_arm_cmp_0(ins, pc, options)
+            parse_arm_cmp_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x54b | 0x55b | 0x56b | 0x57b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1500000
                 && let Some(ins) = parse_arm_cmp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x54d | 0x55d | 0x56d | 0x57d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1500000
                 && let Some(ins) = parse_arm_cmp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x54f | 0x55f | 0x56f | 0x57f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1500000
                 && let Some(ins) = parse_arm_cmp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x581 | 0x591 | 0x5a1 | 0x5b1 => {
             if (ins & 0xff000f0) == 0x1600010
                 && let Some(ins) = parse_arm_clz_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x585 | 0x595 | 0x5a5 | 0x5b5 => {
             if (ins & 0xff000f0) == 0x1600050
                 && let Some(ins) = parse_arm_qdsub_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x588 | 0x58a | 0x58c | 0x58e | 0x598 | 0x59a | 0x59c | 0x59e | 0x5a8 | 0x5aa
@@ -1877,30 +1909,30 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xff00090) == 0x1600080
                 && let Some(ins) = parse_arm_smul_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x5ad | 0x5bd => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x5c0 | 0x5c1 | 0x5c2 | 0x5c3 | 0x5c4 | 0x5c5 | 0x5c6 | 0x5c7 | 0x5c8 | 0x5c9
@@ -1915,45 +1947,45 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xde6 | 0xde7 | 0xde8 | 0xde9 | 0xdea | 0xdeb | 0xdec | 0xded | 0xdee | 0xdef
         | 0xdf0 | 0xdf1 | 0xdf2 | 0xdf3 | 0xdf4 | 0xdf5 | 0xdf6 | 0xdf7 | 0xdf8 | 0xdf9
         | 0xdfa | 0xdfb | 0xdfc | 0xdfd | 0xdfe | 0xdff => {
-            parse_arm_cmn_0(ins, pc, options)
+            parse_arm_cmn_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x5cb | 0x5db | 0x5eb | 0x5fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1700000
                 && let Some(ins) = parse_arm_cmn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x5cd | 0x5dd | 0x5ed | 0x5fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1700000
                 && let Some(ins) = parse_arm_cmn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x5cf | 0x5df | 0x5ef | 0x5ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdf00000) == 0x1700000
                 && let Some(ins) = parse_arm_cmn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x600 | 0x601 | 0x602 | 0x603 | 0x604 | 0x605 | 0x606 | 0x607 | 0x608 | 0x60a
@@ -1978,139 +2010,141 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xe5e | 0xe5f | 0xe60 | 0xe61 | 0xe62 | 0xe63 | 0xe64 | 0xe65 | 0xe66 | 0xe67
         | 0xe68 | 0xe69 | 0xe6a | 0xe6b | 0xe6c | 0xe6d | 0xe6e | 0xe6f | 0xe70 | 0xe71
         | 0xe72 | 0xe73 | 0xe74 | 0xe75 | 0xe76 | 0xe77 | 0xe78 | 0xe79 | 0xe7a | 0xe7b
-        | 0xe7c | 0xe7d | 0xe7e | 0xe7f => parse_arm_orr_0(ins, pc, options),
+        | 0xe7c | 0xe7d | 0xe7e | 0xe7f => {
+            parse_arm_orr_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x609 | 0x619 | 0x629 | 0x639 => {
             if (ins & 0xff000f0) == 0x1800090
                 && let Some(ins) = parse_arm_strex_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x60b | 0x61b | 0x62b | 0x63b => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x60d | 0x61d | 0x62d | 0x63d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x60f | 0x61f | 0x62f | 0x63f => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x649 | 0x659 | 0x669 | 0x679 => {
             if (ins & 0xff000f0) == 0x1900090
                 && let Some(ins) = parse_arm_ldrex_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x64b | 0x65b | 0x66b | 0x67b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x64d | 0x65d | 0x66d | 0x67d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x64f | 0x65f | 0x66f | 0x67f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x680 | 0x6c0 => {
             if (ins & 0xfe00ff0) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x681 | 0x688 | 0x690 | 0x691 | 0x698 | 0x6c1 | 0x6c8 | 0x6d0 | 0x6d1 | 0x6d8 => {
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x682 | 0x683 | 0x68a | 0x692 | 0x693 | 0x69a | 0x6c2 | 0x6c3 | 0x6ca | 0x6d2
@@ -2118,13 +2152,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfef0060) == 0x1a00020
                 && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x684 | 0x685 | 0x68c | 0x694 | 0x695 | 0x69c | 0x6c4 | 0x6c5 | 0x6cc | 0x6d4
@@ -2132,314 +2166,316 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfef0060) == 0x1a00040
                 && let Some(ins) = parse_arm_asr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x686 | 0x6c6 => {
             if (ins & 0xfe00ff0) == 0x1a00060
                 && let Some(ins) = parse_arm_rrx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x687 | 0x68e | 0x696 | 0x697 | 0x69e | 0x6c7 | 0x6ce | 0x6d6 | 0x6d7 | 0x6de => {
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x689 | 0x699 => {
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x1a00090
                 && let Some(ins) = parse_arm_strexd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x68b | 0x69b => {
             if (ins & 0xfef0060) == 0x1a00020
                 && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x68d | 0x69d => {
             if (ins & 0xfef0060) == 0x1a00040
                 && let Some(ins) = parse_arm_asr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x68f | 0x69f => {
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6a0 | 0x6e0 => {
             if (ins & 0xfe00ff0) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6a1 | 0x6a2 | 0x6a3 | 0x6a4 | 0x6a5 | 0x6a7 | 0x6a8 | 0x6aa | 0x6ac | 0x6ae
         | 0x6b0 | 0x6b1 | 0x6b2 | 0x6b3 | 0x6b4 | 0x6b5 | 0x6b6 | 0x6b7 | 0x6b8 | 0x6ba
         | 0x6bc | 0x6be | 0x6e1 | 0x6e2 | 0x6e3 | 0x6e4 | 0x6e5 | 0x6e7 | 0x6e8 | 0x6ea
         | 0x6ec | 0x6ee | 0x6f0 | 0x6f1 | 0x6f2 | 0x6f3 | 0x6f4 | 0x6f5 | 0x6f6 | 0x6f7
-        | 0x6f8 | 0x6fa | 0x6fc | 0x6fe => parse_arm_mov_2(ins, pc, options),
+        | 0x6f8 | 0x6fa | 0x6fc | 0x6fe => {
+            parse_arm_mov_2(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x6a6 | 0x6e6 => {
             if (ins & 0xfe00ff0) == 0x1a00060
                 && let Some(ins) = parse_arm_rrx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6a9 | 0x6b9 => {
             if (ins & 0xff000f0) == 0x1a00090
                 && let Some(ins) = parse_arm_strexd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6ab | 0x6bb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6ad | 0x6bd => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6af | 0x6bf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6c9 | 0x6d9 => {
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x1b00090
                 && let Some(ins) = parse_arm_ldrexd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6cb | 0x6db => {
             if (ins & 0xfef0060) == 0x1a00020
                 && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6cd | 0x6dd => {
             if (ins & 0xfef0060) == 0x1a00040
                 && let Some(ins) = parse_arm_asr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6cf | 0x6df => {
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6e9 | 0x6f9 => {
             if (ins & 0xff000f0) == 0x1b00090
                 && let Some(ins) = parse_arm_ldrexd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6eb | 0x6fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6ed | 0x6fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x6ef | 0x6ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x700 | 0x701 | 0x702 | 0x703 | 0x704 | 0x705 | 0x706 | 0x707 | 0x708 | 0x70a
@@ -2464,126 +2500,128 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xf5e | 0xf5f | 0xf60 | 0xf61 | 0xf62 | 0xf63 | 0xf64 | 0xf65 | 0xf66 | 0xf67
         | 0xf68 | 0xf69 | 0xf6a | 0xf6b | 0xf6c | 0xf6d | 0xf6e | 0xf6f | 0xf70 | 0xf71
         | 0xf72 | 0xf73 | 0xf74 | 0xf75 | 0xf76 | 0xf77 | 0xf78 | 0xf79 | 0xf7a | 0xf7b
-        | 0xf7c | 0xf7d | 0xf7e | 0xf7f => parse_arm_bic_0(ins, pc, options),
+        | 0xf7c | 0xf7d | 0xf7e | 0xf7f => {
+            parse_arm_bic_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x709 | 0x719 | 0x729 | 0x739 => {
             if (ins & 0xff000f0) == 0x1c00090
                 && let Some(ins) = parse_arm_strexb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x70b | 0x71b | 0x72b | 0x73b => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x70d | 0x71d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x70f | 0x71f | 0x72f | 0x73f => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x72d | 0x73d => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x749 | 0x759 | 0x769 | 0x779 => {
             if (ins & 0xff000f0) == 0x1d00090
                 && let Some(ins) = parse_arm_ldrexb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x74b | 0x75b | 0x76b | 0x77b => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x74d | 0x75d | 0x76d | 0x77d => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x74f | 0x75f | 0x76f | 0x77f => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x780 | 0x781 | 0x782 | 0x783 | 0x784 | 0x785 | 0x786 | 0x787 | 0x788 | 0x78a
@@ -2608,181 +2646,183 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0xfde | 0xfdf | 0xfe0 | 0xfe1 | 0xfe2 | 0xfe3 | 0xfe4 | 0xfe5 | 0xfe6 | 0xfe7
         | 0xfe8 | 0xfe9 | 0xfea | 0xfeb | 0xfec | 0xfed | 0xfee | 0xfef | 0xff0 | 0xff1
         | 0xff2 | 0xff3 | 0xff4 | 0xff5 | 0xff6 | 0xff7 | 0xff8 | 0xff9 | 0xffa | 0xffb
-        | 0xffc | 0xffd | 0xffe | 0xfff => parse_arm_mvn_0(ins, pc, options),
+        | 0xffc | 0xffd | 0xffe | 0xfff => {
+            parse_arm_mvn_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x789 | 0x799 | 0x7a9 | 0x7b9 => {
             if (ins & 0xff000f0) == 0x1e00090
                 && let Some(ins) = parse_arm_strexh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x78b | 0x79b | 0x7ab | 0x7bb => {
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x78d | 0x79d => {
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x78f | 0x79f | 0x7af | 0x7bf => {
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x7ad | 0x7bd => {
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x7c9 | 0x7d9 | 0x7e9 | 0x7f9 => {
             if (ins & 0xff000f0) == 0x1f00090
                 && let Some(ins) = parse_arm_ldrexh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x7cb | 0x7db | 0x7eb | 0x7fb => {
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x7cd | 0x7dd | 0x7ed | 0x7fd => {
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x7cf | 0x7df | 0x7ef | 0x7ff => {
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xc80 | 0xc90 => {
             if (ins & 0xfff00ff) == 0x3200000
                 && let Some(ins) = parse_arm_nop_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00ff) == 0x3200004
                 && let Some(ins) = parse_arm_sev_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00ff) == 0x3200002
                 && let Some(ins) = parse_arm_wfe_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00ff) == 0x3200003
                 && let Some(ins) = parse_arm_wfi_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00ff) == 0x3200001
                 && let Some(ins) = parse_arm_yield_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xc81 | 0xc91 => {
             if (ins & 0xfff00ff) == 0x3200014
                 && let Some(ins) = parse_arm_csdb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xc8f | 0xc9f => {
             if (ins & 0xfff00f0) == 0x32000f0
                 && let Some(ins) = parse_arm_dbg_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0xe80 | 0xe81 | 0xe82 | 0xe83 | 0xe84 | 0xe85 | 0xe86 | 0xe87 | 0xe88 | 0xe89
@@ -2801,13 +2841,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe00000) == 0x3a00000
                 && let Some(ins) = parse_arm_mov_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1000 | 0x1001 | 0x1002 | 0x1003 | 0x1004 | 0x1005 | 0x1006 | 0x1007 | 0x1008
@@ -2890,7 +2930,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x1ea2 | 0x1ea3 | 0x1ea4 | 0x1ea5 | 0x1ea6 | 0x1ea7 | 0x1ea8 | 0x1ea9 | 0x1eaa
         | 0x1eab | 0x1eac | 0x1ead | 0x1eae | 0x1eaf | 0x1eb0 | 0x1eb1 | 0x1eb2 | 0x1eb3
         | 0x1eb4 | 0x1eb5 | 0x1eb6 | 0x1eb7 | 0x1eb8 | 0x1eb9 | 0x1eba | 0x1ebb | 0x1ebc
-        | 0x1ebd | 0x1ebe | 0x1ebf => parse_arm_str_0(ins, pc, options),
+        | 0x1ebd | 0x1ebe | 0x1ebf => {
+            parse_arm_str_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x1040 | 0x1041 | 0x1042 | 0x1043 | 0x1044 | 0x1045 | 0x1046 | 0x1047 | 0x1048
         | 0x1049 | 0x104a | 0x104b | 0x104c | 0x104d | 0x104e | 0x104f | 0x1050 | 0x1051
         | 0x1052 | 0x1053 | 0x1054 | 0x1055 | 0x1056 | 0x1057 | 0x1058 | 0x1059 | 0x105a
@@ -2973,7 +3015,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x1ee0 | 0x1ee1 | 0x1ee2 | 0x1ee3 | 0x1ee4 | 0x1ee5 | 0x1ee6 | 0x1ee7 | 0x1ee8
         | 0x1ee9 | 0x1eea | 0x1eeb | 0x1eec | 0x1eed | 0x1eee | 0x1eef | 0x1ef0 | 0x1ef1
         | 0x1ef2 | 0x1ef3 | 0x1ef4 | 0x1ef5 | 0x1ef6 | 0x1ef7 | 0x1ef8 | 0x1ef9 | 0x1efa
-        | 0x1efb | 0x1efc | 0x1efd | 0x1efe | 0x1eff => parse_arm_ldr_0(ins, pc, options),
+        | 0x1efb | 0x1efc | 0x1efd | 0x1efe | 0x1eff => {
+            parse_arm_ldr_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x1080 | 0x1081 | 0x1082 | 0x1083 | 0x1084 | 0x1085 | 0x1086 | 0x1087 | 0x1088
         | 0x1089 | 0x108a | 0x108b | 0x108c | 0x108d | 0x108e | 0x108f | 0x1090 | 0x1091
         | 0x1092 | 0x1093 | 0x1094 | 0x1095 | 0x1096 | 0x1097 | 0x1098 | 0x1099 | 0x109a
@@ -3001,13 +3045,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x10c0 | 0x10c1 | 0x10c2 | 0x10c3 | 0x10c4 | 0x10c5 | 0x10c6 | 0x10c7 | 0x10c8
@@ -3036,13 +3080,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1100 | 0x1101 | 0x1102 | 0x1103 | 0x1104 | 0x1105 | 0x1106 | 0x1107 | 0x1108
@@ -3128,7 +3172,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x1fa4 | 0x1fa5 | 0x1fa6 | 0x1fa7 | 0x1fa8 | 0x1fa9 | 0x1faa | 0x1fab | 0x1fac
         | 0x1fad | 0x1fae | 0x1faf | 0x1fb0 | 0x1fb1 | 0x1fb2 | 0x1fb3 | 0x1fb4 | 0x1fb5
         | 0x1fb6 | 0x1fb7 | 0x1fb8 | 0x1fb9 | 0x1fba | 0x1fbb | 0x1fbc | 0x1fbd | 0x1fbe
-        | 0x1fbf => parse_arm_strb_0(ins, pc, options),
+        | 0x1fbf => parse_arm_strb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x1140 | 0x1141 | 0x1142 | 0x1143 | 0x1144 | 0x1145 | 0x1146 | 0x1147 | 0x1148
         | 0x1149 | 0x114a | 0x114b | 0x114c | 0x114d | 0x114e | 0x114f | 0x1150 | 0x1151
         | 0x1152 | 0x1153 | 0x1154 | 0x1155 | 0x1156 | 0x1157 | 0x1158 | 0x1159 | 0x115a
@@ -3182,7 +3226,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x1fe0 | 0x1fe1 | 0x1fe2 | 0x1fe3 | 0x1fe4 | 0x1fe5 | 0x1fe6 | 0x1fe7 | 0x1fe8
         | 0x1fe9 | 0x1fea | 0x1feb | 0x1fec | 0x1fed | 0x1fee | 0x1ff0 | 0x1ff1 | 0x1ff2
         | 0x1ff3 | 0x1ff4 | 0x1ff5 | 0x1ff6 | 0x1ff7 | 0x1ff8 | 0x1ff9 | 0x1ffa | 0x1ffb
-        | 0x1ffc | 0x1ffd | 0x1ffe => parse_arm_ldrb_0(ins, pc, options),
+        | 0x1ffc | 0x1ffd | 0x1ffe => {
+            parse_arm_ldrb_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x1180 | 0x1181 | 0x1182 | 0x1183 | 0x1184 | 0x1185 | 0x1186 | 0x1187 | 0x1188
         | 0x1189 | 0x118a | 0x118b | 0x118c | 0x118d | 0x118e | 0x118f | 0x1190 | 0x1191
         | 0x1192 | 0x1193 | 0x1194 | 0x1195 | 0x1196 | 0x1197 | 0x1198 | 0x1199 | 0x119a
@@ -3210,13 +3256,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x11c0 | 0x11c1 | 0x11c2 | 0x11c3 | 0x11c4 | 0x11c5 | 0x11c6 | 0x11c7 | 0x11c8
@@ -3246,39 +3292,39 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1260 => {
             if (ins & 0xfff0fff) == 0x49d0004
                 && let Some(ins) = parse_arm_pop_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x14a0 => {
             if (ins & 0xfff0fff) == 0x52d0004
                 && let Some(ins) = parse_arm_push_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1540 | 0x1541 | 0x1542 | 0x1543 | 0x1544 | 0x1545 | 0x1546 | 0x1547 | 0x1548
@@ -3311,659 +3357,659 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfd700000) == 0xf5500000
                 && let Some(ins) = parse_arm_pld_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x15c1 | 0x15d1 | 0x15e1 | 0x15f1 => {
             if (ins & 0xfff000f0) == 0xf5700010
                 && let Some(ins) = parse_arm_clrex_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1841 | 0x1851 | 0x1861 | 0x1871 => {
             if (ins & 0xff000f0) == 0x6100010
                 && let Some(ins) = parse_arm_sadd16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1843 | 0x1853 | 0x1863 | 0x1873 => {
             if (ins & 0xff000f0) == 0x6100030
                 && let Some(ins) = parse_arm_sasx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1845 | 0x1855 | 0x1865 | 0x1875 => {
             if (ins & 0xff000f0) == 0x6100050
                 && let Some(ins) = parse_arm_ssax_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1847 | 0x1857 | 0x1867 | 0x1877 => {
             if (ins & 0xff000f0) == 0x6100070
                 && let Some(ins) = parse_arm_ssub16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1849 | 0x1859 | 0x1869 | 0x1879 => {
             if (ins & 0xff000f0) == 0x6100090
                 && let Some(ins) = parse_arm_sadd8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x184f | 0x185f | 0x186f | 0x187f => {
             if (ins & 0xff000f0) == 0x61000f0
                 && let Some(ins) = parse_arm_ssub8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1881 | 0x1891 | 0x18a1 | 0x18b1 => {
             if (ins & 0xff000f0) == 0x6200010
                 && let Some(ins) = parse_arm_qadd16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1883 | 0x1893 | 0x18a3 | 0x18b3 => {
             if (ins & 0xff000f0) == 0x6200030
                 && let Some(ins) = parse_arm_qasx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1885 | 0x1895 | 0x18a5 | 0x18b5 => {
             if (ins & 0xff000f0) == 0x6200050
                 && let Some(ins) = parse_arm_qsax_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1887 | 0x1897 | 0x18a7 | 0x18b7 => {
             if (ins & 0xff000f0) == 0x6200070
                 && let Some(ins) = parse_arm_qsub16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1889 | 0x1899 | 0x18a9 | 0x18b9 => {
             if (ins & 0xff000f0) == 0x6200090
                 && let Some(ins) = parse_arm_qadd8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x188f | 0x189f | 0x18af | 0x18bf => {
             if (ins & 0xff000f0) == 0x62000f0
                 && let Some(ins) = parse_arm_qsub8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18c1 | 0x18d1 | 0x18e1 | 0x18f1 => {
             if (ins & 0xff000f0) == 0x6300010
                 && let Some(ins) = parse_arm_shadd16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18c3 | 0x18d3 | 0x18e3 | 0x18f3 => {
             if (ins & 0xff000f0) == 0x6300030
                 && let Some(ins) = parse_arm_shasx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18c5 | 0x18d5 | 0x18e5 | 0x18f5 => {
             if (ins & 0xff000f0) == 0x6300050
                 && let Some(ins) = parse_arm_shsax_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18c7 | 0x18d7 | 0x18e7 | 0x18f7 => {
             if (ins & 0xff000f0) == 0x6300070
                 && let Some(ins) = parse_arm_shsub16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18c9 | 0x18d9 | 0x18e9 | 0x18f9 => {
             if (ins & 0xff000f0) == 0x6300090
                 && let Some(ins) = parse_arm_shadd8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x18cf | 0x18df | 0x18ef | 0x18ff => {
             if (ins & 0xff000f0) == 0x63000f0
                 && let Some(ins) = parse_arm_shsub8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1941 | 0x1951 | 0x1961 | 0x1971 => {
             if (ins & 0xff000f0) == 0x6500010
                 && let Some(ins) = parse_arm_uadd16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1943 | 0x1953 | 0x1963 | 0x1973 => {
             if (ins & 0xff000f0) == 0x6500030
                 && let Some(ins) = parse_arm_uasx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1945 | 0x1955 | 0x1965 | 0x1975 => {
             if (ins & 0xff000f0) == 0x6500050
                 && let Some(ins) = parse_arm_usax_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1947 | 0x1957 | 0x1967 | 0x1977 => {
             if (ins & 0xff000f0) == 0x6500070
                 && let Some(ins) = parse_arm_usub16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1949 | 0x1959 | 0x1969 | 0x1979 => {
             if (ins & 0xff000f0) == 0x6500090
                 && let Some(ins) = parse_arm_uadd8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x194f | 0x195f | 0x196f | 0x197f => {
             if (ins & 0xff000f0) == 0x65000f0
                 && let Some(ins) = parse_arm_usub8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1981 | 0x1991 | 0x19a1 | 0x19b1 => {
             if (ins & 0xff000f0) == 0x6600010
                 && let Some(ins) = parse_arm_uqadd16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1983 | 0x1993 | 0x19a3 | 0x19b3 => {
             if (ins & 0xff000f0) == 0x6600030
                 && let Some(ins) = parse_arm_uqasx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1985 | 0x1995 | 0x19a5 | 0x19b5 => {
             if (ins & 0xff000f0) == 0x6600050
                 && let Some(ins) = parse_arm_uqsax_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1987 | 0x1997 | 0x19a7 | 0x19b7 => {
             if (ins & 0xff000f0) == 0x6600070
                 && let Some(ins) = parse_arm_uqsub16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1989 | 0x1999 | 0x19a9 | 0x19b9 => {
             if (ins & 0xff000f0) == 0x6600090
                 && let Some(ins) = parse_arm_uqadd8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x198f | 0x199f | 0x19af | 0x19bf => {
             if (ins & 0xff000f0) == 0x66000f0
                 && let Some(ins) = parse_arm_uqsub8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x19c1 | 0x19d1 | 0x19e1 | 0x19f1 => {
             if (ins & 0xff000f0) == 0x6700010
                 && let Some(ins) = parse_arm_uhadd16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x19c3 | 0x19d3 | 0x19e3 | 0x19f3 => {
             if (ins & 0xff000f0) == 0x6700030
                 && let Some(ins) = parse_arm_uhasx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x19c5 | 0x19d5 | 0x19e5 | 0x19f5 => {
             if (ins & 0xff000f0) == 0x6700050
                 && let Some(ins) = parse_arm_uhsax_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x19c7 | 0x19d7 | 0x19e7 | 0x19f7 => {
             if (ins & 0xff000f0) == 0x6700070
                 && let Some(ins) = parse_arm_uhsub16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x19c9 | 0x19d9 | 0x19e9 | 0x19f9 => {
             if (ins & 0xff000f0) == 0x6700090
                 && let Some(ins) = parse_arm_uhadd8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x19cf | 0x19df | 0x19ef | 0x19ff => {
             if (ins & 0xff000f0) == 0x67000f0
                 && let Some(ins) = parse_arm_uhsub8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a01 | 0x1a09 | 0x1a11 | 0x1a19 | 0x1a21 | 0x1a29 | 0x1a31 | 0x1a39 => {
             if (ins & 0xff00070) == 0x6800010
                 && let Some(ins) = parse_arm_pkhbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a05 | 0x1a0d | 0x1a15 | 0x1a1d | 0x1a25 | 0x1a2d | 0x1a35 | 0x1a3d => {
             if (ins & 0xff00070) == 0x6800050
                 && let Some(ins) = parse_arm_pkhtb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a07 | 0x1a17 => {
             if (ins & 0xff000f0) == 0x6800070
                 && let Some(ins) = parse_arm_sxtab16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a0b | 0x1a1b | 0x1a2b | 0x1a3b => {
             if (ins & 0xff000f0) == 0x68000b0
                 && let Some(ins) = parse_arm_sel_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a27 | 0x1a37 => {
             if (ins & 0xfff00f0) == 0x68f0070
                 && let Some(ins) = parse_arm_sxtb16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x6800070
                 && let Some(ins) = parse_arm_sxtab16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a81 | 0x1a85 | 0x1a89 | 0x1a8d | 0x1a91 | 0x1a95 | 0x1a99 | 0x1a9d | 0x1aa1
@@ -3971,72 +4017,72 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe00030) == 0x6a00010
                 && let Some(ins) = parse_arm_ssat_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a83 | 0x1a93 | 0x1aa3 | 0x1ab3 => {
             if (ins & 0xff000f0) == 0x6a00030
                 && let Some(ins) = parse_arm_ssat16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1a87 | 0x1a97 => {
             if (ins & 0xff000f0) == 0x6a00070
                 && let Some(ins) = parse_arm_sxtab_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1aa7 | 0x1ab7 => {
             if (ins & 0xfff00f0) == 0x6af0070
                 && let Some(ins) = parse_arm_sxtb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x6a00070
                 && let Some(ins) = parse_arm_sxtab_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1ac1 | 0x1ac5 | 0x1ac9 | 0x1acd | 0x1ad1 | 0x1ad5 | 0x1ad9 | 0x1add | 0x1ae1
@@ -4044,119 +4090,119 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe00030) == 0x6a00010
                 && let Some(ins) = parse_arm_ssat_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1ac3 | 0x1ad3 | 0x1ae3 | 0x1af3 => {
             if (ins & 0xff000f0) == 0x6b00030
                 && let Some(ins) = parse_arm_rev_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1ac7 | 0x1ad7 => {
             if (ins & 0xff000f0) == 0x6b00070
                 && let Some(ins) = parse_arm_sxtah_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1acb | 0x1adb | 0x1aeb | 0x1afb => {
             if (ins & 0xff000f0) == 0x6b000b0
                 && let Some(ins) = parse_arm_rev16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1ae7 | 0x1af7 => {
             if (ins & 0xfff00f0) == 0x6bf0070
                 && let Some(ins) = parse_arm_sxth_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x6b00070
                 && let Some(ins) = parse_arm_sxtah_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1b07 | 0x1b17 => {
             if (ins & 0xff000f0) == 0x6c00070
                 && let Some(ins) = parse_arm_uxtab16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1b27 | 0x1b37 => {
             if (ins & 0xfff00f0) == 0x6cf0070
                 && let Some(ins) = parse_arm_uxtb16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x6c00070
                 && let Some(ins) = parse_arm_uxtab16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1b81 | 0x1b85 | 0x1b89 | 0x1b8d | 0x1b91 | 0x1b95 | 0x1b99 | 0x1b9d | 0x1ba1
@@ -4164,72 +4210,72 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe00030) == 0x6e00010
                 && let Some(ins) = parse_arm_usat_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1b83 | 0x1b93 | 0x1ba3 | 0x1bb3 => {
             if (ins & 0xff000f0) == 0x6e00030
                 && let Some(ins) = parse_arm_usat16_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1b87 | 0x1b97 => {
             if (ins & 0xff000f0) == 0x6e00070
                 && let Some(ins) = parse_arm_uxtab_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1ba7 | 0x1bb7 => {
             if (ins & 0xfff00f0) == 0x6ef0070
                 && let Some(ins) = parse_arm_uxtb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x6e00070
                 && let Some(ins) = parse_arm_uxtab_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1bc1 | 0x1bc5 | 0x1bc9 | 0x1bcd | 0x1bd1 | 0x1bd5 | 0x1bd9 | 0x1bdd | 0x1be1
@@ -4237,200 +4283,200 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe00030) == 0x6e00010
                 && let Some(ins) = parse_arm_usat_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1bc7 | 0x1bd7 => {
             if (ins & 0xff000f0) == 0x6f00070
                 && let Some(ins) = parse_arm_uxtah_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1bcb | 0x1bdb | 0x1beb | 0x1bfb => {
             if (ins & 0xff000f0) == 0x6f000b0
                 && let Some(ins) = parse_arm_revsh_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1be7 | 0x1bf7 => {
             if (ins & 0xfff00f0) == 0x6ff0070
                 && let Some(ins) = parse_arm_uxth_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x6f00070
                 && let Some(ins) = parse_arm_uxtah_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1c01 | 0x1c03 | 0x1c11 | 0x1c13 | 0x1c21 | 0x1c23 | 0x1c31 | 0x1c33 => {
             if (ins & 0xff0f0d0) == 0x700f010
                 && let Some(ins) = parse_arm_smuad_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000d0) == 0x7000010
                 && let Some(ins) = parse_arm_smlad_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1c05 | 0x1c07 | 0x1c15 | 0x1c17 | 0x1c25 | 0x1c27 | 0x1c35 | 0x1c37 => {
             if (ins & 0xff0f0d0) == 0x700f050
                 && let Some(ins) = parse_arm_smusd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000d0) == 0x7000050
                 && let Some(ins) = parse_arm_smlsd_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1d01 | 0x1d03 | 0x1d11 | 0x1d13 | 0x1d21 | 0x1d23 | 0x1d31 | 0x1d33 => {
             if (ins & 0xff000d0) == 0x7400010
                 && let Some(ins) = parse_arm_smlald_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1d05 | 0x1d07 | 0x1d15 | 0x1d17 | 0x1d25 | 0x1d27 | 0x1d35 | 0x1d37 => {
             if (ins & 0xff000d0) == 0x7400050
                 && let Some(ins) = parse_arm_smlsld_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1d41 | 0x1d43 | 0x1d51 | 0x1d53 | 0x1d61 | 0x1d63 | 0x1d71 | 0x1d73 => {
             if (ins & 0xff0f0d0) == 0x750f010
                 && let Some(ins) = parse_arm_smmul_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000d0) == 0x7500010
                 && let Some(ins) = parse_arm_smmla_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfd700000) == 0xf5500000
                 && let Some(ins) = parse_arm_pld_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1d4d | 0x1d4f | 0x1d5d | 0x1d5f | 0x1d6d | 0x1d6f | 0x1d7d | 0x1d7f => {
             if (ins & 0xff000d0) == 0x75000d0
                 && let Some(ins) = parse_arm_smmls_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfd700000) == 0xf5500000
                 && let Some(ins) = parse_arm_pld_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1e01 | 0x1e11 | 0x1e21 | 0x1e31 => {
             if (ins & 0xff0f0f0) == 0x780f010
                 && let Some(ins) = parse_arm_usad8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000f0) == 0x7800010
                 && let Some(ins) = parse_arm_usada8_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1fcf | 0x1fdf | 0x1fef | 0x1fff => {
             if (ins & 0xfff000f0) == 0xe7f000f0
                 && let Some(ins) = parse_arm_udf_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2000 | 0x2001 | 0x2002 | 0x2003 | 0x2004 | 0x2005 | 0x2006 | 0x2007 | 0x2008
@@ -4486,7 +4532,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x26a2 | 0x26a3 | 0x26a4 | 0x26a5 | 0x26a6 | 0x26a7 | 0x26a8 | 0x26a9 | 0x26aa
         | 0x26ab | 0x26ac | 0x26ad | 0x26ae | 0x26af | 0x26b0 | 0x26b1 | 0x26b2 | 0x26b3
         | 0x26b4 | 0x26b5 | 0x26b6 | 0x26b7 | 0x26b8 | 0x26b9 | 0x26ba | 0x26bb | 0x26bc
-        | 0x26bd | 0x26be | 0x26bf => parse_arm_stm_0(ins, pc, options),
+        | 0x26bd | 0x26be | 0x26bf => {
+            parse_arm_stm_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x2040 | 0x2041 | 0x2042 | 0x2043 | 0x2044 | 0x2045 | 0x2046 | 0x2047 | 0x2048
         | 0x2049 | 0x204a | 0x204b | 0x204c | 0x204d | 0x204e | 0x204f | 0x2050 | 0x2051
         | 0x2052 | 0x2053 | 0x2054 | 0x2055 | 0x2056 | 0x2057 | 0x2058 | 0x2059 | 0x205a
@@ -4544,13 +4592,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe500000) == 0xf8100000
                 && let Some(ins) = parse_arm_rfe_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe500000) == 0x8100000
                 && let Some(ins) = parse_arm_ldm_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2100 | 0x2101 | 0x2102 | 0x2103 | 0x2104 | 0x2105 | 0x2106 | 0x2107 | 0x2108
@@ -4613,13 +4661,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe500000) == 0xf8400000
                 && let Some(ins) = parse_arm_srs_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0x8000000
                 && let Some(ins) = parse_arm_stm_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2140 | 0x2141 | 0x2142 | 0x2143 | 0x2144 | 0x2145 | 0x2146 | 0x2147 | 0x2148
@@ -4654,13 +4702,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xe708000) == 0x8500000
                 && let Some(ins) = parse_arm_ldm_1(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe508000) == 0x8508000
                 && let Some(ins) = parse_arm_ldm_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x21c0 | 0x21c1 | 0x21c2 | 0x21c3 | 0x21c4 | 0x21c5 | 0x21c6 | 0x21c7 | 0x21c8
@@ -4691,7 +4739,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x27e1 | 0x27e2 | 0x27e3 | 0x27e4 | 0x27e5 | 0x27e6 | 0x27e7 | 0x27e8 | 0x27e9
         | 0x27ea | 0x27eb | 0x27ec | 0x27ed | 0x27ee | 0x27ef | 0x27f0 | 0x27f1 | 0x27f2
         | 0x27f3 | 0x27f4 | 0x27f5 | 0x27f6 | 0x27f7 | 0x27f8 | 0x27f9 | 0x27fa | 0x27fb
-        | 0x27fc | 0x27fd | 0x27fe | 0x27ff => parse_arm_ldm_2(ins, pc, options),
+        | 0x27fc | 0x27fd | 0x27fe | 0x27ff => {
+            parse_arm_ldm_2(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x22e0 | 0x22e1 | 0x22e2 | 0x22e3 | 0x22e4 | 0x22e5 | 0x22e6 | 0x22e7 | 0x22e8
         | 0x22e9 | 0x22ea | 0x22eb | 0x22ec | 0x22ed | 0x22ee | 0x22ef | 0x22f0 | 0x22f1
         | 0x22f2 | 0x22f3 | 0x22f4 | 0x22f5 | 0x22f6 | 0x22f7 | 0x22f8 | 0x22f9 | 0x22fa
@@ -4699,17 +4749,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfff0000) == 0x8bd0000
                 && let Some(ins) = parse_arm_pop_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe500000) == 0xf8100000
                 && let Some(ins) = parse_arm_rfe_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe500000) == 0x8100000
                 && let Some(ins) = parse_arm_ldm_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x24a0 | 0x24a1 | 0x24a2 | 0x24a3 | 0x24a4 | 0x24a5 | 0x24a6 | 0x24a7 | 0x24a8
@@ -4719,13 +4769,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfff0000) == 0x92d0000
                 && let Some(ins) = parse_arm_push_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0x8000000
                 && let Some(ins) = parse_arm_stm_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2800 | 0x2801 | 0x2802 | 0x2803 | 0x2804 | 0x2805 | 0x2806 | 0x2807 | 0x2808
@@ -4845,13 +4895,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe000000) == 0xfa000000
                 && let Some(ins) = parse_arm_blx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000000) == 0xa000000
                 && let Some(ins) = parse_arm_b_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x2c00 | 0x2c01 | 0x2c02 | 0x2c03 | 0x2c04 | 0x2c05 | 0x2c06 | 0x2c07 | 0x2c08
@@ -4971,13 +5021,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe000000) == 0xfa000000
                 && let Some(ins) = parse_arm_blx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000000) == 0xb000000
                 && let Some(ins) = parse_arm_bl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3000 | 0x3001 | 0x3002 | 0x3003 | 0x3004 | 0x3005 | 0x3006 | 0x3007 | 0x3008
@@ -5019,17 +5069,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000a00
                 && let Some(ins) = parse_arm_vstm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3010 | 0x3011 | 0x3012 | 0x3013 | 0x3014 | 0x3015 | 0x3016 | 0x3017 | 0x3018
@@ -5071,17 +5121,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000b00
                 && let Some(ins) = parse_arm_vstm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3040 | 0x3041 | 0x3042 | 0x3043 | 0x3044 | 0x3045 | 0x3046 | 0x3047 | 0x3048
@@ -5123,17 +5173,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100a00
                 && let Some(ins) = parse_arm_vldm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3050 | 0x3051 | 0x3052 | 0x3053 | 0x3054 | 0x3055 | 0x3056 | 0x3057 | 0x3058
@@ -5175,17 +5225,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100b00
                 && let Some(ins) = parse_arm_vldm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3100 | 0x3102 | 0x3104 | 0x3105 | 0x3106 | 0x3107 | 0x3108 | 0x3109 | 0x310a
@@ -5195,54 +5245,54 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000a00
                 && let Some(ins) = parse_arm_vstm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3101 | 0x3103 | 0x3121 | 0x3123 => {
             if (ins & 0xff00fd0) == 0xc400a10
                 && let Some(ins) = parse_arm_vmov_f32_reg_dual_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000a00
                 && let Some(ins) = parse_arm_vstm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3110 | 0x3112 | 0x3114 | 0x3115 | 0x3116 | 0x3117 | 0x3118 | 0x3119 | 0x311a
@@ -5252,54 +5302,54 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000b00
                 && let Some(ins) = parse_arm_vstm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3111 | 0x3113 | 0x3131 | 0x3133 => {
             if (ins & 0xff00fd0) == 0xc400b10
                 && let Some(ins) = parse_arm_vmov_f64_reg_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000b00
                 && let Some(ins) = parse_arm_vstm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3140 | 0x3142 | 0x3144 | 0x3145 | 0x3146 | 0x3147 | 0x3148 | 0x3149 | 0x314a
@@ -5309,54 +5359,54 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100a00
                 && let Some(ins) = parse_arm_vldm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3141 | 0x3143 | 0x3161 | 0x3163 => {
             if (ins & 0xff00fd0) == 0xc500a10
                 && let Some(ins) = parse_arm_vmov_reg_f32_dual_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100a00
                 && let Some(ins) = parse_arm_vldm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3150 | 0x3152 | 0x3154 | 0x3155 | 0x3156 | 0x3157 | 0x3158 | 0x3159 | 0x315a
@@ -5366,54 +5416,54 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100b00
                 && let Some(ins) = parse_arm_vldm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3151 | 0x3153 | 0x3171 | 0x3173 => {
             if (ins & 0xff00fd0) == 0xc500b10
                 && let Some(ins) = parse_arm_vmov_reg_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100b00
                 && let Some(ins) = parse_arm_vldm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x32e0 | 0x32e1 | 0x32e2 | 0x32e3 | 0x32e4 | 0x32e5 | 0x32e6 | 0x32e7 | 0x32e8
@@ -5423,21 +5473,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfbf0f00) == 0xcbd0a00
                 && let Some(ins) = parse_arm_vpop_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100a00
                 && let Some(ins) = parse_arm_vldm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x32f0 | 0x32f1 | 0x32f2 | 0x32f3 | 0x32f4 | 0x32f5 | 0x32f6 | 0x32f7 | 0x32f8
@@ -5447,21 +5497,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfbf0f00) == 0xcbd0b00
                 && let Some(ins) = parse_arm_vpop_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100b00
                 && let Some(ins) = parse_arm_vldm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3400 | 0x3401 | 0x3402 | 0x3403 | 0x3404 | 0x3405 | 0x3406 | 0x3407 | 0x3408
@@ -5482,21 +5532,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xf300f00) == 0xd000a00
                 && let Some(ins) = parse_arm_vstr_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000a00
                 && let Some(ins) = parse_arm_vstm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3410 | 0x3411 | 0x3412 | 0x3413 | 0x3414 | 0x3415 | 0x3416 | 0x3417 | 0x3418
@@ -5517,21 +5567,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xf300f00) == 0xd000b00
                 && let Some(ins) = parse_arm_vstr_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000b00
                 && let Some(ins) = parse_arm_vstm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3440 | 0x3441 | 0x3442 | 0x3443 | 0x3444 | 0x3445 | 0x3446 | 0x3447 | 0x3448
@@ -5552,21 +5602,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xf300f00) == 0xd100a00
                 && let Some(ins) = parse_arm_vldr_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100a00
                 && let Some(ins) = parse_arm_vldm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3450 | 0x3451 | 0x3452 | 0x3453 | 0x3454 | 0x3455 | 0x3456 | 0x3457 | 0x3458
@@ -5587,21 +5637,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xf300f00) == 0xd100b00
                 && let Some(ins) = parse_arm_vldr_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc100000
                 && let Some(ins) = parse_arm_ldc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc100b00
                 && let Some(ins) = parse_arm_vldm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x34a0 | 0x34a1 | 0x34a2 | 0x34a3 | 0x34a4 | 0x34a5 | 0x34a6 | 0x34a7 | 0x34a8
@@ -5611,21 +5661,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfbf0f00) == 0xd2d0a00
                 && let Some(ins) = parse_arm_vpush_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000a00
                 && let Some(ins) = parse_arm_vstm_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x34b0 | 0x34b1 | 0x34b2 | 0x34b3 | 0x34b4 | 0x34b5 | 0x34b6 | 0x34b7 | 0x34b8
@@ -5635,21 +5685,21 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfbf0f00) == 0xd2d0b00
                 && let Some(ins) = parse_arm_vpush_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe100000) == 0xfc000000
                 && let Some(ins) = parse_arm_stc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100f00) == 0xc000b00
                 && let Some(ins) = parse_arm_vstm_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3800 | 0x3802 | 0x3808 | 0x380a | 0x3820 | 0x3822 | 0x3828 | 0x382a | 0x3900
@@ -5657,17 +5707,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe000a00
                 && let Some(ins) = parse_arm_vmla_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3801 | 0x3803 | 0x3805 | 0x3807 | 0x3809 | 0x380b | 0x380d | 0x380f | 0x3821
@@ -5675,17 +5725,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xff00f10) == 0xe000a10
                 && let Some(ins) = parse_arm_vmov_f32_reg_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff100010) == 0xfe000010
                 && let Some(ins) = parse_arm_mcr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3804 | 0x3806 | 0x380c | 0x380e | 0x3824 | 0x3826 | 0x382c | 0x382e | 0x3904
@@ -5693,17 +5743,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe000a40
                 && let Some(ins) = parse_arm_vmls_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3810 | 0x3812 | 0x3818 | 0x381a | 0x3830 | 0x3832 | 0x3838 | 0x383a | 0x3910
@@ -5711,34 +5761,34 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe000b00
                 && let Some(ins) = parse_arm_vmla_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3811 | 0x3819 | 0x3831 | 0x3839 | 0x3891 | 0x3899 | 0x38b1 | 0x38b9 => {
             if (ins & 0xfd00f70) == 0xe000b10
                 && let Some(ins) = parse_arm_vmov_32_reg_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff100010) == 0xfe000010
                 && let Some(ins) = parse_arm_mcr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3813 | 0x3815 | 0x3817 | 0x381b | 0x381d | 0x381f | 0x3833 | 0x3835 | 0x3837
@@ -5769,13 +5819,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xff100010) == 0xfe000010
                 && let Some(ins) = parse_arm_mcr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3814 | 0x3816 | 0x381c | 0x381e | 0x3834 | 0x3836 | 0x383c | 0x383e | 0x3914
@@ -5783,17 +5833,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe000b40
                 && let Some(ins) = parse_arm_vmls_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3840 | 0x3842 | 0x3848 | 0x384a | 0x3860 | 0x3862 | 0x3868 | 0x386a | 0x3940
@@ -5801,17 +5851,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe100a00
                 && let Some(ins) = parse_arm_vnmls_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3841 | 0x3843 | 0x3845 | 0x3847 | 0x3849 | 0x384b | 0x384d | 0x384f | 0x3861
@@ -5819,17 +5869,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xff00f10) == 0xe100a10
                 && let Some(ins) = parse_arm_vmov_reg_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff100010) == 0xfe100010
                 && let Some(ins) = parse_arm_mrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3844 | 0x3846 | 0x384c | 0x384e | 0x3864 | 0x3866 | 0x386c | 0x386e | 0x3944
@@ -5837,17 +5887,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe100a40
                 && let Some(ins) = parse_arm_vnmla_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3850 | 0x3852 | 0x3858 | 0x385a | 0x3870 | 0x3872 | 0x3878 | 0x387a | 0x3950
@@ -5855,34 +5905,34 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe100b00
                 && let Some(ins) = parse_arm_vnmls_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3851 | 0x3859 | 0x3871 | 0x3879 | 0x38d1 | 0x38d9 | 0x38f1 | 0x38f9 => {
             if (ins & 0xfd00f70) == 0xe100b10
                 && let Some(ins) = parse_arm_vmov_reg_32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff100010) == 0xfe100010
                 && let Some(ins) = parse_arm_mrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3853 | 0x3855 | 0x3857 | 0x385b | 0x385d | 0x385f | 0x3873 | 0x3875 | 0x3877
@@ -5913,13 +5963,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xff100010) == 0xfe100010
                 && let Some(ins) = parse_arm_mrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3854 | 0x3856 | 0x385c | 0x385e | 0x3874 | 0x3876 | 0x387c | 0x387e | 0x3954
@@ -5927,17 +5977,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe100b40
                 && let Some(ins) = parse_arm_vnmla_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3880 | 0x3882 | 0x3888 | 0x388a | 0x38a0 | 0x38a2 | 0x38a8 | 0x38aa | 0x3980
@@ -5945,17 +5995,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe200a00
                 && let Some(ins) = parse_arm_vmul_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3884 | 0x3886 | 0x388c | 0x388e | 0x38a4 | 0x38a6 | 0x38ac | 0x38ae | 0x3984
@@ -5963,17 +6013,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe200a40
                 && let Some(ins) = parse_arm_vnmul_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3890 | 0x3892 | 0x3898 | 0x389a | 0x38b0 | 0x38b2 | 0x38b8 | 0x38ba | 0x3990
@@ -5981,17 +6031,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe200b00
                 && let Some(ins) = parse_arm_vmul_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3894 | 0x3896 | 0x389c | 0x389e | 0x38b4 | 0x38b6 | 0x38bc | 0x38be | 0x3994
@@ -5999,17 +6049,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe200b40
                 && let Some(ins) = parse_arm_vnmul_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38c0 | 0x38c2 | 0x38c8 | 0x38ca | 0x38e0 | 0x38e2 | 0x38e8 | 0x38ea | 0x39c0
@@ -6017,17 +6067,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe300a00
                 && let Some(ins) = parse_arm_vadd_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38c4 | 0x38c6 | 0x38cc | 0x38ce | 0x38e4 | 0x38e6 | 0x38ec | 0x38ee | 0x39c4
@@ -6035,17 +6085,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe300a40
                 && let Some(ins) = parse_arm_vsub_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38d0 | 0x38d2 | 0x38d8 | 0x38da | 0x38f0 | 0x38f2 | 0x38f8 | 0x38fa | 0x39d0
@@ -6053,17 +6103,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe300b00
                 && let Some(ins) = parse_arm_vadd_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x38d4 | 0x38d6 | 0x38dc | 0x38de | 0x38f4 | 0x38f6 | 0x38fc | 0x38fe | 0x39d4
@@ -6071,17 +6121,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe300b40
                 && let Some(ins) = parse_arm_vsub_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3a00 | 0x3a02 | 0x3a08 | 0x3a0a | 0x3a20 | 0x3a22 | 0x3a28 | 0x3a2a | 0x3b00
@@ -6089,17 +6139,17 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe800a00
                 && let Some(ins) = parse_arm_vdiv_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3a04 | 0x3a06 | 0x3a0c | 0x3a0e | 0x3a14 | 0x3a16 | 0x3a1c | 0x3a1e | 0x3a24
@@ -6127,13 +6177,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3a10 | 0x3a12 | 0x3a18 | 0x3a1a | 0x3a30 | 0x3a32 | 0x3a38 | 0x3a3a | 0x3b10
@@ -6141,259 +6191,259 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xfb00f50) == 0xe800b00
                 && let Some(ins) = parse_arm_vdiv_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3ac4 | 0x3ac6 | 0x3bc4 | 0x3bc6 => {
             if (ins & 0xfbf0fd0) == 0xeb00a40
                 && let Some(ins) = parse_arm_vmov_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbf0fd0) == 0xeb10a40
                 && let Some(ins) = parse_arm_vneg_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbe0f50) == 0xeb40a40
                 && let Some(ins) = parse_arm_vcmp_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3acc | 0x3ace | 0x3bcc | 0x3bce => {
             if (ins & 0xfbf0fd0) == 0xeb00ac0
                 && let Some(ins) = parse_arm_vabs_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbf0fd0) == 0xeb70ac0
                 && let Some(ins) = parse_arm_vcvt_f64_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbf0fd0) == 0xeb10ac0
                 && let Some(ins) = parse_arm_vsqrt_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbe0f50) == 0xeb40a40
                 && let Some(ins) = parse_arm_vcmp_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3ad4 | 0x3ad6 | 0x3bd4 | 0x3bd6 => {
             if (ins & 0xfbf0fd0) == 0xeb00b40
                 && let Some(ins) = parse_arm_vmov_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbf0fd0) == 0xeb10b40
                 && let Some(ins) = parse_arm_vneg_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbe0f50) == 0xeb40b40
                 && let Some(ins) = parse_arm_vcmp_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3adc | 0x3ade | 0x3bdc | 0x3bde => {
             if (ins & 0xfbf0fd0) == 0xeb00bc0
                 && let Some(ins) = parse_arm_vabs_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbf0fd0) == 0xeb70bc0
                 && let Some(ins) = parse_arm_vcvt_f32_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbf0fd0) == 0xeb10bc0
                 && let Some(ins) = parse_arm_vsqrt_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbe0f50) == 0xeb40b40
                 && let Some(ins) = parse_arm_vcmp_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3ae4 | 0x3ae6 | 0x3be4 | 0x3be6 => {
             if (ins & 0xfbc0fd0) == 0xeb80a40
                 && let Some(ins) = parse_arm_vcvt_f32_u32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebd0a40
                 && let Some(ins) = parse_arm_vcvt_s32_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebc0a40
                 && let Some(ins) = parse_arm_vcvt_u32_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3aec | 0x3aee | 0x3bec | 0x3bee => {
             if (ins & 0xfbc0fd0) == 0xeb80ac0
                 && let Some(ins) = parse_arm_vcvt_f32_s32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebd0a40
                 && let Some(ins) = parse_arm_vcvt_s32_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebc0a40
                 && let Some(ins) = parse_arm_vcvt_u32_f32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3af4 | 0x3af6 | 0x3bf4 | 0x3bf6 => {
             if (ins & 0xfbc0fd0) == 0xeb80b40
                 && let Some(ins) = parse_arm_vcvt_f64_u32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebd0b40
                 && let Some(ins) = parse_arm_vcvt_s32_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebc0b40
                 && let Some(ins) = parse_arm_vcvt_u32_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3afc | 0x3afe | 0x3bfc | 0x3bfe => {
             if (ins & 0xfbc0fd0) == 0xeb80bc0
                 && let Some(ins) = parse_arm_vcvt_f64_s32_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebd0b40
                 && let Some(ins) = parse_arm_vcvt_s32_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfbd0f50) == 0xebc0b40
                 && let Some(ins) = parse_arm_vcvt_u32_f64_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff000010) == 0xfe000000
                 && let Some(ins) = parse_arm_cdp2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3b81 | 0x3b83 | 0x3b85 | 0x3b87 | 0x3b89 | 0x3b8b | 0x3b8d | 0x3b8f => {
             if (ins & 0xfff0f10) == 0xee10a10
                 && let Some(ins) = parse_arm_vmsr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff100010) == 0xfe000010
                 && let Some(ins) = parse_arm_mcr2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3bc1 | 0x3bc3 | 0x3bc5 | 0x3bc7 | 0x3bc9 | 0x3bcb | 0x3bcd | 0x3bcf => {
             if (ins & 0xfff0f10) == 0xef10a10
                 && let Some(ins) = parse_arm_vmrs_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff100010) == 0xfe100010
                 && let Some(ins) = parse_arm_mrc2_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x3c00 | 0x3c01 | 0x3c02 | 0x3c03 | 0x3c04 | 0x3c05 | 0x3c06 | 0x3c07 | 0x3c08
@@ -6510,230 +6560,236 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x3fe7 | 0x3fe8 | 0x3fe9 | 0x3fea | 0x3feb | 0x3fec | 0x3fed | 0x3fee | 0x3fef
         | 0x3ff0 | 0x3ff1 | 0x3ff2 | 0x3ff3 | 0x3ff4 | 0x3ff5 | 0x3ff6 | 0x3ff7 | 0x3ff8
         | 0x3ff9 | 0x3ffa | 0x3ffb | 0x3ffc | 0x3ffd | 0x3ffe | 0x3fff => {
-            parse_arm_svc_0(ins, pc, options)
+            parse_arm_svc_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         _ => unreachable!(),
     }
 }
-pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
+pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Ins {
     match (((ins) & 0xffc0) >> 6) {
         0x0 => {
             if (ins & 0xffc0) == 0x0
                 && let Some(ins) = parse_thumb_mov_2(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf800) == 0x0
                 && let Some(ins) = parse_thumb_lsl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xa | 0xb | 0xc | 0xd | 0xe
         | 0xf | 0x10 | 0x11 | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19
-        | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e | 0x1f => parse_thumb_lsl_0(ins, pc, options),
+        | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e | 0x1f => {
+            parse_thumb_lsl_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
         0x20 | 0x21 | 0x22 | 0x23 | 0x24 | 0x25 | 0x26 | 0x27 | 0x28 | 0x29 | 0x2a | 0x2b
         | 0x2c | 0x2d | 0x2e | 0x2f | 0x30 | 0x31 | 0x32 | 0x33 | 0x34 | 0x35 | 0x36
         | 0x37 | 0x38 | 0x39 | 0x3a | 0x3b | 0x3c | 0x3d | 0x3e | 0x3f => {
-            parse_thumb_lsr_0(ins, pc, options)
+            parse_thumb_lsr_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x40 | 0x41 | 0x42 | 0x43 | 0x44 | 0x45 | 0x46 | 0x47 | 0x48 | 0x49 | 0x4a | 0x4b
         | 0x4c | 0x4d | 0x4e | 0x4f | 0x50 | 0x51 | 0x52 | 0x53 | 0x54 | 0x55 | 0x56
         | 0x57 | 0x58 | 0x59 | 0x5a | 0x5b | 0x5c | 0x5d | 0x5e | 0x5f => {
-            parse_thumb_asr_0(ins, pc, options)
+            parse_thumb_asr_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x60 | 0x61 | 0x62 | 0x63 | 0x64 | 0x65 | 0x66 | 0x67 => {
-            parse_thumb_add_2(ins, pc, options)
+            parse_thumb_add_2(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x68 | 0x69 | 0x6a | 0x6b | 0x6c | 0x6d | 0x6e | 0x6f => {
-            parse_thumb_sub_2(ins, pc, options)
+            parse_thumb_sub_2(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x70 => {
             if (ins & 0xffc0) == 0x1c00
                 && let Some(ins) = parse_thumb_mov_3(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xfe00) == 0x1c00
                 && let Some(ins) = parse_thumb_add_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x71 | 0x72 | 0x73 | 0x74 | 0x75 | 0x76 | 0x77 => {
-            parse_thumb_add_0(ins, pc, options)
+            parse_thumb_add_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x78 | 0x79 | 0x7a | 0x7b | 0x7c | 0x7d | 0x7e | 0x7f => {
-            parse_thumb_sub_0(ins, pc, options)
+            parse_thumb_sub_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x80 | 0x81 | 0x82 | 0x83 | 0x84 | 0x85 | 0x86 | 0x87 | 0x88 | 0x89 | 0x8a | 0x8b
         | 0x8c | 0x8d | 0x8e | 0x8f | 0x90 | 0x91 | 0x92 | 0x93 | 0x94 | 0x95 | 0x96
         | 0x97 | 0x98 | 0x99 | 0x9a | 0x9b | 0x9c | 0x9d | 0x9e | 0x9f => {
-            parse_thumb_mov_0(ins, pc, options)
+            parse_thumb_mov_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0xa0 | 0xa1 | 0xa2 | 0xa3 | 0xa4 | 0xa5 | 0xa6 | 0xa7 | 0xa8 | 0xa9 | 0xaa | 0xab
         | 0xac | 0xad | 0xae | 0xaf | 0xb0 | 0xb1 | 0xb2 | 0xb3 | 0xb4 | 0xb5 | 0xb6
         | 0xb7 | 0xb8 | 0xb9 | 0xba | 0xbb | 0xbc | 0xbd | 0xbe | 0xbf => {
-            parse_thumb_cmp_0(ins, pc, options)
+            parse_thumb_cmp_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0xc0 | 0xc1 | 0xc2 | 0xc3 | 0xc4 | 0xc5 | 0xc6 | 0xc7 | 0xc8 | 0xc9 | 0xca | 0xcb
         | 0xcc | 0xcd | 0xce | 0xcf | 0xd0 | 0xd1 | 0xd2 | 0xd3 | 0xd4 | 0xd5 | 0xd6
         | 0xd7 | 0xd8 | 0xd9 | 0xda | 0xdb | 0xdc | 0xdd | 0xde | 0xdf => {
-            parse_thumb_add_1(ins, pc, options)
+            parse_thumb_add_1(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0xe0 | 0xe1 | 0xe2 | 0xe3 | 0xe4 | 0xe5 | 0xe6 | 0xe7 | 0xe8 | 0xe9 | 0xea | 0xeb
         | 0xec | 0xed | 0xee | 0xef | 0xf0 | 0xf1 | 0xf2 | 0xf3 | 0xf4 | 0xf5 | 0xf6
         | 0xf7 | 0xf8 | 0xf9 | 0xfa | 0xfb | 0xfc | 0xfd | 0xfe | 0xff => {
-            parse_thumb_sub_1(ins, pc, options)
+            parse_thumb_sub_1(ins, pc, options).unwrap_or(Ins::Illegal)
         }
-        0x100 => parse_thumb_and_0(ins, pc, options),
-        0x101 => parse_thumb_eor_0(ins, pc, options),
-        0x102 => parse_thumb_lsl_1(ins, pc, options),
-        0x103 => parse_thumb_lsr_1(ins, pc, options),
-        0x104 => parse_thumb_asr_1(ins, pc, options),
-        0x105 => parse_thumb_adc_0(ins, pc, options),
-        0x106 => parse_thumb_sbc_0(ins, pc, options),
-        0x107 => parse_thumb_ror_0(ins, pc, options),
-        0x108 => parse_thumb_tst_0(ins, pc, options),
+        0x100 => parse_thumb_and_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x101 => parse_thumb_eor_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x102 => parse_thumb_lsl_1(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x103 => parse_thumb_lsr_1(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x104 => parse_thumb_asr_1(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x105 => parse_thumb_adc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x106 => parse_thumb_sbc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x107 => parse_thumb_ror_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x108 => parse_thumb_tst_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x109 => {
             if (ins & 0xffc0) == 0x4240
                 && let Some(ins) = parse_thumb_neg_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xffc0) == 0x4240
                 && let Some(ins) = parse_thumb_rsb_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
-        0x10a => parse_thumb_cmp_1(ins, pc, options),
-        0x10b => parse_thumb_cmn_0(ins, pc, options),
-        0x10c => parse_thumb_orr_0(ins, pc, options),
-        0x10d => parse_thumb_mul_0(ins, pc, options),
-        0x10e => parse_thumb_bic_0(ins, pc, options),
-        0x10f => parse_thumb_mvn_0(ins, pc, options),
-        0x110 => parse_thumb_add_3(ins, pc, options),
+        0x10a => parse_thumb_cmp_1(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x10b => parse_thumb_cmn_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x10c => parse_thumb_orr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x10d => parse_thumb_mul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x10e => parse_thumb_bic_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x10f => parse_thumb_mvn_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x110 => parse_thumb_add_3(ins, pc, options).unwrap_or(Ins::Illegal),
         0x111 => {
             if (ins & 0xff78) == 0x4468
                 && let Some(ins) = parse_thumb_add_6(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00) == 0x4400
                 && let Some(ins) = parse_thumb_add_3(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x112 => {
             if (ins & 0xff87) == 0x4485
                 && let Some(ins) = parse_thumb_add_7(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00) == 0x4400
                 && let Some(ins) = parse_thumb_add_3(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x113 => {
             if (ins & 0xff78) == 0x4468
                 && let Some(ins) = parse_thumb_add_6(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff87) == 0x4485
                 && let Some(ins) = parse_thumb_add_7(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xff00) == 0x4400
                 && let Some(ins) = parse_thumb_add_3(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
-        0x114 | 0x115 | 0x116 | 0x117 => parse_thumb_cmp_2(ins, pc, options),
-        0x118 | 0x119 | 0x11a | 0x11b => parse_thumb_mov_1(ins, pc, options),
-        0x11c | 0x11d => parse_thumb_bx_0(ins, pc, options),
-        0x11e | 0x11f => parse_thumb_blx_1(ins, pc, options),
+        0x114 | 0x115 | 0x116 | 0x117 => {
+            parse_thumb_cmp_2(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
+        0x118 | 0x119 | 0x11a | 0x11b => {
+            parse_thumb_mov_1(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
+        0x11c | 0x11d => parse_thumb_bx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x11e | 0x11f => parse_thumb_blx_1(ins, pc, options).unwrap_or(Ins::Illegal),
         0x120 | 0x121 | 0x122 | 0x123 | 0x124 | 0x125 | 0x126 | 0x127 | 0x128 | 0x129
         | 0x12a | 0x12b | 0x12c | 0x12d | 0x12e | 0x12f | 0x130 | 0x131 | 0x132 | 0x133
         | 0x134 | 0x135 | 0x136 | 0x137 | 0x138 | 0x139 | 0x13a | 0x13b | 0x13c | 0x13d
-        | 0x13e | 0x13f => parse_thumb_ldr_2(ins, pc, options),
+        | 0x13e | 0x13f => parse_thumb_ldr_2(ins, pc, options).unwrap_or(Ins::Illegal),
         0x140 | 0x141 | 0x142 | 0x143 | 0x144 | 0x145 | 0x146 | 0x147 => {
-            parse_thumb_str_2(ins, pc, options)
+            parse_thumb_str_2(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x148 | 0x149 | 0x14a | 0x14b | 0x14c | 0x14d | 0x14e | 0x14f => {
-            parse_thumb_strh_1(ins, pc, options)
+            parse_thumb_strh_1(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x150 | 0x151 | 0x152 | 0x153 | 0x154 | 0x155 | 0x156 | 0x157 => {
-            parse_thumb_strb_1(ins, pc, options)
+            parse_thumb_strb_1(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x158 | 0x159 | 0x15a | 0x15b | 0x15c | 0x15d | 0x15e | 0x15f => {
-            parse_thumb_ldrsb_0(ins, pc, options)
+            parse_thumb_ldrsb_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x160 | 0x161 | 0x162 | 0x163 | 0x164 | 0x165 | 0x166 | 0x167 => {
-            parse_thumb_ldr_3(ins, pc, options)
+            parse_thumb_ldr_3(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x168 | 0x169 | 0x16a | 0x16b | 0x16c | 0x16d | 0x16e | 0x16f => {
-            parse_thumb_ldrh_1(ins, pc, options)
+            parse_thumb_ldrh_1(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x170 | 0x171 | 0x172 | 0x173 | 0x174 | 0x175 | 0x176 | 0x177 => {
-            parse_thumb_ldrb_1(ins, pc, options)
+            parse_thumb_ldrb_1(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x178 | 0x179 | 0x17a | 0x17b | 0x17c | 0x17d | 0x17e | 0x17f => {
-            parse_thumb_ldrsh_0(ins, pc, options)
+            parse_thumb_ldrsh_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x180 | 0x181 | 0x182 | 0x183 | 0x184 | 0x185 | 0x186 | 0x187 | 0x188 | 0x189
         | 0x18a | 0x18b | 0x18c | 0x18d | 0x18e | 0x18f | 0x190 | 0x191 | 0x192 | 0x193
         | 0x194 | 0x195 | 0x196 | 0x197 | 0x198 | 0x199 | 0x19a | 0x19b | 0x19c | 0x19d
-        | 0x19e | 0x19f => parse_thumb_str_0(ins, pc, options),
+        | 0x19e | 0x19f => parse_thumb_str_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x1a0 | 0x1a1 | 0x1a2 | 0x1a3 | 0x1a4 | 0x1a5 | 0x1a6 | 0x1a7 | 0x1a8 | 0x1a9
         | 0x1aa | 0x1ab | 0x1ac | 0x1ad | 0x1ae | 0x1af | 0x1b0 | 0x1b1 | 0x1b2 | 0x1b3
         | 0x1b4 | 0x1b5 | 0x1b6 | 0x1b7 | 0x1b8 | 0x1b9 | 0x1ba | 0x1bb | 0x1bc | 0x1bd
-        | 0x1be | 0x1bf => parse_thumb_ldr_0(ins, pc, options),
+        | 0x1be | 0x1bf => parse_thumb_ldr_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x1c0 | 0x1c1 | 0x1c2 | 0x1c3 | 0x1c4 | 0x1c5 | 0x1c6 | 0x1c7 | 0x1c8 | 0x1c9
         | 0x1ca | 0x1cb | 0x1cc | 0x1cd | 0x1ce | 0x1cf | 0x1d0 | 0x1d1 | 0x1d2 | 0x1d3
         | 0x1d4 | 0x1d5 | 0x1d6 | 0x1d7 | 0x1d8 | 0x1d9 | 0x1da | 0x1db | 0x1dc | 0x1dd
-        | 0x1de | 0x1df => parse_thumb_strb_0(ins, pc, options),
+        | 0x1de | 0x1df => parse_thumb_strb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x1e0 | 0x1e1 | 0x1e2 | 0x1e3 | 0x1e4 | 0x1e5 | 0x1e6 | 0x1e7 | 0x1e8 | 0x1e9
         | 0x1ea | 0x1eb | 0x1ec | 0x1ed | 0x1ee | 0x1ef | 0x1f0 | 0x1f1 | 0x1f2 | 0x1f3
         | 0x1f4 | 0x1f5 | 0x1f6 | 0x1f7 | 0x1f8 | 0x1f9 | 0x1fa | 0x1fb | 0x1fc | 0x1fd
-        | 0x1fe | 0x1ff => parse_thumb_ldrb_0(ins, pc, options),
+        | 0x1fe | 0x1ff => parse_thumb_ldrb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x200 | 0x201 | 0x202 | 0x203 | 0x204 | 0x205 | 0x206 | 0x207 | 0x208 | 0x209
         | 0x20a | 0x20b | 0x20c | 0x20d | 0x20e | 0x20f | 0x210 | 0x211 | 0x212 | 0x213
         | 0x214 | 0x215 | 0x216 | 0x217 | 0x218 | 0x219 | 0x21a | 0x21b | 0x21c | 0x21d
-        | 0x21e | 0x21f => parse_thumb_strh_0(ins, pc, options),
+        | 0x21e | 0x21f => parse_thumb_strh_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x220 | 0x221 | 0x222 | 0x223 | 0x224 | 0x225 | 0x226 | 0x227 | 0x228 | 0x229
         | 0x22a | 0x22b | 0x22c | 0x22d | 0x22e | 0x22f | 0x230 | 0x231 | 0x232 | 0x233
         | 0x234 | 0x235 | 0x236 | 0x237 | 0x238 | 0x239 | 0x23a | 0x23b | 0x23c | 0x23d
-        | 0x23e | 0x23f => parse_thumb_ldrh_0(ins, pc, options),
+        | 0x23e | 0x23f => parse_thumb_ldrh_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x240 | 0x241 | 0x242 | 0x243 | 0x244 | 0x245 | 0x246 | 0x247 | 0x248 | 0x249
         | 0x24a | 0x24b | 0x24c | 0x24d | 0x24e | 0x24f | 0x250 | 0x251 | 0x252 | 0x253
         | 0x254 | 0x255 | 0x256 | 0x257 | 0x258 | 0x259 | 0x25a | 0x25b | 0x25c | 0x25d
-        | 0x25e | 0x25f => parse_thumb_str_1(ins, pc, options),
+        | 0x25e | 0x25f => parse_thumb_str_1(ins, pc, options).unwrap_or(Ins::Illegal),
         0x260 | 0x261 | 0x262 | 0x263 | 0x264 | 0x265 | 0x266 | 0x267 | 0x268 | 0x269
         | 0x26a | 0x26b | 0x26c | 0x26d | 0x26e | 0x26f | 0x270 | 0x271 | 0x272 | 0x273
         | 0x274 | 0x275 | 0x276 | 0x277 | 0x278 | 0x279 | 0x27a | 0x27b | 0x27c | 0x27d
-        | 0x27e | 0x27f => parse_thumb_ldr_1(ins, pc, options),
+        | 0x27e | 0x27f => parse_thumb_ldr_1(ins, pc, options).unwrap_or(Ins::Illegal),
         0x280 | 0x281 | 0x282 | 0x283 | 0x284 | 0x285 | 0x286 | 0x287 | 0x288 | 0x289
         | 0x28a | 0x28b | 0x28c | 0x28d | 0x28e | 0x28f | 0x290 | 0x291 | 0x292 | 0x293
         | 0x294 | 0x295 | 0x296 | 0x297 | 0x298 | 0x299 | 0x29a | 0x29b | 0x29c | 0x29d
-        | 0x29e | 0x29f => parse_thumb_add_8(ins, pc, options),
+        | 0x29e | 0x29f => parse_thumb_add_8(ins, pc, options).unwrap_or(Ins::Illegal),
         0x2a0 | 0x2a1 | 0x2a2 | 0x2a3 | 0x2a4 | 0x2a5 | 0x2a6 | 0x2a7 | 0x2a8 | 0x2a9
         | 0x2aa | 0x2ab | 0x2ac | 0x2ad | 0x2ae | 0x2af | 0x2b0 | 0x2b1 | 0x2b2 | 0x2b3
         | 0x2b4 | 0x2b5 | 0x2b6 | 0x2b7 | 0x2b8 | 0x2b9 | 0x2ba | 0x2bb | 0x2bc | 0x2bd
-        | 0x2be | 0x2bf => parse_thumb_add_4(ins, pc, options),
-        0x2c0 | 0x2c1 => parse_thumb_add_5(ins, pc, options),
-        0x2c2 | 0x2c3 => parse_thumb_sub_3(ins, pc, options),
+        | 0x2be | 0x2bf => parse_thumb_add_4(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2c0 | 0x2c1 => parse_thumb_add_5(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2c2 | 0x2c3 => parse_thumb_sub_3(ins, pc, options).unwrap_or(Ins::Illegal),
         0x2c4 | 0x2c5 | 0x2c6 | 0x2c7 | 0x2cc | 0x2cd | 0x2ce | 0x2cf | 0x2d8 | 0x2da
         | 0x2db | 0x2dc | 0x2dd | 0x2de | 0x2df | 0x2e0 | 0x2e1 | 0x2e2 | 0x2e3 | 0x2e4
         | 0x2e5 | 0x2e6 | 0x2e7 | 0x2ea | 0x2ec | 0x2ed | 0x2ee | 0x2ef | 0x2fd | 0x2fe
@@ -6743,81 +6799,83 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
         | 0x3bd | 0x3be | 0x3bf | 0x3e0 | 0x3e1 | 0x3e2 | 0x3e3 | 0x3e4 | 0x3e5 | 0x3e6
         | 0x3e7 | 0x3e8 | 0x3e9 | 0x3ea | 0x3eb | 0x3ec | 0x3ed | 0x3ee | 0x3ef | 0x3f0
         | 0x3f1 | 0x3f2 | 0x3f3 | 0x3f4 | 0x3f5 | 0x3f6 | 0x3f7 | 0x3f8 | 0x3f9 | 0x3fa
-        | 0x3fb | 0x3fc | 0x3fd | 0x3fe | 0x3ff => None,
-        0x2c8 => parse_thumb_sxth_0(ins, pc, options),
-        0x2c9 => parse_thumb_sxtb_0(ins, pc, options),
-        0x2ca => parse_thumb_uxth_0(ins, pc, options),
-        0x2cb => parse_thumb_uxtb_0(ins, pc, options),
+        | 0x3fb | 0x3fc | 0x3fd | 0x3fe | 0x3ff => Ins::Illegal,
+        0x2c8 => parse_thumb_sxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2c9 => parse_thumb_sxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2ca => parse_thumb_uxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2cb => parse_thumb_uxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x2d0 | 0x2d1 | 0x2d2 | 0x2d3 | 0x2d4 | 0x2d5 | 0x2d6 | 0x2d7 => {
-            parse_thumb_push_0(ins, pc, options)
+            parse_thumb_push_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x2d9 => {
             if (ins & 0xffe8) == 0xb660
                 && let Some(ins) = parse_thumb_cps_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xffe0) == 0xb640
                 && let Some(ins) = parse_thumb_setend_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
-        0x2e8 => parse_thumb_rev_0(ins, pc, options),
-        0x2e9 => parse_thumb_rev16_0(ins, pc, options),
-        0x2eb => parse_thumb_revsh_0(ins, pc, options),
+        0x2e8 => parse_thumb_rev_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2e9 => parse_thumb_rev16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0x2eb => parse_thumb_revsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x2f0 | 0x2f1 | 0x2f2 | 0x2f3 | 0x2f4 | 0x2f5 | 0x2f6 | 0x2f7 => {
-            parse_thumb_pop_0(ins, pc, options)
+            parse_thumb_pop_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
-        0x2f8 | 0x2f9 | 0x2fa | 0x2fb => parse_thumb_bkpt_0(ins, pc, options),
-        0x2fc => parse_thumb_nop_0(ins, pc, options),
+        0x2f8 | 0x2f9 | 0x2fa | 0x2fb => {
+            parse_thumb_bkpt_0(ins, pc, options).unwrap_or(Ins::Illegal)
+        }
+        0x2fc => parse_thumb_nop_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x300 | 0x301 | 0x302 | 0x303 | 0x304 | 0x305 | 0x306 | 0x307 | 0x308 | 0x309
         | 0x30a | 0x30b | 0x30c | 0x30d | 0x30e | 0x30f | 0x310 | 0x311 | 0x312 | 0x313
         | 0x314 | 0x315 | 0x316 | 0x317 | 0x318 | 0x319 | 0x31a | 0x31b | 0x31c | 0x31d
-        | 0x31e | 0x31f => parse_thumb_stm_0(ins, pc, options),
+        | 0x31e | 0x31f => parse_thumb_stm_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x320 | 0x321 | 0x322 | 0x323 | 0x324 | 0x325 | 0x326 | 0x327 | 0x328 | 0x329
         | 0x32a | 0x32b | 0x32c | 0x32d | 0x32e | 0x32f | 0x330 | 0x331 | 0x332 | 0x333
         | 0x334 | 0x335 | 0x336 | 0x337 | 0x338 | 0x339 | 0x33a | 0x33b | 0x33c | 0x33d
-        | 0x33e | 0x33f => parse_thumb_ldm_0(ins, pc, options),
+        | 0x33e | 0x33f => parse_thumb_ldm_0(ins, pc, options).unwrap_or(Ins::Illegal),
         0x340 | 0x341 | 0x342 | 0x343 | 0x344 | 0x345 | 0x346 | 0x347 | 0x348 | 0x349
         | 0x34a | 0x34b | 0x34c | 0x34d | 0x34e | 0x34f | 0x350 | 0x351 | 0x352 | 0x353
         | 0x354 | 0x355 | 0x356 | 0x357 | 0x358 | 0x359 | 0x35a | 0x35b | 0x35c | 0x35d
         | 0x35e | 0x35f | 0x360 | 0x361 | 0x362 | 0x363 | 0x364 | 0x365 | 0x366 | 0x367
         | 0x368 | 0x369 | 0x36a | 0x36b | 0x36c | 0x36d | 0x36e | 0x36f | 0x370 | 0x371
         | 0x372 | 0x373 | 0x374 | 0x375 | 0x376 | 0x377 => {
-            parse_thumb_b_0(ins, pc, options)
+            parse_thumb_b_0(ins, pc, options).unwrap_or(Ins::Illegal)
         }
         0x378 | 0x379 | 0x37a | 0x37b => {
             if (ins & 0xff00) == 0xde00
                 && let Some(ins) = parse_thumb_udf_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000) == 0xd000
                 && let Some(ins) = parse_thumb_b_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x37c | 0x37d | 0x37e | 0x37f => {
             if (ins & 0xff00) == 0xdf00
                 && let Some(ins) = parse_thumb_svc_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xf000) == 0xd000
                 && let Some(ins) = parse_thumb_b_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         0x380 | 0x381 | 0x382 | 0x383 | 0x384 | 0x385 | 0x386 | 0x387 | 0x388 | 0x389
         | 0x38a | 0x38b | 0x38c | 0x38d | 0x38e | 0x38f | 0x390 | 0x391 | 0x392 | 0x393
         | 0x394 | 0x395 | 0x396 | 0x397 | 0x398 | 0x399 | 0x39a | 0x39b | 0x39c | 0x39d
-        | 0x39e | 0x39f => parse_thumb_b_1(ins, pc, options),
+        | 0x39e | 0x39f => parse_thumb_b_1(ins, pc, options).unwrap_or(Ins::Illegal),
         0x3c0 | 0x3c1 | 0x3c2 | 0x3c3 | 0x3c4 | 0x3c5 | 0x3c6 | 0x3c7 | 0x3c8 | 0x3c9
         | 0x3ca | 0x3cb | 0x3cc | 0x3cd | 0x3ce | 0x3cf | 0x3d0 | 0x3d1 | 0x3d2 | 0x3d3
         | 0x3d4 | 0x3d5 | 0x3d6 | 0x3d7 | 0x3d8 | 0x3d9 | 0x3da | 0x3db | 0x3dc | 0x3dd
@@ -6825,13 +6883,13 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Option<Ins> {
             if (ins & 0xd000f800) == 0xd000f000
                 && let Some(ins) = parse_thumb_bl_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else if (ins & 0xd000f800) == 0xc000f000
                 && let Some(ins) = parse_thumb_blx_0(ins, pc, options)
             {
-                Some(ins)
+                ins
             } else {
-                None
+                Ins::Illegal
             }
         }
         _ => unreachable!(),
@@ -6846,7 +6904,9 @@ fn parse_arm_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Adc {
         s,
         thumb,
@@ -6898,7 +6958,9 @@ fn parse_arm_add_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Add {
         s,
         thumb,
@@ -7194,7 +7256,9 @@ fn parse_arm_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::And {
         s,
         thumb,
@@ -7386,7 +7450,9 @@ fn parse_arm_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Bic {
         s,
         thumb,
@@ -7628,6 +7694,12 @@ fn parse_arm_cdp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_cdp2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[Version::V5T, Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
     let opc1 = ((value) >> 20) & 0xf;
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
@@ -7680,7 +7752,9 @@ fn parse_arm_cmn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Cmn { cond, rn, op2 })
 }
 fn parse_thumb_cmn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -7715,7 +7789,9 @@ fn parse_arm_cmp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Cmp { cond, rn, op2 })
 }
 fn parse_thumb_cmp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -7844,7 +7920,9 @@ fn parse_arm_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Eor {
         s,
         thumb,
@@ -7907,6 +7985,12 @@ fn parse_arm_ldc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_ldc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[Version::V5T, Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     let l = (((value) >> 22) & 0x1) != 0;
     let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
@@ -8186,7 +8270,9 @@ fn parse_arm_ldrbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
+    let Some(addr) = AddrLdrStrPost::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Ldrbt { cond, rd, addr })
 }
 fn parse_arm_ldrd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -8442,7 +8528,9 @@ fn parse_arm_ldrt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
+    let Some(addr) = AddrLdrStrPost::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Ldrt { cond, rd, addr })
 }
 fn parse_arm_lsl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -8680,9 +8768,7 @@ fn parse_arm_mcrr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_mcrr2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
-    const VERSIONS: Versions = Versions::of(
-        &[Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
-    );
+    const VERSIONS: Versions = Versions::of(&[Version::V6, Version::V6K]);
     if !VERSIONS.has(options.version) {
         return None;
     }
@@ -8732,7 +8818,9 @@ fn parse_arm_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Mov {
         s,
         thumb,
@@ -8755,7 +8843,9 @@ fn parse_arm_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Mov {
         s,
         thumb,
@@ -8778,7 +8868,9 @@ fn parse_arm_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Mov {
         s,
         thumb,
@@ -8982,9 +9074,7 @@ fn parse_arm_mrrc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_mrrc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
-    const VERSIONS: Versions = Versions::of(
-        &[Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
-    );
+    const VERSIONS: Versions = Versions::of(&[Version::V6, Version::V6K]);
     if !VERSIONS.has(options.version) {
         return None;
     }
@@ -9018,6 +9108,9 @@ fn parse_arm_msr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         return Some(Ins::Illegal);
     }
     if value & 0xf0000000 == 0xf0000000 {
+        return Some(Ins::Illegal);
+    }
+    if value & 0x4f0000 == 0 {
         return Some(Ins::Illegal);
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
@@ -9093,7 +9186,9 @@ fn parse_arm_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let thumb = false;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Mvn {
         s,
         thumb,
@@ -9155,6 +9250,10 @@ fn parse_thumb_neg_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Neg { rd, rm })
 }
 fn parse_arm_nop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(&[Version::V6K]);
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     if value & 0xff00 != 0xf000 {
         return Some(Ins::Illegal);
     }
@@ -9190,7 +9289,9 @@ fn parse_arm_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Orr {
         s,
         thumb,
@@ -9736,7 +9837,9 @@ fn parse_arm_rsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Rsb { s, cond, rd, rn, op2 })
 }
 fn parse_thumb_rsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -9771,7 +9874,9 @@ fn parse_arm_rsc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Rsc { s, cond, rd, rn, op2 })
 }
 fn parse_arm_sadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -9834,7 +9939,9 @@ fn parse_arm_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Sbc {
         s,
         thumb,
@@ -9917,7 +10024,7 @@ fn parse_thumb_setend_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Setend { endian })
 }
 fn parse_arm_sev_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
-    const VERSIONS: Versions = Versions::of(&[Version::V6, Version::V6K]);
+    const VERSIONS: Versions = Versions::of(&[Version::V6K]);
     if !VERSIONS.has(options.version) {
         return None;
     }
@@ -10525,6 +10632,12 @@ fn parse_arm_stc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_stc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[Version::V5T, Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     let l = (((value) >> 22) & 0x1) != 0;
     let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
@@ -10740,7 +10853,9 @@ fn parse_arm_strbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
+    let Some(addr) = AddrLdrStrPost::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Strbt { cond, rd, addr })
 }
 fn parse_arm_strd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -10905,7 +11020,9 @@ fn parse_arm_strt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
-    let addr = AddrLdrStr::Post(AddrLdrStrPost::parse(value, pc));
+    let Some(addr) = AddrLdrStrPost::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Strt { cond, rd, addr })
 }
 fn parse_arm_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -10917,7 +11034,9 @@ fn parse_arm_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rd = Reg::parse(((value) >> 12) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Sub {
         s,
         thumb,
@@ -11258,7 +11377,9 @@ fn parse_arm_teq_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Teq { cond, rn, op2 })
 }
 fn parse_arm_tst_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -11270,7 +11391,9 @@ fn parse_arm_tst_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let op2 = Op2::parse(value, pc);
+    let Some(op2) = Op2::parse(value, pc) else {
+        return Some(Ins::Illegal);
+    };
     Some(Ins::Tst { cond, rn, op2 })
 }
 fn parse_thumb_tst_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {

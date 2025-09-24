@@ -542,7 +542,7 @@ pub enum Ins {
     ///Load Register Byte
     Ldrb { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Load Register Byte with Translation
-    Ldrbt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    Ldrbt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
     ///Load Register Dual
     Ldrd { cond: Cond, rd: Reg, rd2: Reg, addr: AddrMiscLoad },
     ///Load Register Exclusive
@@ -560,7 +560,7 @@ pub enum Ins {
     ///Load Register Signed Halfword
     Ldrsh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
     ///Load Register with Translation
-    Ldrt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    Ldrt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
     ///Logical Shift Left
     Lsl { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Logical Shift Right
@@ -765,7 +765,7 @@ pub enum Ins {
     ///Store Register Byte
     Strb { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Store Register Byte with Translation
-    Strbt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    Strbt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
     ///Store Register Dual
     Strd { cond: Cond, rd: Reg, rd2: Reg, addr: AddrMiscLoad },
     ///Store Register Exclusive
@@ -779,7 +779,7 @@ pub enum Ins {
     ///Store Register Halfword
     Strh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
     ///Store Register with Translation
-    Strt { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    Strt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
     ///Subtract
     Sub { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Supervisor Call

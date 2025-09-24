@@ -27,7 +27,7 @@ mod tests {
     macro_rules! assert_arm {
         ($code:literal, $pc:literal, $disasm:literal) => {{
             let options = options!();
-            let ins = parse_arm($code, $pc, &options).expect("Illegal instruction");
+            let ins = parse_arm($code, $pc, &options);
             assert_ins!(ins, $disasm, options)
         }};
     }
@@ -35,7 +35,7 @@ mod tests {
     macro_rules! assert_thumb {
         ($code:literal, $pc:literal, $disasm:literal) => {{
             let options = options!();
-            let ins = parse_thumb($code, $pc, &options).expect("Illegal instruction");
+            let ins = parse_thumb($code, $pc, &options);
             assert_ins!(ins, $disasm, options)
         }};
     }

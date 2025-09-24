@@ -20,13 +20,13 @@ mod tests {
     macro_rules! assert_asm {
         ($code:literal, $disasm:literal) => {{
             let options = options!();
-            let ins = parse_thumb($code, 0, &options).expect("Illegal instruction");
+            let ins = parse_thumb($code, 0, &options);
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};
         ($code:literal, $next:literal, $disasm:literal) => {{
             let options = options!();
-            let ins = parse_thumb($code | ($next << 16), 0, &options).expect("Illegal instruction");
+            let ins = parse_thumb($code | ($next << 16), 0, &options);
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};

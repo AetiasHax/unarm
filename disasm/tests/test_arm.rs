@@ -14,7 +14,7 @@ mod tests {
                 ip: false,
                 ual: true,
             };
-            let ins = parse_arm($code, 0, &options).expect("Illegal instruction");
+            let ins = parse_arm($code, 0, &options);
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};
@@ -25,7 +25,7 @@ mod tests {
         assert_asm!(0xe0a12003, "adc r2, r1, r3");
         assert_asm!(0xe2a45e23, "adc r5, r4, #0x230");
         assert_asm!(0x10ab960a, "adcne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x40a5f238, "adcmi pc, r5, r8, lsr r2");
+        assert_asm!(0x40a5e238, "adcmi lr, r5, r8, lsr r2");
         assert_asm!(0x70a2046e, "adcvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0a87060, "adclt r7, r8, r0, rrx");
         assert_asm!(0xe0b52153, "adcs r2, r5, r3, asr r1");
@@ -36,7 +36,7 @@ mod tests {
         assert_asm!(0xe0812003, "add r2, r1, r3");
         assert_asm!(0xe2845e23, "add r5, r4, #0x230");
         assert_asm!(0x108b960a, "addne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x4085f238, "addmi pc, r5, r8, lsr r2");
+        assert_asm!(0x4085e238, "addmi lr, r5, r8, lsr r2");
         assert_asm!(0x7082046e, "addvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0887060, "addlt r7, r8, r0, rrx");
         assert_asm!(0xe0952153, "adds r2, r5, r3, asr r1");
@@ -48,7 +48,7 @@ mod tests {
         assert_asm!(0xe0012003, "and r2, r1, r3");
         assert_asm!(0xe2045e23, "and r5, r4, #0x230");
         assert_asm!(0x100b960a, "andne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x4005f238, "andmi pc, r5, r8, lsr r2");
+        assert_asm!(0x4005e238, "andmi lr, r5, r8, lsr r2");
         assert_asm!(0x7002046e, "andvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0087060, "andlt r7, r8, r0, rrx");
         assert_asm!(0xe0152153, "ands r2, r5, r3, asr r1");
@@ -73,7 +73,7 @@ mod tests {
         assert_asm!(0xe1c12003, "bic r2, r1, r3");
         assert_asm!(0xe3c45e23, "bic r5, r4, #0x230");
         assert_asm!(0x11cb960a, "bicne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x41c5f238, "bicmi pc, r5, r8, lsr r2");
+        assert_asm!(0x41c5e238, "bicmi lr, r5, r8, lsr r2");
         assert_asm!(0x71c2046e, "bicvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb1c87060, "biclt r7, r8, r0, rrx");
         assert_asm!(0xe1d52153, "bics r2, r5, r3, asr r1");
@@ -191,7 +191,7 @@ mod tests {
         assert_asm!(0xe0212003, "eor r2, r1, r3");
         assert_asm!(0xe2245e23, "eor r5, r4, #0x230");
         assert_asm!(0x102b960a, "eorne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x4025f238, "eormi pc, r5, r8, lsr r2");
+        assert_asm!(0x4025e238, "eormi lr, r5, r8, lsr r2");
         assert_asm!(0x7022046e, "eorvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0287060, "eorlt r7, r8, r0, rrx");
         assert_asm!(0xe0352153, "eors r2, r5, r3, asr r1");
@@ -277,6 +277,24 @@ mod tests {
     fn test_ldrex() {
         assert_asm!(0xe1912f9f, "ldrex r2, [r1]");
         assert_asm!(0x21912f9f, "ldrexhs r2, [r1]");
+    }
+
+    #[test]
+    fn test_ldrexb() {
+        assert_asm!(0xe1d12f9f, "ldrexb r2, [r1]");
+        assert_asm!(0x21d12f9f, "ldrexbhs r2, [r1]");
+    }
+
+    #[test]
+    fn test_ldrexd() {
+        assert_asm!(0xe1b12f9f, "ldrexd r2, r3, [r1]");
+        assert_asm!(0x21b12f9f, "ldrexdhs r2, r3, [r1]");
+    }
+
+    #[test]
+    fn test_ldrexh() {
+        assert_asm!(0xe1f12f9f, "ldrexh r2, [r1]");
+        assert_asm!(0x21f12f9f, "ldrexhhs r2, [r1]");
     }
 
     #[test]
@@ -413,7 +431,7 @@ mod tests {
         assert_asm!(0xe1e02003, "mvn r2, r3");
         assert_asm!(0xe3e05e23, "mvn r5, #0x230");
         assert_asm!(0x11e0960a, "mvnne r9, r10, lsl #0xc");
-        assert_asm!(0x41e0f238, "mvnmi pc, r8, lsr r2");
+        assert_asm!(0x41e0e238, "mvnmi lr, r8, lsr r2");
         assert_asm!(0x71e0046e, "mvnvc r0, lr, ror #0x8");
         assert_asm!(0xb1e07060, "mvnlt r7, r0, rrx");
         assert_asm!(0xe1f02153, "mvns r2, r3, asr r1");
@@ -430,7 +448,7 @@ mod tests {
         assert_asm!(0xe1812003, "orr r2, r1, r3");
         assert_asm!(0xe3845e23, "orr r5, r4, #0x230");
         assert_asm!(0x118b960a, "orrne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x4185f238, "orrmi pc, r5, r8, lsr r2");
+        assert_asm!(0x4185e238, "orrmi lr, r5, r8, lsr r2");
         assert_asm!(0x7182046e, "orrvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb1887060, "orrlt r7, r8, r0, rrx");
         assert_asm!(0xe1952153, "orrs r2, r5, r3, asr r1");
@@ -558,7 +576,7 @@ mod tests {
         assert_asm!(0xe0612003, "rsb r2, r1, r3");
         assert_asm!(0xe2645e23, "rsb r5, r4, #0x230");
         assert_asm!(0x106b960a, "rsbne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x4065f238, "rsbmi pc, r5, r8, lsr r2");
+        assert_asm!(0x4065e238, "rsbmi lr, r5, r8, lsr r2");
         assert_asm!(0x7062046e, "rsbvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0687060, "rsblt r7, r8, r0, rrx");
         assert_asm!(0xe0752153, "rsbs r2, r5, r3, asr r1");
@@ -569,7 +587,7 @@ mod tests {
         assert_asm!(0xe0e12003, "rsc r2, r1, r3");
         assert_asm!(0xe2e45e23, "rsc r5, r4, #0x230");
         assert_asm!(0x10eb960a, "rscne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x40e5f238, "rscmi pc, r5, r8, lsr r2");
+        assert_asm!(0x40e5e238, "rscmi lr, r5, r8, lsr r2");
         assert_asm!(0x70e2046e, "rscvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0e87060, "rsclt r7, r8, r0, rrx");
         assert_asm!(0xe0f52153, "rscs r2, r5, r3, asr r1");
@@ -595,7 +613,7 @@ mod tests {
         assert_asm!(0xe0c12003, "sbc r2, r1, r3");
         assert_asm!(0xe2c45e23, "sbc r5, r4, #0x230");
         assert_asm!(0x10cb960a, "sbcne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x40c5f238, "sbcmi pc, r5, r8, lsr r2");
+        assert_asm!(0x40c5e238, "sbcmi lr, r5, r8, lsr r2");
         assert_asm!(0x70c2046e, "sbcvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0c87060, "sbclt r7, r8, r0, rrx");
         assert_asm!(0xe0d52153, "sbcs r2, r5, r3, asr r1");
@@ -862,6 +880,24 @@ mod tests {
     }
 
     #[test]
+    fn test_strexb() {
+        assert_asm!(0xe1c12f93, "strexb r2, r3, [r1]");
+        assert_asm!(0x21c12f93, "strexbhs r2, r3, [r1]");
+    }
+
+    #[test]
+    fn test_strexd() {
+        assert_asm!(0xe1a12f94, "strexd r2, r4, r5, [r1]");
+        assert_asm!(0x21a12f94, "strexdhs r2, r4, r5, [r1]");
+    }
+
+    #[test]
+    fn test_strexh() {
+        assert_asm!(0xe1e12f93, "strexh r2, r3, [r1]");
+        assert_asm!(0x21e12f93, "strexhhs r2, r3, [r1]");
+    }
+
+    #[test]
     fn test_strh() {
         assert_asm!(0xe1c12fbf, "strh r2, [r1, #0xff]");
         assert_asm!(0xe10120b3, "strh r2, [r1, -r3]");
@@ -883,7 +919,7 @@ mod tests {
         assert_asm!(0xe0412003, "sub r2, r1, r3");
         assert_asm!(0xe2445e23, "sub r5, r4, #0x230");
         assert_asm!(0x104b960a, "subne r9, r11, r10, lsl #0xc");
-        assert_asm!(0x4045f238, "submi pc, r5, r8, lsr r2");
+        assert_asm!(0x4045e238, "submi lr, r5, r8, lsr r2");
         assert_asm!(0x7042046e, "subvc r0, r2, lr, ror #0x8");
         assert_asm!(0xb0487060, "sublt r7, r8, r0, rrx");
         assert_asm!(0xe0552153, "subs r2, r5, r3, asr r1");

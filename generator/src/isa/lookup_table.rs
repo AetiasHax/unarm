@@ -151,12 +151,12 @@ impl<'a> OpcodeLookupTable<'a> {
 impl<'a> Bucket<'a> {
     pub fn parse_bucket_tokens(&self, arch: Arch) -> TokenStream {
         if self.encodings.is_empty() {
-            quote!(None)
+            quote!(Ins::Illegal)
         } else if self.encodings.len() == 1 {
             let encoding = &self.encodings[0];
             let parse_fn_name = encoding.opcode.parse_fn_name(arch, encoding.index_opcode);
             let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
-            quote!(#parse_fn_ident(ins, pc, options))
+            quote!(#parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal))
         } else {
             let parse_ifs = self.encodings.iter().map(|encoding| {
                 let pattern = encoding.encoding.pattern().combined();
@@ -166,14 +166,14 @@ impl<'a> Bucket<'a> {
                 let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
                 quote! {
                     if (ins & #bitmask_literal) == #pattern_literal && let Some(ins) = #parse_fn_ident(ins, pc, options) {
-                        Some(ins)
+                        ins
                     }
                 }
             });
             quote! {
                 #(#parse_ifs)else*
                 else {
-                    None
+                    Ins::Illegal
                 }
             }
         }
