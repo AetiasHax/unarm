@@ -403,16 +403,18 @@ impl Reg {
                 }
             }
             Self::R9 => {
-                if formatter.options().r9_use == R9Use::R9 {
-                    if formatter.options().av {
-                        formatter.write_str("v6")?;
-                    } else {
-                        formatter.write_str("r9")?;
+                match formatter.options().r9_use {
+                    R9Use::R9 => {
+                        if formatter.options().av {
+                            formatter.write_str("v6")?;
+                        } else {
+                            formatter.write_str("r9")?;
+                        }
                     }
-                } else {
-                    if formatter.options().r9_use == R9Use::Sb {
+                    R9Use::Sb => {
                         formatter.write_str("sb")?;
-                    } else {
+                    }
+                    R9Use::Tr => {
                         formatter.write_str("tr")?;
                     }
                 }

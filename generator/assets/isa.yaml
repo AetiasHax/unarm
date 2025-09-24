@@ -174,16 +174,16 @@ types:
         then: !fmt v5
         else: !fmt r8
     - name: r9
-      format: !if
-        cond: option(r9_use) == enum_variant(r9_use, r9)
-        then: !if
-          cond: option(av)
-          then: !fmt v6
-          else: !fmt r9
-        else: !if
-          cond: option(r9_use) == enum_variant(r9_use, sb)
-          then: !fmt sb
-          else: !fmt tr
+      format: !match
+        value: option(r9_use)
+        option: r9_use
+        cases:
+          r9: !if
+            cond: option(av)
+            then: !fmt v6
+            else: !fmt r9
+          sb: !fmt sb
+          tr: !fmt tr
     - name: r10
       format: !if
         cond: option(sl)

@@ -84,12 +84,11 @@ impl DataTypes {
 pub struct DataTypeName(pub String);
 
 impl DataTypeName {
-    // TODO: Use this method more
-    fn as_ident(&self) -> Ident {
+    pub fn as_ident(&self) -> Ident {
         Ident::new(&self.0, Span::call_site())
     }
 
-    fn as_pascal_ident(&self) -> Ident {
+    pub fn as_pascal_ident(&self) -> Ident {
         Ident::new(&snake_to_pascal_case(&self.0), Span::call_site())
     }
 }
@@ -915,15 +914,15 @@ impl DataTypeEnumVariant {
     }
 }
 
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct DataTypeEnumVariantName(pub String);
 
 impl DataTypeEnumVariantName {
-    fn as_ident(&self) -> Ident {
+    pub fn as_ident(&self) -> Ident {
         Ident::new(&self.0, Span::call_site())
     }
 
-    fn as_pascal_ident(&self) -> Ident {
+    pub fn as_pascal_ident(&self) -> Ident {
         Ident::new(&snake_to_pascal_case(&self.0), Span::call_site())
     }
 }

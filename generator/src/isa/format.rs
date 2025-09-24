@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fmt::Debug, str::FromStr};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::Debug,
+    str::FromStr,
+};
 
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
@@ -14,6 +18,8 @@ use crate::{
 pub enum Format {
     #[serde(rename = "if")]
     If(IfFormat),
+    #[serde(rename = "match")]
+    Match(MatchFormat),
     #[serde(rename = "fmt")]
     Fragments(FragmentsFormat),
     #[serde(rename = "seq")]
@@ -31,6 +37,7 @@ impl Format {
     ) -> TokenStream {
         match self {
             Format::If(if_format) => if_format.fmt_expr_tokens(isa, params, formatter),
+            Format::Match(match_format) => match_format.fmt_expr_tokens(isa, params, formatter),
             Format::Fragments(fragments_format) => {
                 fragments_format.fmt_expr_tokens(isa, params, formatter)
             }
@@ -43,6 +50,7 @@ impl Format {
     pub fn is_empty(&self) -> bool {
         match self {
             Format::If(_) => false,
+            Format::Match(_) => false,
             Format::Fragments(fragments_format) => fragments_format.is_empty(),
             Format::Sequence(formats) => formats.iter().all(|f| f.is_empty()),
         }
@@ -80,6 +88,42 @@ impl IfFormat {
                 #fmt_true
             } else {
                 #fmt_false
+            }
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct MatchFormat {
+    value: FormatCond,
+    option: String,
+    cases: BTreeMap<String, Format>,
+}
+
+impl MatchFormat {
+    fn fmt_expr_tokens(
+        &self,
+        isa: &Isa,
+        params: &FormatParams,
+        formatter: Option<TokenStream>,
+    ) -> TokenStream {
+        let options = formatter.clone().map(|f| quote!(#f.options()));
+        let value = self.value.as_tokens(options);
+
+        let enum_ident = Ident::new(&snake_to_pascal_case(&self.option), Span::call_site());
+        let cases = self.cases.iter().map(|(variant_name, format)| {
+            let variant_ident = Ident::new(&snake_to_pascal_case(variant_name), Span::call_site());
+            let format = format.fmt_expr_tokens(isa, params, formatter.clone());
+            quote! {
+                #enum_ident::#variant_ident => {
+                    #format
+                }
+            }
+        });
+
+        quote! {
+            match #value {
+                #(#cases),*
             }
         }
     }
