@@ -7681,6 +7681,12 @@ fn parse_arm_cdp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_cdp2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[Version::V5T, Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
     let opc1 = ((value) >> 20) & 0xf;
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
@@ -7951,6 +7957,12 @@ fn parse_arm_ldc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_ldc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[Version::V5T, Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     let l = (((value) >> 22) & 0x1) != 0;
     let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);
@@ -9070,6 +9082,9 @@ fn parse_arm_msr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
+    if value & 0x4f0000 == 0 {
+        return Some(Ins::Illegal);
+    }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let status_fields = StatusFields::parse(value, pc);
     let Some(op2) = MsrOp2::parse(value, pc) else {
@@ -9981,7 +9996,7 @@ fn parse_thumb_setend_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Setend { endian })
 }
 fn parse_arm_sev_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
-    const VERSIONS: Versions = Versions::of(&[Version::V6, Version::V6K]);
+    const VERSIONS: Versions = Versions::of(&[Version::V6K]);
     if !VERSIONS.has(options.version) {
         return None;
     }
@@ -10589,6 +10604,12 @@ fn parse_arm_stc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 fn parse_arm_stc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+    const VERSIONS: Versions = Versions::of(
+        &[Version::V5T, Version::V5Te, Version::V5Tej, Version::V6, Version::V6K],
+    );
+    if !VERSIONS.has(options.version) {
+        return None;
+    }
     let l = (((value) >> 22) & 0x1) != 0;
     let coproc = Coproc::parse(((value) >> 8) & 0xf, pc);
     let crd = CoReg::parse(((value) >> 12) & 0xf, pc);

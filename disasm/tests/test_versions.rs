@@ -419,8 +419,8 @@ mod tests {
         assert_arm!(0xe1c12f93, Version::V6K, "strexb r2, r3, [r1]");
         assert_arm!(0xe1c12f93, Version::V6, "<illegal>");
 
-        assert_arm!(0xe1a12f93, Version::V6K, "strexd r2, r2, r3, [r1]");
-        assert_arm!(0xe1a12f93, Version::V6, "<illegal>");
+        assert_arm!(0xe1a12f94, Version::V6K, "strexd r2, r4, r5, [r1]");
+        assert_arm!(0xe1a12f94, Version::V6, "<illegal>");
 
         assert_arm!(0xe1e12f93, Version::V6K, "strexh r2, r3, [r1]");
         assert_arm!(0xe1e12f93, Version::V6, "<illegal>");
