@@ -1310,6 +1310,22 @@ opcodes:
     params:
       cond: !bits 28..32
 
+- mnemonic: dbg
+  description: Debug Hint
+  params: { cond: cond, option: uimm }
+  format:
+    opcode: !fmt dbg(cond)
+    params: !fmt "#(option)"
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_1111_xxxx
+    illegal:
+    - bits(8..12) != 0
+    - bits(12..16) != 0xf
+    params:
+      cond:   !bits 28..32
+      option: !bits 0..4
+
 - mnemonic: eor
   description: Bitwise Exclusive OR
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }

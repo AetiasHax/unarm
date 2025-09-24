@@ -401,6 +401,9 @@ mod tests {
         assert_arm!(0xf57ff01f, Version::V6K, "clrex");
         assert_arm!(0xf57ff01f, Version::V6, "<illegal>");
 
+        assert_arm!(0xe320f0f8, Version::V6K, "dbg #0x8");
+        assert_arm!(0xe320f0f8, Version::V6, "<illegal>");
+
         assert_arm!(0xe1d12f9f, Version::V6K, "ldrexb r2, [r1]");
         assert_arm!(0xe1d12f9f, Version::V5Te, "<illegal>");
 

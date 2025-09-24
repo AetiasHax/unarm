@@ -1400,6 +1400,10 @@ impl Ins {
                 formatter.write_str("csdb")?;
                 formatter.write_cond(*cond)?;
             }
+            Ins::Dbg { cond, option } => {
+                formatter.write_str("dbg")?;
+                formatter.write_cond(*cond)?;
+            }
             Ins::Eor { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("eor")?;
@@ -3085,6 +3089,11 @@ impl Ins {
                 }
             }
             Ins::Csdb { cond } => {}
+            Ins::Dbg { cond, option } => {
+                formatter.write_space()?;
+                formatter.write_str("#")?;
+                formatter.write_uimm(*option)?;
+            }
             Ins::Eor { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
                 if formatter.options().ual || !*thumb {

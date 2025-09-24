@@ -3,7 +3,7 @@ mod tests {
     use unarm::{Options, parse_arm};
 
     macro_rules! assert_asm {
-        ($code:literal, $disasm:literal) => {{
+        ($code:expr, $disasm:literal) => {{
             let options = Options {
                 version: unarm::Version::V6K,
                 extensions: unarm::Extensions::all(),
@@ -173,6 +173,13 @@ mod tests {
     fn test_csdb() {
         assert_asm!(0xe320f014, "csdb");
         assert_asm!(0xa320f014, "csdbge");
+    }
+
+    #[test]
+    fn test_dbg() {
+        assert_asm!(0x0320f0f0, "dbgeq #0x0");
+        assert_asm!(0xe320f0f8, "dbg #0x8");
+        assert_asm!(0x1320f0f5, "dbgne #0x5");
     }
 
     #[test]

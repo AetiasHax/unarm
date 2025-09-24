@@ -520,6 +520,8 @@ pub enum Ins {
     Cps { effect: CpsEffect, aif: AifFlags, mode: u32 },
     ///Consume of Speculative Data Barrier
     Csdb { cond: Cond },
+    ///Debug Hint
+    Dbg { cond: Cond, option: u32 },
     ///Bitwise Exclusive OR
     Eor { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Load Coprocessor
