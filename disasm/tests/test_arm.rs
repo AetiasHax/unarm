@@ -177,13 +177,9 @@ mod tests {
 
     #[test]
     fn test_dbg() {
-        const BASE: u32 = 0x320f0f0;
-        const COND_NE: u32 = 0b0001 << 28;
-        const COND_AL: u32 = 0b1110 << 28;
-
-        assert_asm!(BASE, "dbgeq #0x0");
-        assert_asm!(BASE | COND_AL | 8, "dbg #0x8");
-        assert_asm!(BASE | COND_NE | 5, "dbgne #0x5");
+        assert_asm!(0x0320f0f0, "dbgeq #0x0");
+        assert_asm!(0xe320f0f8, "dbg #0x8");
+        assert_asm!(0x1320f0f5, "dbgne #0x5");
     }
 
     #[test]
