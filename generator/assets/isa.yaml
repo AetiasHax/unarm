@@ -1505,7 +1505,7 @@ opcodes:
 
 - mnemonic: ldrbt
   description: Load Register Byte with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -1520,7 +1520,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: ldrd
   description: Load Register Dual
@@ -1707,7 +1707,7 @@ opcodes:
 
 - mnemonic: ldrt
   description: Load Register with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -1722,7 +1722,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: lsl
   description: Logical Shift Left
@@ -3543,7 +3543,7 @@ opcodes:
 
 - mnemonic: strbt
   description: Store Register Byte with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -3558,7 +3558,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: strd
   description: Store Register Dual
@@ -3689,7 +3689,7 @@ opcodes:
 
 - mnemonic: strt
   description: Store Register with Translation
-  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
   format:
     opcode: !if
       cond: option(ual)
@@ -3704,7 +3704,7 @@ opcodes:
     params:
       cond: !bits 28..32
       rd: !bits 12..16
-      addr: !enum [post, !bits 0..32]
+      addr: !bits 0..32
 
 - mnemonic: sub
   description: Subtract
