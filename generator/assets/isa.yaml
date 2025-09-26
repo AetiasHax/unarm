@@ -3857,7 +3857,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1010_xxxx_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1010_xxxx_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -3880,7 +3880,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1000_xxxx_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -3903,7 +3903,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1011_xxxx_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -3926,7 +3926,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1010_1111_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1010_1111_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -3955,7 +3955,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1000_1111_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1000_1111_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -3977,7 +3977,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1011_1111_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1011_1111_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -4534,7 +4534,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1110_xxxx_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1110_xxxx_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -4557,7 +4557,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1100_xxxx_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1100_xxxx_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -4580,7 +4580,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1111_xxxx_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1111_xxxx_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -4603,7 +4603,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1110_1111_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1110_1111_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -4632,7 +4632,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1100_1111_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1100_1111_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -4654,7 +4654,7 @@ opcodes:
       then: !fmt ", ror #(rotate)"
   arm:
   - version: [v6*]
-    pattern: xxx_0110_1111_1111_xxxx_xxxx_0111_xxxx
+    pattern: xxxx_0110_1111_1111_xxxx_xxxx_0111_xxxx
     illegal:
     - ins() & 0x300 != 0
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond

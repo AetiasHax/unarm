@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use anyhow::bail;
+use anyhow::{Result, bail};
 use serde::{
     Deserialize,
     de::{self, IgnoredAny, Visitor},
@@ -10,6 +10,8 @@ use serde::{
 pub struct Pattern {
     pattern: u32,
     bitmask: u32,
+    /// Number of bits in the pattern (including don't care bits)
+    size: u32,
 }
 
 impl Pattern {
@@ -24,6 +26,10 @@ impl Pattern {
     pub fn num_bits(&self) -> u32 {
         self.bitmask.count_ones()
     }
+
+    pub fn size(&self) -> u32 {
+        self.size
+    }
 }
 
 impl FromStr for Pattern {
@@ -32,10 +38,12 @@ impl FromStr for Pattern {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut pattern = 0;
         let mut bitmask = 0;
+        let mut size = 0;
         let mut chars = s.chars().peekable();
         while chars.peek().is_some() {
             pattern <<= 1;
             bitmask <<= 1;
+            size += 1;
             for c in chars.by_ref() {
                 match c {
                     '1' => {
@@ -53,7 +61,7 @@ impl FromStr for Pattern {
             }
         }
 
-        Ok(Self { pattern, bitmask })
+        Ok(Self { pattern, bitmask, size })
     }
 }
 
@@ -74,11 +82,33 @@ pub struct OpcodePattern {
 }
 
 impl OpcodePattern {
+    pub fn validate(&self, thumb: bool) -> Result<()> {
+        if thumb {
+            if self.first.size() != 16 {
+                bail!("Thumb pattern must be 16 bits");
+            }
+            if let Some(second) = &self.second
+                && second.size() != 16
+            {
+                bail!("Thumb pattern must be 16 bits");
+            }
+        } else {
+            if self.first.size() != 32 {
+                bail!("ARM pattern must be 32 bits");
+            }
+            if self.second.is_some() {
+                bail!("ARM pattern cannot have a second part");
+            }
+        }
+        Ok(())
+    }
+
     pub fn combined(&self) -> Pattern {
         if let Some(second) = &self.second {
             Pattern {
                 pattern: (second.pattern() << 16) | self.first.pattern(),
                 bitmask: (second.bitmask() << 16) | self.first.bitmask(),
+                size: self.first.size() + second.size(),
             }
         } else {
             self.first.clone()

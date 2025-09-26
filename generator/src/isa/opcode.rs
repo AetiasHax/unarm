@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use indexmap::IndexMap;
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::{ToTokens, quote};
@@ -119,6 +119,20 @@ impl Opcode {
                 )
             })?;
         }
+        if let Some(encodings) = &self.arm {
+            for (i, encoding) in encodings.iter().enumerate() {
+                encoding.validate(false).with_context(|| {
+                    format!("Invalid ARM encoding {i} for opcode '{}'", self.mnemonic)
+                })?;
+            }
+        }
+        if let Some(encodings) = &self.thumb {
+            for (i, encoding) in encodings.iter().enumerate() {
+                encoding.validate(true).with_context(|| {
+                    format!("Invalid Thumb encoding {i} for opcode '{}'", self.mnemonic)
+                })?;
+            }
+        }
         Ok(())
     }
 
@@ -234,6 +248,10 @@ pub struct OpcodeEncoding {
     params: IndexMap<OpcodeParamName, OpcodeParamValue>,
 }
 impl OpcodeEncoding {
+    fn validate(&self, thumb: bool) -> Result<()> {
+        self.pattern.validate(thumb)
+    }
+
     pub fn get_param(&self, name: &OpcodeParamName) -> Option<&OpcodeParamValue> {
         self.params.get(name)
     }
