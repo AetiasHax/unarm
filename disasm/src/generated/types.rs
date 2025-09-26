@@ -19,7 +19,7 @@ pub struct Options {
     ///If true, use Unified Assembly Language syntax (UAL), otherwise use divided syntax
     pub ual: bool,
 }
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Version {
     V4,
     V4T,

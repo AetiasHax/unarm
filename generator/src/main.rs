@@ -15,11 +15,11 @@ fn main() -> anyhow::Result<()> {
     isa.validate()?;
     // println!("{:#?}", isa);
 
-    generate_file("disasm/src/types.rs", isa.generate_types())?;
+    generate_file("disasm/src/generated/types.rs", isa.generate_types())?;
     // println!("{}", isa.generate_parser());
-    generate_file("disasm/src/parse.rs", isa.generate_parser())?;
+    generate_file("disasm/src/generated/parse.rs", isa.generate_parser())?;
     // println!("{}", isa.generate_display());
-    generate_file("disasm/src/display.rs", isa.generate_display())?;
+    generate_file("disasm/src/generated/display.rs", isa.generate_display())?;
 
     Ok(())
 }

@@ -31,7 +31,7 @@ impl IsaVersions {
         let versions = self.0.iter().map(|v| v.as_ident());
         let inner_type = self.struct_inner_type();
         quote! {
-            #[derive(Clone, Copy)]
+            #[derive(Debug, Clone, Copy)]
             pub enum Version {
                 #(#versions),*
             }
