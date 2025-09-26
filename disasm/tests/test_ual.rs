@@ -18,7 +18,7 @@ mod tests {
 
     macro_rules! assert_thumb {
         ($code:literal, $options:ident, $disasm:literal) => {{
-            let ins = parse_thumb($code, 0, &$options);
+            let (ins, _size) = parse_thumb($code, 0, &$options);
             assert_ins!(ins, $disasm, $options)
         }};
     }

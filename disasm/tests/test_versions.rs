@@ -35,12 +35,12 @@ mod tests {
     macro_rules! assert_thumb {
         ($code:literal, $version:expr, $disasm:literal) => {{
             let options = options!($version);
-            let ins = parse_thumb($code, 0, &options);
+            let (ins, _size) = parse_thumb($code, 0, &options);
             assert_ins!(ins, $disasm, options)
         }};
         ($code:literal, $next:literal, $version:expr, $disasm:literal) => {{
             let options = options!($version);
-            let ins = parse_thumb($code | ($next << 16), 0, &options);
+            let (ins, _size) = parse_thumb($code | ($next << 16), 0, &options);
             let s = ins.display(&options).to_string();
             assert_eq!(s, $disasm)
         }};

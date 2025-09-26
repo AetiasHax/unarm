@@ -140,13 +140,25 @@ impl<'a> OpcodeLookupTable<'a> {
 
 impl<'a> Bucket<'a> {
     pub fn parse_bucket_tokens(&self, arch: Arch) -> TokenStream {
+        let ins_size = match arch {
+            Arch::Arm => quote!(4),
+            Arch::Thumb => quote!(2),
+        };
         if self.encodings.is_empty() {
-            quote!(Ins::Illegal)
+            match arch {
+                Arch::Arm => quote!(Ins::Illegal),
+                Arch::Thumb => quote!((Ins::Illegal, #ins_size)),
+            }
         } else if self.encodings.len() == 1 {
             let encoding = &self.encodings[0];
             let parse_fn_name = encoding.opcode.parse_fn_name(arch, encoding.index_opcode);
             let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
-            quote!(#parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal))
+            match arch {
+                Arch::Arm => quote!(#parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal)),
+                Arch::Thumb => {
+                    quote!(#parse_fn_ident(ins, pc, options).unwrap_or((Ins::Illegal, #ins_size)))
+                }
+            }
         } else {
             let parse_ifs = self.encodings.iter().map(|encoding| {
                 let pattern = encoding.encoding.pattern().combined();
@@ -160,10 +172,14 @@ impl<'a> Bucket<'a> {
                     }
                 }
             });
+            let fallback = match arch {
+                Arch::Arm => quote!(Ins::Illegal),
+                Arch::Thumb => quote!((Ins::Illegal, #ins_size)),
+            };
             quote! {
                 #(#parse_ifs)else*
                 else {
-                    Ins::Illegal
+                    #fallback
                 }
             }
         }

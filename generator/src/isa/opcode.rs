@@ -83,7 +83,7 @@ impl Opcodes {
         let lookup_table = OpcodeLookupTable::new_thumb(isa);
         let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
         quote! {
-            pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> Ins {
+            pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
                 #parse_fn_body
             }
         }
@@ -159,10 +159,10 @@ impl Opcode {
 
     fn parse_fns_tokens(&self, isa: &Isa) -> TokenStream {
         let arm_parse_fns = self.arm.iter().flatten().enumerate().map(|(i, encoding)| {
-            encoding.parse_fn_tokens(self.parse_fn_name(Arch::Arm, i), self, isa)
+            encoding.parse_fn_tokens(self.parse_fn_name(Arch::Arm, i), self, isa, Arch::Arm)
         });
         let thumb_parse_fns = self.thumb.iter().flatten().enumerate().map(|(i, encoding)| {
-            encoding.parse_fn_tokens(self.parse_fn_name(Arch::Thumb, i), self, isa)
+            encoding.parse_fn_tokens(self.parse_fn_name(Arch::Thumb, i), self, isa, Arch::Thumb)
         });
         quote! {
             #(#arm_parse_fns)*
@@ -256,8 +256,15 @@ impl OpcodeEncoding {
         self.params.get(name)
     }
 
-    fn parse_fn_tokens(&self, name: String, opcode: &Opcode, isa: &Isa) -> TokenStream {
+    fn parse_fn_tokens(&self, name: String, opcode: &Opcode, isa: &Isa, arch: Arch) -> TokenStream {
         let fn_ident = Ident::new(&name, Span::call_site());
+
+        let ins_size = Literal::u32_unsuffixed(self.pattern.combined().size() / 8);
+        let illegal_value = match arch {
+            Arch::Arm => quote!(Some(Ins::Illegal)),
+            Arch::Thumb => quote!(Some((Ins::Illegal, #ins_size))),
+        };
+        let illegal_checks = self.illegal.checks_tokens(Some(illegal_value.clone()));
 
         let params = opcode.params().iter().map(|(param_name, type_name)| {
             let data_type = isa.types().get(type_name).unwrap();
@@ -284,21 +291,17 @@ impl OpcodeEncoding {
                     )
                 )
             {
-                let x = quote! {
+                quote! {
                     let Some(#name_ident) = #parse_expr else {
-                        return Some(Ins::Illegal);
+                        return #illegal_value;
                     };
-                };
-                // println!("{x}");
-                x
+                }
             } else {
                 quote!(let #name_ident = #parse_expr;)
             }
         });
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
-
-        let illegal_checks = self.illegal.checks_tokens(None);
 
         let version_check = if isa.versions().matches_all(&self.version) {
             quote!()
@@ -341,14 +344,25 @@ impl OpcodeEncoding {
             }
         });
 
+        let return_value = match arch {
+            Arch::Arm => quote!(Ins::#variant_ident { #(#param_names),* }),
+            Arch::Thumb => {
+                quote!((Ins::#variant_ident { #(#param_names),* }, #ins_size))
+            }
+        };
+        let return_type = match arch {
+            Arch::Arm => quote!(Option<Ins>),
+            Arch::Thumb => quote!(Option<(Ins, u32)>),
+        };
+
         quote! {
-            fn #fn_ident(value: u32, pc: u32, options: &Options) -> Option<Ins> {
+            fn #fn_ident(value: u32, pc: u32, options: &Options) -> #return_type {
                 #version_check
                 #extensions_check
                 #ignore_check
                 #illegal_checks
                 #(#params)*
-                Some(Ins::#variant_ident { #(#param_names),* })
+                Some(#return_value)
             }
         }
     }
