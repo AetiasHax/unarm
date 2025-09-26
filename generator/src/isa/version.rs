@@ -13,10 +13,6 @@ impl IsaVersions {
         self.0.iter()
     }
 
-    pub fn get_matches(&self, pattern: &IsaVersionPattern) -> impl Iterator<Item = &IsaVersion> {
-        self.0.iter().filter(|v| pattern.matches(v))
-    }
-
     fn struct_inner_type(&self) -> TokenStream {
         match self.0.len() {
             0..8 => quote!(u8),

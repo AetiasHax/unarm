@@ -13,11 +13,8 @@ pub struct OpcodeLookupTable<'a> {
     arch: Arch,
     bitmask: u32,
     buckets: Vec<Bucket<'a>>,
-    /// Maps bucket index to the bucket index sharing the same parse function, for deduplication. Can be the same index.
-    bucket_parse_map: BTreeMap<usize, usize>,
-    /// Reverse mapping of `bucket_parse_map`
-    bucket_parse_map_rev: BTreeMap<usize, Vec<usize>>,
-    all_encodings: Vec<Encoding<'a>>,
+    /// Contains all buckets which contain the same encodings as other buckets
+    equivalent_buckets: BTreeMap<usize, Vec<usize>>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -69,7 +66,7 @@ impl<'a> OpcodeLookupTable<'a> {
         encodings.sort_by(|a, b| {
             let a_pattern = a.encoding.pattern().combined();
             let b_pattern = b.encoding.pattern().combined();
-            b_pattern.bitmask().count_ones().cmp(&a_pattern.bitmask().count_ones())
+            b_pattern.num_bits().cmp(&a_pattern.num_bits())
         });
         for (index, encoding) in encodings.iter_mut().enumerate() {
             encoding.index_all = index;
@@ -108,7 +105,7 @@ impl<'a> OpcodeLookupTable<'a> {
                 buckets.iter().take(i).position(|b| b == bucket).map(|j| (i, j)).unwrap_or((i, i))
             })
             .collect::<BTreeMap<_, _>>();
-        let bucket_parse_clones_rev = bucket_parse_clones.iter().map(|(k, v)| (*v, *k)).fold(
+        let equivalent_buckets = bucket_parse_clones.iter().map(|(k, v)| (*v, *k)).fold(
             BTreeMap::<usize, Vec<usize>>::new(),
             |mut acc, (k, v)| {
                 acc.entry(k).or_default().push(v);
@@ -116,18 +113,11 @@ impl<'a> OpcodeLookupTable<'a> {
             },
         );
 
-        OpcodeLookupTable {
-            arch,
-            bitmask,
-            buckets,
-            all_encodings: encodings,
-            bucket_parse_map: bucket_parse_clones,
-            bucket_parse_map_rev: bucket_parse_clones_rev,
-        }
+        OpcodeLookupTable { arch, bitmask, buckets, equivalent_buckets }
     }
 
     pub fn parse_match_fn_body_tokens(&self) -> TokenStream {
-        let cases = self.bucket_parse_map_rev.iter().map(|(key, clones)| {
+        let cases = self.equivalent_buckets.iter().map(|(key, clones)| {
             let pattern_literals = clones.iter().map(|k| HexLiteral(*k));
 
             let bucket = self.buckets.get(*key).unwrap();

@@ -20,6 +20,10 @@ impl Pattern {
     pub fn bitmask(&self) -> u32 {
         self.bitmask
     }
+
+    pub fn num_bits(&self) -> u32 {
+        self.bitmask.count_ones()
+    }
 }
 
 impl FromStr for Pattern {
@@ -70,14 +74,6 @@ pub struct OpcodePattern {
 }
 
 impl OpcodePattern {
-    pub fn first(&self) -> &Pattern {
-        &self.first
-    }
-
-    pub fn second(&self) -> Option<&Pattern> {
-        self.second.as_ref()
-    }
-
     pub fn combined(&self) -> Pattern {
         if let Some(second) = &self.second {
             Pattern {
@@ -87,11 +83,6 @@ impl OpcodePattern {
         } else {
             self.first.clone()
         }
-    }
-
-    pub fn num_bits(&self) -> u32 {
-        self.first.bitmask.count_ones()
-            + self.second.as_ref().map(|s| s.bitmask.count_ones()).unwrap_or(0)
     }
 }
 

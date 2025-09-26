@@ -918,10 +918,6 @@ impl DataTypeEnumVariant {
 pub struct DataTypeEnumVariantName(pub String);
 
 impl DataTypeEnumVariantName {
-    pub fn as_ident(&self) -> Ident {
-        Ident::new(&self.0, Span::call_site())
-    }
-
     pub fn as_pascal_ident(&self) -> Ident {
         Ident::new(&snake_to_pascal_case(&self.0), Span::call_site())
     }

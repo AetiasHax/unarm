@@ -13,13 +13,6 @@ impl IsaExtensions {
         self.0.iter()
     }
 
-    pub fn get_matches(
-        &self,
-        pattern: &IsaExtensionPattern,
-    ) -> impl Iterator<Item = &IsaExtension> {
-        self.0.iter().filter(|e| pattern.matches(e))
-    }
-
     fn struct_inner_type(&self) -> TokenStream {
         match self.0.len() {
             0..8 => quote!(u8),
@@ -136,10 +129,6 @@ impl<'de> Deserialize<'de> for IsaExtensionPattern {
 pub struct IsaExtensionPatterns(Vec<IsaExtensionPattern>);
 
 impl IsaExtensionPatterns {
-    pub fn iter(&self) -> impl Iterator<Item = &IsaExtensionPattern> {
-        self.0.iter()
-    }
-
     pub fn extensions<'a>(&self, isa: &'a Isa) -> Vec<&'a IsaExtension> {
         isa.extensions()
             .iter()
