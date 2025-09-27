@@ -472,6 +472,7 @@ pub enum VldmVstmMode {
     ///Decrement Before
     Db,
 }
+#[repr(u16)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Ins {
     Illegal,

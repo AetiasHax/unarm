@@ -27,6 +27,7 @@ impl Opcodes {
     pub fn ins_enum_tokens(&self, isa: &Isa) -> TokenStream {
         let opcodes = self.iter().map(|o| o.ins_variant_tokens(isa));
         quote! {
+            #[repr(u16)]
             #[derive(Debug, Clone, PartialEq, Eq, Hash)]
             pub enum Ins {
                 Illegal,
