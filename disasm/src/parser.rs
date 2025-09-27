@@ -7,6 +7,17 @@ pub enum ParseMode {
     Data,
 }
 
+impl ParseMode {
+    pub fn from_mapping_symbol(symbol: &str) -> Option<Self> {
+        match symbol {
+            "$a" => Some(ParseMode::Arm),
+            "$t" => Some(ParseMode::Thumb),
+            "$d" => Some(ParseMode::Data),
+            _ => None,
+        }
+    }
+}
+
 pub struct Parser<'a> {
     bytes: &'a [u8],
     options: Options,
