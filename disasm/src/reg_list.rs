@@ -1,6 +1,6 @@
 use crate::{Dreg, Reg, Sreg, Write};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RegList(u16);
 
 impl RegList {
@@ -30,7 +30,7 @@ impl RegList {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SregList {
     start: u8,
     end: u8,
@@ -65,7 +65,7 @@ impl SregList {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DregList {
     start: u8,
     end: u8,

@@ -27,8 +27,12 @@ impl Opcodes {
     pub fn ins_enum_tokens(&self, isa: &Isa) -> TokenStream {
         let opcodes = self.iter().map(|o| o.ins_variant_tokens(isa));
         quote! {
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
             pub enum Ins {
                 Illegal,
+                Word(u32),
+                HalfWord(u16),
+                Byte(u8),
                 #(#opcodes),*,
             }
         }
@@ -50,6 +54,9 @@ impl Opcodes {
                 {
                     match self {
                         Ins::Illegal => formatter.write_str("<illegal>")?,
+                        Ins::Word(value) => formatter.write_str(".word")?,
+                        Ins::HalfWord(value) => formatter.write_str(".hword")?,
+                        Ins::Byte(value) => formatter.write_str(".byte")?,
                         #(#opcodes)*
                     }
                     Ok(())
@@ -61,6 +68,18 @@ impl Opcodes {
                 {
                     match self {
                         Ins::Illegal => {},
+                        Ins::Word(value) => {
+                            formatter.write_space()?;
+                            formatter.write_uimm(*value)?;
+                        },
+                        Ins::HalfWord(value) => {
+                            formatter.write_space()?;
+                            formatter.write_uimm(*value as u32)?;
+                        },
+                        Ins::Byte(value) => {
+                            formatter.write_space()?;
+                            formatter.write_uimm(*value as u32)?;
+                        },
                         #(#params)*
                     }
                     Ok(())

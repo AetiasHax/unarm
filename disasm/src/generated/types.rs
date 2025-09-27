@@ -108,11 +108,11 @@ pub enum R9Use {
     ///TLS register (TR), used for thread-local storage
     Tr,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct BranchTarget {
     pub addr: u32,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum BlxTarget {
     ///Direct target
     Direct(BranchTarget),
@@ -120,7 +120,7 @@ pub enum BlxTarget {
     Indirect(Reg),
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Cond {
     ///Equal
     Eq,
@@ -154,7 +154,7 @@ pub enum Cond {
     Al,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Reg {
     R0,
     R1,
@@ -174,14 +174,14 @@ pub enum Reg {
     Pc,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum StatusReg {
     ///Current program status register
     Cpsr,
     ///Saved program status register
     Spsr,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct StatusFields {
     pub reg: StatusReg,
     pub c: bool,
@@ -189,7 +189,7 @@ pub struct StatusFields {
     pub s: bool,
     pub f: bool,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum MsrOp2 {
     ///Immediate
     Imm(u32),
@@ -197,7 +197,7 @@ pub enum MsrOp2 {
     Reg(Reg),
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ShiftOp {
     ///Logical shift left
     Lsl,
@@ -209,7 +209,7 @@ pub enum ShiftOp {
     Ror,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Coproc {
     P0,
     P1,
@@ -229,7 +229,7 @@ pub enum Coproc {
     P15,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum CoReg {
     C0,
     C1,
@@ -248,7 +248,7 @@ pub enum CoReg {
     C14,
     C15,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Op2 {
     ///Immediate
     Imm(u32),
@@ -257,26 +257,26 @@ pub enum Op2 {
     ///Register shifted by immediate
     ShiftImm(ShiftImm),
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct ShiftReg {
     pub rm: Reg,
     pub shift_op: ShiftOp,
     pub rs: Reg,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct ShiftImm {
     pub rm: Reg,
     pub shift_op: ShiftOp,
     pub imm: u32,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Op2Shift {
     ///Immediate
     Imm(u32),
     ///Register
     Reg(Reg),
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum CpsEffect {
     ///Set mode
     SetMode,
@@ -285,13 +285,13 @@ pub enum CpsEffect {
     ///Interrupt disable
     Id,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct AifFlags {
     pub a: bool,
     pub i: bool,
     pub f: bool,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdcStc {
     ///Pre-indexed
     Pre { rn: Reg, offset: i32, writeback: bool },
@@ -301,7 +301,7 @@ pub enum AddrLdcStc {
     Unidx { rn: Reg, option: u32 },
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LdmStmMode {
     ///Decrement After
     Da,
@@ -312,32 +312,32 @@ pub enum LdmStmMode {
     ///Increment Before
     Ib,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdrStr {
     ///Pre-indexed
     Pre { rn: Reg, offset: LdrStrOffset, writeback: bool },
     ///Post-indexed
     Post(AddrLdrStrPost),
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct AddrLdrStrPost {
     pub rn: Reg,
     pub offset: LdrStrOffset,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LdrStrOffset {
     ///Immediate offset
     Imm(i32),
     ///Register offset
     Reg { subtract: bool, rm: Reg, shift_op: ShiftOp, imm: u32 },
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrMiscLoad {
     ///Pre-indexed
     Pre { rn: Reg, offset: MiscLoadOffset, writeback: bool },
     Post { rn: Reg, offset: MiscLoadOffset },
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum MiscLoadOffset {
     ///Immediate offset
     Imm(i32),
@@ -345,7 +345,7 @@ pub enum MiscLoadOffset {
     Reg { rm: Reg, subtract: bool },
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum SrsRfeMode {
     ///Decrement After
     Da,
@@ -357,7 +357,7 @@ pub enum SrsRfeMode {
     Ib,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Endianness {
     ///Little-endian
     Le,
@@ -365,7 +365,7 @@ pub enum Endianness {
     Be,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum RegSide {
     ///Bottom halfword
     Bottom,
@@ -373,7 +373,7 @@ pub enum RegSide {
     Top,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Sreg {
     S0,
     S1,
@@ -409,7 +409,7 @@ pub enum Sreg {
     S31,
 }
 #[repr(u8)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Dreg {
     D0,
     D1,
@@ -444,36 +444,40 @@ pub enum Dreg {
     D30,
     D31,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VcmpF32Op2 {
     ///Compare with zero
     Zero,
     ///Compare with register
     Reg(Sreg),
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VcmpF64Op2 {
     ///Compare with zero
     Zero,
     ///Compare with register
     Reg(Dreg),
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct DregIndex {
     pub dreg: Dreg,
     pub index: u32,
 }
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Fpscr {}
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VldmVstmMode {
     ///Increment After
     Ia,
     ///Decrement Before
     Db,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Ins {
     Illegal,
+    Word(u32),
+    HalfWord(u16),
+    Byte(u8),
     ///Add with Carry
     Adc { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Add
