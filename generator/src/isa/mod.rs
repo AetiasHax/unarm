@@ -28,6 +28,7 @@ pub use syn::*;
 pub use version::*;
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Isa {
     options: IsaOptions,
     versions: IsaVersions,

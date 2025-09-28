@@ -617,7 +617,7 @@ types:
               kind: !type [wb, bit(21)]
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
-        desctiption: Post-indexed
+        description: Post-indexed
         data:
           name: addr_misc_load_post
           kind: !struct

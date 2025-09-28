@@ -139,6 +139,7 @@ impl Opcodes {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Opcode {
     mnemonic: String,
     description: String,
@@ -324,12 +325,14 @@ impl Display for OpcodeParamName {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpcodeFormat {
     opcode: Format,
     params: Format,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OpcodeEncoding {
     version: IsaVersionPatterns,
     #[serde(default)]

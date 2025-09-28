@@ -100,6 +100,7 @@ impl Display for DataTypeName {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct DataType {
     name: DataTypeName,
     kind: DataTypeKind,
@@ -115,6 +116,7 @@ fn default_data_type_write() -> bool {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub enum DataTypeKind {
     #[serde(rename = "bool")]
     Bool {
@@ -504,6 +506,7 @@ impl DataType {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct DataTypeEnum {
     bits: BitRange,
     default: Option<DataTypeEnumVariantName>,
@@ -605,6 +608,7 @@ impl DataTypeEnum {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct DataTypeUnion {
     bits: BitRange,
     default: Option<DataTypeEnumVariantName>,
@@ -735,6 +739,7 @@ impl DataTypeUnion {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct DataTypeEnumVariant {
     name: DataTypeEnumVariantName,
     description: Option<String>,
@@ -950,6 +955,7 @@ impl Display for DataTypeEnumVariantName {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct DataTypeStruct {
     format: Format,
     #[serde(default)]

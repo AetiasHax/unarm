@@ -27,6 +27,7 @@ impl IsaOptions {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct IsaOption {
     description: String,
     kind: OptionKind,
@@ -94,6 +95,7 @@ impl OptionKind {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct OptionEnumVariant {
     name: String,
     description: String,

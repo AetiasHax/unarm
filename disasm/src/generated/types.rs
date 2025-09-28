@@ -414,6 +414,7 @@ pub enum AddrMiscLoad {
         ///If true, write the last accessed address back to the base register
         writeback: bool,
     },
+    ///Post-indexed
     Post {
         ///Base register
         rn: Reg,

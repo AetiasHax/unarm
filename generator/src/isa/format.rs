@@ -64,6 +64,7 @@ impl Default for Format {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct IfFormat {
     cond: FormatCond,
     #[serde(rename = "then")]
@@ -94,6 +95,7 @@ impl IfFormat {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct MatchFormat {
     value: FormatCond,
     option: String,
