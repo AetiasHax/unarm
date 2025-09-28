@@ -1286,10 +1286,6 @@ impl Ins {
         F: Write + ?Sized,
     {
         match self {
-            Ins::Illegal => formatter.write_str("<illegal>")?,
-            Ins::Word(value) => formatter.write_str(".word")?,
-            Ins::HalfWord(value) => formatter.write_str(".hword")?,
-            Ins::Byte(value) => formatter.write_str(".byte")?,
             Ins::Adc { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("adc")?;
@@ -2922,6 +2918,10 @@ impl Ins {
                 formatter.write_str("yield")?;
                 formatter.write_cond(*cond)?;
             }
+            Ins::Illegal => formatter.write_str("<illegal>")?,
+            Ins::Word(value) => formatter.write_str(".word")?,
+            Ins::HalfWord(value) => formatter.write_str(".hword")?,
+            Ins::Byte(value) => formatter.write_str(".byte")?,
         }
         Ok(())
     }
@@ -2930,19 +2930,6 @@ impl Ins {
         F: Write + ?Sized,
     {
         match self {
-            Ins::Illegal => {}
-            Ins::Word(value) => {
-                formatter.write_space()?;
-                formatter.write_uimm(*value)?;
-            }
-            Ins::HalfWord(value) => {
-                formatter.write_space()?;
-                formatter.write_uimm(*value as u32)?;
-            }
-            Ins::Byte(value) => {
-                formatter.write_space()?;
-                formatter.write_uimm(*value as u32)?;
-            }
             Ins::Adc { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
                 if formatter.options().ual || !*thumb {
@@ -4885,6 +4872,19 @@ impl Ins {
             Ins::Wfe { cond } => {}
             Ins::Wfi { cond } => {}
             Ins::Yield { cond } => {}
+            Ins::Illegal => {}
+            Ins::Word(value) => {
+                formatter.write_space()?;
+                formatter.write_uimm(*value)?;
+            }
+            Ins::HalfWord(value) => {
+                formatter.write_space()?;
+                formatter.write_uimm(*value as u32)?;
+            }
+            Ins::Byte(value) => {
+                formatter.write_space()?;
+                formatter.write_uimm(*value as u32)?;
+            }
         }
         Ok(())
     }

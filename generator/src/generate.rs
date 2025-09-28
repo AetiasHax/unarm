@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::isa::Isa;
+use crate::isa::{Arch, Isa};
 
 impl Isa {
     pub fn generate_types(&self) -> TokenStream {
@@ -39,6 +39,10 @@ impl Isa {
         let data_default_impls = self.types().default_impls_tokens(self);
         let parse_arm_fn = self.opcodes().parse_arm_lookup_match_tokens(self);
         let parse_thumb_fn = self.opcodes().parse_thumb_lookup_match_tokens(self);
+        let parse_arm_with_discriminant_fn =
+            self.opcodes().parse_with_discriminant_tokens(Arch::Arm);
+        let parse_thumb_with_discriminant_fn =
+            self.opcodes().parse_with_discriminant_tokens(Arch::Thumb);
         let opcode_parse_fns = self.opcodes().parse_fns_tokens(self);
 
         quote! {
@@ -60,6 +64,8 @@ impl Isa {
 
             #parse_arm_fn
             #parse_thumb_fn
+            #parse_arm_with_discriminant_fn
+            #parse_thumb_with_discriminant_fn
             #opcode_parse_fns
         }
     }

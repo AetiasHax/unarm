@@ -6921,6 +6921,741 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         _ => unreachable!(),
     }
 }
+pub fn parse_arm_with_discriminant(
+    ins: u32,
+    discriminant: u16,
+    pc: u32,
+    options: &Options,
+) -> Ins {
+    match discriminant {
+        0 => parse_arm_adc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        1 => parse_arm_add_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        2 => parse_arm_and_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        3 => parse_arm_asr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        4 => parse_arm_b_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        5 => parse_arm_bic_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        6 => parse_arm_bkpt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        7 => parse_arm_bl_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        8 => {
+            if (ins & 0xfe000000) == 0xfa000000 {
+                parse_arm_blx_0(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff000f0) == 0x1200030 {
+                parse_arm_blx_1(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        9 => parse_arm_bx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        10 => parse_arm_bxj_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        11 => parse_arm_cdp_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        12 => parse_arm_cdp2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        13 => parse_arm_clrex_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        14 => parse_arm_clz_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        15 => parse_arm_cmn_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        16 => parse_arm_cmp_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        17 => parse_arm_cps_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        18 => parse_arm_csdb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        19 => parse_arm_dbg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        20 => parse_arm_eor_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        21 => parse_arm_ldc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        22 => parse_arm_ldc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        23 => {
+            if (ins & 0xe500000) == 0x8100000 {
+                parse_arm_ldm_0(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xe708000) == 0x8500000 {
+                parse_arm_ldm_1(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xe508000) == 0x8508000 {
+                parse_arm_ldm_2(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        24 => parse_arm_ldr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        25 => parse_arm_ldrb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        26 => parse_arm_ldrbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        27 => {
+            if (ins & 0xe1000f0) == 0xd0 {
+                parse_arm_ldrd_0(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xe5f00f0) == 0x4f00d0 {
+                parse_arm_ldrd_1(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        28 => parse_arm_ldrex_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        29 => parse_arm_ldrexb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        30 => parse_arm_ldrexd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        31 => parse_arm_ldrexh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        32 => parse_arm_ldrh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        33 => parse_arm_ldrsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        34 => parse_arm_ldrsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        35 => parse_arm_ldrt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        36 => parse_arm_lsl_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        37 => parse_arm_lsr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        38 => parse_arm_mcr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        39 => parse_arm_mcr2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        40 => parse_arm_mcrr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        41 => parse_arm_mcrr2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        42 => parse_arm_mla_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        43 => {
+            if (ins & 0xfe00000) == 0x3a00000 {
+                parse_arm_mov_0(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00ff0) == 0x1a00000 {
+                parse_arm_mov_1(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xde00000) == 0x1a00000 {
+                parse_arm_mov_2(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        44 => parse_arm_mrc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        45 => parse_arm_mrc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        46 => parse_arm_mrrc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        47 => parse_arm_mrrc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        48 => parse_arm_mrs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        49 => parse_arm_msr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        50 => parse_arm_mul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        51 => parse_arm_mvn_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        53 => parse_arm_nop_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        54 => parse_arm_orr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        55 => parse_arm_pkhbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        56 => parse_arm_pkhtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        57 => parse_arm_pld_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        58 => {
+            if (ins & 0xfff0000) == 0x8bd0000 {
+                parse_arm_pop_0(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfff0fff) == 0x49d0004 {
+                parse_arm_pop_1(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        59 => {
+            if (ins & 0xfff0000) == 0x92d0000 {
+                parse_arm_push_0(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfff0fff) == 0x52d0004 {
+                parse_arm_push_1(ins, pc, options).unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        60 => parse_arm_qadd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        61 => parse_arm_qadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        62 => parse_arm_qadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        63 => parse_arm_qasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        64 => parse_arm_qdadd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        65 => parse_arm_qdsub_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        66 => parse_arm_qsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        67 => parse_arm_qsub_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        68 => parse_arm_qsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        69 => parse_arm_qsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        70 => parse_arm_rev_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        71 => parse_arm_rev16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        72 => parse_arm_revsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        73 => parse_arm_rfe_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        74 => parse_arm_ror_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        75 => parse_arm_rrx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        76 => parse_arm_rsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        77 => parse_arm_rsc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        78 => parse_arm_sadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        79 => parse_arm_sadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        80 => parse_arm_sasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        81 => parse_arm_sbc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        82 => parse_arm_sel_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        83 => parse_arm_setend_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        84 => parse_arm_sev_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        85 => parse_arm_shadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        86 => parse_arm_shadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        87 => parse_arm_shasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        88 => parse_arm_shsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        89 => parse_arm_shsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        90 => parse_arm_shsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        91 => parse_arm_smla_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        92 => parse_arm_smlad_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        93 => parse_arm_smlal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        94 => parse_arm_smlal_half_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        95 => parse_arm_smlald_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        96 => parse_arm_smlaw_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        97 => parse_arm_smlsd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        98 => parse_arm_smlsld_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        99 => parse_arm_smmla_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        100 => parse_arm_smmls_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        101 => parse_arm_smmul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        102 => parse_arm_smuad_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        103 => parse_arm_smul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        104 => parse_arm_smull_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        105 => parse_arm_smulw_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        106 => parse_arm_smusd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        107 => parse_arm_srs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        108 => parse_arm_ssat_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        109 => parse_arm_ssat16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        110 => parse_arm_ssax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        111 => parse_arm_ssub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        112 => parse_arm_ssub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        113 => parse_arm_stc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        114 => parse_arm_stc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        115 => parse_arm_stm_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        116 => parse_arm_str_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        117 => parse_arm_strb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        118 => parse_arm_strbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        119 => parse_arm_strd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        120 => parse_arm_strex_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        121 => parse_arm_strexb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        122 => parse_arm_strexd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        123 => parse_arm_strexh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        124 => parse_arm_strh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        125 => parse_arm_strt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        126 => parse_arm_sub_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        127 => parse_arm_svc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        128 => parse_arm_swp_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        129 => parse_arm_swpb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        130 => parse_arm_sxtab_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        131 => parse_arm_sxtab16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        132 => parse_arm_sxtah_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        133 => parse_arm_sxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        134 => parse_arm_sxtb16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        135 => parse_arm_sxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        136 => parse_arm_teq_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        137 => parse_arm_tst_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        138 => parse_arm_uadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        139 => parse_arm_uadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        140 => parse_arm_uasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        141 => parse_arm_udf_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        142 => parse_arm_uhadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        143 => parse_arm_uhadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        144 => parse_arm_uhasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        145 => parse_arm_uhsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        146 => parse_arm_uhsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        147 => parse_arm_uhsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        148 => parse_arm_umaal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        149 => parse_arm_umlal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        150 => parse_arm_umull_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        151 => parse_arm_uqadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        152 => parse_arm_uqadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        153 => parse_arm_uqasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        154 => parse_arm_uqsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        155 => parse_arm_uqsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        156 => parse_arm_uqsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        157 => parse_arm_usad8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        158 => parse_arm_usada8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        159 => parse_arm_usat_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        160 => parse_arm_usat16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        161 => parse_arm_usax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        162 => parse_arm_usub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        163 => parse_arm_usub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        164 => parse_arm_uxtab_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        165 => parse_arm_uxtab16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        166 => parse_arm_uxtah_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        167 => parse_arm_uxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        168 => parse_arm_uxtb16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        169 => parse_arm_uxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        170 => parse_arm_vabs_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        171 => parse_arm_vabs_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        172 => parse_arm_vadd_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        173 => parse_arm_vadd_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        174 => parse_arm_vcmp_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        175 => parse_arm_vcmp_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        176 => parse_arm_vcvt_f32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        177 => parse_arm_vcvt_f32_s32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        178 => parse_arm_vcvt_f32_u32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        179 => parse_arm_vcvt_f64_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        180 => parse_arm_vcvt_f64_s32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        181 => parse_arm_vcvt_f64_u32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        182 => parse_arm_vcvt_s32_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        183 => parse_arm_vcvt_s32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        184 => parse_arm_vcvt_u32_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        185 => parse_arm_vcvt_u32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        186 => parse_arm_vdiv_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        187 => parse_arm_vdiv_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        188 => parse_arm_vldm_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        189 => parse_arm_vldm_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        190 => parse_arm_vldr_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        191 => parse_arm_vldr_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        192 => parse_arm_vmla_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        193 => parse_arm_vmla_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        194 => parse_arm_vmls_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        195 => parse_arm_vmls_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        196 => parse_arm_vmov_32_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        197 => parse_arm_vmov_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        198 => parse_arm_vmov_f32_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        199 => parse_arm_vmov_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        200 => parse_arm_vmov_reg_32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        201 => parse_arm_vmov_reg_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        202 => parse_arm_vmov_reg_f32_dual_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        203 => parse_arm_vmov_f32_reg_dual_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        204 => parse_arm_vmov_reg_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        205 => parse_arm_vmov_f64_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        206 => parse_arm_vmrs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        207 => parse_arm_vmsr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        208 => parse_arm_vmul_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        209 => parse_arm_vmul_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        210 => parse_arm_vneg_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        211 => parse_arm_vneg_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        212 => parse_arm_vnmla_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        213 => parse_arm_vnmla_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        214 => parse_arm_vnmls_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        215 => parse_arm_vnmls_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        216 => parse_arm_vnmul_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        217 => parse_arm_vnmul_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        218 => parse_arm_vpop_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        219 => parse_arm_vpop_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        220 => parse_arm_vpush_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        221 => parse_arm_vpush_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        222 => parse_arm_vsqrt_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        223 => parse_arm_vsqrt_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        224 => parse_arm_vstm_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        225 => parse_arm_vstm_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        226 => parse_arm_vstr_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        227 => parse_arm_vstr_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        228 => parse_arm_vsub_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        229 => parse_arm_vsub_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        230 => parse_arm_wfe_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        231 => parse_arm_wfi_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        232 => parse_arm_yield_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        233 => Ins::Byte(ins as u8),
+        234 => Ins::HalfWord(ins as u16),
+        235 => Ins::Word(ins),
+        _ => Ins::Illegal,
+    }
+}
+pub fn parse_thumb_with_discriminant(
+    ins: u32,
+    discriminant: u16,
+    pc: u32,
+    options: &Options,
+) -> Ins {
+    match discriminant {
+        0 => {
+            parse_thumb_adc_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        1 => {
+            if (ins & 0xfe00) == 0x1c00 {
+                parse_thumb_add_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0x3000 {
+                parse_thumb_add_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x1800 {
+                parse_thumb_add_2(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff00) == 0x4400 {
+                parse_thumb_add_3(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0xa800 {
+                parse_thumb_add_4(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff80) == 0xb000 {
+                parse_thumb_add_5(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff78) == 0x4468 {
+                parse_thumb_add_6(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff87) == 0x4485 {
+                parse_thumb_add_7(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0xa000 {
+                parse_thumb_add_8(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        2 => {
+            parse_thumb_and_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        3 => {
+            if (ins & 0xf800) == 0x1000 {
+                parse_thumb_asr_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xffc0) == 0x4100 {
+                parse_thumb_asr_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        4 => {
+            if (ins & 0xf000) == 0xd000 {
+                parse_thumb_b_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0xe000 {
+                parse_thumb_b_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        5 => {
+            parse_thumb_bic_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        6 => {
+            parse_thumb_bkpt_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        7 => {
+            parse_thumb_bl_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        8 => {
+            if (ins & 0xd000f800) == 0xc000f000 {
+                parse_thumb_blx_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff87) == 0x4780 {
+                parse_thumb_blx_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        9 => {
+            parse_thumb_bx_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        15 => {
+            parse_thumb_cmn_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        16 => {
+            if (ins & 0xf800) == 0x2800 {
+                parse_thumb_cmp_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xffc0) == 0x4280 {
+                parse_thumb_cmp_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff00) == 0x4500 {
+                parse_thumb_cmp_2(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        17 => {
+            parse_thumb_cps_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        20 => {
+            parse_thumb_eor_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        23 => {
+            parse_thumb_ldm_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        24 => {
+            if (ins & 0xf800) == 0x6800 {
+                parse_thumb_ldr_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0x9800 {
+                parse_thumb_ldr_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0x4800 {
+                parse_thumb_ldr_2(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x5800 {
+                parse_thumb_ldr_3(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        25 => {
+            if (ins & 0xf800) == 0x7800 {
+                parse_thumb_ldrb_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x5c00 {
+                parse_thumb_ldrb_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        32 => {
+            if (ins & 0xf800) == 0x8800 {
+                parse_thumb_ldrh_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x5a00 {
+                parse_thumb_ldrh_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        33 => {
+            parse_thumb_ldrsb_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        34 => {
+            parse_thumb_ldrsh_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        36 => {
+            if (ins & 0xf800) == 0x0 {
+                parse_thumb_lsl_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xffc0) == 0x4080 {
+                parse_thumb_lsl_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        37 => {
+            if (ins & 0xf800) == 0x800 {
+                parse_thumb_lsr_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xffc0) == 0x40c0 {
+                parse_thumb_lsr_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        43 => {
+            if (ins & 0xf800) == 0x2000 {
+                parse_thumb_mov_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff00) == 0x4600 {
+                parse_thumb_mov_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xffc0) == 0x0 {
+                parse_thumb_mov_2(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xffc0) == 0x1c00 {
+                parse_thumb_mov_3(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        50 => {
+            parse_thumb_mul_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        51 => {
+            parse_thumb_mvn_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        52 => {
+            parse_thumb_neg_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        53 => {
+            parse_thumb_nop_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        54 => {
+            parse_thumb_orr_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        58 => {
+            parse_thumb_pop_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        59 => {
+            parse_thumb_push_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        70 => {
+            parse_thumb_rev_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        71 => {
+            parse_thumb_rev16_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        72 => {
+            parse_thumb_revsh_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        74 => {
+            parse_thumb_ror_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        76 => {
+            parse_thumb_rsb_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        81 => {
+            parse_thumb_sbc_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        83 => {
+            parse_thumb_setend_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        115 => {
+            parse_thumb_stm_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        116 => {
+            if (ins & 0xf800) == 0x6000 {
+                parse_thumb_str_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0x9000 {
+                parse_thumb_str_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x5000 {
+                parse_thumb_str_2(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        117 => {
+            if (ins & 0xf800) == 0x7000 {
+                parse_thumb_strb_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x5400 {
+                parse_thumb_strb_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        124 => {
+            if (ins & 0xf800) == 0x8000 {
+                parse_thumb_strh_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x5200 {
+                parse_thumb_strh_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        126 => {
+            if (ins & 0xfe00) == 0x1e00 {
+                parse_thumb_sub_0(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xf800) == 0x3800 {
+                parse_thumb_sub_1(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xfe00) == 0x1a00 {
+                parse_thumb_sub_2(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else if (ins & 0xff80) == 0xb080 {
+                parse_thumb_sub_3(ins, pc, options)
+                    .map(|(ins, _size)| ins)
+                    .unwrap_or(Ins::Illegal)
+            } else {
+                Ins::Illegal
+            }
+        }
+        127 => {
+            parse_thumb_svc_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        133 => {
+            parse_thumb_sxtb_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        135 => {
+            parse_thumb_sxth_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        137 => {
+            parse_thumb_tst_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        141 => {
+            parse_thumb_udf_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        167 => {
+            parse_thumb_uxtb_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        169 => {
+            parse_thumb_uxth_0(ins, pc, options)
+                .map(|(ins, _size)| ins)
+                .unwrap_or(Ins::Illegal)
+        }
+        233 => Ins::Byte(ins as u8),
+        234 => Ins::HalfWord(ins as u16),
+        235 => Ins::Word(ins),
+        _ => Ins::Illegal,
+    }
+}
 fn parse_arm_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);

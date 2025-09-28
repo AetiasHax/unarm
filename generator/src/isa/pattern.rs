@@ -1,10 +1,14 @@
 use std::str::FromStr;
 
 use anyhow::{Result, bail};
+use proc_macro2::TokenStream;
+use quote::quote;
 use serde::{
     Deserialize,
     de::{self, IgnoredAny, Visitor},
 };
+
+use crate::util::hex_literal::HexLiteral;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Pattern {
@@ -29,6 +33,12 @@ impl Pattern {
 
     pub fn size(&self) -> u32 {
         self.size
+    }
+
+    pub fn condition_tokens(&self, value: TokenStream) -> TokenStream {
+        let bitmask = HexLiteral(self.bitmask());
+        let pattern = HexLiteral(self.pattern());
+        quote!((#value & #bitmask) == #pattern)
     }
 }
 
@@ -113,6 +123,11 @@ impl OpcodePattern {
         } else {
             self.first.clone()
         }
+    }
+
+    pub fn condition_tokens(&self, value: TokenStream) -> TokenStream {
+        let combined = self.combined();
+        combined.condition_tokens(value)
     }
 }
 

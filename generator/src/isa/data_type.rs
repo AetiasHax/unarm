@@ -763,11 +763,10 @@ impl DataTypeEnumVariant {
     }
 
     fn parse_if_tokens(&self, isa: &Isa, pattern: &Pattern, can_be_illegal: bool) -> TokenStream {
-        let bitmask = HexLiteral(pattern.bitmask());
-        let pattern = HexLiteral(pattern.pattern());
+        let condition = pattern.condition_tokens(quote!(value));
         let parse_expr = self.parse_expr_tokens(isa, can_be_illegal);
         quote! {
-            if (value & #bitmask) == #pattern {
+            if #condition {
                 #parse_expr
             }
         }

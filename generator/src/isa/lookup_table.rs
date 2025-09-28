@@ -47,19 +47,23 @@ impl<'a> OpcodeLookupTable<'a> {
                 let encodings = match arch {
                     Arch::Arm => opcode.arm_encodings(),
                     Arch::Thumb => opcode.thumb_encodings(),
-                }?;
-                Some(
-                    encodings
-                        .iter()
-                        .enumerate()
-                        .map(|(index, encoding)| Encoding {
-                            opcode,
-                            encoding,
-                            index_opcode: index,
-                            index_all: 0,
-                        })
-                        .collect::<Vec<_>>(),
-                )
+                };
+                if encodings.is_empty() {
+                    None
+                } else {
+                    Some(
+                        encodings
+                            .iter()
+                            .enumerate()
+                            .map(|(index, encoding)| Encoding {
+                                opcode,
+                                encoding,
+                                index_opcode: index,
+                                index_all: 0,
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                }
             })
             .flatten()
             .collect::<Vec<_>>();
@@ -151,8 +155,7 @@ impl<'a> Bucket<'a> {
             }
         } else if self.encodings.len() == 1 {
             let encoding = &self.encodings[0];
-            let parse_fn_name = encoding.opcode.parse_fn_name(arch, encoding.index_opcode);
-            let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
+            let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
             match arch {
                 Arch::Arm => quote!(#parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal)),
                 Arch::Thumb => {
@@ -162,12 +165,10 @@ impl<'a> Bucket<'a> {
         } else {
             let parse_ifs = self.encodings.iter().map(|encoding| {
                 let pattern = encoding.encoding.pattern().combined();
-                let pattern_literal = HexLiteral(pattern.pattern());
-                let bitmask_literal = HexLiteral(pattern.bitmask());
-                let parse_fn_name = encoding.opcode.parse_fn_name(arch, encoding.index_opcode);
-                let parse_fn_ident = Ident::new(&parse_fn_name, Span::call_site());
+                let condition = pattern.condition_tokens(quote!(ins));
+                let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
                 quote! {
-                    if (ins & #bitmask_literal) == #pattern_literal && let Some(ins) = #parse_fn_ident(ins, pc, options) {
+                    if #condition && let Some(ins) = #parse_fn_ident(ins, pc, options) {
                         ins
                     }
                 }

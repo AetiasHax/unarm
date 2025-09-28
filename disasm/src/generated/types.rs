@@ -475,10 +475,6 @@ pub enum VldmVstmMode {
 #[repr(u16)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Ins {
-    Illegal,
-    Word(u32),
-    HalfWord(u16),
-    Byte(u8),
     ///Add with Carry
     Adc { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Add
@@ -999,4 +995,8 @@ pub enum Ins {
     Wfi { cond: Cond },
     ///Yield
     Yield { cond: Cond },
+    Word(u32),
+    HalfWord(u16),
+    Byte(u8),
+    Illegal,
 }
