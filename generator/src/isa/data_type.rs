@@ -103,6 +103,7 @@ impl Display for DataTypeName {
 pub struct DataType {
     name: DataTypeName,
     kind: DataTypeKind,
+    description: Option<String>,
     #[serde(default = "default_data_type_write")]
     write: bool,
     #[serde(skip)]
@@ -171,20 +172,23 @@ impl DataType {
     }
 
     fn type_decl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
-        match &self.kind {
-            DataTypeKind::Bool { .. } => None,
-            DataTypeKind::UInt(_) => None,
-            DataTypeKind::Int(_) => None,
-            DataTypeKind::Enum(data_type_enum) => Some(data_type_enum.enum_tokens(isa, &self.name)),
-            DataTypeKind::Union(data_type_union) => {
-                Some(data_type_union.enum_tokens(isa, &self.name))
-            }
+        let type_decl = match &self.kind {
+            DataTypeKind::Bool { .. } => return None,
+            DataTypeKind::UInt(_) => return None,
+            DataTypeKind::Int(_) => return None,
+            DataTypeKind::Enum(data_type_enum) => data_type_enum.enum_tokens(isa, &self.name),
+            DataTypeKind::Union(data_type_union) => data_type_union.enum_tokens(isa, &self.name),
             DataTypeKind::Struct(data_type_struct) => {
-                Some(data_type_struct.struct_tokens(isa, &self.name))
+                data_type_struct.struct_tokens(isa, &self.name)
             }
-            DataTypeKind::Type(_, _) => None,
-            DataTypeKind::Custom => None,
-        }
+            DataTypeKind::Type(_, _) => return None,
+            DataTypeKind::Custom => return None,
+        };
+        let doc = self.description.as_ref().map(|desc| quote!(#[doc = #desc]));
+        Some(quote! {
+            #doc
+            #type_decl
+        })
     }
 
     fn parse_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
@@ -477,6 +481,7 @@ impl DataType {
             return None;
         }
 
+        let doc = self.description.as_ref().map(|desc| quote!(#[doc = #desc]));
         let fn_ident = self.trait_write_fn_ident();
         let value = self.name.as_ident();
         let type_tokens = self.type_tokens(isa);
@@ -484,6 +489,7 @@ impl DataType {
         let write_expr = self.write_expr_tokens(isa, value.to_token_stream(), quote!(self));
 
         Some(quote! {
+            #doc
             fn #fn_ident(&mut self, #value: #type_tokens) -> core::fmt::Result {
                 #write_expr
                 Ok(())

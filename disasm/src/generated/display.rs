@@ -12,40 +12,47 @@ pub trait Write: core::fmt::Write {
     fn write_separator(&mut self) -> core::fmt::Result {
         self.write_str(", ")
     }
+    ///Mnemonic suffix, updates status flags when present
     fn write_s(&mut self, s: bool) -> core::fmt::Result {
         if s {
             self.write_str("s")?;
         }
         Ok(())
     }
+    ///Mnemonic suffix, specifies a long load/store for LDC/STC instructions
     fn write_l(&mut self, l: bool) -> core::fmt::Result {
         if l {
             self.write_str("l")?;
         }
         Ok(())
     }
+    ///In LDM/STM, write the last accessed address back to the base register
     fn write_wb(&mut self, wb: bool) -> core::fmt::Result {
         if wb {
             self.write_str("!")?;
         }
         Ok(())
     }
+    ///In LDM/STM, access user mode registers while in a privileged mode
     fn write_user_mode(&mut self, user_mode: bool) -> core::fmt::Result {
         if user_mode {
             self.write_str("^")?;
         }
         Ok(())
     }
+    ///In LDR/STR and similar, subtract the index register from the base register
     fn write_subtract(&mut self, subtract: bool) -> core::fmt::Result {
         if subtract {
             self.write_str("-")?;
         }
         Ok(())
     }
+    ///Unsigned immediate
     fn write_uimm(&mut self, uimm: u32) -> core::fmt::Result {
         write!(self, "{:#x}", uimm)?;
         Ok(())
     }
+    ///Signed immediate
     fn write_simm(&mut self, simm: i32) -> core::fmt::Result {
         if simm < 0 {
             write!(self, "-{:#x}", - simm)?;
@@ -54,86 +61,107 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
+    ///The direct destination address of a branch instruction
     fn write_branch_target(&mut self, branch_target: BranchTarget) -> core::fmt::Result {
         branch_target.write(self)?;
         Ok(())
     }
+    ///The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
     fn write_blx_target(&mut self, blx_target: BlxTarget) -> core::fmt::Result {
         blx_target.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix, specifies the condition for whether to execute the instruction
     fn write_cond(&mut self, cond: Cond) -> core::fmt::Result {
         cond.write(self)?;
         Ok(())
     }
+    ///General-purpose register
     fn write_reg(&mut self, reg: Reg) -> core::fmt::Result {
         reg.write(self)?;
         Ok(())
     }
+    ///List of general-purpose registers, used by LDM/STM
     fn write_reg_list(&mut self, reg_list: RegList) -> core::fmt::Result {
         reg_list.write(self)?;
         Ok(())
     }
+    ///Status register
     fn write_status_reg(&mut self, status_reg: StatusReg) -> core::fmt::Result {
         status_reg.write(self)?;
         Ok(())
     }
+    ///Status register with field masks
     fn write_status_fields(&mut self, status_fields: StatusFields) -> core::fmt::Result {
         status_fields.write(self)?;
         Ok(())
     }
+    ///Second operand of the MSR instruction, can be an immediate or a register
     fn write_msr_op2(&mut self, msr_op2: MsrOp2) -> core::fmt::Result {
         msr_op2.write(self)?;
         Ok(())
     }
+    ///Shift operation
     fn write_shift_op(&mut self, shift_op: ShiftOp) -> core::fmt::Result {
         shift_op.write(self)?;
         Ok(())
     }
+    ///Coprocessor
     fn write_coproc(&mut self, coproc: Coproc) -> core::fmt::Result {
         coproc.write(self)?;
         Ok(())
     }
+    ///Coprocessor register
     fn write_co_reg(&mut self, co_reg: CoReg) -> core::fmt::Result {
         co_reg.write(self)?;
         Ok(())
     }
+    ///Second operand of a data-processing operation, can be an immediate, an immediate-shifted register or a register-shifted register.
     fn write_op2(&mut self, op2: Op2) -> core::fmt::Result {
         op2.write(self)?;
         Ok(())
     }
+    ///Register shifted by another register
     fn write_shift_reg(&mut self, shift_reg: ShiftReg) -> core::fmt::Result {
         shift_reg.write(self)?;
         Ok(())
     }
+    ///Register shifted by an immediate
     fn write_shift_imm(&mut self, shift_imm: ShiftImm) -> core::fmt::Result {
         shift_imm.write(self)?;
         Ok(())
     }
+    ///Second operand of a shift instruction, can be an immediate or a register
     fn write_op2_shift(&mut self, op2_shift: Op2Shift) -> core::fmt::Result {
         op2_shift.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix for CPS, specifies whether to enable/disable interrupt bits or just set the processor mode
     fn write_cps_effect(&mut self, cps_effect: CpsEffect) -> core::fmt::Result {
         cps_effect.write(self)?;
         Ok(())
     }
+    ///In a CPS instruction, specifies which interrupt bits to enable or disable
     fn write_aif_flags(&mut self, aif_flags: AifFlags) -> core::fmt::Result {
         aif_flags.write(self)?;
         Ok(())
     }
+    ///The memory address of an LDC/STC instruction
     fn write_addr_ldc_stc(&mut self, addr_ldc_stc: AddrLdcStc) -> core::fmt::Result {
         addr_ldc_stc.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix for LDM/STM, specifies how to step the base address
     fn write_ldm_stm_mode(&mut self, ldm_stm_mode: LdmStmMode) -> core::fmt::Result {
         ldm_stm_mode.write(self)?;
         Ok(())
     }
+    ///The memory address of an LDR(B)/STR(B)/PLD instruction
     fn write_addr_ldr_str(&mut self, addr_ldr_str: AddrLdrStr) -> core::fmt::Result {
         addr_ldr_str.write(self)?;
         Ok(())
     }
+    ///A post-indexed memory address for LDR(B)(T)/STR(B)(T)
     fn write_addr_ldr_str_post(
         &mut self,
         addr_ldr_str_post: AddrLdrStrPost,
@@ -141,6 +169,7 @@ pub trait Write: core::fmt::Write {
         addr_ldr_str_post.write(self)?;
         Ok(())
     }
+    ///The offset value in the memory address of a LDR(B)/STR(B) instruction, can be an immediate or a register
     fn write_ldr_str_offset(
         &mut self,
         ldr_str_offset: LdrStrOffset,
@@ -148,6 +177,7 @@ pub trait Write: core::fmt::Write {
         ldr_str_offset.write(self)?;
         Ok(())
     }
+    ///The memory address of a miscellaneous load/store instruction
     fn write_addr_misc_load(
         &mut self,
         addr_misc_load: AddrMiscLoad,
@@ -155,6 +185,7 @@ pub trait Write: core::fmt::Write {
         addr_misc_load.write(self)?;
         Ok(())
     }
+    ///The offset value in the memory address of a miscellaneous load/store instruction, can be an immediate or a register
     fn write_misc_load_offset(
         &mut self,
         misc_load_offset: MiscLoadOffset,
@@ -162,30 +193,36 @@ pub trait Write: core::fmt::Write {
         misc_load_offset.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
     fn write_srs_rfe_mode(&mut self, srs_rfe_mode: SrsRfeMode) -> core::fmt::Result {
         srs_rfe_mode.write(self)?;
         Ok(())
     }
+    ///Used by SETEND, specifies the endianness for data accesses
     fn write_endianness(&mut self, endianness: Endianness) -> core::fmt::Result {
         endianness.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix, specifies which half of a register to use as an operand
     fn write_reg_side(&mut self, reg_side: RegSide) -> core::fmt::Result {
         reg_side.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix, when performing two 16x16 bit multiplications, swap the two halfwords of Rm
     fn write_swap_rm(&mut self, swap_rm: bool) -> core::fmt::Result {
         if swap_rm {
             self.write_str("x")?;
         }
         Ok(())
     }
+    ///Mnemonic suffix, round the multiplication result instead of truncating
     fn write_round(&mut self, round: bool) -> core::fmt::Result {
         if round {
             self.write_str("r")?;
         }
         Ok(())
     }
+    ///Mnemonic suffix, when converting a floating-point number to an integer, round the result towards zero
     fn write_round_zero(&mut self, round_zero: bool) -> core::fmt::Result {
         if round_zero {
             if self.options().ual {
@@ -196,44 +233,54 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
+    ///General-purpose register for single-precision floating-point numbers
     fn write_sreg(&mut self, sreg: Sreg) -> core::fmt::Result {
         sreg.write(self)?;
         Ok(())
     }
+    ///General-purpose register for double-precision floating-point numbers
     fn write_dreg(&mut self, dreg: Dreg) -> core::fmt::Result {
         dreg.write(self)?;
         Ok(())
     }
-    fn write_quiet_nan_exc(&mut self, quiet_nan_exc: bool) -> core::fmt::Result {
-        if quiet_nan_exc {
+    ///Mnemonic suffix, specifies that a comparison operation should cause an exception if any operand is NaN
+    fn write_nan_exc(&mut self, nan_exc: bool) -> core::fmt::Result {
+        if nan_exc {
             self.write_str("e")?;
         }
         Ok(())
     }
+    ///Second operand of a VCMP.F32 instruction, can be zero or a register
     fn write_vcmp_f32_op2(&mut self, vcmp_f32_op2: VcmpF32Op2) -> core::fmt::Result {
         vcmp_f32_op2.write(self)?;
         Ok(())
     }
+    ///Second operand of a VCMP.F64 instruction, can be zero or a register
     fn write_vcmp_f64_op2(&mut self, vcmp_f64_op2: VcmpF64Op2) -> core::fmt::Result {
         vcmp_f64_op2.write(self)?;
         Ok(())
     }
+    ///List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
     fn write_sreg_list(&mut self, sreg_list: SregList) -> core::fmt::Result {
         sreg_list.write(self)?;
         Ok(())
     }
+    ///List of general-purpose double-precision floation-point registers, used by VLDM/VSTM
     fn write_dreg_list(&mut self, dreg_list: DregList) -> core::fmt::Result {
         dreg_list.write(self)?;
         Ok(())
     }
+    ///A double-precision floating-point register and index (0 or 1) to move to/from
     fn write_dreg_index(&mut self, dreg_index: DregIndex) -> core::fmt::Result {
         dreg_index.write(self)?;
         Ok(())
     }
+    ///Floating-Point Status and Control Register
     fn write_fpscr(&mut self, fpscr: Fpscr) -> core::fmt::Result {
         fpscr.write(self)?;
         Ok(())
     }
+    ///Mnemonic suffix for VLDM/VSTM, specifies how to step the base address
     fn write_vldm_vstm_mode(
         &mut self,
         vldm_vstm_mode: VldmVstmMode,
@@ -1146,54 +1193,6 @@ impl Dreg {
             }
             Self::D15 => {
                 formatter.write_str("d15")?;
-            }
-            Self::D16 => {
-                formatter.write_str("d16")?;
-            }
-            Self::D17 => {
-                formatter.write_str("d17")?;
-            }
-            Self::D18 => {
-                formatter.write_str("d18")?;
-            }
-            Self::D19 => {
-                formatter.write_str("d19")?;
-            }
-            Self::D20 => {
-                formatter.write_str("d20")?;
-            }
-            Self::D21 => {
-                formatter.write_str("d21")?;
-            }
-            Self::D22 => {
-                formatter.write_str("d22")?;
-            }
-            Self::D23 => {
-                formatter.write_str("d23")?;
-            }
-            Self::D24 => {
-                formatter.write_str("d24")?;
-            }
-            Self::D25 => {
-                formatter.write_str("d25")?;
-            }
-            Self::D26 => {
-                formatter.write_str("d26")?;
-            }
-            Self::D27 => {
-                formatter.write_str("d27")?;
-            }
-            Self::D28 => {
-                formatter.write_str("d28")?;
-            }
-            Self::D29 => {
-                formatter.write_str("d29")?;
-            }
-            Self::D30 => {
-                formatter.write_str("d30")?;
-            }
-            Self::D31 => {
-                formatter.write_str("d31")?;
             }
         }
         Ok(())
@@ -2334,15 +2333,15 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            Ins::VcmpF32 { quiet_nan_exc, cond, sd, op2 } => {
+            Ins::VcmpF32 { nan_exc, cond, sd, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("vcmp")?;
-                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    formatter.write_nan_exc(*nan_exc)?;
                     formatter.write_cond(*cond)?;
                     formatter.write_str(".f32")?;
                 } else {
                     formatter.write_str("fcmp")?;
-                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    formatter.write_nan_exc(*nan_exc)?;
                     if *op2 == VcmpF32Op2::Zero {
                         formatter.write_str("z")?;
                     } else {}
@@ -2350,15 +2349,15 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            Ins::VcmpF64 { quiet_nan_exc, cond, dd, op2 } => {
+            Ins::VcmpF64 { nan_exc, cond, dd, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("vcmp")?;
-                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    formatter.write_nan_exc(*nan_exc)?;
                     formatter.write_cond(*cond)?;
                     formatter.write_str(".f64")?;
                 } else {
                     formatter.write_str("fcmp")?;
-                    formatter.write_quiet_nan_exc(*quiet_nan_exc)?;
+                    formatter.write_nan_exc(*nan_exc)?;
                     if *op2 == VcmpF64Op2::Zero {
                         formatter.write_str("z")?;
                     } else {}
@@ -4483,7 +4482,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_dreg(*dm)?;
             }
-            Ins::VcmpF32 { quiet_nan_exc, cond, sd, op2 } => {
+            Ins::VcmpF32 { nan_exc, cond, sd, op2 } => {
                 formatter.write_space()?;
                 formatter.write_sreg(*sd)?;
                 if formatter.options().ual || *op2 != VcmpF32Op2::Zero {
@@ -4491,7 +4490,7 @@ impl Ins {
                     formatter.write_vcmp_f32_op2(*op2)?;
                 } else {}
             }
-            Ins::VcmpF64 { quiet_nan_exc, cond, dd, op2 } => {
+            Ins::VcmpF64 { nan_exc, cond, dd, op2 } => {
                 formatter.write_space()?;
                 formatter.write_dreg(*dd)?;
                 if formatter.options().ual || *op2 != VcmpF64Op2::Zero {

@@ -360,7 +360,7 @@ impl Sreg {
 impl Dreg {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        debug_assert!(value < 32, "Invalid enum value {:#x} for Dreg", value);
+        debug_assert!(value < 16, "Invalid enum value {:#x} for Dreg", value);
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }
@@ -12989,14 +12989,14 @@ fn parse_arm_vcmp_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
-    let quiet_nan_exc = (((value) >> 7) & 0x1) != 0;
+    let nan_exc = (((value) >> 7) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let sd = Sreg::parse(((((value) >> 12) & 0xf) << 1) | (((value) >> 22) & 0x1), pc);
     let Some(op2) = VcmpF32Op2::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
     Some(Ins::VcmpF32 {
-        quiet_nan_exc,
+        nan_exc,
         cond,
         sd,
         op2,
@@ -13016,14 +13016,14 @@ fn parse_arm_vcmp_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
-    let quiet_nan_exc = (((value) >> 7) & 0x1) != 0;
+    let nan_exc = (((value) >> 7) & 0x1) != 0;
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let dd = Dreg::parse(((((value) >> 12) & 0xf) << 1) | (((value) >> 22) & 0x1), pc);
     let Some(op2) = VcmpF64Op2::parse(value, pc) else {
         return Some(Ins::Illegal);
     };
     Some(Ins::VcmpF64 {
-        quiet_nan_exc,
+        nan_exc,
         cond,
         dd,
         op2,

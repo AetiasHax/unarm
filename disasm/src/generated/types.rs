@@ -108,10 +108,12 @@ pub enum R9Use {
     ///TLS register (TR), used for thread-local storage
     Tr,
 }
+///The direct destination address of a branch instruction
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct BranchTarget {
     pub addr: u32,
 }
+///The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum BlxTarget {
     ///Direct target
@@ -119,6 +121,7 @@ pub enum BlxTarget {
     ///Indirect target
     Indirect(Reg),
 }
+///Mnemonic suffix, specifies the condition for whether to execute the instruction
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Cond {
@@ -153,6 +156,7 @@ pub enum Cond {
     ///Always
     Al,
 }
+///General-purpose register
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Reg {
@@ -173,6 +177,7 @@ pub enum Reg {
     Lr,
     Pc,
 }
+///Status register
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum StatusReg {
@@ -181,6 +186,7 @@ pub enum StatusReg {
     ///Saved program status register
     Spsr,
 }
+///Status register with field masks
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct StatusFields {
     pub reg: StatusReg,
@@ -189,6 +195,7 @@ pub struct StatusFields {
     pub s: bool,
     pub f: bool,
 }
+///Second operand of the MSR instruction, can be an immediate or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum MsrOp2 {
     ///Immediate
@@ -196,6 +203,7 @@ pub enum MsrOp2 {
     ///Register
     Reg(Reg),
 }
+///Shift operation
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ShiftOp {
@@ -208,6 +216,7 @@ pub enum ShiftOp {
     ///Rotate right
     Ror,
 }
+///Coprocessor
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Coproc {
@@ -228,6 +237,7 @@ pub enum Coproc {
     P14,
     P15,
 }
+///Coprocessor register
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum CoReg {
@@ -248,6 +258,7 @@ pub enum CoReg {
     C14,
     C15,
 }
+///Second operand of a data-processing operation, can be an immediate, an immediate-shifted register or a register-shifted register.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Op2 {
     ///Immediate
@@ -257,18 +268,21 @@ pub enum Op2 {
     ///Register shifted by immediate
     ShiftImm(ShiftImm),
 }
+///Register shifted by another register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct ShiftReg {
     pub rm: Reg,
     pub shift_op: ShiftOp,
     pub rs: Reg,
 }
+///Register shifted by an immediate
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct ShiftImm {
     pub rm: Reg,
     pub shift_op: ShiftOp,
     pub imm: u32,
 }
+///Second operand of a shift instruction, can be an immediate or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Op2Shift {
     ///Immediate
@@ -276,6 +290,7 @@ pub enum Op2Shift {
     ///Register
     Reg(Reg),
 }
+///Mnemonic suffix for CPS, specifies whether to enable/disable interrupt bits or just set the processor mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum CpsEffect {
     ///Set mode
@@ -285,12 +300,14 @@ pub enum CpsEffect {
     ///Interrupt disable
     Id,
 }
+///In a CPS instruction, specifies which interrupt bits to enable or disable
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct AifFlags {
     pub a: bool,
     pub i: bool,
     pub f: bool,
 }
+///The memory address of an LDC/STC instruction
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdcStc {
     ///Pre-indexed
@@ -300,6 +317,7 @@ pub enum AddrLdcStc {
     ///Unindexed
     Unidx { rn: Reg, option: u32 },
 }
+///Mnemonic suffix for LDM/STM, specifies how to step the base address
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LdmStmMode {
@@ -312,6 +330,7 @@ pub enum LdmStmMode {
     ///Increment Before
     Ib,
 }
+///The memory address of an LDR(B)/STR(B)/PLD instruction
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdrStr {
     ///Pre-indexed
@@ -319,11 +338,13 @@ pub enum AddrLdrStr {
     ///Post-indexed
     Post(AddrLdrStrPost),
 }
+///A post-indexed memory address for LDR(B)(T)/STR(B)(T)
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct AddrLdrStrPost {
     pub rn: Reg,
     pub offset: LdrStrOffset,
 }
+///The offset value in the memory address of a LDR(B)/STR(B) instruction, can be an immediate or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LdrStrOffset {
     ///Immediate offset
@@ -331,12 +352,14 @@ pub enum LdrStrOffset {
     ///Register offset
     Reg { subtract: bool, rm: Reg, shift_op: ShiftOp, imm: u32 },
 }
+///The memory address of a miscellaneous load/store instruction
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrMiscLoad {
     ///Pre-indexed
     Pre { rn: Reg, offset: MiscLoadOffset, writeback: bool },
     Post { rn: Reg, offset: MiscLoadOffset },
 }
+///The offset value in the memory address of a miscellaneous load/store instruction, can be an immediate or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum MiscLoadOffset {
     ///Immediate offset
@@ -344,6 +367,7 @@ pub enum MiscLoadOffset {
     ///Register offset
     Reg { rm: Reg, subtract: bool },
 }
+///Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum SrsRfeMode {
@@ -356,6 +380,7 @@ pub enum SrsRfeMode {
     ///Increment Before
     Ib,
 }
+///Used by SETEND, specifies the endianness for data accesses
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Endianness {
@@ -364,6 +389,7 @@ pub enum Endianness {
     ///Big-endian
     Be,
 }
+///Mnemonic suffix, specifies which half of a register to use as an operand
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum RegSide {
@@ -372,6 +398,7 @@ pub enum RegSide {
     ///Top halfword
     Top,
 }
+///General-purpose register for single-precision floating-point numbers
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Sreg {
@@ -408,6 +435,7 @@ pub enum Sreg {
     S30,
     S31,
 }
+///General-purpose register for double-precision floating-point numbers
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Dreg {
@@ -427,23 +455,8 @@ pub enum Dreg {
     D13,
     D14,
     D15,
-    D16,
-    D17,
-    D18,
-    D19,
-    D20,
-    D21,
-    D22,
-    D23,
-    D24,
-    D25,
-    D26,
-    D27,
-    D28,
-    D29,
-    D30,
-    D31,
 }
+///Second operand of a VCMP.F32 instruction, can be zero or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VcmpF32Op2 {
     ///Compare with zero
@@ -451,6 +464,7 @@ pub enum VcmpF32Op2 {
     ///Compare with register
     Reg(Sreg),
 }
+///Second operand of a VCMP.F64 instruction, can be zero or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VcmpF64Op2 {
     ///Compare with zero
@@ -458,13 +472,16 @@ pub enum VcmpF64Op2 {
     ///Compare with register
     Reg(Dreg),
 }
+///A double-precision floating-point register and index (0 or 1) to move to/from
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct DregIndex {
     pub dreg: Dreg,
     pub index: u32,
 }
+///Floating-Point Status and Control Register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Fpscr {}
+///Mnemonic suffix for VLDM/VSTM, specifies how to step the base address
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VldmVstmMode {
     ///Increment After
@@ -878,9 +895,9 @@ pub enum Ins {
     ///Vector Add 64-bit
     VaddF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     ///Vector Compare 32-bit
-    VcmpF32 { quiet_nan_exc: bool, cond: Cond, sd: Sreg, op2: VcmpF32Op2 },
+    VcmpF32 { nan_exc: bool, cond: Cond, sd: Sreg, op2: VcmpF32Op2 },
     ///Vector Compare 64-bit
-    VcmpF64 { quiet_nan_exc: bool, cond: Cond, dd: Dreg, op2: VcmpF64Op2 },
+    VcmpF64 { nan_exc: bool, cond: Cond, dd: Dreg, op2: VcmpF64Op2 },
     ///Vector Convert to Floating-point 32-bit from Floating-point 64-bit
     VcvtF32F64 { cond: Cond, sd: Sreg, dm: Dreg },
     ///Vector Convert to Floating-point 32-bit from Signed 32-bit integer
