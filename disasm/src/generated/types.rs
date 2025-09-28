@@ -169,12 +169,19 @@ pub enum Reg {
     R6,
     R7,
     R8,
+    ///General-purpose or SB (static base) or TR (TLS register)
     R9,
+    ///General-purpose or SL (stack limit)
     R10,
+    ///General-purpose or FP (frame pointer)
     R11,
+    ///General-purpose or IP (intra-procedure call scratch register)
     R12,
+    ///Stack pointer
     Sp,
+    ///Link register
     Lr,
+    ///Program counter
     Pc,
 }
 ///Status register

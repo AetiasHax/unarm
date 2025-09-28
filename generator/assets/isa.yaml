@@ -187,6 +187,7 @@ types:
         then: !fmt v5
         else: !fmt r8
     - name: r9
+      description: General-purpose or SB (static base) or TR (TLS register)
       format: !match
         value: option(r9_use)
         option: r9_use
@@ -198,6 +199,7 @@ types:
           sb: !fmt sb
           tr: !fmt tr
     - name: r10
+      description: General-purpose or SL (stack limit)
       format: !if
         cond: option(sl)
         then: !fmt sl
@@ -206,6 +208,7 @@ types:
           then: !fmt v7
           else: !fmt r10
     - name: r11
+      description: General-purpose or FP (frame pointer)
       format: !if
         cond: option(fp)
         then: !fmt fp
@@ -214,13 +217,17 @@ types:
           then: !fmt v8
           else: !fmt r11
     - name: r12
+      description: General-purpose or IP (intra-procedure call scratch register)
       format: !if
         cond: option(ip)
         then: !fmt ip
         else: !fmt r12
     - name: sp
+      description: Stack pointer
     - name: lr
+      description: Link register
     - name: pc
+      description: Program counter
 - name: reg_list
   description: List of general-purpose registers, used by LDM/STM
   kind: !custom
