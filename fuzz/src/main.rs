@@ -80,10 +80,10 @@ fn main() {
     println!("Starting {} threads running {} iterations", threads, iterations);
     let start = Instant::now();
     if arm {
-        arm::fuzz(threads, iterations, options, test);
+        arm::fuzz(threads, iterations, options.clone(), test);
     }
     if thumb {
-        thumb::fuzz(threads, iterations, options, test);
+        thumb::fuzz(threads, iterations, options.clone(), test);
     }
     println!("Finished in {:.2}s", start.elapsed().as_secs_f32());
 }

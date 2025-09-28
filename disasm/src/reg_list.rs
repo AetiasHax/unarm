@@ -1,7 +1,7 @@
 use crate::{Dreg, Reg, Sreg, Write};
 
 /// List of general-purpose registers, used by LDM/STM
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct RegList(u16);
 
 impl RegList {
@@ -32,7 +32,7 @@ impl RegList {
 }
 
 /// List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct SregList {
     start: u8,
     end: u8,
@@ -68,7 +68,7 @@ impl SregList {
 }
 
 /// List of general-purpose double-precision floation-point registers, used by VLDM/VSTM
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct DregList {
     start: u8,
     end: u8,

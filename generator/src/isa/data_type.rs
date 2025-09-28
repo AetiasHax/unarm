@@ -550,7 +550,7 @@ impl DataTypeEnum {
         let repr_type = self.repr_type();
         quote! {
             #[repr(#repr_type)]
-            #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+            #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
             pub enum #name_ident {
                 #(#variants),*
             }
@@ -639,7 +639,7 @@ impl DataTypeUnion {
         let name_ident = name.as_pascal_ident();
         let variants = self.variants.values().map(|v| v.variant_tokens(isa));
         quote! {
-            #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+            #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
             pub enum #name_ident {
                 #(#variants),*
             }
@@ -968,7 +968,7 @@ impl DataTypeStruct {
         let name_ident = name.as_pascal_ident();
         let record = self.record_tokens(isa, true);
         quote! {
-            #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+            #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
             pub struct #name_ident #record
         }
     }

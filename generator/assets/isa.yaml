@@ -766,6 +766,22 @@ types:
       - name: d13
       - name: d14
       - name: d15
+      - name: d16
+      - name: d17
+      - name: d18
+      - name: d19
+      - name: d20
+      - name: d21
+      - name: d22
+      - name: d23
+      - name: d24
+      - name: d25
+      - name: d26
+      - name: d27
+      - name: d28
+      - name: d29
+      - name: d30
+      - name: d31
 - name: nan_exc
   description: Mnemonic suffix, specifies that a comparison operation should cause an exception if any operand is NaN
   kind: !bool

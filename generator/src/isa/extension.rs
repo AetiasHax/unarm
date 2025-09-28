@@ -27,7 +27,7 @@ impl IsaExtensions {
         let extensions = self.0.iter().map(|e| e.as_ident());
         let inner_type = self.struct_inner_type();
         quote! {
-            #[derive(Clone, Copy)]
+            #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
             pub enum Extension {
                 #(#extensions),*
             }
@@ -43,7 +43,7 @@ impl IsaExtensions {
     pub fn struct_tokens(&self) -> TokenStream {
         let inner_type = self.struct_inner_type();
         quote! {
-            #[derive(Clone, Copy)]
+            #[derive(Debug, PartialEq, Eq, Clone, Copy)]
             pub struct Extensions(#inner_type);
 
             impl Extensions {

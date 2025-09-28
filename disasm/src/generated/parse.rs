@@ -360,7 +360,7 @@ impl Sreg {
 impl Dreg {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        debug_assert!(value < 16, "Invalid enum value {:#x} for Dreg", value);
+        debug_assert!(value < 32, "Invalid enum value {:#x} for Dreg", value);
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }

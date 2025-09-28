@@ -10,7 +10,7 @@ pub fn fuzz(num_threads: usize, iterations: usize, options: Options, test: Test)
         .map(|i| {
             let start = ((0x100000000 * i) / num_threads).try_into().unwrap();
             let end = ((0x100000000 * (i + 1)) / num_threads - 1).try_into().unwrap();
-            Fuzzer::new(start..=end, iterations, options)
+            Fuzzer::new(start..=end, iterations, options.clone())
         })
         .collect();
 
@@ -67,7 +67,7 @@ impl Fuzzer {
     fn parse_and_write(&self) -> std::thread::JoinHandle<()> {
         let range = self.range.clone();
         let iterations = self.iterations;
-        let options = self.options;
+        let options = self.options.clone();
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {

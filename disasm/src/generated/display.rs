@@ -1194,6 +1194,54 @@ impl Dreg {
             Self::D15 => {
                 formatter.write_str("d15")?;
             }
+            Self::D16 => {
+                formatter.write_str("d16")?;
+            }
+            Self::D17 => {
+                formatter.write_str("d17")?;
+            }
+            Self::D18 => {
+                formatter.write_str("d18")?;
+            }
+            Self::D19 => {
+                formatter.write_str("d19")?;
+            }
+            Self::D20 => {
+                formatter.write_str("d20")?;
+            }
+            Self::D21 => {
+                formatter.write_str("d21")?;
+            }
+            Self::D22 => {
+                formatter.write_str("d22")?;
+            }
+            Self::D23 => {
+                formatter.write_str("d23")?;
+            }
+            Self::D24 => {
+                formatter.write_str("d24")?;
+            }
+            Self::D25 => {
+                formatter.write_str("d25")?;
+            }
+            Self::D26 => {
+                formatter.write_str("d26")?;
+            }
+            Self::D27 => {
+                formatter.write_str("d27")?;
+            }
+            Self::D28 => {
+                formatter.write_str("d28")?;
+            }
+            Self::D29 => {
+                formatter.write_str("d29")?;
+            }
+            Self::D30 => {
+                formatter.write_str("d30")?;
+            }
+            Self::D31 => {
+                formatter.write_str("d31")?;
+            }
         }
         Ok(())
     }

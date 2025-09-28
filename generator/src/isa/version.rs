@@ -27,7 +27,7 @@ impl IsaVersions {
         let versions = self.0.iter().map(|v| v.as_ident());
         let inner_type = self.struct_inner_type();
         quote! {
-            #[derive(Debug, Clone, Copy)]
+            #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
             pub enum Version {
                 #(#versions),*
             }
@@ -43,7 +43,7 @@ impl IsaVersions {
     pub fn struct_tokens(&self) -> TokenStream {
         let inner_type = self.struct_inner_type();
         quote! {
-            #[derive(Clone, Copy)]
+            #[derive(Debug, PartialEq, Eq, Clone, Copy)]
             pub struct Versions(#inner_type);
 
             impl Versions {

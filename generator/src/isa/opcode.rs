@@ -28,7 +28,7 @@ impl Opcodes {
         let opcodes = self.iter().map(|o| o.ins_variant_tokens(isa));
         quote! {
             #[repr(u16)]
-            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
             pub enum Ins {
                 #(#opcodes),*,
                 Word(u32),
