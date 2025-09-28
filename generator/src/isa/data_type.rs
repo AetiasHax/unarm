@@ -54,7 +54,7 @@ impl DataTypes {
     }
 
     pub fn write_trait_tokens(&self, isa: &Isa) -> TokenStream {
-        let data_types = self.0.iter().map(|dt| dt.trait_write_fn_tokens(isa));
+        let data_types = self.0.iter().filter_map(|dt| dt.trait_write_fn_tokens(isa));
 
         quote! {
             pub trait Write: core::fmt::Write {
@@ -103,8 +103,14 @@ impl Display for DataTypeName {
 pub struct DataType {
     name: DataTypeName,
     kind: DataTypeKind,
+    #[serde(default = "default_data_type_write")]
+    write: bool,
     #[serde(skip)]
     top_level: bool,
+}
+
+fn default_data_type_write() -> bool {
+    true
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -466,19 +472,23 @@ impl DataType {
         }
     }
 
-    fn trait_write_fn_tokens(&self, isa: &Isa) -> TokenStream {
+    fn trait_write_fn_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        if !self.write {
+            return None;
+        }
+
         let fn_ident = self.trait_write_fn_ident();
         let value = self.name.as_ident();
         let type_tokens = self.type_tokens(isa);
 
         let write_expr = self.write_expr_tokens(isa, value.to_token_stream(), quote!(self));
 
-        quote! {
+        Some(quote! {
             fn #fn_ident(&mut self, #value: #type_tokens) -> core::fmt::Result {
                 #write_expr
                 Ok(())
             }
-        }
+        })
     }
 }
 

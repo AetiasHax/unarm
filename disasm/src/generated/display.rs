@@ -42,12 +42,6 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
-    fn write_thumb(&mut self, thumb: bool) -> core::fmt::Result {
-        if thumb {
-            self.write_str("thumb")?;
-        }
-        Ok(())
-    }
     fn write_uimm(&mut self, uimm: u32) -> core::fmt::Result {
         write!(self, "{:#x}", uimm)?;
         Ok(())

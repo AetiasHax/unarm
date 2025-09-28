@@ -61,6 +61,7 @@ types:
     format: !fmt "-"
 - name: thumb
   kind: !bool
+  write: false
 - name: uimm
   kind: !uint bits(0..32)
 - name: simm
