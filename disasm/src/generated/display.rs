@@ -972,7 +972,7 @@ impl MiscLoadOffset {
                 formatter.write_str("#")?;
                 formatter.write_simm(*offset)?;
             }
-            Self::Reg { rm, subtract } => {
+            Self::Reg { subtract, rm } => {
                 formatter.write_subtract(*subtract)?;
                 formatter.write_reg(*rm)?;
             }

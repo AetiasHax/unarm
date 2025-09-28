@@ -248,15 +248,19 @@ types:
     - name: reg
       kind: !type [status_reg, bit(22)]
     - name: c
+      description: Control field mask
       kind: !bool
         bits: 16
     - name: x
+      description: Extension field mask
       kind: !bool
         bits: 17
     - name: s
+      description: Status field mask
       kind: !bool
         bits: 18
     - name: f
+      description: Flags field mask
       kind: !bool
         bits: 19
 - name: msr_op2
@@ -371,10 +375,13 @@ types:
     - ins() & 0xf0000 == 0xf0000 # rn == pc
     fields:
     - name: rm
+      description: Register being shifted
       kind: !type [reg, bits(0..4)]
     - name: shift_op
+      description: Shift operation to apply
       kind: !type [shift_op, bits(5..7)]
     - name: rs
+      description: Register to shift by
       kind: !type [reg, bits(8..12)]
 - name: shift_imm
   description: Register shifted by an immediate
@@ -388,10 +395,13 @@ types:
         else: !fmt "(rm), (shift_op) #(imm)"
     fields:
     - name: rm
+      description: Register being shifted
       kind: !type [reg, bits(0..4)]
     - name: shift_op
+      description: Shift operation to apply
       kind: !type [shift_op, bits(5..7)]
     - name: imm
+      description: Immediate to shift by
       kind: !uint bits(7..12)
 - name: op2_shift
   description: Second operand of a shift instruction, can be an immediate or a register
@@ -432,12 +442,15 @@ types:
     format: !fmt (a)(i)(f)
     fields:
     - name: a
+      description: Imprecise data abort bit
       kind: !bool
         bits: 2
     - name: i
+      description: IRQ interrupt bit
       kind: !bool
         bits: 1
     - name: f
+      description: FIQ interrupt bit
       kind: !bool
         bits: 0
 - name: addr_ldc_stc
@@ -454,10 +467,12 @@ types:
             format: !fmt "[(rn), #(offset)](writeback)"
             fields:
             - name: rn
+              description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !int (bits(0..8) << 2).negate_if(bit(23) == 0)
             - name: writeback
+              description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
       xxxx_xxx0_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
@@ -468,6 +483,7 @@ types:
             format: !fmt "[(rn)], #(offset)"
             fields:
             - name: rn
+              description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !int (bits(0..8) << 2).negate_if(bit(23) == 0)
@@ -480,8 +496,10 @@ types:
             format: !fmt "[(rn)], {(option)}"
             fields:
             - name: rn
+              description: Base register
               kind: !type [reg, bits(16..20)]
             - name: option
+              description: Additional options to the coprocessor
               kind: !uint bits(0..8)
 - name: ldm_stm_mode
   description: Mnemonic suffix for LDM/STM, specifies how to step the base address
@@ -515,10 +533,12 @@ types:
             format: !fmt "[(rn), (offset)](writeback)"
             fields:
             - name: rn
+              description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !type [ldr_str_offset, bits(0..32)]
             - name: writeback
+              description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
@@ -532,6 +552,7 @@ types:
     format: !fmt "[(rn)], (offset)"
     fields:
     - name: rn
+      description: Base register
       kind: !type [reg, bits(16..20)]
     - name: offset
       kind: !type [ldr_str_offset, bits(0..32)]
@@ -562,12 +583,16 @@ types:
                 else: !fmt "(subtract)(rm), (shift_op) #(imm)"
             fields:
             - name: subtract
+              description: If true, subtract Rm from the base register instead of adding
               kind: !type [subtract, bit(23) ^ 1]
             - name: rm
+              description: Index register
               kind: !type [reg, bits(0..4)]
             - name: shift_op
+              description: Shift operation to apply to Rm
               kind: !type [shift_op, bits(5..7)]
             - name: imm
+              description: Immediate to shift by
               kind: !uint if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }
 - name: addr_misc_load
   description: The memory address of a miscellaneous load/store instruction
@@ -583,10 +608,12 @@ types:
             format: !fmt "[(rn), (offset)](writeback)"
             fields:
             - name: rn
+              description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !type [misc_load_offset, bits(0..32)]
             - name: writeback
+              description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
@@ -597,6 +624,7 @@ types:
             format: !fmt "[(rn)], (offset)"
             fields:
             - name: rn
+              description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !type [misc_load_offset, bits(0..32)]
@@ -622,10 +650,12 @@ types:
           kind: !struct
             format: !fmt (subtract)(rm) 
             fields:
-            - name: rm
-              kind: !type [reg, bits(0..4)]
             - name: subtract
+              description: If true, subtract Rm from the base register instead of adding
               kind: !type [subtract, bit(23) ^ 1]
+            - name: rm
+              description: Index register
+              kind: !type [reg, bits(0..4)]
 - name: srs_rfe_mode
   description: Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
   kind: !enum

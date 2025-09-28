@@ -197,9 +197,13 @@ pub enum StatusReg {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct StatusFields {
     pub reg: StatusReg,
+    ///Control field mask
     pub c: bool,
+    ///Extension field mask
     pub x: bool,
+    ///Status field mask
     pub s: bool,
+    ///Flags field mask
     pub f: bool,
 }
 ///Second operand of the MSR instruction, can be an immediate or a register
@@ -278,15 +282,21 @@ pub enum Op2 {
 ///Register shifted by another register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct ShiftReg {
+    ///Register being shifted
     pub rm: Reg,
+    ///Shift operation to apply
     pub shift_op: ShiftOp,
+    ///Register to shift by
     pub rs: Reg,
 }
 ///Register shifted by an immediate
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct ShiftImm {
+    ///Register being shifted
     pub rm: Reg,
+    ///Shift operation to apply
     pub shift_op: ShiftOp,
+    ///Immediate to shift by
     pub imm: u32,
 }
 ///Second operand of a shift instruction, can be an immediate or a register
@@ -310,19 +320,37 @@ pub enum CpsEffect {
 ///In a CPS instruction, specifies which interrupt bits to enable or disable
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct AifFlags {
+    ///Imprecise data abort bit
     pub a: bool,
+    ///IRQ interrupt bit
     pub i: bool,
+    ///FIQ interrupt bit
     pub f: bool,
 }
 ///The memory address of an LDC/STC instruction
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdcStc {
     ///Pre-indexed
-    Pre { rn: Reg, offset: i32, writeback: bool },
+    Pre {
+        ///Base register
+        rn: Reg,
+        offset: i32,
+        ///If true, write the last accessed address back to the base register
+        writeback: bool,
+    },
     ///Post-indexed
-    Post { rn: Reg, offset: i32 },
+    Post {
+        ///Base register
+        rn: Reg,
+        offset: i32,
+    },
     ///Unindexed
-    Unidx { rn: Reg, option: u32 },
+    Unidx {
+        ///Base register
+        rn: Reg,
+        ///Additional options to the coprocessor
+        option: u32,
+    },
 }
 ///Mnemonic suffix for LDM/STM, specifies how to step the base address
 #[repr(u8)]
@@ -341,13 +369,20 @@ pub enum LdmStmMode {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdrStr {
     ///Pre-indexed
-    Pre { rn: Reg, offset: LdrStrOffset, writeback: bool },
+    Pre {
+        ///Base register
+        rn: Reg,
+        offset: LdrStrOffset,
+        ///If true, write the last accessed address back to the base register
+        writeback: bool,
+    },
     ///Post-indexed
     Post(AddrLdrStrPost),
 }
 ///A post-indexed memory address for LDR(B)(T)/STR(B)(T)
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct AddrLdrStrPost {
+    ///Base register
     pub rn: Reg,
     pub offset: LdrStrOffset,
 }
@@ -357,14 +392,33 @@ pub enum LdrStrOffset {
     ///Immediate offset
     Imm(i32),
     ///Register offset
-    Reg { subtract: bool, rm: Reg, shift_op: ShiftOp, imm: u32 },
+    Reg {
+        ///If true, subtract Rm from the base register instead of adding
+        subtract: bool,
+        ///Index register
+        rm: Reg,
+        ///Shift operation to apply to Rm
+        shift_op: ShiftOp,
+        ///Immediate to shift by
+        imm: u32,
+    },
 }
 ///The memory address of a miscellaneous load/store instruction
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrMiscLoad {
     ///Pre-indexed
-    Pre { rn: Reg, offset: MiscLoadOffset, writeback: bool },
-    Post { rn: Reg, offset: MiscLoadOffset },
+    Pre {
+        ///Base register
+        rn: Reg,
+        offset: MiscLoadOffset,
+        ///If true, write the last accessed address back to the base register
+        writeback: bool,
+    },
+    Post {
+        ///Base register
+        rn: Reg,
+        offset: MiscLoadOffset,
+    },
 }
 ///The offset value in the memory address of a miscellaneous load/store instruction, can be an immediate or a register
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -372,7 +426,12 @@ pub enum MiscLoadOffset {
     ///Immediate offset
     Imm(i32),
     ///Register offset
-    Reg { rm: Reg, subtract: bool },
+    Reg {
+        ///If true, subtract Rm from the base register instead of adding
+        subtract: bool,
+        ///Index register
+        rm: Reg,
+    },
 }
 ///Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
 #[repr(u8)]

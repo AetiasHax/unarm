@@ -321,8 +321,8 @@ impl MiscLoadOffset {
                 return None;
             }
             Some(Self::Reg {
-                rm: Reg::parse(((value) & 0xf), pc),
                 subtract: ((((value) >> 23) & 0x1) ^ 1) != 0,
+                rm: Reg::parse(((value) & 0xf), pc),
             })
         } else {
             None
@@ -9244,8 +9244,8 @@ fn parse_thumb_ldrh_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let addr = AddrMiscLoad::Pre {
         rn: Reg::parse(((value) >> 3) & 0x7, pc),
         offset: MiscLoadOffset::Reg {
-            rm: Reg::parse(((value) >> 6) & 0x7, pc),
             subtract: false,
+            rm: Reg::parse(((value) >> 6) & 0x7, pc),
         },
         writeback: false,
     };
@@ -9287,8 +9287,8 @@ fn parse_thumb_ldrsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u
     let addr = AddrMiscLoad::Pre {
         rn: Reg::parse(((value) >> 3) & 0x7, pc),
         offset: MiscLoadOffset::Reg {
-            rm: Reg::parse(((value) >> 6) & 0x7, pc),
             subtract: false,
+            rm: Reg::parse(((value) >> 6) & 0x7, pc),
         },
         writeback: false,
     };
@@ -9324,8 +9324,8 @@ fn parse_thumb_ldrsh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u
     let addr = AddrMiscLoad::Pre {
         rn: Reg::parse(((value) >> 3) & 0x7, pc),
         offset: MiscLoadOffset::Reg {
-            rm: Reg::parse(((value) >> 6) & 0x7, pc),
             subtract: false,
+            rm: Reg::parse(((value) >> 6) & 0x7, pc),
         },
         writeback: false,
     };
@@ -11858,8 +11858,8 @@ fn parse_thumb_strh_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let addr = AddrMiscLoad::Pre {
         rn: Reg::parse(((value) >> 3) & 0x7, pc),
         offset: MiscLoadOffset::Reg {
-            rm: Reg::parse(((value) >> 6) & 0x7, pc),
             subtract: false,
+            rm: Reg::parse(((value) >> 6) & 0x7, pc),
         },
         writeback: false,
     };

@@ -243,10 +243,15 @@ impl DataType {
     fn field_tokens(&self, isa: &Isa, is_pub: bool) -> TokenStream {
         let name_ident = self.name.as_ident();
         let type_tokens = self.type_tokens(isa);
-        if is_pub {
+        let field = if is_pub {
             quote!(pub #name_ident: #type_tokens)
         } else {
             quote!(#name_ident: #type_tokens)
+        };
+        let doc = self.description.as_ref().map(|desc| quote!(#[doc = #desc]));
+        quote! {
+            #doc
+            #field
         }
     }
 
