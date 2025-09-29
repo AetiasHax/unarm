@@ -1,14 +1,17 @@
 use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{Result, anyhow, bail};
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::{ToTokens, quote};
 use serde::Deserialize;
 use syn::{Ident, visit_mut::VisitMut};
 
 use crate::{
-    isa::{BitRange, Format, FormatParams, IllegalChecks, Isa, OpcodeParamValue, Pattern, SynExpr},
+    isa::{
+        BitRange, Format, FormatParams, IllegalChecks, Isa, IsaExtension, IsaVersion,
+        OpcodeParamValue, Pattern, SynExpr,
+    },
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
 
@@ -16,6 +19,10 @@ use crate::{
 pub struct DataTypes(Vec<DataType>);
 
 impl DataTypes {
+    pub fn iter(&self) -> impl Iterator<Item = &DataType> {
+        self.0.iter()
+    }
+
     pub fn get(&self, name: &DataTypeName) -> Option<&DataType> {
         self.0.iter().find(|dt| &dt.name == name)
     }
@@ -26,9 +33,9 @@ impl DataTypes {
         }
     }
 
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self, isa: &Isa) -> Result<()> {
         for data_type in self.0.iter() {
-            data_type.validate()?;
+            data_type.validate(isa)?;
         }
         Ok(())
     }
@@ -137,7 +144,7 @@ pub enum DataTypeKind {
     #[serde(rename = "type")]
     Type(DataTypeName, DataExpr),
     #[serde(rename = "custom")]
-    Custom,
+    Custom(DataTypeCustom),
 }
 
 impl DataType {
@@ -149,7 +156,7 @@ impl DataType {
         &self.kind
     }
 
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self, isa: &Isa) -> Result<()> {
         match &self.kind {
             DataTypeKind::Bool { .. } => Ok(()),
             DataTypeKind::UInt(_) => Ok(()),
@@ -158,7 +165,7 @@ impl DataType {
             DataTypeKind::Union(data_type_union) => data_type_union.validate(&self.name),
             DataTypeKind::Struct(_) => Ok(()),
             DataTypeKind::Type(_, _) => Ok(()),
-            DataTypeKind::Custom => Ok(()),
+            DataTypeKind::Custom(data_type_custom) => data_type_custom.validate(&self.name, isa),
         }
     }
 
@@ -184,7 +191,7 @@ impl DataType {
                 data_type_struct.struct_tokens(isa, &self.name)
             }
             DataTypeKind::Type(_, _) => return None,
-            DataTypeKind::Custom => return None,
+            DataTypeKind::Custom(_) => return None,
         };
         let doc = self.description.as_ref().map(|desc| quote!(#[doc = #desc]));
         Some(quote! {
@@ -208,7 +215,7 @@ impl DataType {
                 Some(data_type_struct.parse_impl_tokens(isa, &self.name))
             }
             DataTypeKind::Type(_, _) => None,
-            DataTypeKind::Custom => None,
+            DataTypeKind::Custom(_) => None,
         }
     }
 
@@ -235,7 +242,7 @@ impl DataType {
                 };
                 inner_type.type_tokens(isa)
             }
-            DataTypeKind::Custom => {
+            DataTypeKind::Custom(_) => {
                 let name_ident = self.name.as_pascal_ident();
                 quote!(#name_ident)
             }
@@ -288,7 +295,7 @@ impl DataType {
                     .unwrap_or_else(|| data_expr.as_tokens(Ident::new("value", Span::call_site())));
                 inner_type.parse_expr_tokens(isa, Some(value))
             }
-            DataTypeKind::Custom => {
+            DataTypeKind::Custom(_) => {
                 let name_ident = self.name.as_pascal_ident();
                 let value = value.unwrap_or_else(|| quote!(value));
                 quote!(#name_ident::parse(#value))
@@ -307,7 +314,7 @@ impl DataType {
             DataTypeKind::Type(data_type_name, _) => {
                 isa.types().get(data_type_name).unwrap().can_be_illegal(isa)
             }
-            DataTypeKind::Custom => false,
+            DataTypeKind::Custom(_) => false,
         }
     }
 
@@ -327,7 +334,7 @@ impl DataType {
                 };
                 inner_type.default_expr_tokens(isa)
             }
-            DataTypeKind::Custom => {
+            DataTypeKind::Custom(_) => {
                 let type_ident = self.name.as_pascal_ident();
                 Some(quote!(#type_ident::default()))
             }
@@ -347,7 +354,7 @@ impl DataType {
                 data_type_struct.default_impl_body_tokens(isa)?
             }
             DataTypeKind::Type(_, _) => return None,
-            DataTypeKind::Custom => return None,
+            DataTypeKind::Custom(_) => return None,
         };
         let name_ident = self.name.as_pascal_ident();
         Some(quote! {
@@ -372,7 +379,7 @@ impl DataType {
                 Some(data_type_struct.write_impl_body_tokens(isa))
             }
             DataTypeKind::Type(_, _) => None,
-            DataTypeKind::Custom => None,
+            DataTypeKind::Custom(_) => None,
         }
     }
 
@@ -385,7 +392,7 @@ impl DataType {
             DataTypeKind::Union(_) => {}
             DataTypeKind::Struct(_) => {}
             DataTypeKind::Type(_, _) => return None,
-            DataTypeKind::Custom => return None,
+            DataTypeKind::Custom(_) => return None,
         };
         let display_expr = self.write_impl_body_tokens(isa);
         let name_ident = self.name().as_pascal_ident();
@@ -437,7 +444,7 @@ impl DataType {
             DataTypeKind::Union(_) => &self.name.0,
             DataTypeKind::Struct(_) => &self.name.0,
             DataTypeKind::Type(name, _) => &name.0,
-            DataTypeKind::Custom => &self.name.0,
+            DataTypeKind::Custom(_) => &self.name.0,
         };
         let fn_name = format!("write_{}", base_name);
         Ident::new(&fn_name, Span::call_site())
@@ -479,7 +486,30 @@ impl DataType {
             DataTypeKind::Union(_) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Struct(_) => quote!(#value.write(#formatter)?;),
             DataTypeKind::Type(_, _) => quote!(#value.write(#formatter)?;),
-            DataTypeKind::Custom => quote!(#value.write(#formatter)?;),
+            DataTypeKind::Custom(_) => quote!(#value.write(#formatter)?;),
+        }
+    }
+
+    fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let versions = self.versions(isa);
+        let extensions = self.extensions(isa);
+
+        let extension_features = extensions.iter().map(|ext| {
+            let name = ext.name();
+            quote!(feature = #name)
+        });
+        let version_features = versions.iter().map(|ver| {
+            let name = ver.name();
+            quote!(feature = #name)
+        });
+
+        match (isa.versions.has_all(&versions), extensions.is_empty()) {
+            (true, true) => None,
+            (true, false) => Some(quote!(#[cfg(all(#(#extension_features),*))])),
+            (false, true) => Some(quote!(#[cfg(any(#(#version_features),*))])),
+            (false, false) => {
+                Some(quote!(#[cfg(all(#(#extension_features),*, any(#(#version_features),*)))]))
+            }
         }
     }
 
@@ -495,13 +525,97 @@ impl DataType {
 
         let write_expr = self.write_expr_tokens(isa, value.to_token_stream(), quote!(self));
 
+        let cfg = self.cfg_condition_tokens(isa);
+
         Some(quote! {
             #doc
+            #cfg
             fn #fn_ident(&mut self, #value: #type_tokens) -> core::fmt::Result {
                 #write_expr
                 Ok(())
             }
         })
+    }
+
+    fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
+        let mut versions = IndexSet::new();
+        for opcode in isa.opcodes().iter() {
+            if !opcode.uses_data_type(self) {
+                continue;
+            }
+            for version in opcode.versions(isa) {
+                versions.insert(version);
+            }
+        }
+        for data_type in isa.types().iter() {
+            if !data_type.uses_data_type(self) {
+                continue;
+            }
+            for version in data_type.versions(isa) {
+                versions.insert(version);
+            }
+        }
+        versions
+    }
+
+    fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
+        let mut extensions: Option<IndexSet<IsaExtension>> = None;
+        for opcode in isa.opcodes().iter() {
+            if !opcode.uses_data_type(self) {
+                continue;
+            }
+            let exts = opcode.extensions(isa);
+            if let Some(extensions) = &mut extensions {
+                *extensions = extensions.intersection(&exts).cloned().collect();
+            } else {
+                extensions = Some(exts);
+            }
+        }
+        for data_type in isa.types().iter() {
+            if !data_type.uses_data_type(self) {
+                continue;
+            }
+            let exts = data_type.extensions(isa);
+            if let Some(extensions) = &mut extensions {
+                *extensions = extensions.intersection(&exts).cloned().collect();
+            } else {
+                extensions = Some(exts);
+            }
+        }
+        extensions.unwrap_or_default()
+    }
+
+    fn uses_data_type(&self, data_type: &DataType) -> bool {
+        match &self.kind {
+            DataTypeKind::Bool { .. } => false,
+            DataTypeKind::UInt(_) => false,
+            DataTypeKind::Int(_) => false,
+            DataTypeKind::Enum(_) => false,
+            DataTypeKind::Union(data_type_union) => {
+                data_type_union.variants.values().any(|variant| {
+                    if let Some(data) = &variant.data {
+                        if let DataTypeKind::Type(type_name, _) = &self.kind {
+                            type_name == &data_type.name
+                        } else {
+                            data.uses_data_type(data_type)
+                        }
+                    } else {
+                        false
+                    }
+                })
+            }
+            DataTypeKind::Struct(data_type_struct) => data_type_struct.fields.iter().any(|field| {
+                if let DataTypeKind::Type(type_name, _) = &self.kind {
+                    type_name == &data_type.name
+                } else {
+                    field.uses_data_type(data_type)
+                }
+            }),
+            DataTypeKind::Type(data_type_name, _) => data_type_name == &data_type.name,
+            DataTypeKind::Custom(data_type_custom) => {
+                data_type_custom.inner_types.iter().any(|type_name| type_name == &data_type.name)
+            }
+        }
     }
 }
 
@@ -1109,6 +1223,23 @@ impl DataTypeStruct {
             params.insert(field.name.0.clone(), field.clone());
         }
         self.format.fmt_expr_tokens(isa, &params, None)
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct DataTypeCustom {
+    inner_types: Vec<DataTypeName>,
+}
+
+impl DataTypeCustom {
+    pub fn validate(&self, name: &DataTypeName, isa: &Isa) -> Result<()> {
+        for inner_type in &self.inner_types {
+            isa.types().get(inner_type).ok_or_else(|| {
+                anyhow!("Inner type '{}' of custom type '{}' does not exist", inner_type.0, name.0)
+            })?;
+        }
+        Ok(())
     }
 }
 

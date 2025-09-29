@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{Context, Result, anyhow};
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::{ToTokens, quote};
 use serde::Deserialize;
@@ -10,8 +10,8 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtensionPatterns,
-        IsaVersionPatterns, OpcodeLookupTable, OpcodePattern,
+        Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension, IsaExtensionPatterns,
+        IsaVersion, IsaVersionPatterns, OpcodeLookupTable, OpcodePattern,
     },
     util::str::snake_to_pascal_case,
 };
@@ -312,6 +312,46 @@ impl Opcode {
                 quote!(#parse_fn_ident(ins, pc, options).map(|(ins, _size)| ins).unwrap_or(Ins::Illegal))
             }
         }
+    }
+
+    pub fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
+        let mut versions = IndexSet::new();
+        for encoding in &self.arm {
+            for v in encoding.version.versions(isa) {
+                versions.insert(v.clone());
+            }
+        }
+        for encoding in &self.thumb {
+            for v in encoding.version.versions(isa) {
+                versions.insert(v.clone());
+            }
+        }
+        versions
+    }
+
+    pub fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
+        let mut extensions: Option<IndexSet<IsaExtension>> = None;
+        for encoding in &self.arm {
+            let exts = encoding.extensions.extensions(isa).into_iter().cloned().collect();
+            if let Some(extensions) = &mut extensions {
+                *extensions = extensions.intersection(&exts).cloned().collect();
+            } else {
+                extensions = Some(exts);
+            }
+        }
+        for encoding in &self.thumb {
+            let exts = encoding.extensions.extensions(isa).into_iter().cloned().collect();
+            if let Some(extensions) = &mut extensions {
+                *extensions = extensions.intersection(&exts).cloned().collect();
+            } else {
+                extensions = Some(exts);
+            }
+        }
+        extensions.unwrap_or_default()
+    }
+
+    pub fn uses_data_type(&self, data_type: &DataType) -> bool {
+        self.params.values().any(|type_name| type_name == data_type.name())
     }
 }
 

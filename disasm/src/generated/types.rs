@@ -21,12 +21,19 @@ pub struct Options {
 }
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Version {
+    #[cfg(feature = "v4")]
     V4,
+    #[cfg(feature = "v4t")]
     V4T,
+    #[cfg(feature = "v5t")]
     V5T,
+    #[cfg(feature = "v5te")]
     V5Te,
+    #[cfg(feature = "v5tej")]
     V5Tej,
+    #[cfg(feature = "v6")]
     V6,
+    #[cfg(feature = "v6k")]
     V6K,
 }
 impl Version {
@@ -64,6 +71,7 @@ impl Versions {
 }
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Extension {
+    #[cfg(feature = "vfp_v2")]
     VfpV2,
 }
 impl Extension {

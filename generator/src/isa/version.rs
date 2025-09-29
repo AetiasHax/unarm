@@ -1,3 +1,4 @@
+use indexmap::IndexSet;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use serde::{Deserialize, de};
@@ -24,7 +25,14 @@ impl IsaVersions {
     }
 
     pub fn enum_tokens(&self) -> TokenStream {
-        let versions = self.0.iter().map(|v| v.as_ident());
+        let versions = self.0.iter().map(|v| {
+            let version = &v.0;
+            let ident = v.as_ident();
+            quote! {
+                #[cfg(feature = #version)]
+                #ident
+            }
+        });
         let inner_type = self.struct_inner_type();
         quote! {
             #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -82,9 +90,13 @@ impl IsaVersions {
     pub fn matches_all(&self, versions: &IsaVersionPatterns) -> bool {
         self.0.iter().all(|v| versions.iter().any(|pattern| pattern.matches(v)))
     }
+
+    pub fn has_all(&self, versions: &IndexSet<IsaVersion>) -> bool {
+        self.0.iter().all(|v| versions.contains(v))
+    }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IsaVersion(String);
 
 impl IsaVersion {

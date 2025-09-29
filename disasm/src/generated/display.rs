@@ -67,6 +67,15 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
+    #[cfg(
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
+    )]
     fn write_blx_target(&mut self, blx_target: BlxTarget) -> core::fmt::Result {
         blx_target.write(self)?;
         Ok(())
@@ -137,11 +146,13 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///Mnemonic suffix for CPS, specifies whether to enable/disable interrupt bits or just set the processor mode
+    #[cfg(any(feature = "v6", feature = "v6k"))]
     fn write_cps_effect(&mut self, cps_effect: CpsEffect) -> core::fmt::Result {
         cps_effect.write(self)?;
         Ok(())
     }
     ///In a CPS instruction, specifies which interrupt bits to enable or disable
+    #[cfg(any(feature = "v6", feature = "v6k"))]
     fn write_aif_flags(&mut self, aif_flags: AifFlags) -> core::fmt::Result {
         aif_flags.write(self)?;
         Ok(())
@@ -194,21 +205,25 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
+    #[cfg(any(feature = "v6", feature = "v6k"))]
     fn write_srs_rfe_mode(&mut self, srs_rfe_mode: SrsRfeMode) -> core::fmt::Result {
         srs_rfe_mode.write(self)?;
         Ok(())
     }
     ///Used by SETEND, specifies the endianness for data accesses
+    #[cfg(any(feature = "v6", feature = "v6k"))]
     fn write_endianness(&mut self, endianness: Endianness) -> core::fmt::Result {
         endianness.write(self)?;
         Ok(())
     }
     ///Mnemonic suffix, specifies which half of a register to use as an operand
+    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
     fn write_reg_side(&mut self, reg_side: RegSide) -> core::fmt::Result {
         reg_side.write(self)?;
         Ok(())
     }
     ///Mnemonic suffix, when performing two 16x16 bit multiplications, swap the two halfwords of Rm
+    #[cfg(any(feature = "v6", feature = "v6k"))]
     fn write_swap_rm(&mut self, swap_rm: bool) -> core::fmt::Result {
         if swap_rm {
             self.write_str("x")?;
@@ -216,6 +231,7 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///Mnemonic suffix, round the multiplication result instead of truncating
+    #[cfg(any(feature = "v6", feature = "v6k"))]
     fn write_round(&mut self, round: bool) -> core::fmt::Result {
         if round {
             self.write_str("r")?;
@@ -223,6 +239,12 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///Mnemonic suffix, when converting a floating-point number to an integer, round the result towards zero
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_round_zero(&mut self, round_zero: bool) -> core::fmt::Result {
         if round_zero {
             if self.options().ual {
@@ -234,16 +256,34 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///General-purpose register for single-precision floating-point numbers
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_sreg(&mut self, sreg: Sreg) -> core::fmt::Result {
         sreg.write(self)?;
         Ok(())
     }
     ///General-purpose register for double-precision floating-point numbers
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_dreg(&mut self, dreg: Dreg) -> core::fmt::Result {
         dreg.write(self)?;
         Ok(())
     }
     ///Mnemonic suffix, specifies that a comparison operation should cause an exception if any operand is NaN
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_nan_exc(&mut self, nan_exc: bool) -> core::fmt::Result {
         if nan_exc {
             self.write_str("e")?;
@@ -251,36 +291,78 @@ pub trait Write: core::fmt::Write {
         Ok(())
     }
     ///Second operand of a VCMP.F32 instruction, can be zero or a register
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_vcmp_f32_op2(&mut self, vcmp_f32_op2: VcmpF32Op2) -> core::fmt::Result {
         vcmp_f32_op2.write(self)?;
         Ok(())
     }
     ///Second operand of a VCMP.F64 instruction, can be zero or a register
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_vcmp_f64_op2(&mut self, vcmp_f64_op2: VcmpF64Op2) -> core::fmt::Result {
         vcmp_f64_op2.write(self)?;
         Ok(())
     }
     ///List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_sreg_list(&mut self, sreg_list: SregList) -> core::fmt::Result {
         sreg_list.write(self)?;
         Ok(())
     }
     ///List of general-purpose double-precision floation-point registers, used by VLDM/VSTM
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_dreg_list(&mut self, dreg_list: DregList) -> core::fmt::Result {
         dreg_list.write(self)?;
         Ok(())
     }
     ///A double-precision floating-point register and index (0 or 1) to move to/from
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_dreg_index(&mut self, dreg_index: DregIndex) -> core::fmt::Result {
         dreg_index.write(self)?;
         Ok(())
     }
     ///Floating-Point Status and Control Register
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_fpscr(&mut self, fpscr: Fpscr) -> core::fmt::Result {
         fpscr.write(self)?;
         Ok(())
     }
     ///Mnemonic suffix for VLDM/VSTM, specifies how to step the base address
+    #[cfg(
+        all(
+            feature = "vfp_v2",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     fn write_vldm_vstm_mode(
         &mut self,
         vldm_vstm_mode: VldmVstmMode,

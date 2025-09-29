@@ -48,7 +48,7 @@ impl Isa {
     }
 
     pub fn validate(&self) -> Result<()> {
-        self.types.validate()?;
+        self.types.validate(self)?;
         for opcode in self.opcodes.iter() {
             opcode.validate(self)?;
         }

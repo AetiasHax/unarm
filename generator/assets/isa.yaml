@@ -231,6 +231,7 @@ types:
 - name: reg_list
   description: List of general-purpose registers, used by LDM/STM
   kind: !custom
+    inner_types: [reg]
 - name: status_reg
   description: Status register
   kind: !enum
@@ -274,7 +275,7 @@ types:
         format: !fmt "#(imm)"
         data:
           name: imm
-          kind: !uint bits(0..8).rotate_right(bits(8..12))
+          kind: !type [uimm, bits(0..8).rotate_right(bits(8..12))]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0000_xxxx:
         name: reg
         description: Register
@@ -351,7 +352,7 @@ types:
         format: !fmt "#(imm)"
         data:
           name: imm
-          kind: !uint bits(0..8).rotate_right(bits(8..12) << 1)
+          kind: !type [uimm, bits(0..8).rotate_right(bits(8..12) << 1)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
         name: shift_reg
         description: Register shifted by register
@@ -402,7 +403,7 @@ types:
       kind: !type [shift_op, bits(5..7)]
     - name: imm
       description: Immediate to shift by
-      kind: !uint bits(7..12)
+      kind: !type [uimm, bits(7..12)]
 - name: op2_shift
   description: Second operand of a shift instruction, can be an immediate or a register
   kind: !union
@@ -414,7 +415,7 @@ types:
         format: !fmt "#(imm)"
         data:
           name: imm
-          kind: !uint if bits(7..12) != 0 { bits(7..12) } else { 32 }
+          kind: !type [uimm, "if bits(7..12) != 0 { bits(7..12) } else { 32 }"]
       xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
         name: reg
         description: Register
@@ -470,7 +471,7 @@ types:
               description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
-              kind: !int (bits(0..8) << 2).negate_if(bit(23) == 0)
+              kind: !type [simm, (bits(0..8) << 2).negate_if(bit(23) == 0)]
             - name: writeback
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
@@ -486,7 +487,7 @@ types:
               description: Base register
               kind: !type [reg, bits(16..20)]
             - name: offset
-              kind: !int (bits(0..8) << 2).negate_if(bit(23) == 0)
+              kind: !type [simm, (bits(0..8) << 2).negate_if(bit(23) == 0)]
       xxxx_xxx0_1x0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: unidx
         description: Unindexed
@@ -500,7 +501,7 @@ types:
               kind: !type [reg, bits(16..20)]
             - name: option
               description: Additional options to the coprocessor
-              kind: !uint bits(0..8)
+              kind: !type [uimm, bits(0..8)]
 - name: ldm_stm_mode
   description: Mnemonic suffix for LDM/STM, specifies how to step the base address
   kind: !enum
@@ -567,7 +568,7 @@ types:
         format: !fmt "#(offset)"
         data:
           name: offset
-          kind: !int bits(0..12).negate_if(bit(23) == 0)
+          kind: !type [simm, bits(0..12).negate_if(bit(23) == 0)]
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
         name: reg
         description: Register offset
@@ -593,7 +594,7 @@ types:
               kind: !type [shift_op, bits(5..7)]
             - name: imm
               description: Immediate to shift by
-              kind: !uint if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }
+              kind: !type [uimm, "if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }"]
 - name: addr_misc_load
   description: The memory address of a miscellaneous load/store instruction
   kind: !union
@@ -640,7 +641,7 @@ types:
         format: !fmt "#(offset)"
         data: 
           name: offset
-          kind: !int ((bits(8..12) << 4) | bits(0..4)).negate_if(bit(23) == 0)
+          kind: !type [simm, ((bits(8..12) << 4) | bits(0..4)).negate_if(bit(23) == 0)]
       xxxx_000x_x0xx_xxxx_xxxx_xxxx_1xx1_xxxx:
         name: reg
         description: Register offset
@@ -820,9 +821,11 @@ types:
 - name: sreg_list
   description: List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
   kind: !custom
+    inner_types: [sreg]
 - name: dreg_list
   description: List of general-purpose double-precision floation-point registers, used by VLDM/VSTM
   kind: !custom
+    inner_types: [dreg]
 - name: dreg_index
   description: A double-precision floating-point register and index (0 or 1) to move to/from
   kind: !struct
@@ -834,7 +837,7 @@ types:
     - name: dreg
       kind: !type [dreg, (bit(7) << 4) | bits(16..20)]
     - name: index
-      kind: !uint bit(21)
+      kind: !type [uimm, bit(21)]
 - name: fpscr
   description: Floating-Point Status and Control Register
   kind: !struct

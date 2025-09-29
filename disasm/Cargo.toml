@@ -2,3 +2,27 @@
 name = "unarm"
 version = "2.0.0"
 edition = "2024"
+
+[features]
+default = [
+    "thumb",
+    "arm",
+    "v4",
+    "v4t",
+    "v5t",
+    "v5te",
+    "v5tej",
+    "v6",
+    "v6k",
+    "vfp_v2",
+]
+thumb = []
+arm = []
+v4 = []
+v4t = []
+v5t = []
+v5te = []
+v5tej = []
+v6 = []
+v6k = []
+vfp_v2 = []
