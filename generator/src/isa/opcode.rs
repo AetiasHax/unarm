@@ -11,7 +11,7 @@ use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
         Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension, IsaExtensionPatterns,
-        IsaVersion, IsaVersionPatterns, OpcodeLookupTable, OpcodePattern,
+        IsaVersion, IsaVersionPatterns, OpcodeLookupTable, OpcodePattern, cfg_condition_tokens,
     },
     util::str::snake_to_pascal_case,
 };
@@ -91,8 +91,9 @@ impl Opcodes {
 
     pub fn parse_arm_lookup_match_tokens(&self, isa: &Isa) -> TokenStream {
         let lookup_table = OpcodeLookupTable::new_arm(isa);
-        let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
+        let parse_fn_body = lookup_table.parse_match_fn_body_tokens(isa);
         quote! {
+            #[cfg(feature = "arm")]
             pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 #parse_fn_body
             }
@@ -101,15 +102,16 @@ impl Opcodes {
 
     pub fn parse_thumb_lookup_match_tokens(&self, isa: &Isa) -> TokenStream {
         let lookup_table = OpcodeLookupTable::new_thumb(isa);
-        let parse_fn_body = lookup_table.parse_match_fn_body_tokens();
+        let parse_fn_body = lookup_table.parse_match_fn_body_tokens(isa);
         quote! {
+            #[cfg(feature = "thumb")]
             pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
                 #parse_fn_body
             }
         }
     }
 
-    pub fn parse_with_discriminant_tokens(&self, arch: Arch) -> TokenStream {
+    pub fn parse_with_discriminant_tokens(&self, isa: &Isa, arch: Arch) -> TokenStream {
         let num_opcodes = self.0.len();
 
         // See Opcodes::ins_enum_tokens
@@ -118,21 +120,28 @@ impl Opcodes {
         let id_word = Literal::usize_unsuffixed(num_opcodes + 2);
 
         let cases = self.0.iter().enumerate().filter_map(|(discriminant, opcode)| {
-            opcode.parse_with_discriminant_case(discriminant as u16, arch)
+            opcode.parse_with_discriminant_case(isa, discriminant as u16, arch)
         });
 
         let fn_name = format!("parse_{arch}_with_discriminant");
         let fn_ident = Ident::new(&fn_name, Span::call_site());
 
+        let cfg = match arch {
+            Arch::Arm => quote!(#[cfg(feature = "arm")]),
+            Arch::Thumb => quote!(#[cfg(feature = "thumb")]),
+        };
+
         quote! {
+            #cfg
             pub fn #fn_ident(ins: u32, discriminant: u16, pc: u32, options: &Options) -> Ins {
                 match discriminant {
                     #(#cases),*,
-                    #id_byte => Ins::Byte(ins as u8),
-                    #id_halfword => Ins::HalfWord(ins as u16),
-                    #id_word => Ins::Word(ins),
-                    _ => Ins::Illegal,
-                }
+                    #id_byte => return Ins::Byte(ins as u8),
+                    #id_halfword => return Ins::HalfWord(ins as u16),
+                    #id_word => return Ins::Word(ins),
+                    _ => {},
+                };
+                Ins::Illegal
             }
         }
     }
@@ -194,7 +203,11 @@ impl Opcode {
             quote!(#name_ident: #type_ident)
         });
         let description = &self.description;
+
+        let cfg = self.cfg_condition_tokens(isa);
+
         quote! {
+            #cfg
             #[doc = #description]
             #variant_ident { #(#params),* }
         }
@@ -232,7 +245,7 @@ impl Opcode {
     fn write_opcode_tokens(&self, isa: &Isa) -> TokenStream {
         let params = self.format_params(isa);
         let display_expr = self.format.opcode.fmt_expr_tokens(isa, &params, None);
-        self.write_variant_tokens(display_expr)
+        self.write_variant_tokens(isa, display_expr)
     }
 
     fn write_params_tokens(&self, isa: &Isa) -> TokenStream {
@@ -246,14 +259,16 @@ impl Opcode {
         } else {
             quote!()
         };
-        self.write_variant_tokens(display_expr)
+        self.write_variant_tokens(isa, display_expr)
     }
 
-    fn write_variant_tokens(&self, expr: TokenStream) -> TokenStream {
+    fn write_variant_tokens(&self, isa: &Isa, expr: TokenStream) -> TokenStream {
         let variant_ident = Ident::new(&snake_to_pascal_case(&self.mnemonic), Span::call_site());
         let param_names = self.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
+        let cfg = self.cfg_condition_tokens(isa);
 
         quote! {
+            #cfg
             Ins::#variant_ident { #(#param_names),* } => {
                 #expr
             }
@@ -268,7 +283,12 @@ impl Opcode {
         &self.thumb
     }
 
-    fn parse_with_discriminant_case(&self, discriminant: u16, arch: Arch) -> Option<TokenStream> {
+    fn parse_with_discriminant_case(
+        &self,
+        isa: &Isa,
+        discriminant: u16,
+        arch: Arch,
+    ) -> Option<TokenStream> {
         let encodings = match arch {
             Arch::Arm => &self.arm,
             Arch::Thumb => &self.thumb,
@@ -281,23 +301,28 @@ impl Opcode {
                 let encoding_ifs = encodings.iter().enumerate().map(|(index, encoding)| {
                     let condition = encoding.pattern.condition_tokens(quote!(ins));
                     let parse_fn = self.with_discriminant_encoding_parse_fn(arch, index);
+                    let cfg = encoding.cfg_condition_tokens(isa);
                     quote! {
+                        #cfg
                         if #condition {
-                            #parse_fn
+                            #parse_fn;
                         }
                     }
                 });
                 quote! {
-                    #(#encoding_ifs)else*
-                    else {
-                        Ins::Illegal
+                    {
+                        #(#encoding_ifs)*
                     }
                 }
             }
         };
 
+        let cfg = self.cfg_condition_tokens(isa);
         let discriminant_lit = Literal::u16_unsuffixed(discriminant);
-        Some(quote!(#discriminant_lit => #parse_encoding))
+        Some(quote! {
+            #cfg
+            #discriminant_lit => #parse_encoding
+        })
     }
 
     fn with_discriminant_encoding_parse_fn(
@@ -307,22 +332,24 @@ impl Opcode {
     ) -> TokenStream {
         let parse_fn_ident = self.parse_fn_ident(arch, encoding_index);
         match arch {
-            Arch::Arm => quote!(#parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal)),
-            Arch::Thumb => {
-                quote!(#parse_fn_ident(ins, pc, options).map(|(ins, _size)| ins).unwrap_or(Ins::Illegal))
-            }
+            Arch::Arm => quote! {
+                return #parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal)
+            },
+            Arch::Thumb => quote! {
+                return #parse_fn_ident(ins, pc, options).map(|(ins, _size)| ins).unwrap_or(Ins::Illegal)
+            },
         }
     }
 
     pub fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
         let mut versions = IndexSet::new();
         for encoding in &self.arm {
-            for v in encoding.version.versions(isa) {
+            for v in encoding.versions(isa) {
                 versions.insert(v.clone());
             }
         }
         for encoding in &self.thumb {
-            for v in encoding.version.versions(isa) {
+            for v in encoding.versions(isa) {
                 versions.insert(v.clone());
             }
         }
@@ -332,7 +359,7 @@ impl Opcode {
     pub fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
         let mut extensions: Option<IndexSet<IsaExtension>> = None;
         for encoding in &self.arm {
-            let exts = encoding.extensions.extensions(isa).into_iter().cloned().collect();
+            let exts = encoding.extensions(isa);
             if let Some(extensions) = &mut extensions {
                 *extensions = extensions.intersection(&exts).cloned().collect();
             } else {
@@ -340,7 +367,7 @@ impl Opcode {
             }
         }
         for encoding in &self.thumb {
-            let exts = encoding.extensions.extensions(isa).into_iter().cloned().collect();
+            let exts = encoding.extensions(isa);
             if let Some(extensions) = &mut extensions {
                 *extensions = extensions.intersection(&exts).cloned().collect();
             } else {
@@ -352,6 +379,12 @@ impl Opcode {
 
     pub fn uses_data_type(&self, data_type: &DataType) -> bool {
         self.params.values().any(|type_name| type_name == data_type.name())
+    }
+
+    fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let versions = self.versions(isa);
+        let extensions = self.extensions(isa);
+        cfg_condition_tokens(&versions, &extensions, isa)
     }
 }
 
@@ -449,7 +482,11 @@ impl OpcodeEncoding {
             let versions = self.version.versions(isa);
             let versions = versions.iter().map(|version| {
                 let ident = version.as_ident();
-                quote!(Version::#ident)
+                let name = version.name();
+                quote! {
+                    #[cfg(feature = #name)]
+                    Version::#ident
+                }
             });
             quote! {
                 const VERSIONS: Versions = Versions::of(&[#(#versions),*]);
@@ -495,7 +532,10 @@ impl OpcodeEncoding {
             Arch::Thumb => quote!(Option<(Ins, u32)>),
         };
 
+        let cfg = self.cfg_condition_tokens(isa);
+
         quote! {
+            #cfg
             fn #fn_ident(value: u32, pc: u32, options: &Options) -> #return_type {
                 #version_check
                 #extensions_check
@@ -509,6 +549,20 @@ impl OpcodeEncoding {
 
     pub fn pattern(&self) -> &OpcodePattern {
         &self.pattern
+    }
+
+    fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
+        self.version.versions(isa).into_iter().cloned().collect()
+    }
+
+    fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
+        self.extensions.extensions(isa).into_iter().cloned().collect()
+    }
+
+    pub fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let versions = self.versions(isa);
+        let extensions = self.extensions(isa);
+        cfg_condition_tokens(&versions, &extensions, isa)
     }
 }
 

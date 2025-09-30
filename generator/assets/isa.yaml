@@ -1776,7 +1776,7 @@ opcodes:
       else: !fmt ldr(cond)sb
     params: !fmt (rd), (addr)
   arm:
-  - version: [v5te*, v6*]
+  - version: [v4*, v5t*, v6*]
     pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1101_xxxx
     illegal:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -2295,10 +2295,6 @@ opcodes:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params: 
       cond: !bits 28..32
-  thumb:
-  - version: [v4t, v5t*, v6*]
-    pattern: 1011_1111_0000_0000
-    params: {}
 
 - mnemonic: orr
   description: Bitwise OR

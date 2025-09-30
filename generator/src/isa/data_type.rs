@@ -10,7 +10,7 @@ use syn::{Ident, visit_mut::VisitMut};
 use crate::{
     isa::{
         BitRange, Format, FormatParams, IllegalChecks, Isa, IsaExtension, IsaVersion,
-        OpcodeParamValue, Pattern, SynExpr,
+        OpcodeParamValue, Pattern, SynExpr, cfg_condition_tokens,
     },
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
@@ -193,30 +193,47 @@ impl DataType {
             DataTypeKind::Type(_, _) => return None,
             DataTypeKind::Custom(_) => return None,
         };
+        let cfg = self.cfg_condition_tokens(isa);
         let doc = self.description.as_ref().map(|desc| quote!(#[doc = #desc]));
         Some(quote! {
+            #cfg
             #doc
             #type_decl
         })
     }
 
     fn parse_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
-        match &self.kind {
-            DataTypeKind::Bool { .. } => None,
-            DataTypeKind::UInt(_) => None,
-            DataTypeKind::Int(_) => None,
-            DataTypeKind::Enum(data_type_enum) => {
-                Some(data_type_enum.parse_impl_tokens(&self.name))
+        let body = match &self.kind {
+            DataTypeKind::Bool { .. } => return None,
+            DataTypeKind::UInt(_) => return None,
+            DataTypeKind::Int(_) => return None,
+            DataTypeKind::Enum(data_type_enum) => data_type_enum.parse_impl_body_tokens(&self.name),
+            DataTypeKind::Union(data_type_union) => data_type_union.parse_impl_body_tokens(isa),
+            DataTypeKind::Struct(data_type_struct) => data_type_struct.parse_impl_body_tokens(isa),
+            DataTypeKind::Type(_, _) => return None,
+            DataTypeKind::Custom(_) => return None,
+        };
+
+        let name_ident = self.name.as_pascal_ident();
+
+        let can_be_illegal = self.can_be_illegal(isa);
+        let return_type = if can_be_illegal {
+            quote!(Option<Self>)
+        } else {
+            quote!(Self)
+        };
+
+        let cfg = self.cfg_condition_tokens(isa);
+
+        Some(quote! {
+            #cfg
+            impl #name_ident {
+                #[inline(always)]
+                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
+                    #body
+                }
             }
-            DataTypeKind::Union(data_type_union) => {
-                Some(data_type_union.parse_impl_tokens(isa, &self.name))
-            }
-            DataTypeKind::Struct(data_type_struct) => {
-                Some(data_type_struct.parse_impl_tokens(isa, &self.name))
-            }
-            DataTypeKind::Type(_, _) => None,
-            DataTypeKind::Custom(_) => None,
-        }
+        })
     }
 
     pub fn type_tokens(&self, isa: &Isa) -> TokenStream {
@@ -357,7 +374,9 @@ impl DataType {
             DataTypeKind::Custom(_) => return None,
         };
         let name_ident = self.name.as_pascal_ident();
+        let cfg = self.cfg_condition_tokens(isa);
         Some(quote! {
+            #cfg
             impl Default for #name_ident {
                 fn default() -> Self {
                     #default_expr
@@ -396,7 +415,9 @@ impl DataType {
         };
         let display_expr = self.write_impl_body_tokens(isa);
         let name_ident = self.name().as_pascal_ident();
+        let cfg = self.cfg_condition_tokens(isa);
         Some(quote! {
+            #cfg
             impl #name_ident {
                 pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
@@ -493,24 +514,7 @@ impl DataType {
     fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         let versions = self.versions(isa);
         let extensions = self.extensions(isa);
-
-        let extension_features = extensions.iter().map(|ext| {
-            let name = ext.name();
-            quote!(feature = #name)
-        });
-        let version_features = versions.iter().map(|ver| {
-            let name = ver.name();
-            quote!(feature = #name)
-        });
-
-        match (isa.versions.has_all(&versions), extensions.is_empty()) {
-            (true, true) => None,
-            (true, false) => Some(quote!(#[cfg(all(#(#extension_features),*))])),
-            (false, true) => Some(quote!(#[cfg(any(#(#version_features),*))])),
-            (false, false) => {
-                Some(quote!(#[cfg(all(#(#extension_features),*, any(#(#version_features),*)))]))
-            }
-        }
+        cfg_condition_tokens(&versions, &extensions, isa)
     }
 
     fn trait_write_fn_tokens(&self, isa: &Isa) -> Option<TokenStream> {
@@ -528,8 +532,8 @@ impl DataType {
         let cfg = self.cfg_condition_tokens(isa);
 
         Some(quote! {
-            #doc
             #cfg
+            #doc
             fn #fn_ident(&mut self, #value: #type_tokens) -> core::fmt::Result {
                 #write_expr
                 Ok(())
@@ -671,20 +675,15 @@ impl DataTypeEnum {
         }
     }
 
-    fn parse_impl_tokens(&self, name: &DataTypeName) -> TokenStream {
+    fn parse_impl_body_tokens(&self, name: &DataTypeName) -> TokenStream {
         let name_ident = name.as_pascal_ident();
         let num_variants = Literal::usize_unsuffixed(self.variants.len());
         let repr_type = self.repr_type();
         let assert_message = format!("Invalid enum value {{:#x}} for {}", name_ident);
 
         quote! {
-            impl #name_ident {
-                #[inline(always)]
-                pub(crate) fn parse(value: u32, pc: u32) -> Self {
-                    debug_assert!(value < #num_variants, #assert_message, value);
-                    unsafe { core::mem::transmute::<#repr_type, Self>(value as #repr_type) }
-                }
-            }
+            debug_assert!(value < #num_variants, #assert_message, value);
+            unsafe { core::mem::transmute::<#repr_type, Self>(value as #repr_type) }
         }
     }
 
@@ -770,9 +769,7 @@ impl DataTypeUnion {
         !self.complete
     }
 
-    fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
-        let name_ident = name.as_pascal_ident();
-
+    fn parse_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
         let can_be_illegal = self.can_be_illegal();
         let illegal_expr = if can_be_illegal {
             quote!(None)
@@ -780,40 +777,26 @@ impl DataTypeUnion {
             quote!(unreachable!())
         };
 
-        let fn_body =
-            if self.has_optional_bits() {
-                let variants = self.variants.iter().map(|(pattern, variant)| {
-                    variant.parse_if_tokens(isa, pattern, can_be_illegal)
-                });
-                quote! {
-                    #(#variants)else*
-                    else {
-                        #illegal_expr
-                    }
+        if self.has_optional_bits() {
+            let variants = self
+                .variants
+                .iter()
+                .map(|(pattern, variant)| variant.parse_if_tokens(isa, pattern, can_be_illegal));
+            quote! {
+                #(#variants)else*
+                else {
+                    #illegal_expr
                 }
-            } else {
-                let variants = self.variants.iter().map(|(pattern, variant)| {
-                    variant.parse_match_tokens(isa, pattern, can_be_illegal)
-                });
-                quote! {
-                    match value {
-                        #(#variants),*,
-                        _ => #illegal_expr,
-                    }
-                }
-            };
-
-        let return_type = if can_be_illegal {
-            quote!(Option<Self>)
+            }
         } else {
-            quote!(Self)
-        };
-
-        quote! {
-            impl #name_ident {
-                #[inline(always)]
-                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
-                    #fn_body
+            let variants = self
+                .variants
+                .iter()
+                .map(|(pattern, variant)| variant.parse_match_tokens(isa, pattern, can_be_illegal));
+            quote! {
+                match value {
+                    #(#variants),*,
+                    _ => #illegal_expr,
                 }
             }
         }
@@ -1092,15 +1075,9 @@ impl DataTypeStruct {
         quote!({ #(#fields),* })
     }
 
-    fn parse_impl_tokens(&self, isa: &Isa, name: &DataTypeName) -> TokenStream {
-        let name_ident = name.as_pascal_ident();
+    fn parse_impl_body_tokens(&self, isa: &Isa) -> TokenStream {
         let record = self.parse_record_tokens(isa);
 
-        let return_type = if self.can_be_illegal(isa) {
-            quote!(Option<Self>)
-        } else {
-            quote!(Self)
-        };
         let return_value = if self.can_be_illegal(isa) {
             quote!(Some(Self #record))
         } else {
@@ -1110,13 +1087,8 @@ impl DataTypeStruct {
         let illegal_checks = self.illegal.checks_tokens(Some(quote!(None)));
 
         quote! {
-            impl #name_ident {
-                #[inline(always)]
-                pub(crate) fn parse(value: u32, pc: u32) -> #return_type {
-                    #illegal_checks
-                    #return_value
-                }
-            }
+            #illegal_checks
+            #return_value
         }
     }
 

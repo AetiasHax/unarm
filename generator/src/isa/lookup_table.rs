@@ -120,12 +120,12 @@ impl<'a> OpcodeLookupTable<'a> {
         OpcodeLookupTable { arch, bitmask, buckets, equivalent_buckets }
     }
 
-    pub fn parse_match_fn_body_tokens(&self) -> TokenStream {
+    pub fn parse_match_fn_body_tokens(&self, isa: &'a Isa) -> TokenStream {
         let cases = self.equivalent_buckets.iter().map(|(key, clones)| {
             let pattern_literals = clones.iter().map(|k| HexLiteral(*k));
 
             let bucket = self.buckets.get(*key).unwrap();
-            let body_tokens = bucket.parse_bucket_tokens(self.arch);
+            let body_tokens = bucket.parse_bucket_tokens(self.arch, isa);
 
             quote! {
                 #(#pattern_literals)|* => #body_tokens
@@ -133,33 +133,34 @@ impl<'a> OpcodeLookupTable<'a> {
         });
         let bit_ranges = BitRanges::from_mask(self.bitmask);
         let index_expr = bit_ranges.shift_mask_tokens(Some(Ident::new("ins", Span::call_site())));
+
+        let fallback = match self.arch {
+            Arch::Arm => quote!(Ins::Illegal),
+            Arch::Thumb => quote!((Ins::Illegal, 2)),
+        };
+
         quote! {
             match #index_expr {
                 #(#cases),*,
                 _ => unreachable!(),
             }
+            #fallback
         }
     }
 }
 
 impl<'a> Bucket<'a> {
-    pub fn parse_bucket_tokens(&self, arch: Arch) -> TokenStream {
-        let ins_size = match arch {
-            Arch::Arm => quote!(4),
-            Arch::Thumb => quote!(2),
-        };
+    pub fn parse_bucket_tokens(&self, arch: Arch, isa: &Isa) -> TokenStream {
         if self.encodings.is_empty() {
-            match arch {
-                Arch::Arm => quote!(Ins::Illegal),
-                Arch::Thumb => quote!((Ins::Illegal, #ins_size)),
-            }
+            quote!({})
         } else if self.encodings.len() == 1 {
             let encoding = &self.encodings[0];
             let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
-            match arch {
-                Arch::Arm => quote!(#parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal)),
-                Arch::Thumb => {
-                    quote!(#parse_fn_ident(ins, pc, options).unwrap_or((Ins::Illegal, #ins_size)))
+            let cfg = encoding.encoding.cfg_condition_tokens(isa);
+            quote! {
+                #cfg
+                if let Some(ins) = #parse_fn_ident(ins, pc, options) {
+                    return ins;
                 }
             }
         } else {
@@ -167,20 +168,17 @@ impl<'a> Bucket<'a> {
                 let pattern = encoding.encoding.pattern().combined();
                 let condition = pattern.condition_tokens(quote!(ins));
                 let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
+                let cfg = encoding.encoding.cfg_condition_tokens(isa);
                 quote! {
+                    #cfg
                     if #condition && let Some(ins) = #parse_fn_ident(ins, pc, options) {
-                        ins
+                        return ins;
                     }
                 }
             });
-            let fallback = match arch {
-                Arch::Arm => quote!(Ins::Illegal),
-                Arch::Thumb => quote!((Ins::Illegal, #ins_size)),
-            };
             quote! {
-                #(#parse_ifs)else*
-                else {
-                    #fallback
+                {
+                    #(#parse_ifs)*
                 }
             }
         }

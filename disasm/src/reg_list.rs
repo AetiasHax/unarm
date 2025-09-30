@@ -1,4 +1,4 @@
-use crate::{Dreg, Reg, Sreg, Write};
+use crate::*;
 
 /// List of general-purpose registers, used by LDM/STM
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -31,6 +31,10 @@ impl RegList {
     }
 }
 
+#[cfg(all(
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
 /// List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct SregList {
@@ -38,6 +42,10 @@ pub struct SregList {
     end: u8,
 }
 
+#[cfg(all(
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
 impl SregList {
     pub fn parse(value: u32) -> Self {
         let start = (((value >> 22) & 0x1) | ((value >> 11) & 0x1e)) as u8;
@@ -67,6 +75,10 @@ impl SregList {
     }
 }
 
+#[cfg(all(
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
 /// List of general-purpose double-precision floation-point registers, used by VLDM/VSTM
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct DregList {
@@ -74,6 +86,10 @@ pub struct DregList {
     end: u8,
 }
 
+#[cfg(all(
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
 impl DregList {
     pub fn parse(value: u32) -> Self {
         let start = (((value >> 18) & 0x10) | ((value >> 12) & 0xf)) as u8;

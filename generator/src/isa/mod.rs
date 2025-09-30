@@ -1,4 +1,5 @@
 mod bit_range;
+mod cfg;
 mod data_type;
 mod extension;
 mod format;
@@ -16,6 +17,7 @@ use anyhow::Result;
 use serde::Deserialize;
 
 pub use bit_range::*;
+pub use cfg::*;
 pub use data_type::*;
 pub use extension::*;
 pub use format::*;
