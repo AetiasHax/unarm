@@ -1,7 +1,7 @@
 use std::{hint::black_box, ops::RangeInclusive};
 
 use rand::RngCore;
-use unarm::{parse_arm, Options};
+use unarm::{parse_arm, parse_arm_with_discriminant, Options};
 
 use crate::Test;
 
@@ -18,6 +18,7 @@ pub fn fuzz(num_threads: usize, iterations: usize, options: Options, test: Test)
         Test::Parse => fuzzers.iter().map(|f| f.parse()).collect(),
         Test::ParseRandom => fuzzers.iter().map(|f| f.parse_random()).collect(),
         Test::ParseAndWrite => fuzzers.iter().map(|f| f.parse_and_write()).collect(),
+        Test::Reparse => fuzzers.iter().map(|f| f.reparse()).collect(),
     };
     for handle in handles {
         handle.join().unwrap();
@@ -42,7 +43,6 @@ impl Fuzzer {
         std::thread::spawn(move || {
             for _ in 0..iterations {
                 for code in range.clone() {
-                    #[allow(clippy::unit_arg)]
                     black_box(parse_arm(code, 0, &options));
                 }
             }
@@ -58,7 +58,6 @@ impl Fuzzer {
             for _ in 0..iterations {
                 for _ in range.clone() {
                     let code = rng.next_u32();
-                    #[allow(clippy::unit_arg)]
                     black_box(parse_arm(code, 0, &options));
                 }
             }
@@ -73,7 +72,24 @@ impl Fuzzer {
             for _ in 0..iterations {
                 for code in range.clone() {
                     let ins = parse_arm(code, 0, &options);
+                    // let mut formatter = CompactStringFormatter::new(&options);
+                    // formatter.write_ins(&ins).unwrap();
                     black_box(ins.display(&options).to_string());
+                }
+            }
+        })
+    }
+
+    fn reparse(&self) -> std::thread::JoinHandle<()> {
+        let range = self.range.clone();
+        let iterations = self.iterations;
+        let options = self.options.clone();
+        std::thread::spawn(move || {
+            for _ in 0..iterations {
+                for code in range.clone() {
+                    let ins = parse_arm(code, 0, &options);
+                    let discriminant = ins.discriminant();
+                    black_box(parse_arm_with_discriminant(code, discriminant, 0, &options));
                 }
             }
         })

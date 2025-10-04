@@ -10,6 +10,7 @@ pub enum Test {
     Parse,
     ParseRandom,
     ParseAndWrite,
+    Reparse,
 }
 
 fn main() {
@@ -46,6 +47,7 @@ fn main() {
                 "parse" => test = Some(Test::Parse),
                 "parse-random" => test = Some(Test::ParseRandom),
                 "parse-and-write" => test = Some(Test::ParseAndWrite),
+                "reparse" => test = Some(Test::Reparse),
                 _ => panic!("Unknown argument '{}'", arg),
             }
         }
@@ -64,7 +66,7 @@ fn main() {
         panic!("Expected one of: v4, v4t, v5t, v5te, v5tej, v6, v6k");
     };
     let Some(test) = test else {
-        panic!("Expected one of: parse, parse-random, parse-and-write");
+        panic!("Expected one of: parse, parse-random, parse-and-write, reparse");
     };
     let options = Options {
         version,
