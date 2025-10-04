@@ -13384,10 +13384,10 @@ fn parse_arm_dbg_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !VERSIONS.has(options.version) {
         return None;
     }
-    if (((value) >> 8) & 0xf) != 0 {
+    if value & 0xff00 != 0xf000 {
         return Some(Ins::Illegal);
     }
-    if (((value) >> 12) & 0xf) != 0xf {
+    if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);

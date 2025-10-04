@@ -1413,8 +1413,8 @@ opcodes:
   - version: [v6k]
     pattern: xxxx_0011_0010_0000_xxxx_xxxx_1111_xxxx
     illegal:
-    - bits(8..12) != 0
-    - bits(12..16) != 0xf
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       cond:   !bits 28..32
       option: !bits 0..4
