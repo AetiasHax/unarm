@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
     use unarm::{
-        AddrLdrStr, AddrMiscLoad, Cond, Endianness, Extensions, Ins, LdrStrOffset, MiscLoadOffset,
-        Op2, Op2Shift, Options, ParseMode, Parser, R9Use, Reg, RegList, ShiftImm, ShiftOp, Version,
+        AddrLdrStr, AddrMiscLoad, Cond, Extensions, Ins, LdrStrOffset, MiscLoadOffset, Op2,
+        Op2Shift, Options, ParseEndian, ParseMode, Parser, R9Use, Reg, RegList, ShiftImm, ShiftOp,
+        Version,
     };
 
     #[test]
@@ -25,7 +26,7 @@ mod tests {
         let mut parser = Parser::new(
             code,
             ParseMode::Arm,
-            Endianness::Le,
+            ParseEndian::Little,
             Options {
                 version: Version::V6K,
                 extensions: Extensions::all(),
@@ -209,7 +210,7 @@ mod tests {
         let mut parser = Parser::new(
             code,
             ParseMode::Thumb,
-            Endianness::Le,
+            ParseEndian::Little,
             Options {
                 version: Version::V6K,
                 extensions: Extensions::all(),
@@ -425,7 +426,7 @@ mod tests {
         let mut parser = Parser::new(
             code,
             ParseMode::Data,
-            Endianness::Le,
+            ParseEndian::Little,
             Options {
                 version: Version::V6K,
                 extensions: Extensions::all(),
