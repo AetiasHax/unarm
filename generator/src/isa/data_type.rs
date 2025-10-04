@@ -9,8 +9,8 @@ use syn::{Ident, visit_mut::VisitMut};
 
 use crate::{
     isa::{
-        BitRange, Format, FormatParams, IllegalChecks, Isa, IsaExtension, IsaVersion,
-        OpcodeParamValue, Pattern, SynExpr, cfg_condition_tokens,
+        Arch, BitRange, Format, FormatParams, IllegalChecks, Isa, IsaExtension, IsaVersionSet,
+        OpcodeParamValue, Pattern, SynExpr, cfg_attribute_tokens,
     },
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
@@ -193,7 +193,7 @@ impl DataType {
             DataTypeKind::Type(_, _) => return None,
             DataTypeKind::Custom(_) => return None,
         };
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
         let doc = self.description.as_ref().map(|desc| quote!(#[doc = #desc]));
         Some(quote! {
             #cfg
@@ -223,7 +223,7 @@ impl DataType {
             quote!(Self)
         };
 
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
 
         Some(quote! {
             #cfg
@@ -374,7 +374,7 @@ impl DataType {
             DataTypeKind::Custom(_) => return None,
         };
         let name_ident = self.name.as_pascal_ident();
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
         Some(quote! {
             #cfg
             impl Default for #name_ident {
@@ -415,7 +415,7 @@ impl DataType {
         };
         let display_expr = self.write_impl_body_tokens(isa);
         let name_ident = self.name().as_pascal_ident();
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
         Some(quote! {
             #cfg
             impl #name_ident {
@@ -511,10 +511,18 @@ impl DataType {
         }
     }
 
-    fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
-        let versions = self.versions(isa);
-        let extensions = self.extensions(isa);
-        cfg_condition_tokens(&versions, &extensions, isa)
+    fn cfg_attribute_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let arm_versions = self.versions(isa, Arch::Arm);
+        let thumb_versions = self.versions(isa, Arch::Thumb);
+        let arm_extensions = self.extensions(isa, Arch::Arm);
+        let thumb_extensions = self.extensions(isa, Arch::Thumb);
+        cfg_attribute_tokens(
+            &arm_versions,
+            &arm_extensions,
+            &thumb_versions,
+            &thumb_extensions,
+            isa,
+        )
     }
 
     fn trait_write_fn_tokens(&self, isa: &Isa) -> Option<TokenStream> {
@@ -529,7 +537,7 @@ impl DataType {
 
         let write_expr = self.write_expr_tokens(isa, value.to_token_stream(), quote!(self));
 
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
 
         Some(quote! {
             #cfg
@@ -541,34 +549,34 @@ impl DataType {
         })
     }
 
-    fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
-        let mut versions = IndexSet::new();
+    fn versions(&self, isa: &Isa, arch: Arch) -> IsaVersionSet {
+        let mut versions = IsaVersionSet::new();
         for opcode in isa.opcodes().iter() {
             if !opcode.uses_data_type(self) {
                 continue;
             }
-            for version in opcode.versions(isa) {
-                versions.insert(version);
+            for version in opcode.versions(isa, arch).0 {
+                versions.0.insert(version);
             }
         }
         for data_type in isa.types().iter() {
             if !data_type.uses_data_type(self) {
                 continue;
             }
-            for version in data_type.versions(isa) {
-                versions.insert(version);
+            for version in data_type.versions(isa, arch).0 {
+                versions.0.insert(version);
             }
         }
         versions
     }
 
-    fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
+    fn extensions(&self, isa: &Isa, arch: Arch) -> IndexSet<IsaExtension> {
         let mut extensions: Option<IndexSet<IsaExtension>> = None;
         for opcode in isa.opcodes().iter() {
             if !opcode.uses_data_type(self) {
                 continue;
             }
-            let exts = opcode.extensions(isa);
+            let exts = opcode.extensions(isa, arch);
             if let Some(extensions) = &mut extensions {
                 *extensions = extensions.intersection(&exts).cloned().collect();
             } else {
@@ -579,7 +587,7 @@ impl DataType {
             if !data_type.uses_data_type(self) {
                 continue;
             }
-            let exts = data_type.extensions(isa);
+            let exts = data_type.extensions(isa, arch);
             if let Some(extensions) = &mut extensions {
                 *extensions = extensions.intersection(&exts).cloned().collect();
             } else {

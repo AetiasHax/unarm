@@ -156,7 +156,7 @@ impl<'a> Bucket<'a> {
         } else if self.encodings.len() == 1 {
             let encoding = &self.encodings[0];
             let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
-            let cfg = encoding.encoding.cfg_condition_tokens(isa);
+            let cfg = encoding.encoding.cfg_attribute_tokens(isa, arch);
             quote! {
                 #cfg
                 if let Some(ins) = #parse_fn_ident(ins, pc, options) {
@@ -168,7 +168,7 @@ impl<'a> Bucket<'a> {
                 let pattern = encoding.encoding.pattern().combined();
                 let condition = pattern.condition_tokens(quote!(ins));
                 let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
-                let cfg = encoding.encoding.cfg_condition_tokens(isa);
+                let cfg = encoding.encoding.cfg_attribute_tokens(isa, arch);
                 quote! {
                     #cfg
                     if #condition && let Some(ins) = #parse_fn_ident(ins, pc, options) {

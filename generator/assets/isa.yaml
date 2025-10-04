@@ -32,13 +32,14 @@ options:
     kind: !bool
 
 versions:
-- v4
-- v4t
-- v5t
-- v5te
-- v5tej
-- v6
-- v6k
+- name: v4
+  thumb: false
+- name: v4t
+- name: v5t
+- name: v5te
+- name: v5tej
+- name: v6
+- name: v6k
 
 extensions:
 - vfp_v2

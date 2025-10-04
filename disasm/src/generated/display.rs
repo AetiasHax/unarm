@@ -19,6 +19,7 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///Mnemonic suffix, specifies a long load/store for LDC/STC instructions
     fn write_l(&mut self, l: bool) -> core::fmt::Result {
         if l {
@@ -95,16 +96,19 @@ pub trait Write: core::fmt::Write {
         reg_list.write(self)?;
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///Status register
     fn write_status_reg(&mut self, status_reg: StatusReg) -> core::fmt::Result {
         status_reg.write(self)?;
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///Status register with field masks
     fn write_status_fields(&mut self, status_fields: StatusFields) -> core::fmt::Result {
         status_fields.write(self)?;
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///Second operand of the MSR instruction, can be an immediate or a register
     fn write_msr_op2(&mut self, msr_op2: MsrOp2) -> core::fmt::Result {
         msr_op2.write(self)?;
@@ -115,11 +119,13 @@ pub trait Write: core::fmt::Write {
         shift_op.write(self)?;
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///Coprocessor
     fn write_coproc(&mut self, coproc: Coproc) -> core::fmt::Result {
         coproc.write(self)?;
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///Coprocessor register
     fn write_co_reg(&mut self, co_reg: CoReg) -> core::fmt::Result {
         co_reg.write(self)?;
@@ -157,6 +163,7 @@ pub trait Write: core::fmt::Write {
         aif_flags.write(self)?;
         Ok(())
     }
+    #[cfg(feature = "arm")]
     ///The memory address of an LDC/STC instruction
     fn write_addr_ldc_stc(&mut self, addr_ldc_stc: AddrLdcStc) -> core::fmt::Result {
         addr_ldc_stc.write(self)?;
@@ -204,7 +211,7 @@ pub trait Write: core::fmt::Write {
         misc_load_offset.write(self)?;
         Ok(())
     }
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
     fn write_srs_rfe_mode(&mut self, srs_rfe_mode: SrsRfeMode) -> core::fmt::Result {
         srs_rfe_mode.write(self)?;
@@ -216,13 +223,18 @@ pub trait Write: core::fmt::Write {
         endianness.write(self)?;
         Ok(())
     }
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Mnemonic suffix, specifies which half of a register to use as an operand
     fn write_reg_side(&mut self, reg_side: RegSide) -> core::fmt::Result {
         reg_side.write(self)?;
         Ok(())
     }
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Mnemonic suffix, when performing two 16x16 bit multiplications, swap the two halfwords of Rm
     fn write_swap_rm(&mut self, swap_rm: bool) -> core::fmt::Result {
         if swap_rm {
@@ -230,7 +242,7 @@ pub trait Write: core::fmt::Write {
         }
         Ok(())
     }
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Mnemonic suffix, round the multiplication result instead of truncating
     fn write_round(&mut self, round: bool) -> core::fmt::Result {
         if round {
@@ -240,6 +252,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -257,6 +270,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -268,6 +282,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -279,6 +294,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -292,6 +308,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -303,6 +320,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -314,6 +332,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -325,6 +344,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -336,6 +356,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -347,6 +368,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -358,6 +380,7 @@ pub trait Write: core::fmt::Write {
     }
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -593,6 +616,7 @@ impl Reg {
         Ok(())
     }
 }
+#[cfg(feature = "arm")]
 impl StatusReg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -609,6 +633,7 @@ impl StatusReg {
         Ok(())
     }
 }
+#[cfg(feature = "arm")]
 impl StatusFields {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -632,6 +657,7 @@ impl StatusFields {
         Ok(())
     }
 }
+#[cfg(feature = "arm")]
 impl MsrOp2 {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -671,6 +697,7 @@ impl ShiftOp {
         Ok(())
     }
 }
+#[cfg(feature = "arm")]
 impl Coproc {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -729,6 +756,7 @@ impl Coproc {
         Ok(())
     }
 }
+#[cfg(feature = "arm")]
 impl CoReg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -900,6 +928,7 @@ impl AifFlags {
         Ok(())
     }
 }
+#[cfg(feature = "arm")]
 impl AddrLdcStc {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -1073,7 +1102,7 @@ impl MiscLoadOffset {
         Ok(())
     }
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 impl SrsRfeMode {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -1113,7 +1142,12 @@ impl Endianness {
         Ok(())
     }
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 impl RegSide {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
@@ -1132,6 +1166,7 @@ impl RegSide {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1244,6 +1279,7 @@ impl Sreg {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1356,6 +1392,7 @@ impl Dreg {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1378,6 +1415,7 @@ impl VcmpF32Op2 {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1400,6 +1438,7 @@ impl VcmpF64Op2 {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1423,6 +1462,7 @@ impl DregIndex {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1439,6 +1479,7 @@ impl Fpscr {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -1574,38 +1615,50 @@ impl Ins {
                 formatter.write_str("bx")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v5tej", feature = "v6", feature = "v6k"))]
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(feature = "v5tej", feature = "v6", feature = "v6k")
+                )
+            )]
             Ins::Bxj { cond, rm } => {
                 formatter.write_str("bxj")?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
                 formatter.write_str("cdp")?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
                 formatter.write_str("cdp2")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Clrex {} => {
                 formatter.write_str("clrex")?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Clz { cond, rd, rm } => {
@@ -1625,11 +1678,12 @@ impl Ins {
                 formatter.write_str("cps")?;
                 formatter.write_cps_effect(*effect)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Csdb { cond } => {
                 formatter.write_str("csdb")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Dbg { cond, option } => {
                 formatter.write_str("dbg")?;
                 formatter.write_cond(*cond)?;
@@ -1647,6 +1701,7 @@ impl Ins {
                     } else {}
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Ldc { l, cond, coproc, crd, dest } => {
                 if formatter.options().ual {
                     formatter.write_str("ldc")?;
@@ -1659,12 +1714,15 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Ldc2 { l, coproc, crd, dest } => {
@@ -1696,6 +1754,7 @@ impl Ins {
                     formatter.write_str("b")?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Ldrbt { cond, rd, addr } => {
                 if formatter.options().ual {
                     formatter.write_str("ldrbt")?;
@@ -1707,7 +1766,15 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Ldrd { cond, rd, rd2, addr } => {
                 if formatter.options().ual {
@@ -1719,22 +1786,22 @@ impl Ins {
                     formatter.write_str("d")?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ldrex { cond, rd, rn } => {
                 formatter.write_str("ldrex")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexb { cond, rd, rn } => {
                 formatter.write_str("ldrexb")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexd { cond, rd, rd2, rn } => {
                 formatter.write_str("ldrexd")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexh { cond, rd, rn } => {
                 formatter.write_str("ldrexh")?;
                 formatter.write_cond(*cond)?;
@@ -1769,6 +1836,7 @@ impl Ins {
                     formatter.write_str("sh")?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Ldrt { cond, rd, addr } => {
                 if formatter.options().ual {
                     formatter.write_str("ldrt")?;
@@ -1794,33 +1862,46 @@ impl Ins {
                 formatter.write_s(*s)?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Mcr { cond, coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_str("mcr")?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Mcr2 { coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_str("mcr2")?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Mcrr { cond, coproc, opc, rd, rd2, crm } => {
                 formatter.write_str("mcrr")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Mcrr2 { coproc, opc, rd, rd2, crm } => {
                 formatter.write_str("mcrr2")?;
             }
+            #[cfg(feature = "arm")]
             Ins::Mla { s, cond, rd, rn, rm, ra } => {
                 if formatter.options().ual {
                     formatter.write_str("mla")?;
@@ -1845,37 +1926,51 @@ impl Ins {
                     } else {}
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Mrc { cond, coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_str("mrc")?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Mrc2 { coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_str("mrc2")?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Mrrc { cond, coproc, opc, rd, rd2, crm } => {
                 formatter.write_str("mrrc")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Mrrc2 { coproc, opc, rd, rd2, crm } => {
                 formatter.write_str("mrrc2")?;
             }
+            #[cfg(feature = "arm")]
             Ins::Mrs { cond, rd, status_reg } => {
                 formatter.write_str("mrs")?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Msr { cond, status_fields, op2 } => {
                 formatter.write_str("msr")?;
                 formatter.write_cond(*cond)?;
@@ -1906,20 +2001,11 @@ impl Ins {
                     } else {}
                 }
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             Ins::Neg { rd, rm } => {
                 formatter.write_str("neg")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Nop { cond } => {
                 formatter.write_str("nop")?;
                 formatter.write_cond(*cond)?;
@@ -1937,18 +2023,26 @@ impl Ins {
                     } else {}
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Pkhbt { cond, rd, rn, rm, shift_op, shift } => {
                 formatter.write_str("pkhbt")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Pkhtb { cond, rd, rn, rm, shift_op, shift } => {
                 formatter.write_str("pkhtb")?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Pld { addr } => {
                 formatter.write_str("pld")?;
@@ -1962,23 +2056,31 @@ impl Ins {
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qadd { cond, rd, rm, rn } => {
                 formatter.write_str("qadd")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qadd16 { cond, rd, rn, rm } => {
                 formatter.write_str("qadd16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qadd8 { cond, rd, rn, rm } => {
                 formatter.write_str("qadd8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qasx { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("qasx")?;
@@ -1989,20 +2091,36 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qdadd { cond, rd, rm, rn } => {
                 formatter.write_str("qdadd")?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qdsub { cond, rd, rm, rn } => {
                 formatter.write_str("qdsub")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qsax { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("qsax")?;
@@ -2013,18 +2131,26 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qsub { cond, rd, rm, rn } => {
                 formatter.write_str("qsub")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("qsub16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qsub8 { cond, rd, rn, rm } => {
                 formatter.write_str("qsub8")?;
                 formatter.write_cond(*cond)?;
@@ -2044,7 +2170,7 @@ impl Ins {
                 formatter.write_str("revsh")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Rfe { addr_mode, rn, writeback } => {
                 formatter.write_str("rfe")?;
                 formatter.write_srs_rfe_mode(*addr_mode)?;
@@ -2059,6 +2185,7 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Rrx { s, cond, rd, rm } => {
                 formatter.write_str("rrx")?;
                 formatter.write_s(*s)?;
@@ -2075,6 +2202,7 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Rsc { s, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
                     formatter.write_str("rsc")?;
@@ -2086,17 +2214,17 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sadd16 { cond, rd, rn, rm } => {
                 formatter.write_str("sadd16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sadd8 { cond, rd, rn, rm } => {
                 formatter.write_str("sadd8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sasx { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("sasx")?;
@@ -2119,7 +2247,7 @@ impl Ins {
                     } else {}
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sel { cond, rd, rn, rm } => {
                 formatter.write_str("sel")?;
                 formatter.write_cond(*cond)?;
@@ -2128,22 +2256,22 @@ impl Ins {
             Ins::Setend { endian } => {
                 formatter.write_str("setend")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Sev { cond } => {
                 formatter.write_str("sev")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shadd16 { cond, rd, rn, rm } => {
                 formatter.write_str("shadd16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shadd8 { cond, rd, rn, rm } => {
                 formatter.write_str("shadd8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shasx { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("shasx")?;
@@ -2153,7 +2281,7 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shsax { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("shsax")?;
@@ -2163,18 +2291,26 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("shsub16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shsub8 { cond, rd, rn, rm } => {
                 formatter.write_str("shsub8")?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smla { cond, rd, rn, rn_side, rm, rm_side, ra } => {
                 formatter.write_str("smla")?;
@@ -2182,12 +2318,13 @@ impl Ins {
                 formatter.write_reg_side(*rm_side)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlad { cond, rd, rn, rm, swap_rm, ra } => {
                 formatter.write_str("smlad")?;
                 formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Smlal { s, cond, rd_lo, rd_hi, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("smlal")?;
@@ -2200,7 +2337,15 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::SmlalHalf { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
                 formatter.write_str("smlal")?;
@@ -2208,58 +2353,74 @@ impl Ins {
                 formatter.write_reg_side(*rm_side)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlald { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
                 formatter.write_str("smlald")?;
                 formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smlaw { cond, rd, rn, rm, rm_side, ra } => {
                 formatter.write_str("smlaw")?;
                 formatter.write_reg_side(*rm_side)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlsd { cond, rd, rn, rm, swap_rm, ra } => {
                 formatter.write_str("smlsd")?;
                 formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlsld { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
                 formatter.write_str("smlsld")?;
                 formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smmla { round, cond, rd, rn, rm, ra } => {
                 formatter.write_str("smmla")?;
                 formatter.write_round(*round)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smmls { round, cond, rd, rn, rm, ra } => {
                 formatter.write_str("smmls")?;
                 formatter.write_round(*round)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smmul { round, cond, rd, rn, rm } => {
                 formatter.write_str("smmul")?;
                 formatter.write_round(*round)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smuad { cond, rd, rn, rm, swap_rm } => {
                 formatter.write_str("smuad")?;
                 formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smul { cond, rd, rn, rn_side, rm, rm_side } => {
                 formatter.write_str("smul")?;
@@ -2267,6 +2428,7 @@ impl Ins {
                 formatter.write_reg_side(*rm_side)?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Smull { s, cond, rd_lo, rd_hi, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("smull")?;
@@ -2279,35 +2441,43 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smulw { cond, rd, rn, rm, rm_side } => {
                 formatter.write_str("smulw")?;
                 formatter.write_reg_side(*rm_side)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smusd { cond, rd, rn, rm, swap_rm } => {
                 formatter.write_str("smusd")?;
                 formatter.write_swap_rm(*swap_rm)?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Srs { addr_mode, rn, writeback, mode } => {
                 formatter.write_str("srs")?;
                 formatter.write_srs_rfe_mode(*addr_mode)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssat { cond, rd, imm, op2 } => {
                 formatter.write_str("ssat")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssat16 { cond, rd, imm, rn } => {
                 formatter.write_str("ssat16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssax { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("ssax")?;
@@ -2317,16 +2487,17 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssub16 { cond, rd, rn, rm } => {
                 formatter.write_str("ssub16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssub8 { cond, rd, rn, rm } => {
                 formatter.write_str("ssub8")?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Stc { l, cond, coproc, crd, dest } => {
                 if formatter.options().ual {
                     formatter.write_str("stc")?;
@@ -2339,12 +2510,15 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Stc2 { l, coproc, crd, dest } => {
@@ -2376,6 +2550,7 @@ impl Ins {
                     formatter.write_str("b")?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Strbt { cond, rd, addr } => {
                 if formatter.options().ual {
                     formatter.write_str("strbt")?;
@@ -2387,7 +2562,15 @@ impl Ins {
                 }
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Strd { cond, rd, rd2, addr } => {
                 if formatter.options().ual {
@@ -2399,22 +2582,22 @@ impl Ins {
                     formatter.write_str("d")?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Strex { cond, rd, rm, rn } => {
                 formatter.write_str("strex")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexb { cond, rd, rm, rn } => {
                 formatter.write_str("strexb")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexd { cond, rd, rm, rm2, rn } => {
                 formatter.write_str("strexd")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexh { cond, rd, rm, rn } => {
                 formatter.write_str("strexh")?;
                 formatter.write_cond(*cond)?;
@@ -2429,6 +2612,7 @@ impl Ins {
                     formatter.write_str("h")?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Strt { cond, rd, addr } => {
                 if formatter.options().ual {
                     formatter.write_str("strt")?;
@@ -2461,25 +2645,27 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Swp { cond, rd, rd2, rn } => {
                 formatter.write_str("swp")?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Swpb { cond, rd, rd2, rn } => {
                 formatter.write_str("swpb")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtab { cond, rd, rn, rm, rotate } => {
                 formatter.write_str("sxtab")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtab16 { cond, rd, rn, rm, rotate } => {
                 formatter.write_str("sxtab16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtah { cond, rd, rn, rm, rotate } => {
                 formatter.write_str("sxtah")?;
                 formatter.write_cond(*cond)?;
@@ -2489,7 +2675,7 @@ impl Ins {
                 formatter.write_str("sxtb")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtb16 { cond, rd, rm, rotate } => {
                 formatter.write_str("sxtb16")?;
                 formatter.write_cond(*cond)?;
@@ -2499,6 +2685,7 @@ impl Ins {
                 formatter.write_str("sxth")?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Teq { cond, rn, op2 } => {
                 formatter.write_str("teq")?;
                 formatter.write_cond(*cond)?;
@@ -2507,17 +2694,17 @@ impl Ins {
                 formatter.write_str("tst")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uadd16 { cond, rd, rn, rm } => {
                 formatter.write_str("uadd16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uadd8 { cond, rd, rn, rm } => {
                 formatter.write_str("uadd8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uasx { cond, rd, rn, rm } => {
                 formatter.write_str("uasx")?;
                 formatter.write_cond(*cond)?;
@@ -2535,17 +2722,17 @@ impl Ins {
             Ins::Udf { imm } => {
                 formatter.write_str("udf")?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhadd16 { cond, rd, rn, rm } => {
                 formatter.write_str("uhadd16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhadd8 { cond, rd, rn, rm } => {
                 formatter.write_str("uhadd8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhasx { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("uhasx")?;
@@ -2555,7 +2742,7 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhsax { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("uhsax")?;
@@ -2565,21 +2752,22 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("uhsub16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhsub8 { cond, rd, rn, rm } => {
                 formatter.write_str("uhsub8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Umaal { cond, rd_lo, rd_hi, rn, rm } => {
                 formatter.write_str("umaal")?;
                 formatter.write_cond(*cond)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Umlal { s, cond, rd_lo, rd_hi, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("umlal")?;
@@ -2591,6 +2779,7 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Umull { s, cond, rd_lo, rd_hi, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("umull")?;
@@ -2602,17 +2791,17 @@ impl Ins {
                     formatter.write_s(*s)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqadd16 { cond, rd, rn, rm } => {
                 formatter.write_str("uqadd16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqadd8 { cond, rd, rn, rm } => {
                 formatter.write_str("uqadd8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqasx { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("uqasx")?;
@@ -2622,7 +2811,7 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqsax { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("uqsax")?;
@@ -2632,37 +2821,37 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqsub16 { cond, rd, rn, rm } => {
                 formatter.write_str("uqsub16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqsub8 { cond, rd, rn, rm } => {
                 formatter.write_str("uqsub8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usad8 { cond, rd, rn, rm } => {
                 formatter.write_str("usad8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usada8 { cond, rd, rn, rm, ra } => {
                 formatter.write_str("usada8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usat { cond, rd, imm, op2 } => {
                 formatter.write_str("usat")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usat16 { cond, rd, imm, rn } => {
                 formatter.write_str("usat16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usax { cond, rd, rn, rm } => {
                 if formatter.options().ual {
                     formatter.write_str("usax")?;
@@ -2672,27 +2861,27 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usub16 { cond, rd, rn, rm } => {
                 formatter.write_str("usub16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usub8 { cond, rd, rn, rm } => {
                 formatter.write_str("usub8")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtab { cond, rd, rn, rm, rotate } => {
                 formatter.write_str("uxtab")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtab16 { cond, rd, rn, rm, rotate } => {
                 formatter.write_str("uxtab16")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtah { cond, rd, rn, rm, rotate } => {
                 formatter.write_str("uxtah")?;
                 formatter.write_cond(*cond)?;
@@ -2702,7 +2891,7 @@ impl Ins {
                 formatter.write_str("uxtb")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtb16 { cond, rd, rm, rotate } => {
                 formatter.write_str("uxtb16")?;
                 formatter.write_cond(*cond)?;
@@ -2714,6 +2903,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2735,6 +2925,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2756,6 +2947,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2777,6 +2969,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2798,6 +2991,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2825,6 +3019,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2852,6 +3047,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2873,6 +3069,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2894,6 +3091,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2915,6 +3113,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2936,6 +3135,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2957,6 +3157,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -2978,6 +3179,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3002,6 +3204,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3026,6 +3229,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3050,6 +3254,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3074,6 +3279,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3095,6 +3301,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3116,6 +3323,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3139,6 +3347,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3162,6 +3371,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3182,6 +3392,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3202,6 +3413,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3223,6 +3435,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3244,6 +3457,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3265,6 +3479,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3286,6 +3501,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3312,6 +3528,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3333,6 +3550,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3353,6 +3571,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3374,6 +3593,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3400,6 +3620,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3420,6 +3641,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3440,6 +3662,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3460,6 +3683,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3480,6 +3704,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3500,6 +3725,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3520,6 +3746,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3540,6 +3767,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3561,6 +3789,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3582,6 +3811,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3603,6 +3833,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3624,6 +3855,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3645,6 +3877,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3666,6 +3899,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3687,6 +3921,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3708,6 +3943,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3729,6 +3965,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3750,6 +3987,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3765,6 +4003,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3780,6 +4019,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3795,6 +4035,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3810,6 +4051,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3831,6 +4073,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3852,6 +4095,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3875,6 +4119,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3898,6 +4143,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3918,6 +4164,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3938,6 +4185,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3959,6 +4207,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -3978,17 +4227,17 @@ impl Ins {
                     formatter.write_cond(*cond)?;
                 }
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Wfe { cond } => {
                 formatter.write_str("wfe")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Wfi { cond } => {
                 formatter.write_str("wfi")?;
                 formatter.write_cond(*cond)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Yield { cond } => {
                 formatter.write_str("yield")?;
                 formatter.write_cond(*cond)?;
@@ -4124,11 +4373,17 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v5tej", feature = "v6", feature = "v6k"))]
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(feature = "v5tej", feature = "v6", feature = "v6k")
+                )
+            )]
             Ins::Bxj { cond, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Cdp { cond, coproc, opc1, crd, crn, crm, opc2 } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -4146,12 +4401,15 @@ impl Ins {
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Cdp2 { coproc, opc1, crd, crn, crm, opc2 } => {
@@ -4170,15 +4428,18 @@ impl Ins {
                 formatter.write_str("#")?;
                 formatter.write_uimm(*opc2)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Clrex {} => {}
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Clz { cond, rd, rm } => {
@@ -4216,8 +4477,9 @@ impl Ins {
                     }
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Csdb { cond } => {}
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Dbg { cond, option } => {
                 formatter.write_space()?;
                 formatter.write_str("#")?;
@@ -4237,6 +4499,7 @@ impl Ins {
                     formatter.write_op2(*op2)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Ldc { l, cond, coproc, crd, dest } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -4246,12 +4509,15 @@ impl Ins {
                 formatter.write_addr_ldc_stc(*dest)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Ldc2 { l, coproc, crd, dest } => {
@@ -4282,6 +4548,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_addr_ldr_str(*addr)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Ldrbt { cond, rd, addr } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4289,7 +4556,15 @@ impl Ins {
                 formatter.write_addr_ldr_str_post(*addr)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Ldrd { cond, rd, rd2, addr } => {
                 formatter.write_space()?;
@@ -4305,7 +4580,7 @@ impl Ins {
                     formatter.write_addr_misc_load(*addr)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ldrex { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4314,7 +4589,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexb { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4323,7 +4598,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexd { cond, rd, rd2, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4334,7 +4609,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexh { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4361,6 +4636,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_addr_misc_load(*addr)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Ldrt { cond, rd, addr } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4395,6 +4671,7 @@ impl Ins {
                     formatter.write_op2_shift(*op2)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Mcr { cond, coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -4412,12 +4689,15 @@ impl Ins {
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Mcr2 { coproc, opc1, rd, crn, crm, opc2 } => {
@@ -4437,7 +4717,15 @@ impl Ins {
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Mcrr { cond, coproc, opc, rd, rd2, crm } => {
                 formatter.write_space()?;
@@ -4452,7 +4740,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Mcrr2 { coproc, opc, rd, rd2, crm } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -4466,6 +4754,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Mla { s, cond, rd, rn, rm, ra } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4482,6 +4771,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Mrc { cond, coproc, opc1, rd, crn, crm, opc2 } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -4499,12 +4789,15 @@ impl Ins {
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Mrc2 { coproc, opc1, rd, crn, crm, opc2 } => {
@@ -4524,7 +4817,15 @@ impl Ins {
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Mrrc { cond, coproc, opc, rd, rd2, crm } => {
                 formatter.write_space()?;
@@ -4539,7 +4840,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Mrrc2 { coproc, opc, rd, rd2, crm } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -4553,12 +4854,14 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Mrs { cond, rd, status_reg } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
                 formatter.write_status_reg(*status_reg)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Msr { cond, status_fields, op2 } => {
                 formatter.write_space()?;
                 formatter.write_status_fields(*status_fields)?;
@@ -4585,23 +4888,14 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             Ins::Neg { rd, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Nop { cond } => {}
             Ins::Orr { s, thumb, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
@@ -4617,7 +4911,7 @@ impl Ins {
                     formatter.write_op2(*op2)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Pkhbt { cond, rd, rn, rm, shift_op, shift } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4633,7 +4927,7 @@ impl Ins {
                     formatter.write_uimm(*shift)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Pkhtb { cond, rd, rn, rm, shift_op, shift } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4648,7 +4942,15 @@ impl Ins {
                 formatter.write_uimm(*shift)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Pld { addr } => {
                 formatter.write_space()?;
@@ -4663,7 +4965,15 @@ impl Ins {
                 formatter.write_reg_list(*regs)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qadd { cond, rd, rm, rn } => {
                 formatter.write_space()?;
@@ -4673,7 +4983,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qadd16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4682,7 +4992,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qadd8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4691,7 +5001,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qasx { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4701,7 +5011,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qdadd { cond, rd, rm, rn } => {
                 formatter.write_space()?;
@@ -4712,7 +5030,15 @@ impl Ins {
                 formatter.write_reg(*rn)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qdsub { cond, rd, rm, rn } => {
                 formatter.write_space()?;
@@ -4722,7 +5048,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qsax { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4732,7 +5058,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Qsub { cond, rd, rm, rn } => {
                 formatter.write_space()?;
@@ -4742,7 +5076,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qsub16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4751,7 +5085,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Qsub8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4781,7 +5115,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Rfe { addr_mode, rn, writeback } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rn)?;
@@ -4801,6 +5135,7 @@ impl Ins {
                     formatter.write_op2_shift(*op2)?;
                 }
             }
+            #[cfg(feature = "arm")]
             Ins::Rrx { s, cond, rd, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4815,6 +5150,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Rsc { s, cond, rd, rn, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4823,7 +5159,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sadd16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4832,7 +5168,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sadd8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4841,7 +5177,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sasx { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4864,7 +5200,7 @@ impl Ins {
                     formatter.write_op2(*op2)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sel { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4878,9 +5214,9 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_endianness(*endian)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Sev { cond } => {}
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shadd16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4889,7 +5225,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shadd8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4898,7 +5234,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shasx { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4907,7 +5243,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shsax { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4916,7 +5252,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shsub16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4925,7 +5261,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Shsub8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4935,7 +5271,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smla { cond, rd, rn, rn_side, rm, rm_side, ra } => {
                 formatter.write_space()?;
@@ -4947,7 +5291,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlad { cond, rd, rn, rm, swap_rm, ra } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -4958,6 +5302,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Smlal { s, cond, rd_lo, rd_hi, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -4969,7 +5314,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::SmlalHalf { cond, rd_lo, rd_hi, rn, rn_side, rm, rm_side } => {
                 formatter.write_space()?;
@@ -4981,7 +5334,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlald { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -4993,7 +5346,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smlaw { cond, rd, rn, rm, rm_side, ra } => {
                 formatter.write_space()?;
@@ -5005,7 +5366,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlsd { cond, rd, rn, rm, swap_rm, ra } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5016,7 +5377,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smlsld { cond, rd_lo, rd_hi, rn, rm, swap_rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -5027,7 +5388,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smmla { round, cond, rd, rn, rm, ra } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5038,7 +5399,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smmls { round, cond, rd, rn, rm, ra } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5049,7 +5410,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smmul { round, cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5058,7 +5419,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smuad { cond, rd, rn, rm, swap_rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5068,7 +5429,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smul { cond, rd, rn, rn_side, rm, rm_side } => {
                 formatter.write_space()?;
@@ -5078,6 +5447,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Smull { s, cond, rd_lo, rd_hi, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -5089,7 +5459,15 @@ impl Ins {
                 formatter.write_reg(*rm)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Smulw { cond, rd, rn, rm, rm_side } => {
                 formatter.write_space()?;
@@ -5099,7 +5477,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smusd { cond, rd, rn, rm, swap_rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5108,7 +5486,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Srs { addr_mode, rn, writeback, mode } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rn)?;
@@ -5117,7 +5495,7 @@ impl Ins {
                 formatter.write_str("#")?;
                 formatter.write_uimm(*mode)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssat { cond, rd, imm, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5127,7 +5505,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_shift_imm(*op2)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssat16 { cond, rd, imm, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5137,7 +5515,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssax { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5146,7 +5524,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssub16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5155,7 +5533,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssub8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5164,6 +5542,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Stc { l, cond, coproc, crd, dest } => {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
@@ -5173,12 +5552,15 @@ impl Ins {
                 formatter.write_addr_ldc_stc(*dest)?;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             Ins::Stc2 { l, coproc, crd, dest } => {
@@ -5209,6 +5591,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_addr_ldr_str(*addr)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Strbt { cond, rd, addr } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5216,7 +5599,15 @@ impl Ins {
                 formatter.write_addr_ldr_str_post(*addr)?;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             Ins::Strd { cond, rd, rd2, addr } => {
                 formatter.write_space()?;
@@ -5232,7 +5623,7 @@ impl Ins {
                     formatter.write_addr_misc_load(*addr)?;
                 }
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Strex { cond, rd, rm, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5243,7 +5634,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexb { cond, rd, rm, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5254,7 +5645,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexd { cond, rd, rm, rm2, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5267,7 +5658,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexh { cond, rd, rm, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5284,6 +5675,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_addr_misc_load(*addr)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Strt { cond, rd, addr } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5309,6 +5701,7 @@ impl Ins {
                 formatter.write_str("#")?;
                 formatter.write_uimm(*imm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Swp { cond, rd, rd2, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5319,6 +5712,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
+            #[cfg(feature = "arm")]
             Ins::Swpb { cond, rd, rd2, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5329,7 +5723,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_str("]")?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtab { cond, rd, rn, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5345,7 +5739,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtab16 { cond, rd, rn, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5361,7 +5755,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtah { cond, rd, rn, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5391,7 +5785,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtb16 { cond, rd, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5419,6 +5813,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
+            #[cfg(feature = "arm")]
             Ins::Teq { cond, rn, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rn)?;
@@ -5431,7 +5826,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_op2(*op2)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uadd16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5440,7 +5835,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uadd8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5449,7 +5844,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uasx { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5473,7 +5868,7 @@ impl Ins {
                 formatter.write_str("#")?;
                 formatter.write_uimm(*imm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhadd16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5482,7 +5877,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhadd8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5491,7 +5886,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhasx { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5500,7 +5895,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhsax { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5509,7 +5904,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhsub16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5518,7 +5913,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhsub8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5527,7 +5922,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Umaal { cond, rd_lo, rd_hi, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -5538,6 +5933,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Umlal { s, cond, rd_lo, rd_hi, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -5548,6 +5944,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
+            #[cfg(feature = "arm")]
             Ins::Umull { s, cond, rd_lo, rd_hi, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd_lo)?;
@@ -5558,7 +5955,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqadd16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5567,7 +5964,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqadd8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5576,7 +5973,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqasx { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5585,7 +5982,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqsax { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5594,7 +5991,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqsub16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5603,7 +6000,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uqsub8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5612,7 +6009,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usad8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5621,7 +6018,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usada8 { cond, rd, rn, rm, ra } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5632,7 +6029,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*ra)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usat { cond, rd, imm, op2 } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5642,7 +6039,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_shift_imm(*op2)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usat16 { cond, rd, imm, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5652,7 +6049,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usax { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5661,7 +6058,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usub16 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5670,7 +6067,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Usub8 { cond, rd, rn, rm } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5679,7 +6076,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtab { cond, rd, rn, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5695,7 +6092,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtab16 { cond, rd, rn, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5711,7 +6108,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtah { cond, rd, rn, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5741,7 +6138,7 @@ impl Ins {
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uxtb16 { cond, rd, rm, rotate } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
@@ -5771,6 +6168,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5788,6 +6186,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5805,6 +6204,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5824,6 +6224,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5843,6 +6244,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5862,6 +6264,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5881,6 +6284,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5898,6 +6302,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5915,6 +6320,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5932,6 +6338,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5949,6 +6356,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5966,6 +6374,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5983,6 +6392,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6000,6 +6410,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6017,6 +6428,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6034,6 +6446,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6051,6 +6464,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6070,6 +6484,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6089,6 +6504,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6107,6 +6523,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6125,6 +6542,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6142,6 +6560,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6159,6 +6578,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6178,6 +6598,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6197,6 +6618,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6216,6 +6638,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6235,6 +6658,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6252,6 +6676,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6269,6 +6694,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6286,6 +6712,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6303,6 +6730,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6320,6 +6748,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6337,6 +6766,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6358,6 +6788,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6379,6 +6810,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6398,6 +6830,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6417,6 +6850,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6434,6 +6868,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6451,6 +6886,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6470,6 +6906,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6489,6 +6926,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6506,6 +6944,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6523,6 +6962,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6542,6 +6982,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6561,6 +7002,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6580,6 +7022,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6599,6 +7042,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6618,6 +7062,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6637,6 +7082,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6652,6 +7098,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6667,6 +7114,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6682,6 +7130,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6697,6 +7146,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6714,6 +7164,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6731,6 +7182,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6749,6 +7201,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6767,6 +7220,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6784,6 +7238,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6801,6 +7256,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6820,6 +7276,7 @@ impl Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6837,11 +7294,11 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_dreg(*dm)?;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Wfe { cond } => {}
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Wfi { cond } => {}
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Yield { cond } => {}
             Ins::Illegal => {}
             Ins::Word(value) => {

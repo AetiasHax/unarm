@@ -11,7 +11,8 @@ use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
         Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension, IsaExtensionPatterns,
-        IsaVersion, IsaVersionPatterns, OpcodeLookupTable, OpcodePattern, cfg_condition_tokens,
+        IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
+        cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
     },
     util::str::snake_to_pascal_case,
 };
@@ -204,7 +205,7 @@ impl Opcode {
         });
         let description = &self.description;
 
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
 
         quote! {
             #cfg
@@ -265,7 +266,7 @@ impl Opcode {
     fn write_variant_tokens(&self, isa: &Isa, expr: TokenStream) -> TokenStream {
         let variant_ident = Ident::new(&snake_to_pascal_case(&self.mnemonic), Span::call_site());
         let param_names = self.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
 
         quote! {
             #cfg
@@ -301,7 +302,7 @@ impl Opcode {
                 let encoding_ifs = encodings.iter().enumerate().map(|(index, encoding)| {
                     let condition = encoding.pattern.condition_tokens(quote!(ins));
                     let parse_fn = self.with_discriminant_encoding_parse_fn(arch, index);
-                    let cfg = encoding.cfg_condition_tokens(isa);
+                    let cfg = encoding.cfg_attribute_tokens(isa, arch);
                     quote! {
                         #cfg
                         if #condition {
@@ -317,7 +318,7 @@ impl Opcode {
             }
         };
 
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa);
         let discriminant_lit = Literal::u16_unsuffixed(discriminant);
         Some(quote! {
             #cfg
@@ -341,32 +342,27 @@ impl Opcode {
         }
     }
 
-    pub fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
-        let mut versions = IndexSet::new();
-        for encoding in &self.arm {
-            for v in encoding.versions(isa) {
-                versions.insert(v.clone());
-            }
-        }
-        for encoding in &self.thumb {
-            for v in encoding.versions(isa) {
-                versions.insert(v.clone());
+    pub fn versions(&self, isa: &Isa, arch: Arch) -> IsaVersionSet {
+        let mut versions = IsaVersionSet::new();
+        let encodings = match arch {
+            Arch::Arm => &self.arm,
+            Arch::Thumb => &self.thumb,
+        };
+        for encoding in encodings {
+            for v in encoding.versions(isa).0 {
+                versions.0.insert(v.clone());
             }
         }
         versions
     }
 
-    pub fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
+    pub fn extensions(&self, isa: &Isa, arch: Arch) -> IndexSet<IsaExtension> {
         let mut extensions: Option<IndexSet<IsaExtension>> = None;
-        for encoding in &self.arm {
-            let exts = encoding.extensions(isa);
-            if let Some(extensions) = &mut extensions {
-                *extensions = extensions.intersection(&exts).cloned().collect();
-            } else {
-                extensions = Some(exts);
-            }
-        }
-        for encoding in &self.thumb {
+        let encodings = match arch {
+            Arch::Arm => &self.arm,
+            Arch::Thumb => &self.thumb,
+        };
+        for encoding in encodings {
             let exts = encoding.extensions(isa);
             if let Some(extensions) = &mut extensions {
                 *extensions = extensions.intersection(&exts).cloned().collect();
@@ -381,10 +377,18 @@ impl Opcode {
         self.params.values().any(|type_name| type_name == data_type.name())
     }
 
-    fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
-        let versions = self.versions(isa);
-        let extensions = self.extensions(isa);
-        cfg_condition_tokens(&versions, &extensions, isa)
+    fn cfg_attribute_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        let arm_versions = self.versions(isa, Arch::Arm);
+        let thumb_versions = self.versions(isa, Arch::Thumb);
+        let arm_extensions = self.extensions(isa, Arch::Arm);
+        let thumb_extensions = self.extensions(isa, Arch::Thumb);
+        cfg_attribute_tokens(
+            &arm_versions,
+            &arm_extensions,
+            &thumb_versions,
+            &thumb_extensions,
+            isa,
+        )
     }
 }
 
@@ -532,7 +536,7 @@ impl OpcodeEncoding {
             Arch::Thumb => quote!(Option<(Ins, u32)>),
         };
 
-        let cfg = self.cfg_condition_tokens(isa);
+        let cfg = self.cfg_attribute_tokens(isa, arch);
 
         quote! {
             #cfg
@@ -551,18 +555,18 @@ impl OpcodeEncoding {
         &self.pattern
     }
 
-    fn versions(&self, isa: &Isa) -> IndexSet<IsaVersion> {
-        self.version.versions(isa).into_iter().cloned().collect()
+    fn versions(&self, isa: &Isa) -> IsaVersionSet {
+        IsaVersionSet(self.version.versions(isa).into_iter().cloned().collect())
     }
 
     fn extensions(&self, isa: &Isa) -> IndexSet<IsaExtension> {
         self.extensions.extensions(isa).into_iter().cloned().collect()
     }
 
-    pub fn cfg_condition_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+    pub fn cfg_attribute_tokens(&self, isa: &Isa, arch: Arch) -> Option<TokenStream> {
         let versions = self.versions(isa);
         let extensions = self.extensions(isa);
-        cfg_condition_tokens(&versions, &extensions, isa)
+        cfg_attribute_single_arch_tokens(&versions, &extensions, isa, arch)
     }
 }
 

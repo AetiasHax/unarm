@@ -4,7 +4,10 @@ use quote::quote;
 use serde::{Deserialize, de};
 use syn::Ident;
 
-use crate::{isa::Isa, util::str::snake_to_pascal_case};
+use crate::{
+    isa::{Arch, Isa},
+    util::str::snake_to_pascal_case,
+};
 
 #[derive(Deserialize, Debug)]
 pub struct IsaVersions(Vec<IsaVersion>);
@@ -26,7 +29,7 @@ impl IsaVersions {
 
     pub fn enum_tokens(&self) -> TokenStream {
         let versions = self.0.iter().map(|v| {
-            let version = &v.0;
+            let version = v.name();
             let ident = v.as_ident();
             quote! {
                 #[cfg(feature = #version)]
@@ -91,21 +94,47 @@ impl IsaVersions {
         self.0.iter().all(|v| versions.iter().any(|pattern| pattern.matches(v)))
     }
 
-    pub fn has_all(&self, versions: &IndexSet<IsaVersion>) -> bool {
-        self.0.iter().all(|v| versions.contains(v))
+    pub fn has_all(&self, versions: &IsaVersionSet, arch: Option<Arch>) -> bool {
+        self.0
+            .iter()
+            .filter(|v| arch != Some(Arch::Thumb) || v.thumb)
+            .all(|v| versions.0.contains(v))
     }
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct IsaVersion(String);
+pub struct IsaVersion {
+    name: String,
+    #[serde(default = "isa_version_thumb_default")]
+    thumb: bool,
+}
+
+fn isa_version_thumb_default() -> bool {
+    true
+}
 
 impl IsaVersion {
     pub fn name(&self) -> &str {
-        &self.0
+        &self.name
     }
 
     pub fn as_ident(&self) -> Ident {
-        Ident::new(&snake_to_pascal_case(&self.0), Span::call_site())
+        Ident::new(&snake_to_pascal_case(&self.name), Span::call_site())
+    }
+}
+
+#[derive(Clone)]
+pub struct IsaVersionSet(pub IndexSet<IsaVersion>);
+
+impl IsaVersionSet {
+    pub fn new() -> Self {
+        Self(IndexSet::new())
+    }
+
+    pub fn is_same(&self, thumb_versions: &IsaVersionSet) -> bool {
+        let mut versions = self.clone();
+        versions.0.retain(|v| v.thumb);
+        versions.0 == thumb_versions.0
     }
 }
 

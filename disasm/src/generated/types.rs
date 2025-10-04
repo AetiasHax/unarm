@@ -201,6 +201,7 @@ pub enum Reg {
     ///Program counter
     Pc,
 }
+#[cfg(feature = "arm")]
 ///Status register
 #[repr(u8)]
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -210,6 +211,7 @@ pub enum StatusReg {
     ///Saved program status register
     Spsr,
 }
+#[cfg(feature = "arm")]
 ///Status register with field masks
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct StatusFields {
@@ -223,6 +225,7 @@ pub struct StatusFields {
     ///Flags field mask
     pub f: bool,
 }
+#[cfg(feature = "arm")]
 ///Second operand of the MSR instruction, can be an immediate or a register
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum MsrOp2 {
@@ -244,6 +247,7 @@ pub enum ShiftOp {
     ///Rotate right
     Ror,
 }
+#[cfg(feature = "arm")]
 ///Coprocessor
 #[repr(u8)]
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -265,6 +269,7 @@ pub enum Coproc {
     P14,
     P15,
 }
+#[cfg(feature = "arm")]
 ///Coprocessor register
 #[repr(u8)]
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -346,6 +351,7 @@ pub struct AifFlags {
     ///FIQ interrupt bit
     pub f: bool,
 }
+#[cfg(feature = "arm")]
 ///The memory address of an LDC/STC instruction
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum AddrLdcStc {
@@ -453,7 +459,7 @@ pub enum MiscLoadOffset {
         rm: Reg,
     },
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 ///Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
 #[repr(u8)]
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -477,7 +483,12 @@ pub enum Endianness {
     ///Big-endian
     Be,
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 ///Mnemonic suffix, specifies which half of a register to use as an operand
 #[repr(u8)]
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -489,6 +500,7 @@ pub enum RegSide {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -532,6 +544,7 @@ pub enum Sreg {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -575,6 +588,7 @@ pub enum Dreg {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -589,6 +603,7 @@ pub enum VcmpF32Op2 {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -603,6 +618,7 @@ pub enum VcmpF64Op2 {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -615,6 +631,7 @@ pub struct DregIndex {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -624,6 +641,7 @@ pub struct DregIndex {
 pub struct Fpscr {}
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -687,9 +705,10 @@ pub enum Ins {
     )]
     ///Branch and Exchange
     Bx { cond: Cond, rm: Reg },
-    #[cfg(any(feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v5tej", feature = "v6", feature = "v6k")))]
     ///Branch and Exchange Jazelle
     Bxj { cond: Cond, rm: Reg },
+    #[cfg(feature = "arm")]
     ///Coprocessor Data Processing
     Cdp {
         cond: Cond,
@@ -701,26 +720,32 @@ pub enum Ins {
         opc2: u32,
     },
     #[cfg(
-        any(
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
+        all(
+            feature = "arm",
+            any(
+                feature = "v5t",
+                feature = "v5te",
+                feature = "v5tej",
+                feature = "v6",
+                feature = "v6k"
+            )
         )
     )]
     ///Coprocessor Data Processing (extended)
     Cdp2 { coproc: Coproc, opc1: u32, crd: CoReg, crn: CoReg, crm: CoReg, opc2: u32 },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Clear Exclusive
     Clrex {},
     #[cfg(
-        any(
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
+        all(
+            feature = "arm",
+            any(
+                feature = "v5t",
+                feature = "v5te",
+                feature = "v5tej",
+                feature = "v6",
+                feature = "v6k"
+            )
         )
     )]
     ///Count Leading Zeros
@@ -732,22 +757,27 @@ pub enum Ins {
     #[cfg(any(feature = "v6", feature = "v6k"))]
     ///Change Processor State
     Cps { effect: CpsEffect, aif: AifFlags, mode: u32 },
+    #[cfg(feature = "arm")]
     ///Consume of Speculative Data Barrier
     Csdb { cond: Cond },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Debug Hint
     Dbg { cond: Cond, option: u32 },
     ///Bitwise Exclusive OR
     Eor { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    #[cfg(feature = "arm")]
     ///Load Coprocessor
     Ldc { l: bool, cond: Cond, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
     #[cfg(
-        any(
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
+        all(
+            feature = "arm",
+            any(
+                feature = "v5t",
+                feature = "v5te",
+                feature = "v5tej",
+                feature = "v6",
+                feature = "v6k"
+            )
         )
     )]
     ///Load Coprocessor (extended)
@@ -765,21 +795,27 @@ pub enum Ins {
     Ldr { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Load Register Byte
     Ldrb { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    #[cfg(feature = "arm")]
     ///Load Register Byte with Translation
     Ldrbt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Load Register Dual
     Ldrd { cond: Cond, rd: Reg, rd2: Reg, addr: AddrMiscLoad },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Load Register Exclusive
     Ldrex { cond: Cond, rd: Reg, rn: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Load Register Exclusive Byte
     Ldrexb { cond: Cond, rd: Reg, rn: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Load Register Exclusive Doubleword
     Ldrexd { cond: Cond, rd: Reg, rd2: Reg, rn: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Load Register Exclusive Halfword
     Ldrexh { cond: Cond, rd: Reg, rn: Reg },
     ///Load Register Halfword
@@ -788,12 +824,14 @@ pub enum Ins {
     Ldrsb { cond: Cond, rd: Reg, addr: AddrMiscLoad },
     ///Load Register Signed Halfword
     Ldrsh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
+    #[cfg(feature = "arm")]
     ///Load Register with Translation
     Ldrt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
     ///Logical Shift Left
     Lsl { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
     ///Logical Shift Right
     Lsr { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    #[cfg(feature = "arm")]
     ///Move to Coprocessor from ARM Register
     Mcr {
         cond: Cond,
@@ -805,26 +843,36 @@ pub enum Ins {
         opc2: u32,
     },
     #[cfg(
-        any(
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
+        all(
+            feature = "arm",
+            any(
+                feature = "v5t",
+                feature = "v5te",
+                feature = "v5tej",
+                feature = "v6",
+                feature = "v6k"
+            )
         )
     )]
     ///Move to Coprocessor from ARM Register (extended)
     Mcr2 { coproc: Coproc, opc1: u32, rd: Reg, crn: CoReg, crm: CoReg, opc2: u32 },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Move to Coprocessor from two ARM Registers
     Mcrr { cond: Cond, coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Move to Coprocessor from two ARM Registers (extended)
     Mcrr2 { coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
+    #[cfg(feature = "arm")]
     ///Multiply Accumulate
     Mla { s: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
     ///Move
     Mov { s: bool, thumb: bool, cond: Cond, rd: Reg, op2: Op2 },
+    #[cfg(feature = "arm")]
     ///Move to ARM Register from Coprocessor
     Mrc {
         cond: Cond,
@@ -836,88 +884,114 @@ pub enum Ins {
         opc2: u32,
     },
     #[cfg(
-        any(
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
+        all(
+            feature = "arm",
+            any(
+                feature = "v5t",
+                feature = "v5te",
+                feature = "v5tej",
+                feature = "v6",
+                feature = "v6k"
+            )
         )
     )]
     ///Move to ARM Register from Coprocessor (extended)
     Mrc2 { coproc: Coproc, opc1: u32, rd: Reg, crn: CoReg, crm: CoReg, opc2: u32 },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Move to two ARM Registers from Coprocessor
     Mrrc { cond: Cond, coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Move to two ARM Registers from Coprocessor (extended)
     Mrrc2 { coproc: Coproc, opc: u32, rd: Reg, rd2: Reg, crm: CoReg },
+    #[cfg(feature = "arm")]
     ///Move to Register from Status register
     Mrs { cond: Cond, rd: Reg, status_reg: StatusReg },
+    #[cfg(feature = "arm")]
     ///Move to Status register
     Msr { cond: Cond, status_fields: StatusFields, op2: MsrOp2 },
     ///Multiply
     Mul { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     ///Move Negative
     Mvn { s: bool, thumb: bool, cond: Cond, rd: Reg, op2: Op2 },
-    #[cfg(
-        any(
-            feature = "v4t",
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
-        )
-    )]
+    #[cfg(feature = "thumb")]
     ///Negate
     Neg { rd: Reg, rm: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///No Operation
     Nop { cond: Cond },
     ///Bitwise OR
     Orr { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Pack Halfword Bottom Top
     Pkhbt { cond: Cond, rd: Reg, rn: Reg, rm: Reg, shift_op: ShiftOp, shift: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Pack Halfword Top Bottom
     Pkhtb { cond: Cond, rd: Reg, rn: Reg, rm: Reg, shift_op: ShiftOp, shift: u32 },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Preload Data
     Pld { addr: AddrLdrStr },
     ///Pop multiple registers
     Pop { cond: Cond, regs: RegList },
     ///Push multiple registers
     Push { cond: Cond, regs: RegList },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Saturating Add
     Qadd { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Saturating Add two 16-bit values
     Qadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Saturating Add four 8-bit values
     Qadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Saturating Add and Subtract with Exchange
     Qasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Saturating Double and Add
     Qdadd { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Saturating Double and Subtract
     Qdsub { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Saturating Subtract and Add with Exchange
     Qsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Saturating Subtract
     Qsub { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Saturating Subtract two 16-bit values
     Qsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Saturating Subtract four 8-bit values
     Qsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     #[cfg(any(feature = "v6", feature = "v6k"))]
@@ -929,56 +1003,63 @@ pub enum Ins {
     #[cfg(any(feature = "v6", feature = "v6k"))]
     ///Reverse bytes in signed halfword
     Revsh { cond: Cond, rd: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Return From Exception
     Rfe { addr_mode: SrsRfeMode, rn: Reg, writeback: bool },
     ///Rotate Right
     Ror { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2Shift },
+    #[cfg(feature = "arm")]
     ///Rotate Right with Extend
     Rrx { s: bool, cond: Cond, rd: Reg, rm: Reg },
     ///Reverse Subtract
     Rsb { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
+    #[cfg(feature = "arm")]
     ///Reverse Subtract with Carry
     Rsc { s: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Add two 16-bit values
     Sadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Add four 8-bit values
     Sadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Add and Subtract with Exchange
     Sasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     ///Subtract with Carry
     Sbc { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Select
     Sel { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     #[cfg(any(feature = "v6", feature = "v6k"))]
     ///Set Endianness
     Setend { endian: Endianness },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Send Event
     Sev { cond: Cond },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Halving Add two 16-bit values
     Shadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Halving Add four 8-bit values
     Shadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Halving Add and Subtract with Exchange
     Shasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Halving Subtract and Add with Exchange
     Shsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Halving Subtract two 16-bit values
     Shsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Halving Subtract four 8-bit values
     Shsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Signed Multiply Accumulate halfwords
     Smla {
         cond: Cond,
@@ -989,12 +1070,18 @@ pub enum Ins {
         rm_side: RegSide,
         ra: Reg,
     },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Multiply Accumulate Dual
     Smlad { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool, ra: Reg },
+    #[cfg(feature = "arm")]
     ///Signed Multiply Accumulate Long
     Smlal { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Signed Multiply Accumulate Long halfwords
     SmlalHalf {
         cond: Cond,
@@ -1005,68 +1092,88 @@ pub enum Ins {
         rm: Reg,
         rm_side: RegSide,
     },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Multiply Accumulate Long Dual
     Smlald { cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg, swap_rm: bool },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Signed Multiply Accumulate Word by halfword
     Smlaw { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rm_side: RegSide, ra: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Multiply Subtract Dual
     Smlsd { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool, ra: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Multiply Subtract Long Dual
     Smlsld { cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg, swap_rm: bool },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Most significant word Multiply Accumulate
     Smmla { round: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Most significant word Multiply Subtract
     Smmls { round: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Most significant word Multiply
     Smmul { round: bool, cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Multiply Add Dual
     Smuad { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Signed Multiply
     Smul { cond: Cond, rd: Reg, rn: Reg, rn_side: RegSide, rm: Reg, rm_side: RegSide },
+    #[cfg(feature = "arm")]
     ///Signed Multiply Long
     Smull { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Signed Multiply Word by halfword
     Smulw { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rm_side: RegSide },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Multiply Subtract Dual
     Smusd { cond: Cond, rd: Reg, rn: Reg, rm: Reg, swap_rm: bool },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Store Return State
     Srs { addr_mode: SrsRfeMode, rn: Reg, writeback: bool, mode: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Saturate
     Ssat { cond: Cond, rd: Reg, imm: u32, op2: ShiftImm },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Saturate two 16-bit values
     Ssat16 { cond: Cond, rd: Reg, imm: u32, rn: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Subtract and Add with Exchange
     Ssax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Subtract two 16-bit values
     Ssub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Signed Subtract four 8-bit values
     Ssub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
+    #[cfg(feature = "arm")]
     ///Store Coprocessor
     Stc { l: bool, cond: Cond, coproc: Coproc, crd: CoReg, dest: AddrLdcStc },
     #[cfg(
-        any(
-            feature = "v5t",
-            feature = "v5te",
-            feature = "v5tej",
-            feature = "v6",
-            feature = "v6k"
+        all(
+            feature = "arm",
+            any(
+                feature = "v5t",
+                feature = "v5te",
+                feature = "v5tej",
+                feature = "v6",
+                feature = "v6k"
+            )
         )
     )]
     ///Store Coprocessor (extended)
@@ -1084,64 +1191,74 @@ pub enum Ins {
     Str { cond: Cond, rd: Reg, addr: AddrLdrStr },
     ///Store Register Byte
     Strb { cond: Cond, rd: Reg, addr: AddrLdrStr },
+    #[cfg(feature = "arm")]
     ///Store Register Byte with Translation
     Strbt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
-    #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+    #[cfg(
+        all(
+            feature = "arm",
+            any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+        )
+    )]
     ///Store Register Dual
     Strd { cond: Cond, rd: Reg, rd2: Reg, addr: AddrMiscLoad },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Store Register Exclusive
     Strex { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Store Register Exclusive Byte
     Strexb { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Store Register Exclusive Doubleword
     Strexd { cond: Cond, rd: Reg, rm: Reg, rm2: Reg, rn: Reg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Store Register Exclusive Halfword
     Strexh { cond: Cond, rd: Reg, rm: Reg, rn: Reg },
     ///Store Register Halfword
     Strh { cond: Cond, rd: Reg, addr: AddrMiscLoad },
+    #[cfg(feature = "arm")]
     ///Store Register with Translation
     Strt { cond: Cond, rd: Reg, addr: AddrLdrStrPost },
     ///Subtract
     Sub { s: bool, thumb: bool, cond: Cond, rd: Reg, rn: Reg, op2: Op2 },
     ///Supervisor Call
     Svc { cond: Cond, imm: u32 },
+    #[cfg(feature = "arm")]
     ///Swap
     Swp { cond: Cond, rd: Reg, rd2: Reg, rn: Reg },
+    #[cfg(feature = "arm")]
     ///Swap Byte
     Swpb { cond: Cond, rd: Reg, rd2: Reg, rn: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Sign Extend and Add Byte
     Sxtab { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Sign Extend to 16 bits and Add Byte
     Sxtab16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Sign Extend and Add Halfword
     Sxtah { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
     #[cfg(any(feature = "v6", feature = "v6k"))]
     ///Sign Extend Byte
     Sxtb { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Sign Extend Byte to 16 bits
     Sxtb16 { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
     #[cfg(any(feature = "v6", feature = "v6k"))]
     ///Sign Extend Halfword
     Sxth { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
+    #[cfg(feature = "arm")]
     ///Test Equivalence
     Teq { cond: Cond, rn: Reg, op2: Op2 },
     ///Test
     Tst { cond: Cond, rn: Reg, op2: Op2 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Add two 16-bit values
     Uadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Add four 8-bit values
     Uadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Add and Subtract with Exchange
     Uasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
     #[cfg(
@@ -1156,83 +1273,85 @@ pub enum Ins {
     )]
     ///Undefined Permanently
     Udf { imm: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Halving Add two 16-bit values
     Uhadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Halving Add four 8-bit values
     Uhadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Halving Add and Subtract with Exchange
     Uhasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Halving Subtract and Add with Exchange
     Uhsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Halving Subtract two 16-bit values
     Uhsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Halving Subtract four 8-bit values
     Uhsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Multiply Accumulate Accumulate Long
     Umaal { cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    #[cfg(feature = "arm")]
     ///Unsigned Multiply Accumulate Long
     Umlal { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
+    #[cfg(feature = "arm")]
     ///Unsigned Multiply Long
     Umull { s: bool, cond: Cond, rd_lo: Reg, rd_hi: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturating Add two 16-bit values
     Uqadd16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturating Add four 8-bit values
     Uqadd8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturating Add and Subtract with Exchange
     Uqasx { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturating Subtract and Add with Exchange
     Uqsax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturating Subtract two 16-bit values
     Uqsub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturating Subtract four 8-bit values
     Uqsub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Sum of Absolute Differences for four 8-bit values
     Usad8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Sum of Absolute Differences and Accumulate four 8-bit values
     Usada8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg, ra: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturate
     Usat { cond: Cond, rd: Reg, imm: u32, op2: ShiftImm },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Saturate two 16-bit values
     Usat16 { cond: Cond, rd: Reg, imm: u32, rn: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Subtract and Add with Exchange
     Usax { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Subtract two 16-bit values
     Usub16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Subtract four 8-bit values
     Usub8 { cond: Cond, rd: Reg, rn: Reg, rm: Reg },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Extend and Add Byte
     Uxtab { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Extend to 16 bits and Add Byte
     Uxtab16 { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Extend and Add Halfword
     Uxtah { cond: Cond, rd: Reg, rn: Reg, rm: Reg, rotate: u32 },
     #[cfg(any(feature = "v6", feature = "v6k"))]
     ///Unsigned Extend Byte
     Uxtb { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
-    #[cfg(any(feature = "v6", feature = "v6k"))]
+    #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
     ///Unsigned Extend Byte to 16 bits
     Uxtb16 { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
     #[cfg(any(feature = "v6", feature = "v6k"))]
@@ -1240,6 +1359,7 @@ pub enum Ins {
     Uxth { cond: Cond, rd: Reg, rm: Reg, rotate: u32 },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1248,6 +1368,7 @@ pub enum Ins {
     VabsF32 { cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1256,6 +1377,7 @@ pub enum Ins {
     VabsF64 { cond: Cond, dd: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1264,6 +1386,7 @@ pub enum Ins {
     VaddF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1272,6 +1395,7 @@ pub enum Ins {
     VaddF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1280,6 +1404,7 @@ pub enum Ins {
     VcmpF32 { nan_exc: bool, cond: Cond, sd: Sreg, op2: VcmpF32Op2 },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1288,6 +1413,7 @@ pub enum Ins {
     VcmpF64 { nan_exc: bool, cond: Cond, dd: Dreg, op2: VcmpF64Op2 },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1296,6 +1422,7 @@ pub enum Ins {
     VcvtF32F64 { cond: Cond, sd: Sreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1304,6 +1431,7 @@ pub enum Ins {
     VcvtF32S32 { cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1312,6 +1440,7 @@ pub enum Ins {
     VcvtF32U32 { cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1320,6 +1449,7 @@ pub enum Ins {
     VcvtF64F32 { cond: Cond, dd: Dreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1328,6 +1458,7 @@ pub enum Ins {
     VcvtF64S32 { cond: Cond, dd: Dreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1336,6 +1467,7 @@ pub enum Ins {
     VcvtF64U32 { cond: Cond, dd: Dreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1344,6 +1476,7 @@ pub enum Ins {
     VcvtS32F32 { round_zero: bool, cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1352,6 +1485,7 @@ pub enum Ins {
     VcvtS32F64 { round_zero: bool, cond: Cond, sd: Sreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1360,6 +1494,7 @@ pub enum Ins {
     VcvtU32F32 { round_zero: bool, cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1368,6 +1503,7 @@ pub enum Ins {
     VcvtU32F64 { round_zero: bool, cond: Cond, sd: Sreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1376,6 +1512,7 @@ pub enum Ins {
     VdivF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1384,6 +1521,7 @@ pub enum Ins {
     VdivF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1392,6 +1530,7 @@ pub enum Ins {
     VldmF32 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: SregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1400,6 +1539,7 @@ pub enum Ins {
     VldmF64 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: DregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1408,6 +1548,7 @@ pub enum Ins {
     VldrF32 { cond: Cond, sd: Sreg, addr: AddrLdrStr },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1416,6 +1557,7 @@ pub enum Ins {
     VldrF64 { cond: Cond, dd: Dreg, addr: AddrLdrStr },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1424,6 +1566,7 @@ pub enum Ins {
     VmlaF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1432,6 +1575,7 @@ pub enum Ins {
     VmlaF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1440,6 +1584,7 @@ pub enum Ins {
     VmlsF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1448,6 +1593,7 @@ pub enum Ins {
     VmlsF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1456,6 +1602,7 @@ pub enum Ins {
     Vmov32Reg { cond: Cond, dd: DregIndex, rt: Reg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1464,6 +1611,7 @@ pub enum Ins {
     VmovF32 { cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1472,6 +1620,7 @@ pub enum Ins {
     VmovF32Reg { cond: Cond, sn: Sreg, rt: Reg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1480,6 +1629,7 @@ pub enum Ins {
     VmovF64 { cond: Cond, dd: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1488,6 +1638,7 @@ pub enum Ins {
     VmovReg32 { cond: Cond, rt: Reg, dn: DregIndex },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1496,6 +1647,7 @@ pub enum Ins {
     VmovRegF32 { cond: Cond, rt: Reg, sn: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1504,6 +1656,7 @@ pub enum Ins {
     VmovRegF32Dual { cond: Cond, rt: Reg, rt2: Reg, sm: Sreg, sm2: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1512,6 +1665,7 @@ pub enum Ins {
     VmovF32RegDual { cond: Cond, sm: Sreg, sm2: Sreg, rt: Reg, rt2: Reg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1520,6 +1674,7 @@ pub enum Ins {
     VmovRegF64 { cond: Cond, rt: Reg, rt2: Reg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1528,6 +1683,7 @@ pub enum Ins {
     VmovF64Reg { cond: Cond, dm: Dreg, rt: Reg, rt2: Reg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1536,6 +1692,7 @@ pub enum Ins {
     Vmrs { cond: Cond, rd: Reg, fpscr: Fpscr },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1544,6 +1701,7 @@ pub enum Ins {
     Vmsr { cond: Cond, fpscr: Fpscr, rd: Reg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1552,6 +1710,7 @@ pub enum Ins {
     VmulF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1560,6 +1719,7 @@ pub enum Ins {
     VmulF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1568,6 +1728,7 @@ pub enum Ins {
     VnegF32 { cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1576,6 +1737,7 @@ pub enum Ins {
     VnegF64 { cond: Cond, dd: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1584,6 +1746,7 @@ pub enum Ins {
     VnmlaF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1592,6 +1755,7 @@ pub enum Ins {
     VnmlaF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1600,6 +1764,7 @@ pub enum Ins {
     VnmlsF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1608,6 +1773,7 @@ pub enum Ins {
     VnmlsF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1616,6 +1782,7 @@ pub enum Ins {
     VnmulF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1624,6 +1791,7 @@ pub enum Ins {
     VnmulF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1632,6 +1800,7 @@ pub enum Ins {
     VpopF32 { cond: Cond, regs: SregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1640,6 +1809,7 @@ pub enum Ins {
     VpopF64 { cond: Cond, regs: DregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1648,6 +1818,7 @@ pub enum Ins {
     VpushF32 { cond: Cond, regs: SregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1656,6 +1827,7 @@ pub enum Ins {
     VpushF64 { cond: Cond, regs: DregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1664,6 +1836,7 @@ pub enum Ins {
     VsqrtF32 { cond: Cond, sd: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1672,6 +1845,7 @@ pub enum Ins {
     VsqrtF64 { cond: Cond, dd: Dreg, dm: Dreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1680,6 +1854,7 @@ pub enum Ins {
     VstmF32 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: SregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1688,6 +1863,7 @@ pub enum Ins {
     VstmF64 { mode: VldmVstmMode, cond: Cond, rn: Reg, writeback: bool, regs: DregList },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1696,6 +1872,7 @@ pub enum Ins {
     VstrF32 { cond: Cond, sd: Sreg, addr: AddrLdrStr },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1704,6 +1881,7 @@ pub enum Ins {
     VstrF64 { cond: Cond, dd: Dreg, addr: AddrLdrStr },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
@@ -1712,19 +1890,20 @@ pub enum Ins {
     VsubF32 { cond: Cond, sd: Sreg, sn: Sreg, sm: Sreg },
     #[cfg(
         all(
+            feature = "arm",
             feature = "vfp_v2",
             any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
         )
     )]
     ///Vector Subtract 64-bit
     VsubF64 { cond: Cond, dd: Dreg, dn: Dreg, dm: Dreg },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Wait For Event
     Wfe { cond: Cond },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Wait For Interrupt
     Wfi { cond: Cond },
-    #[cfg(feature = "v6k")]
+    #[cfg(all(feature = "arm", feature = "v6k"))]
     ///Yield
     Yield { cond: Cond },
     Word(u32),

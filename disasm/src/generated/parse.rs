@@ -58,6 +58,7 @@ impl Reg {
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }
+#[cfg(feature = "arm")]
 impl StatusReg {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -65,6 +66,7 @@ impl StatusReg {
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }
+#[cfg(feature = "arm")]
 impl StatusFields {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -77,6 +79,7 @@ impl StatusFields {
         }
     }
 }
+#[cfg(feature = "arm")]
 impl MsrOp2 {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
@@ -99,6 +102,7 @@ impl ShiftOp {
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }
+#[cfg(feature = "arm")]
 impl Coproc {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -106,6 +110,7 @@ impl Coproc {
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }
+#[cfg(feature = "arm")]
 impl CoReg {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -202,6 +207,7 @@ impl AifFlags {
         }
     }
 }
+#[cfg(feature = "arm")]
 impl AddrLdcStc {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
@@ -340,7 +346,7 @@ impl MiscLoadOffset {
         }
     }
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 impl SrsRfeMode {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -356,7 +362,12 @@ impl Endianness {
         unsafe { core::mem::transmute::<u8, Self>(value as u8) }
     }
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 impl RegSide {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -366,6 +377,7 @@ impl RegSide {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -379,6 +391,7 @@ impl Sreg {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -392,6 +405,7 @@ impl Dreg {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -414,6 +428,7 @@ impl VcmpF32Op2 {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -436,6 +451,7 @@ impl VcmpF64Op2 {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -454,6 +470,7 @@ impl DregIndex {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -466,6 +483,7 @@ impl Fpscr {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -510,7 +528,7 @@ impl Default for LdmStmMode {
         Self::Ia
     }
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 impl Default for SrsRfeMode {
     fn default() -> Self {
         Self::Ia
@@ -518,6 +536,7 @@ impl Default for SrsRfeMode {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -552,16 +571,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x869 | 0x86a | 0x86b | 0x86c | 0x86d | 0x86e | 0x86f | 0x870 | 0x871 | 0x872
         | 0x873 | 0x874 | 0x875 | 0x876 | 0x877 | 0x878 | 0x879 | 0x87a | 0x87b | 0x87c
         | 0x87d | 0x87e | 0x87f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_and_0(ins, pc, options) {
                 return ins;
             }
         }
         0x9 | 0x19 | 0x29 | 0x39 | 0x49 | 0x59 | 0x69 | 0x79 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe000f0) == 0x90
                 && let Some(ins) = parse_arm_mul_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -569,11 +591,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xb | 0x1b | 0x2b | 0x3b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -582,13 +606,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0xd | 0x1d | 0x2d | 0x3d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -597,13 +630,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0xf | 0x1f | 0x2f | 0x3f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -611,11 +653,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x4b | 0x5b | 0x6b | 0x7b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -623,11 +667,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x4d | 0x5d | 0x6d | 0x7d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -635,11 +681,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x4f | 0x5f | 0x6f | 0x7f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x0
                 && let Some(ins) = parse_arm_and_0(ins, pc, options)
             {
@@ -668,16 +716,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x8e8 | 0x8e9 | 0x8ea | 0x8eb | 0x8ec | 0x8ed | 0x8ee | 0x8ef | 0x8f0 | 0x8f1
         | 0x8f2 | 0x8f3 | 0x8f4 | 0x8f5 | 0x8f6 | 0x8f7 | 0x8f8 | 0x8f9 | 0x8fa | 0x8fb
         | 0x8fc | 0x8fd | 0x8fe | 0x8ff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_eor_0(ins, pc, options) {
                 return ins;
             }
         }
         0x89 | 0x99 | 0xa9 | 0xb9 | 0xc9 | 0xd9 | 0xe9 | 0xf9 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe000f0) == 0x200090
                 && let Some(ins) = parse_arm_mla_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -685,11 +736,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x8b | 0x9b | 0xab | 0xbb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -698,13 +751,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x8d | 0x9d | 0xad | 0xbd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -713,13 +775,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x8f | 0x9f | 0xaf | 0xbf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -727,11 +798,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xcb | 0xdb | 0xeb | 0xfb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -739,11 +812,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xcd | 0xdd | 0xed | 0xfd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -751,11 +826,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xcf | 0xdf | 0xef | 0xff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x200000
                 && let Some(ins) = parse_arm_eor_0(ins, pc, options)
             {
@@ -785,17 +862,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x964 | 0x965 | 0x966 | 0x967 | 0x968 | 0x969 | 0x96a | 0x96b | 0x96c | 0x96d
         | 0x96e | 0x96f | 0x970 | 0x971 | 0x972 | 0x973 | 0x974 | 0x975 | 0x976 | 0x977
         | 0x978 | 0x979 | 0x97a | 0x97b | 0x97c | 0x97d | 0x97e | 0x97f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_sub_0(ins, pc, options) {
                 return ins;
             }
         }
         0x109 | 0x119 | 0x129 | 0x139 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x400090
                 && let Some(ins) = parse_arm_umaal_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -803,11 +882,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x10b | 0x11b | 0x12b | 0x13b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -816,13 +897,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x10d | 0x11d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -831,13 +921,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x10f | 0x11f | 0x12f | 0x13f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -846,7 +945,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x12d | 0x13d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -854,13 +961,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -868,11 +984,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x14b | 0x15b | 0x16b | 0x17b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -880,11 +998,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x14d | 0x15d | 0x16d | 0x17d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -892,11 +1012,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x14f | 0x15f | 0x16f | 0x17f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x400000
                 && let Some(ins) = parse_arm_sub_0(ins, pc, options)
             {
@@ -927,16 +1049,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x9ea | 0x9eb | 0x9ec | 0x9ed | 0x9ee | 0x9ef | 0x9f0 | 0x9f1 | 0x9f2 | 0x9f3
         | 0x9f4 | 0x9f5 | 0x9f6 | 0x9f7 | 0x9f8 | 0x9f9 | 0x9fa | 0x9fb | 0x9fc | 0x9fd
         | 0x9fe | 0x9ff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_rsb_0(ins, pc, options) {
                 return ins;
             }
         }
         0x18b | 0x19b | 0x1ab | 0x1bb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -945,13 +1070,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x18d | 0x19d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -960,13 +1094,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x18f | 0x19f | 0x1af | 0x1bf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -975,7 +1118,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x1ad | 0x1bd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -983,13 +1134,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -997,11 +1157,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1cb | 0x1db | 0x1eb | 0x1fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -1009,11 +1171,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1cd | 0x1dd | 0x1ed | 0x1fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -1021,11 +1185,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1cf | 0x1df | 0x1ef | 0x1ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x600000
                 && let Some(ins) = parse_arm_rsb_0(ins, pc, options)
             {
@@ -1055,16 +1221,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xa68 | 0xa69 | 0xa6a | 0xa6b | 0xa6c | 0xa6d | 0xa6e | 0xa6f | 0xa70 | 0xa71
         | 0xa72 | 0xa73 | 0xa74 | 0xa75 | 0xa76 | 0xa77 | 0xa78 | 0xa79 | 0xa7a | 0xa7b
         | 0xa7c | 0xa7d | 0xa7e | 0xa7f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_add_0(ins, pc, options) {
                 return ins;
             }
         }
         0x209 | 0x219 | 0x229 | 0x239 | 0x249 | 0x259 | 0x269 | 0x279 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe000f0) == 0x800090
                 && let Some(ins) = parse_arm_umull_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1072,11 +1241,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x20b | 0x21b | 0x22b | 0x23b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1085,13 +1256,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x20d | 0x21d | 0x22d | 0x23d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1100,13 +1280,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x20f | 0x21f | 0x22f | 0x23f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1114,11 +1303,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x24b | 0x25b | 0x26b | 0x27b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1126,11 +1317,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x24d | 0x25d | 0x26d | 0x27d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1138,11 +1331,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x24f | 0x25f | 0x26f | 0x27f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x800000
                 && let Some(ins) = parse_arm_add_0(ins, pc, options)
             {
@@ -1172,16 +1367,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xae8 | 0xae9 | 0xaea | 0xaeb | 0xaec | 0xaed | 0xaee | 0xaef | 0xaf0 | 0xaf1
         | 0xaf2 | 0xaf3 | 0xaf4 | 0xaf5 | 0xaf6 | 0xaf7 | 0xaf8 | 0xaf9 | 0xafa | 0xafb
         | 0xafc | 0xafd | 0xafe | 0xaff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_adc_0(ins, pc, options) {
                 return ins;
             }
         }
         0x289 | 0x299 | 0x2a9 | 0x2b9 | 0x2c9 | 0x2d9 | 0x2e9 | 0x2f9 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe000f0) == 0xa00090
                 && let Some(ins) = parse_arm_umlal_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1189,11 +1387,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x28b | 0x29b | 0x2ab | 0x2bb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1202,13 +1402,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x28d | 0x29d | 0x2ad | 0x2bd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1217,13 +1426,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x28f | 0x29f | 0x2af | 0x2bf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1231,11 +1449,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x2cb | 0x2db | 0x2eb | 0x2fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1243,11 +1463,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x2cd | 0x2dd | 0x2ed | 0x2fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1255,11 +1477,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x2cf | 0x2df | 0x2ef | 0x2ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xa00000
                 && let Some(ins) = parse_arm_adc_0(ins, pc, options)
             {
@@ -1289,16 +1513,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xb68 | 0xb69 | 0xb6a | 0xb6b | 0xb6c | 0xb6d | 0xb6e | 0xb6f | 0xb70 | 0xb71
         | 0xb72 | 0xb73 | 0xb74 | 0xb75 | 0xb76 | 0xb77 | 0xb78 | 0xb79 | 0xb7a | 0xb7b
         | 0xb7c | 0xb7d | 0xb7e | 0xb7f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_sbc_0(ins, pc, options) {
                 return ins;
             }
         }
         0x309 | 0x319 | 0x329 | 0x339 | 0x349 | 0x359 | 0x369 | 0x379 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe000f0) == 0xc00090
                 && let Some(ins) = parse_arm_smull_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1306,11 +1533,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x30b | 0x31b | 0x32b | 0x33b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1319,13 +1548,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x30d | 0x31d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1334,13 +1572,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x30f | 0x31f | 0x32f | 0x33f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1349,7 +1596,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x32d | 0x33d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -1357,13 +1612,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1371,11 +1635,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x34b | 0x35b | 0x36b | 0x37b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1383,11 +1649,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x34d | 0x35d | 0x36d | 0x37d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1395,11 +1663,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x34f | 0x35f | 0x36f | 0x37f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xc00000
                 && let Some(ins) = parse_arm_sbc_0(ins, pc, options)
             {
@@ -1429,16 +1699,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xbe8 | 0xbe9 | 0xbea | 0xbeb | 0xbec | 0xbed | 0xbee | 0xbef | 0xbf0 | 0xbf1
         | 0xbf2 | 0xbf3 | 0xbf4 | 0xbf5 | 0xbf6 | 0xbf7 | 0xbf8 | 0xbf9 | 0xbfa | 0xbfb
         | 0xbfc | 0xbfd | 0xbfe | 0xbff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_rsc_0(ins, pc, options) {
                 return ins;
             }
         }
         0x389 | 0x399 | 0x3a9 | 0x3b9 | 0x3c9 | 0x3d9 | 0x3e9 | 0x3f9 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe000f0) == 0xe00090
                 && let Some(ins) = parse_arm_smlal_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1446,11 +1719,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x38b | 0x39b | 0x3ab | 0x3bb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1459,13 +1734,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x38d | 0x39d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1474,13 +1758,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x38f | 0x39f | 0x3af | 0x3bf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1489,7 +1782,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x3ad | 0x3bd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -1497,13 +1798,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1511,11 +1821,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x3cb | 0x3db | 0x3eb | 0x3fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1523,11 +1835,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x3cd | 0x3dd | 0x3ed | 0x3fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1535,11 +1849,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x3cf | 0x3df | 0x3ef | 0x3ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0xe00000
                 && let Some(ins) = parse_arm_rsc_0(ins, pc, options)
             {
@@ -1547,18 +1863,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x400 | 0x410 | 0x420 | 0x430 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff100f0) == 0xf1010000
                 && let Some(ins) = parse_arm_setend_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xfb002f0) == 0x1000000
                 && let Some(ins) = parse_arm_mrs_0(ins, pc, options)
             {
@@ -1566,7 +1883,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x401 | 0x404 | 0x411 | 0x414 | 0x421 | 0x424 | 0x431 | 0x434 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_arm_cps_0(ins, pc, options) {
                 return ins;
             }
@@ -1589,14 +1906,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xd2e | 0xd2f | 0xd30 | 0xd31 | 0xd32 | 0xd33 | 0xd34 | 0xd35 | 0xd36 | 0xd37
         | 0xd38 | 0xd39 | 0xd3a | 0xd3b | 0xd3c | 0xd3d | 0xd3e | 0xd3f => {}
         0x405 | 0x415 | 0x425 | 0x435 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff000f0) == 0x1000050
                 && let Some(ins) = parse_arm_qadd_0(ins, pc, options)
@@ -1605,14 +1930,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x408 | 0x40c | 0x418 | 0x41c | 0x428 | 0x42c | 0x438 | 0x43c => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00090) == 0x1000080
                 && let Some(ins) = parse_arm_smla_0(ins, pc, options)
@@ -1621,12 +1954,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x409 | 0x419 | 0x429 | 0x439 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xff000f0) == 0x1000090
                 && let Some(ins) = parse_arm_swp_0(ins, pc, options)
             {
@@ -1635,26 +1969,43 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x40a | 0x40e | 0x41a | 0x41e | 0x42a | 0x42e | 0x43a | 0x43e => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if let Some(ins) = parse_arm_smla_0(ins, pc, options) {
                 return ins;
             }
         }
         0x40b | 0x41b | 0x42b | 0x43b | 0x50b | 0x51b | 0x52b | 0x53b => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_strh_0(ins, pc, options) {
                 return ins;
             }
         }
         0x40d | 0x41d | 0x42d | 0x43d => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff10020) == 0xf1000000
                 && let Some(ins) = parse_arm_cps_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
@@ -1664,7 +2015,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x40f | 0x41f | 0x42f | 0x43f | 0x50f | 0x51f | 0x52f | 0x53f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if let Some(ins) = parse_arm_strd_0(ins, pc, options) {
                 return ins;
@@ -1682,16 +2041,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xc66 | 0xc67 | 0xc68 | 0xc69 | 0xc6a | 0xc6b | 0xc6c | 0xc6d | 0xc6e | 0xc6f
         | 0xc70 | 0xc71 | 0xc72 | 0xc73 | 0xc74 | 0xc75 | 0xc76 | 0xc77 | 0xc78 | 0xc79
         | 0xc7a | 0xc7b | 0xc7c | 0xc7d | 0xc7e | 0xc7f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_tst_0(ins, pc, options) {
                 return ins;
             }
         }
         0x44b | 0x45b | 0x46b | 0x47b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1100000
                 && let Some(ins) = parse_arm_tst_0(ins, pc, options)
             {
@@ -1699,11 +2061,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x44d | 0x45d | 0x46d | 0x47d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1100000
                 && let Some(ins) = parse_arm_tst_0(ins, pc, options)
             {
@@ -1711,11 +2075,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x44f | 0x45f | 0x46f | 0x47f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1100000
                 && let Some(ins) = parse_arm_tst_0(ins, pc, options)
             {
@@ -1739,19 +2105,23 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xda6 | 0xda7 | 0xda8 | 0xda9 | 0xdaa | 0xdab | 0xdac | 0xdad | 0xdae | 0xdaf
         | 0xdb0 | 0xdb1 | 0xdb2 | 0xdb3 | 0xdb4 | 0xdb5 | 0xdb6 | 0xdb7 | 0xdb8 | 0xdb9
         | 0xdba | 0xdbb | 0xdbc | 0xdbd | 0xdbe | 0xdbf => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_msr_0(ins, pc, options) {
                 return ins;
             }
         }
         0x481 | 0x491 | 0x4a1 | 0x4b1 => {
             #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v4t",
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000f0) == 0x1200010
@@ -1759,6 +2129,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1766,12 +2137,18 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x482 | 0x492 | 0x4a2 | 0x4b2 => {
-            #[cfg(any(feature = "v5tej", feature = "v6", feature = "v6k"))]
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(feature = "v5tej", feature = "v6", feature = "v6k")
+                )
+            )]
             if (ins & 0xff000f0) == 0x1200020
                 && let Some(ins) = parse_arm_bxj_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1780,12 +2157,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x483 | 0x493 | 0x4a3 | 0x4b3 => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000f0) == 0x1200030
@@ -1793,6 +2173,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1801,13 +2182,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x485 | 0x495 | 0x4a5 | 0x4b5 => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff000f0) == 0x1200050
                 && let Some(ins) = parse_arm_qsub_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1816,12 +2206,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x487 | 0x497 | 0x4a7 | 0x4b7 => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfff000f0) == 0xe1200070
@@ -1829,6 +2222,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1837,13 +2231,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x488 | 0x48c | 0x498 | 0x49c | 0x4a8 | 0x4ac | 0x4b8 | 0x4bc => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff000b0) == 0x1200080
                 && let Some(ins) = parse_arm_smlaw_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1852,13 +2255,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x48a | 0x48e | 0x49a | 0x49e | 0x4aa | 0x4ae | 0x4ba | 0x4be => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff000b0) == 0x12000a0
                 && let Some(ins) = parse_arm_smulw_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1866,11 +2278,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x48b | 0x49b | 0x4ab | 0x4bb | 0x58b | 0x59b | 0x5ab | 0x5bb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1879,13 +2293,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x48d | 0x49d | 0x4ad | 0x4bd | 0x58d | 0x59d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1894,13 +2317,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x48f | 0x49f | 0x4af | 0x4bf | 0x58f | 0x59f | 0x5af | 0x5bf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -1919,16 +2351,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xce6 | 0xce7 | 0xce8 | 0xce9 | 0xcea | 0xceb | 0xcec | 0xced | 0xcee | 0xcef
         | 0xcf0 | 0xcf1 | 0xcf2 | 0xcf3 | 0xcf4 | 0xcf5 | 0xcf6 | 0xcf7 | 0xcf8 | 0xcf9
         | 0xcfa | 0xcfb | 0xcfc | 0xcfd | 0xcfe | 0xcff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_teq_0(ins, pc, options) {
                 return ins;
             }
         }
         0x4cb | 0x4db | 0x4eb | 0x4fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1300000
                 && let Some(ins) = parse_arm_teq_0(ins, pc, options)
             {
@@ -1936,11 +2371,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x4cd | 0x4dd | 0x4ed | 0x4fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1300000
                 && let Some(ins) = parse_arm_teq_0(ins, pc, options)
             {
@@ -1948,11 +2385,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x4cf | 0x4df | 0x4ef | 0x4ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1300000
                 && let Some(ins) = parse_arm_teq_0(ins, pc, options)
             {
@@ -1960,13 +2399,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x500 | 0x510 | 0x520 | 0x530 => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_mrs_0(ins, pc, options) {
                 return ins;
             }
         }
         0x505 | 0x515 | 0x525 | 0x535 => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if let Some(ins) = parse_arm_qdadd_0(ins, pc, options) {
                 return ins;
@@ -1975,20 +2423,37 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x508 | 0x50a | 0x50c | 0x50e | 0x518 | 0x51a | 0x51c | 0x51e | 0x528 | 0x52a
         | 0x52c | 0x52e | 0x538 | 0x53a | 0x53c | 0x53e => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if let Some(ins) = parse_arm_smlal_half_0(ins, pc, options) {
                 return ins;
             }
         }
         0x509 | 0x519 | 0x529 | 0x539 => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_swpb_0(ins, pc, options) {
                 return ins;
             }
         }
         0x50d | 0x51d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if let Some(ins) = parse_arm_ldrd_0(ins, pc, options) {
                 return ins;
@@ -1996,7 +2461,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x52d | 0x53d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -2004,7 +2477,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
@@ -2024,16 +2505,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xd66 | 0xd67 | 0xd68 | 0xd69 | 0xd6a | 0xd6b | 0xd6c | 0xd6d | 0xd6e | 0xd6f
         | 0xd70 | 0xd71 | 0xd72 | 0xd73 | 0xd74 | 0xd75 | 0xd76 | 0xd77 | 0xd78 | 0xd79
         | 0xd7a | 0xd7b | 0xd7c | 0xd7d | 0xd7e | 0xd7f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_cmp_0(ins, pc, options) {
                 return ins;
             }
         }
         0x54b | 0x55b | 0x56b | 0x57b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1500000
                 && let Some(ins) = parse_arm_cmp_0(ins, pc, options)
             {
@@ -2041,11 +2525,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x54d | 0x55d | 0x56d | 0x57d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1500000
                 && let Some(ins) = parse_arm_cmp_0(ins, pc, options)
             {
@@ -2053,11 +2539,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x54f | 0x55f | 0x56f | 0x57f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1500000
                 && let Some(ins) = parse_arm_cmp_0(ins, pc, options)
             {
@@ -2066,12 +2554,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x581 | 0x591 | 0x5a1 | 0x5b1 => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000f0) == 0x1600010
@@ -2079,6 +2570,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -2087,13 +2579,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x585 | 0x595 | 0x5a5 | 0x5b5 => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff000f0) == 0x1600050
                 && let Some(ins) = parse_arm_qdsub_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -2103,13 +2604,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x588 | 0x58a | 0x58c | 0x58e | 0x598 | 0x59a | 0x59c | 0x59e | 0x5a8 | 0x5aa
         | 0x5ac | 0x5ae | 0x5b8 | 0x5ba | 0x5bc | 0x5be => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00090) == 0x1600080
                 && let Some(ins) = parse_arm_smul_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -2118,7 +2628,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x5ad | 0x5bd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -2126,13 +2644,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -2151,16 +2678,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xde6 | 0xde7 | 0xde8 | 0xde9 | 0xdea | 0xdeb | 0xdec | 0xded | 0xdee | 0xdef
         | 0xdf0 | 0xdf1 | 0xdf2 | 0xdf3 | 0xdf4 | 0xdf5 | 0xdf6 | 0xdf7 | 0xdf8 | 0xdf9
         | 0xdfa | 0xdfb | 0xdfc | 0xdfd | 0xdfe | 0xdff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_cmn_0(ins, pc, options) {
                 return ins;
             }
         }
         0x5cb | 0x5db | 0x5eb | 0x5fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1700000
                 && let Some(ins) = parse_arm_cmn_0(ins, pc, options)
             {
@@ -2168,11 +2698,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x5cd | 0x5dd | 0x5ed | 0x5fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1700000
                 && let Some(ins) = parse_arm_cmn_0(ins, pc, options)
             {
@@ -2180,11 +2712,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x5cf | 0x5df | 0x5ef | 0x5ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdf00000) == 0x1700000
                 && let Some(ins) = parse_arm_cmn_0(ins, pc, options)
             {
@@ -2214,17 +2748,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xe68 | 0xe69 | 0xe6a | 0xe6b | 0xe6c | 0xe6d | 0xe6e | 0xe6f | 0xe70 | 0xe71
         | 0xe72 | 0xe73 | 0xe74 | 0xe75 | 0xe76 | 0xe77 | 0xe78 | 0xe79 | 0xe7a | 0xe7b
         | 0xe7c | 0xe7d | 0xe7e | 0xe7f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_orr_0(ins, pc, options) {
                 return ins;
             }
         }
         0x609 | 0x619 | 0x629 | 0x639 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x1800090
                 && let Some(ins) = parse_arm_strex_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2232,11 +2768,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x60b | 0x61b | 0x62b | 0x63b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2245,13 +2783,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x60d | 0x61d | 0x62d | 0x63d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2260,13 +2807,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x60f | 0x61f | 0x62f | 0x63f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2274,12 +2830,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x649 | 0x659 | 0x669 | 0x679 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x1900090
                 && let Some(ins) = parse_arm_ldrex_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2287,11 +2844,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x64b | 0x65b | 0x66b | 0x67b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2299,11 +2858,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x64d | 0x65d | 0x66d | 0x67d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2311,11 +2872,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x64f | 0x65f | 0x66f | 0x67f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1800000
                 && let Some(ins) = parse_arm_orr_0(ins, pc, options)
             {
@@ -2323,16 +2886,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x680 | 0x6c0 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00ff0) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_1(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2341,11 +2907,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x681 | 0x688 | 0x690 | 0x691 | 0x698 | 0x6c1 | 0x6c8 | 0x6d0 | 0x6d1
         | 0x6d8 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2354,11 +2922,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x682 | 0x683 | 0x68a | 0x692 | 0x693 | 0x69a | 0x6c2 | 0x6c3 | 0x6ca | 0x6d2
         | 0x6d3 | 0x6da => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00020
                 && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2367,11 +2937,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x684 | 0x685 | 0x68c | 0x694 | 0x695 | 0x69c | 0x6c4 | 0x6c5 | 0x6cc | 0x6d4
         | 0x6d5 | 0x6dc => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00040
                 && let Some(ins) = parse_arm_asr_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2379,16 +2951,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x686 | 0x6c6 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00ff0) == 0x1a00060
                 && let Some(ins) = parse_arm_rrx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2397,11 +2972,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x687 | 0x68e | 0x696 | 0x697 | 0x69e | 0x6c7 | 0x6ce | 0x6d6 | 0x6d7
         | 0x6de => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2409,17 +2986,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x689 | 0x699 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1a00090
                 && let Some(ins) = parse_arm_strexd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2427,16 +3006,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x68b | 0x69b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00020
                 && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2444,19 +3026,29 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x68d | 0x69d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00040
                 && let Some(ins) = parse_arm_asr_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2464,19 +3056,29 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x68f | 0x69f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2484,11 +3086,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6a0 | 0x6e0 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00ff0) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_1(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2500,16 +3104,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x6bc | 0x6be | 0x6e1 | 0x6e2 | 0x6e3 | 0x6e4 | 0x6e5 | 0x6e7 | 0x6e8 | 0x6ea
         | 0x6ec | 0x6ee | 0x6f0 | 0x6f1 | 0x6f2 | 0x6f3 | 0x6f4 | 0x6f5 | 0x6f6 | 0x6f7
         | 0x6f8 | 0x6fa | 0x6fc | 0x6fe => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_mov_2(ins, pc, options) {
                 return ins;
             }
         }
         0x6a6 | 0x6e6 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00ff0) == 0x1a00060
                 && let Some(ins) = parse_arm_rrx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2517,12 +3124,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6a9 | 0x6b9 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1a00090
                 && let Some(ins) = parse_arm_strexd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2530,11 +3138,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6ab | 0x6bb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2543,13 +3153,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x6ad | 0x6bd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2558,13 +3177,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x6af | 0x6bf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2572,17 +3200,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6c9 | 0x6d9 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00000
                 && let Some(ins) = parse_arm_lsl_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1b00090
                 && let Some(ins) = parse_arm_ldrexd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2590,16 +3220,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6cb | 0x6db => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00020
                 && let Some(ins) = parse_arm_lsr_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2607,16 +3240,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6cd | 0x6dd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00040
                 && let Some(ins) = parse_arm_asr_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2624,16 +3260,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6cf | 0x6df => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfef0060) == 0x1a00060
                 && let Some(ins) = parse_arm_ror_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2641,12 +3280,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6e9 | 0x6f9 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1b00090
                 && let Some(ins) = parse_arm_ldrexd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2654,11 +3294,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6eb | 0x6fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2666,11 +3308,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6ed | 0x6fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2678,11 +3322,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x6ef | 0x6ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -2712,17 +3358,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xf68 | 0xf69 | 0xf6a | 0xf6b | 0xf6c | 0xf6d | 0xf6e | 0xf6f | 0xf70 | 0xf71
         | 0xf72 | 0xf73 | 0xf74 | 0xf75 | 0xf76 | 0xf77 | 0xf78 | 0xf79 | 0xf7a | 0xf7b
         | 0xf7c | 0xf7d | 0xf7e | 0xf7f => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_bic_0(ins, pc, options) {
                 return ins;
             }
         }
         0x709 | 0x719 | 0x729 | 0x739 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1c00090
                 && let Some(ins) = parse_arm_strexb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2730,11 +3378,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x70b | 0x71b | 0x72b | 0x73b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2743,13 +3393,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x70d | 0x71d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2758,13 +3417,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x70f | 0x71f | 0x72f | 0x73f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2773,7 +3441,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x72d | 0x73d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -2781,13 +3457,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2795,12 +3480,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x749 | 0x759 | 0x769 | 0x779 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1d00090
                 && let Some(ins) = parse_arm_ldrexb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2808,11 +3494,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x74b | 0x75b | 0x76b | 0x77b => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2820,11 +3508,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x74d | 0x75d | 0x76d | 0x77d => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2832,11 +3522,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x74f | 0x75f | 0x76f | 0x77f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1c00000
                 && let Some(ins) = parse_arm_bic_0(ins, pc, options)
             {
@@ -2866,17 +3558,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xfe8 | 0xfe9 | 0xfea | 0xfeb | 0xfec | 0xfed | 0xfee | 0xfef | 0xff0 | 0xff1
         | 0xff2 | 0xff3 | 0xff4 | 0xff5 | 0xff6 | 0xff7 | 0xff8 | 0xff9 | 0xffa | 0xffb
         | 0xffc | 0xffd | 0xffe | 0xfff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_mvn_0(ins, pc, options) {
                 return ins;
             }
         }
         0x789 | 0x799 | 0x7a9 | 0x7b9 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1e00090
                 && let Some(ins) = parse_arm_strexh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2884,11 +3578,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x78b | 0x79b | 0x7ab | 0x7bb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0xb0
                 && let Some(ins) = parse_arm_strh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2897,13 +3593,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x78d | 0x79d => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2912,13 +3617,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x78f | 0x79f | 0x7af | 0x7bf => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xf0
                 && let Some(ins) = parse_arm_strd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2927,7 +3641,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x7ad | 0x7bd => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0
                 && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
@@ -2935,13 +3657,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0
                 && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2949,12 +3680,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x7c9 | 0x7d9 | 0x7e9 | 0x7f9 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xff000f0) == 0x1f00090
                 && let Some(ins) = parse_arm_ldrexh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2962,11 +3694,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x7cb | 0x7db | 0x7eb | 0x7fb => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000b0
                 && let Some(ins) = parse_arm_ldrh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2974,11 +3708,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x7cd | 0x7dd | 0x7ed | 0x7fd => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000d0
                 && let Some(ins) = parse_arm_ldrsb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2986,11 +3722,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x7cf | 0x7df | 0x7ef | 0x7ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe1000f0) == 0x1000f0
                 && let Some(ins) = parse_arm_ldrsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1e00000
                 && let Some(ins) = parse_arm_mvn_0(ins, pc, options)
             {
@@ -2998,36 +3736,37 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xc80 | 0xc90 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff00ff) == 0x3200000
                 && let Some(ins) = parse_arm_nop_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff00ff) == 0x3200004
                 && let Some(ins) = parse_arm_sev_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff00ff) == 0x3200002
                 && let Some(ins) = parse_arm_wfe_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff00ff) == 0x3200003
                 && let Some(ins) = parse_arm_wfi_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff00ff) == 0x3200001
                 && let Some(ins) = parse_arm_yield_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -3035,11 +3774,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xc81 | 0xc91 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff00ff) == 0x3200014
                 && let Some(ins) = parse_arm_csdb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -3047,12 +3788,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0xc8f | 0xc9f => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff00f0) == 0x32000f0
                 && let Some(ins) = parse_arm_dbg_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xdb00000) == 0x1200000
                 && let Some(ins) = parse_arm_msr_0(ins, pc, options)
             {
@@ -3072,11 +3814,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0xee4 | 0xee5 | 0xee6 | 0xee7 | 0xee8 | 0xee9 | 0xeea | 0xeeb | 0xeec | 0xeed
         | 0xeee | 0xeef | 0xef0 | 0xef1 | 0xef2 | 0xef3 | 0xef4 | 0xef5 | 0xef6 | 0xef7
         | 0xef8 | 0xef9 | 0xefa | 0xefb | 0xefc | 0xefd | 0xefe | 0xeff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00000) == 0x3a00000
                 && let Some(ins) = parse_arm_mov_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000
                 && let Some(ins) = parse_arm_mov_2(ins, pc, options)
             {
@@ -3164,6 +3908,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1eab | 0x1eac | 0x1ead | 0x1eae | 0x1eaf | 0x1eb0 | 0x1eb1 | 0x1eb2 | 0x1eb3
         | 0x1eb4 | 0x1eb5 | 0x1eb6 | 0x1eb7 | 0x1eb8 | 0x1eb9 | 0x1eba | 0x1ebb | 0x1ebc
         | 0x1ebd | 0x1ebe | 0x1ebf => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_str_0(ins, pc, options) {
                 return ins;
             }
@@ -3251,6 +3996,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1ee9 | 0x1eea | 0x1eeb | 0x1eec | 0x1eed | 0x1eee | 0x1eef | 0x1ef0 | 0x1ef1
         | 0x1ef2 | 0x1ef3 | 0x1ef4 | 0x1ef5 | 0x1ef6 | 0x1ef7 | 0x1ef8 | 0x1ef9 | 0x1efa
         | 0x1efb | 0x1efc | 0x1efd | 0x1efe | 0x1eff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_ldr_0(ins, pc, options) {
                 return ins;
             }
@@ -3279,11 +4025,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1aa2 | 0x1aa4 | 0x1aa6 | 0x1aa8 | 0x1aaa | 0x1aab | 0x1aac | 0x1aae | 0x1aaf
         | 0x1ab0 | 0x1ab2 | 0x1ab4 | 0x1ab6 | 0x1ab8 | 0x1aba | 0x1abb | 0x1abc | 0x1abe
         | 0x1abf => {
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3313,11 +4061,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1ad6 | 0x1ad8 | 0x1ada | 0x1adc | 0x1ade | 0x1adf | 0x1ae0 | 0x1ae2 | 0x1ae4
         | 0x1ae6 | 0x1ae8 | 0x1aea | 0x1aec | 0x1aee | 0x1aef | 0x1af0 | 0x1af2 | 0x1af4
         | 0x1af6 | 0x1af8 | 0x1afa | 0x1afc | 0x1afe | 0x1aff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3408,6 +4158,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1fad | 0x1fae | 0x1faf | 0x1fb0 | 0x1fb1 | 0x1fb2 | 0x1fb3 | 0x1fb4 | 0x1fb5
         | 0x1fb6 | 0x1fb7 | 0x1fb8 | 0x1fb9 | 0x1fba | 0x1fbb | 0x1fbc | 0x1fbd | 0x1fbe
         | 0x1fbf => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_strb_0(ins, pc, options) {
                 return ins;
             }
@@ -3466,6 +4217,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1fe9 | 0x1fea | 0x1feb | 0x1fec | 0x1fed | 0x1fee | 0x1ff0 | 0x1ff1 | 0x1ff2
         | 0x1ff3 | 0x1ff4 | 0x1ff5 | 0x1ff6 | 0x1ff7 | 0x1ff8 | 0x1ff9 | 0x1ffa | 0x1ffb
         | 0x1ffc | 0x1ffd | 0x1ffe => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_ldrb_0(ins, pc, options) {
                 return ins;
             }
@@ -3494,11 +4246,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1ba2 | 0x1ba4 | 0x1ba6 | 0x1ba8 | 0x1baa | 0x1bab | 0x1bac | 0x1bae | 0x1baf
         | 0x1bb0 | 0x1bb2 | 0x1bb4 | 0x1bb6 | 0x1bb8 | 0x1bba | 0x1bbb | 0x1bbc | 0x1bbe
         | 0x1bbf => {
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -3529,11 +4283,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1be2 | 0x1be3 | 0x1be4 | 0x1be6 | 0x1be8 | 0x1bea | 0x1bec | 0x1bee | 0x1bef
         | 0x1bf0 | 0x1bf2 | 0x1bf3 | 0x1bf4 | 0x1bf6 | 0x1bf8 | 0x1bfa | 0x1bfc | 0x1bfe
         | 0x1bff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3541,11 +4297,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1260 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0fff) == 0x49d0004
                 && let Some(ins) = parse_arm_pop_1(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3553,11 +4311,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x14a0 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0fff) == 0x52d0004
                 && let Some(ins) = parse_arm_push_1(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3592,13 +4352,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x1f71 | 0x1f72 | 0x1f73 | 0x1f74 | 0x1f75 | 0x1f76 | 0x1f77 | 0x1f78 | 0x1f79
         | 0x1f7a | 0x1f7b | 0x1f7c | 0x1f7d | 0x1f7e | 0x1f7f => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xfd700000) == 0xf5500000
                 && let Some(ins) = parse_arm_pld_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3606,12 +4375,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x15c1 | 0x15d1 | 0x15e1 | 0x15f1 => {
-            #[cfg(feature = "v6k")]
+            #[cfg(all(feature = "arm", feature = "v6k"))]
             if (ins & 0xfff000f0) == 0xf5700010
                 && let Some(ins) = parse_arm_clrex_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3619,12 +4389,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1841 | 0x1851 | 0x1861 | 0x1871 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6100010
                 && let Some(ins) = parse_arm_sadd16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3632,12 +4403,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1843 | 0x1853 | 0x1863 | 0x1873 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6100030
                 && let Some(ins) = parse_arm_sasx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3645,12 +4417,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1845 | 0x1855 | 0x1865 | 0x1875 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6100050
                 && let Some(ins) = parse_arm_ssax_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3658,12 +4431,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1847 | 0x1857 | 0x1867 | 0x1877 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6100070
                 && let Some(ins) = parse_arm_ssub16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3671,12 +4445,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1849 | 0x1859 | 0x1869 | 0x1879 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6100090
                 && let Some(ins) = parse_arm_sadd8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3684,12 +4459,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x184f | 0x185f | 0x186f | 0x187f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x61000f0
                 && let Some(ins) = parse_arm_ssub8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3697,17 +4473,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1881 | 0x1891 | 0x18a1 | 0x18b1 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6200010
                 && let Some(ins) = parse_arm_qadd16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3715,17 +4493,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1883 | 0x1893 | 0x18a3 | 0x18b3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6200030
                 && let Some(ins) = parse_arm_qasx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3733,17 +4513,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1885 | 0x1895 | 0x18a5 | 0x18b5 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6200050
                 && let Some(ins) = parse_arm_qsax_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3751,17 +4533,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1887 | 0x1897 | 0x18a7 | 0x18b7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6200070
                 && let Some(ins) = parse_arm_qsub16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3769,17 +4553,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1889 | 0x1899 | 0x18a9 | 0x18b9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6200090
                 && let Some(ins) = parse_arm_qadd8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3787,17 +4573,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x188f | 0x189f | 0x18af | 0x18bf => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x62000f0
                 && let Some(ins) = parse_arm_qsub8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -3805,17 +4593,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x18c1 | 0x18d1 | 0x18e1 | 0x18f1 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6300010
                 && let Some(ins) = parse_arm_shadd16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3823,17 +4613,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x18c3 | 0x18d3 | 0x18e3 | 0x18f3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6300030
                 && let Some(ins) = parse_arm_shasx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3841,17 +4633,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x18c5 | 0x18d5 | 0x18e5 | 0x18f5 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6300050
                 && let Some(ins) = parse_arm_shsax_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3859,17 +4653,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x18c7 | 0x18d7 | 0x18e7 | 0x18f7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6300070
                 && let Some(ins) = parse_arm_shsub16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3877,17 +4673,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x18c9 | 0x18d9 | 0x18e9 | 0x18f9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6300090
                 && let Some(ins) = parse_arm_shadd8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3895,17 +4693,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x18cf | 0x18df | 0x18ef | 0x18ff => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x63000f0
                 && let Some(ins) = parse_arm_shsub8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -3913,12 +4713,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1941 | 0x1951 | 0x1961 | 0x1971 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6500010
                 && let Some(ins) = parse_arm_uadd16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3926,12 +4727,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1943 | 0x1953 | 0x1963 | 0x1973 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6500030
                 && let Some(ins) = parse_arm_uasx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3939,12 +4741,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1945 | 0x1955 | 0x1965 | 0x1975 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6500050
                 && let Some(ins) = parse_arm_usax_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3952,12 +4755,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1947 | 0x1957 | 0x1967 | 0x1977 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6500070
                 && let Some(ins) = parse_arm_usub16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3965,12 +4769,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1949 | 0x1959 | 0x1969 | 0x1979 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6500090
                 && let Some(ins) = parse_arm_uadd8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3978,12 +4783,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x194f | 0x195f | 0x196f | 0x197f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x65000f0
                 && let Some(ins) = parse_arm_usub8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -3991,17 +4797,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1981 | 0x1991 | 0x19a1 | 0x19b1 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6600010
                 && let Some(ins) = parse_arm_uqadd16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4009,17 +4817,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1983 | 0x1993 | 0x19a3 | 0x19b3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6600030
                 && let Some(ins) = parse_arm_uqasx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4027,17 +4837,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1985 | 0x1995 | 0x19a5 | 0x19b5 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6600050
                 && let Some(ins) = parse_arm_uqsax_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4045,17 +4857,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1987 | 0x1997 | 0x19a7 | 0x19b7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6600070
                 && let Some(ins) = parse_arm_uqsub16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4063,17 +4877,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1989 | 0x1999 | 0x19a9 | 0x19b9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6600090
                 && let Some(ins) = parse_arm_uqadd8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4081,17 +4897,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x198f | 0x199f | 0x19af | 0x19bf => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x66000f0
                 && let Some(ins) = parse_arm_uqsub8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4099,17 +4917,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x19c1 | 0x19d1 | 0x19e1 | 0x19f1 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6700010
                 && let Some(ins) = parse_arm_uhadd16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4117,17 +4937,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x19c3 | 0x19d3 | 0x19e3 | 0x19f3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6700030
                 && let Some(ins) = parse_arm_uhasx_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4135,17 +4957,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x19c5 | 0x19d5 | 0x19e5 | 0x19f5 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6700050
                 && let Some(ins) = parse_arm_uhsax_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4153,17 +4977,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x19c7 | 0x19d7 | 0x19e7 | 0x19f7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6700070
                 && let Some(ins) = parse_arm_uhsub16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4171,17 +4997,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x19c9 | 0x19d9 | 0x19e9 | 0x19f9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6700090
                 && let Some(ins) = parse_arm_uhadd8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4189,17 +5017,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x19cf | 0x19df | 0x19ef | 0x19ff => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x67000f0
                 && let Some(ins) = parse_arm_uhsub8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4207,12 +5037,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a01 | 0x1a09 | 0x1a11 | 0x1a19 | 0x1a21 | 0x1a29 | 0x1a31 | 0x1a39 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff00070) == 0x6800010
                 && let Some(ins) = parse_arm_pkhbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4220,12 +5051,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a05 | 0x1a0d | 0x1a15 | 0x1a1d | 0x1a25 | 0x1a2d | 0x1a35 | 0x1a3d => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff00070) == 0x6800050
                 && let Some(ins) = parse_arm_pkhtb_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4233,12 +5065,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a07 | 0x1a17 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6800070
                 && let Some(ins) = parse_arm_sxtab16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4246,12 +5079,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a0b | 0x1a1b | 0x1a2b | 0x1a3b => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x68000b0
                 && let Some(ins) = parse_arm_sel_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4259,18 +5093,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a27 | 0x1a37 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00f0) == 0x68f0070
                 && let Some(ins) = parse_arm_sxtb16_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6800070
                 && let Some(ins) = parse_arm_sxtab16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4279,17 +5114,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x1a81 | 0x1a85 | 0x1a89 | 0x1a8d | 0x1a91 | 0x1a95 | 0x1a99 | 0x1a9d | 0x1aa1
         | 0x1aa5 | 0x1aa9 | 0x1aad | 0x1ab1 | 0x1ab5 | 0x1ab9 | 0x1abd => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe00030) == 0x6a00010
                 && let Some(ins) = parse_arm_ssat_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4297,17 +5134,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a83 | 0x1a93 | 0x1aa3 | 0x1ab3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6a00030
                 && let Some(ins) = parse_arm_ssat16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4315,17 +5154,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1a87 | 0x1a97 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6a00070
                 && let Some(ins) = parse_arm_sxtab_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4333,23 +5174,25 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1aa7 | 0x1ab7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00f0) == 0x6af0070
                 && let Some(ins) = parse_arm_sxtb_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6a00070
                 && let Some(ins) = parse_arm_sxtab_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4200000
                 && let Some(ins) = parse_arm_strt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4358,17 +5201,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x1ac1 | 0x1ac5 | 0x1ac9 | 0x1acd | 0x1ad1 | 0x1ad5 | 0x1ad9 | 0x1add | 0x1ae1
         | 0x1ae5 | 0x1ae9 | 0x1aed | 0x1af1 | 0x1af5 | 0x1af9 | 0x1afd => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe00030) == 0x6a00010
                 && let Some(ins) = parse_arm_ssat_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -4376,17 +5221,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1ac3 | 0x1ad3 | 0x1ae3 | 0x1af3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6b00030
                 && let Some(ins) = parse_arm_rev_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -4394,17 +5241,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1ac7 | 0x1ad7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6b00070
                 && let Some(ins) = parse_arm_sxtah_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -4412,17 +5261,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1acb | 0x1adb | 0x1aeb | 0x1afb => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6b000b0
                 && let Some(ins) = parse_arm_rev16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -4430,23 +5281,25 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1ae7 | 0x1af7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00f0) == 0x6bf0070
                 && let Some(ins) = parse_arm_sxth_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6b00070
                 && let Some(ins) = parse_arm_sxtah_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4300000
                 && let Some(ins) = parse_arm_ldrt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4100000
                 && let Some(ins) = parse_arm_ldr_0(ins, pc, options)
             {
@@ -4454,12 +5307,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1b07 | 0x1b17 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6c00070
                 && let Some(ins) = parse_arm_uxtab16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4467,18 +5321,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1b27 | 0x1b37 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00f0) == 0x6cf0070
                 && let Some(ins) = parse_arm_uxtb16_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6c00070
                 && let Some(ins) = parse_arm_uxtab16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4487,17 +5342,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x1b81 | 0x1b85 | 0x1b89 | 0x1b8d | 0x1b91 | 0x1b95 | 0x1b99 | 0x1b9d | 0x1ba1
         | 0x1ba5 | 0x1ba9 | 0x1bad | 0x1bb1 | 0x1bb5 | 0x1bb9 | 0x1bbd => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe00030) == 0x6e00010
                 && let Some(ins) = parse_arm_usat_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4505,17 +5362,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1b83 | 0x1b93 | 0x1ba3 | 0x1bb3 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6e00030
                 && let Some(ins) = parse_arm_usat16_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4523,17 +5382,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1b87 | 0x1b97 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6e00070
                 && let Some(ins) = parse_arm_uxtab_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4541,23 +5402,25 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1ba7 | 0x1bb7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00f0) == 0x6ef0070
                 && let Some(ins) = parse_arm_uxtb_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6e00070
                 && let Some(ins) = parse_arm_uxtab_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4600000
                 && let Some(ins) = parse_arm_strbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4566,17 +5429,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x1bc1 | 0x1bc5 | 0x1bc9 | 0x1bcd | 0x1bd1 | 0x1bd5 | 0x1bd9 | 0x1bdd | 0x1be1
         | 0x1be5 | 0x1be9 | 0x1bed | 0x1bf1 | 0x1bf5 | 0x1bf9 | 0x1bfd => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe00030) == 0x6e00010
                 && let Some(ins) = parse_arm_usat_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4584,17 +5449,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1bc7 | 0x1bd7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6f00070
                 && let Some(ins) = parse_arm_uxtah_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4602,17 +5469,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1bcb | 0x1bdb | 0x1beb | 0x1bfb => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6f000b0
                 && let Some(ins) = parse_arm_revsh_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4620,23 +5489,25 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1be7 | 0x1bf7 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00f0) == 0x6ff0070
                 && let Some(ins) = parse_arm_uxth_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x6f00070
                 && let Some(ins) = parse_arm_uxtah_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xd700000) == 0x4700000
                 && let Some(ins) = parse_arm_ldrbt_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4644,18 +5515,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1c01 | 0x1c03 | 0x1c11 | 0x1c13 | 0x1c21 | 0x1c23 | 0x1c31 | 0x1c33 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff0f0d0) == 0x700f010
                 && let Some(ins) = parse_arm_smuad_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000d0) == 0x7000010
                 && let Some(ins) = parse_arm_smlad_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4663,18 +5535,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1c05 | 0x1c07 | 0x1c15 | 0x1c17 | 0x1c25 | 0x1c27 | 0x1c35 | 0x1c37 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff0f0d0) == 0x700f050
                 && let Some(ins) = parse_arm_smusd_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000d0) == 0x7000050
                 && let Some(ins) = parse_arm_smlsd_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4682,12 +5555,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1d01 | 0x1d03 | 0x1d11 | 0x1d13 | 0x1d21 | 0x1d23 | 0x1d31 | 0x1d33 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000d0) == 0x7400010
                 && let Some(ins) = parse_arm_smlald_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4695,12 +5569,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1d05 | 0x1d07 | 0x1d15 | 0x1d17 | 0x1d25 | 0x1d27 | 0x1d35 | 0x1d37 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000d0) == 0x7400050
                 && let Some(ins) = parse_arm_smlsld_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4400000
                 && let Some(ins) = parse_arm_strb_0(ins, pc, options)
             {
@@ -4708,26 +5583,35 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1d41 | 0x1d43 | 0x1d51 | 0x1d53 | 0x1d61 | 0x1d63 | 0x1d71 | 0x1d73 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff0f0d0) == 0x750f010
                 && let Some(ins) = parse_arm_smmul_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000d0) == 0x7500010
                 && let Some(ins) = parse_arm_smmla_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xfd700000) == 0xf5500000
                 && let Some(ins) = parse_arm_pld_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4735,20 +5619,29 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1d4d | 0x1d4f | 0x1d5d | 0x1d5f | 0x1d6d | 0x1d6f | 0x1d7d | 0x1d7f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000d0) == 0x75000d0
                 && let Some(ins) = parse_arm_smmls_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xfd700000) == 0xf5500000
                 && let Some(ins) = parse_arm_pld_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4756,18 +5649,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
         }
         0x1e01 | 0x1e11 | 0x1e21 | 0x1e31 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff0f0f0) == 0x780f010
                 && let Some(ins) = parse_arm_usad8_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xff000f0) == 0x7800010
                 && let Some(ins) = parse_arm_usada8_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4000000
                 && let Some(ins) = parse_arm_str_0(ins, pc, options)
             {
@@ -4776,13 +5670,16 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x1fcf | 0x1fdf | 0x1fef | 0x1fff => {
             #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v4t",
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfff000f0) == 0xe7f000f0
@@ -4790,6 +5687,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xc500000) == 0x4500000
                 && let Some(ins) = parse_arm_ldrb_0(ins, pc, options)
             {
@@ -4850,6 +5748,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x26ab | 0x26ac | 0x26ad | 0x26ae | 0x26af | 0x26b0 | 0x26b1 | 0x26b2 | 0x26b3
         | 0x26b4 | 0x26b5 | 0x26b6 | 0x26b7 | 0x26b8 | 0x26b9 | 0x26ba | 0x26bb | 0x26bc
         | 0x26bd | 0x26be | 0x26bf => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_stm_0(ins, pc, options) {
                 return ins;
             }
@@ -4908,12 +5807,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x26eb | 0x26ec | 0x26ed | 0x26ee | 0x26ef | 0x26f0 | 0x26f1 | 0x26f2 | 0x26f3
         | 0x26f4 | 0x26f5 | 0x26f6 | 0x26f7 | 0x26f8 | 0x26f9 | 0x26fa | 0x26fb | 0x26fc
         | 0x26fd | 0x26fe | 0x26ff => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe500000) == 0xf8100000
                 && let Some(ins) = parse_arm_rfe_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe500000) == 0x8100000
                 && let Some(ins) = parse_arm_ldm_0(ins, pc, options)
             {
@@ -4977,12 +5877,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x27a6 | 0x27a7 | 0x27a8 | 0x27a9 | 0x27aa | 0x27ab | 0x27ac | 0x27ad | 0x27ae
         | 0x27af | 0x27b0 | 0x27b1 | 0x27b2 | 0x27b3 | 0x27b4 | 0x27b5 | 0x27b6 | 0x27b7
         | 0x27b8 | 0x27b9 | 0x27ba | 0x27bb | 0x27bc | 0x27bd | 0x27be | 0x27bf => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe500000) == 0xf8400000
                 && let Some(ins) = parse_arm_srs_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0x8000000
                 && let Some(ins) = parse_arm_stm_0(ins, pc, options)
             {
@@ -5018,11 +5919,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x276a | 0x276b | 0x276c | 0x276d | 0x276e | 0x276f | 0x2770 | 0x2771 | 0x2772
         | 0x2773 | 0x2774 | 0x2775 | 0x2776 | 0x2777 | 0x2778 | 0x2779 | 0x277a | 0x277b
         | 0x277c | 0x277d | 0x277e | 0x277f => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe708000) == 0x8500000
                 && let Some(ins) = parse_arm_ldm_1(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe508000) == 0x8508000
                 && let Some(ins) = parse_arm_ldm_2(ins, pc, options)
             {
@@ -5058,6 +5961,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x27ea | 0x27eb | 0x27ec | 0x27ed | 0x27ee | 0x27ef | 0x27f0 | 0x27f1 | 0x27f2
         | 0x27f3 | 0x27f4 | 0x27f5 | 0x27f6 | 0x27f7 | 0x27f8 | 0x27f9 | 0x27fa | 0x27fb
         | 0x27fc | 0x27fd | 0x27fe | 0x27ff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_ldm_2(ins, pc, options) {
                 return ins;
             }
@@ -5066,17 +5970,19 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x22e9 | 0x22ea | 0x22eb | 0x22ec | 0x22ed | 0x22ee | 0x22ef | 0x22f0 | 0x22f1
         | 0x22f2 | 0x22f3 | 0x22f4 | 0x22f5 | 0x22f6 | 0x22f7 | 0x22f8 | 0x22f9 | 0x22fa
         | 0x22fb | 0x22fc | 0x22fd | 0x22fe | 0x22ff => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0000) == 0x8bd0000
                 && let Some(ins) = parse_arm_pop_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfe500000) == 0xf8100000
                 && let Some(ins) = parse_arm_rfe_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe500000) == 0x8100000
                 && let Some(ins) = parse_arm_ldm_0(ins, pc, options)
             {
@@ -5087,11 +5993,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x24a9 | 0x24aa | 0x24ab | 0x24ac | 0x24ad | 0x24ae | 0x24af | 0x24b0 | 0x24b1
         | 0x24b2 | 0x24b3 | 0x24b4 | 0x24b5 | 0x24b6 | 0x24b7 | 0x24b8 | 0x24b9 | 0x24ba
         | 0x24bb | 0x24bc | 0x24bd | 0x24be | 0x24bf => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0000) == 0x92d0000
                 && let Some(ins) = parse_arm_push_0(ins, pc, options)
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0x8000000
                 && let Some(ins) = parse_arm_stm_0(ins, pc, options)
             {
@@ -5213,12 +6121,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x2bf0 | 0x2bf1 | 0x2bf2 | 0x2bf3 | 0x2bf4 | 0x2bf5 | 0x2bf6 | 0x2bf7 | 0x2bf8
         | 0x2bf9 | 0x2bfa | 0x2bfb | 0x2bfc | 0x2bfd | 0x2bfe | 0x2bff => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe000000) == 0xfa000000
@@ -5226,6 +6137,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000000) == 0xa000000
                 && let Some(ins) = parse_arm_b_0(ins, pc, options)
             {
@@ -5347,12 +6259,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x2ff0 | 0x2ff1 | 0x2ff2 | 0x2ff3 | 0x2ff4 | 0x2ff5 | 0x2ff6 | 0x2ff7 | 0x2ff8
         | 0x2ff9 | 0x2ffa | 0x2ffb | 0x2ffc | 0x2ffd | 0x2ffe | 0x2fff => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe000000) == 0xfa000000
@@ -5360,6 +6275,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000000) == 0xb000000
                 && let Some(ins) = parse_arm_bl_0(ins, pc, options)
             {
@@ -5403,12 +6319,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x37a2 | 0x37a3 | 0x37a4 | 0x37a5 | 0x37a6 | 0x37a7 | 0x37a8 | 0x37a9 | 0x37aa
         | 0x37ab | 0x37ac | 0x37ad | 0x37ae | 0x37af => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -5418,6 +6337,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5432,6 +6352,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -5475,12 +6396,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x37b2 | 0x37b3 | 0x37b4 | 0x37b5 | 0x37b6 | 0x37b7 | 0x37b8 | 0x37b9 | 0x37ba
         | 0x37bb | 0x37bc | 0x37bd | 0x37be | 0x37bf => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -5490,6 +6414,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5504,6 +6429,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -5547,12 +6473,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x37e2 | 0x37e3 | 0x37e4 | 0x37e5 | 0x37e6 | 0x37e7 | 0x37e8 | 0x37e9 | 0x37ea
         | 0x37eb | 0x37ec | 0x37ed | 0x37ee | 0x37ef => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -5562,6 +6491,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5576,6 +6506,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -5619,12 +6550,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x37f2 | 0x37f3 | 0x37f4 | 0x37f5 | 0x37f6 | 0x37f7 | 0x37f8 | 0x37f9 | 0x37fa
         | 0x37fb | 0x37fc | 0x37fd | 0x37fe | 0x37ff => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -5634,6 +6568,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5648,6 +6583,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -5658,14 +6594,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x310b | 0x310c | 0x310d | 0x310e | 0x310f | 0x3120 | 0x3122 | 0x3124 | 0x3125
         | 0x3126 | 0x3127 | 0x3128 | 0x3129 | 0x312a | 0x312b | 0x312c | 0x312d | 0x312e
         | 0x312f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
@@ -5673,12 +6617,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -5688,6 +6635,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5702,6 +6650,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -5711,6 +6660,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3101 | 0x3103 | 0x3121 | 0x3123 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5725,14 +6675,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
@@ -5740,12 +6698,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -5755,6 +6716,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5769,6 +6731,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -5779,14 +6742,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x311b | 0x311c | 0x311d | 0x311e | 0x311f | 0x3130 | 0x3132 | 0x3134 | 0x3135
         | 0x3136 | 0x3137 | 0x3138 | 0x3139 | 0x313a | 0x313b | 0x313c | 0x313d | 0x313e
         | 0x313f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
@@ -5794,12 +6765,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -5809,6 +6783,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5823,6 +6798,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -5832,6 +6808,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3111 | 0x3113 | 0x3131 | 0x3133 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5846,14 +6823,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc400000
                 && let Some(ins) = parse_arm_mcrr2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc400000
                 && let Some(ins) = parse_arm_mcrr_0(ins, pc, options)
@@ -5861,12 +6846,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -5876,6 +6864,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5890,6 +6879,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -5900,19 +6890,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x314b | 0x314c | 0x314d | 0x314e | 0x314f | 0x3160 | 0x3162 | 0x3164 | 0x3165
         | 0x3166 | 0x3167 | 0x3168 | 0x3169 | 0x316a | 0x316b | 0x316c | 0x316d | 0x316e
         | 0x316f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -5921,7 +6914,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
@@ -5930,6 +6931,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5944,6 +6946,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -5953,6 +6956,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3141 | 0x3143 | 0x3161 | 0x3163 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -5967,19 +6971,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -5988,7 +6995,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
@@ -5997,6 +7012,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6011,6 +7027,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6021,19 +7038,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x315b | 0x315c | 0x315d | 0x315e | 0x315f | 0x3170 | 0x3172 | 0x3174 | 0x3175
         | 0x3176 | 0x3177 | 0x3178 | 0x3179 | 0x317a | 0x317b | 0x317c | 0x317d | 0x317e
         | 0x317f => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -6042,7 +7062,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
@@ -6051,6 +7079,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6065,6 +7094,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6074,6 +7104,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3151 | 0x3153 | 0x3171 | 0x3173 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6088,19 +7119,22 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xfff00000) == 0xfc500000
                 && let Some(ins) = parse_arm_mrrc2_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -6109,7 +7143,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xff00000) == 0xc500000
                 && let Some(ins) = parse_arm_mrrc_0(ins, pc, options)
@@ -6118,6 +7160,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6132,6 +7175,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6144,6 +7188,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x33eb | 0x33ec | 0x33ed | 0x33ee | 0x33ef => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6159,12 +7204,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -6174,6 +7222,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6188,6 +7237,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6200,6 +7250,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x33fb | 0x33fc | 0x33fd | 0x33fe | 0x33ff => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6215,12 +7266,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -6230,6 +7284,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6244,6 +7299,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6267,6 +7323,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x372e | 0x372f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6282,12 +7339,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -6297,6 +7357,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6311,6 +7372,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -6334,6 +7396,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x373e | 0x373f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6349,12 +7412,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -6364,6 +7430,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6378,6 +7445,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -6401,6 +7469,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x376e | 0x376f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6416,12 +7485,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -6431,6 +7503,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6445,6 +7518,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6468,6 +7542,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x377e | 0x377f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6483,12 +7558,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc100000
@@ -6498,6 +7576,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6512,6 +7591,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc100000
                 && let Some(ins) = parse_arm_ldc_0(ins, pc, options)
             {
@@ -6524,6 +7604,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x35ab | 0x35ac | 0x35ad | 0x35ae | 0x35af => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6539,12 +7620,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -6554,6 +7638,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6568,6 +7653,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -6580,6 +7666,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x35bb | 0x35bc | 0x35bd | 0x35be | 0x35bf => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6595,12 +7682,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe100000) == 0xfc000000
@@ -6610,6 +7700,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6624,6 +7715,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe100000) == 0xc000000
                 && let Some(ins) = parse_arm_stc_0(ins, pc, options)
             {
@@ -6634,6 +7726,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3902 | 0x3908 | 0x390a | 0x3920 | 0x3922 | 0x3928 | 0x392a => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6649,12 +7742,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -6662,6 +7758,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -6672,6 +7769,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3823 | 0x3825 | 0x3827 | 0x3829 | 0x382b | 0x382d | 0x382f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6687,12 +7785,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe000010
@@ -6700,6 +7801,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
@@ -6710,6 +7812,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3906 | 0x390c | 0x390e | 0x3924 | 0x3926 | 0x392c | 0x392e => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6725,12 +7828,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -6738,6 +7844,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -6748,6 +7855,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3912 | 0x3918 | 0x391a | 0x3930 | 0x3932 | 0x3938 | 0x393a => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6763,12 +7871,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -6776,6 +7887,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -6785,6 +7897,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3811 | 0x3819 | 0x3831 | 0x3839 | 0x3891 | 0x3899 | 0x38b1 | 0x38b9 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6800,12 +7913,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe000010
@@ -6813,6 +7929,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
@@ -6845,12 +7962,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3b9f | 0x3ba1 | 0x3ba3 | 0x3ba5 | 0x3ba7 | 0x3ba9 | 0x3bab | 0x3bad | 0x3baf
         | 0x3bb1 | 0x3bb3 | 0x3bb5 | 0x3bb7 | 0x3bb9 | 0x3bbb | 0x3bbd | 0x3bbf => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe000010
@@ -6858,6 +7978,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
@@ -6868,6 +7989,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3916 | 0x391c | 0x391e | 0x3934 | 0x3936 | 0x393c | 0x393e => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6883,12 +8005,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -6896,6 +8021,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -6906,6 +8032,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3942 | 0x3948 | 0x394a | 0x3960 | 0x3962 | 0x3968 | 0x396a => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6921,12 +8048,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -6934,6 +8064,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -6944,6 +8075,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3863 | 0x3865 | 0x3867 | 0x3869 | 0x386b | 0x386d | 0x386f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6959,12 +8091,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe100010
@@ -6972,6 +8107,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
@@ -6982,6 +8118,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3946 | 0x394c | 0x394e | 0x3964 | 0x3966 | 0x396c | 0x396e => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -6997,12 +8134,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7010,6 +8150,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7020,6 +8161,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3952 | 0x3958 | 0x395a | 0x3970 | 0x3972 | 0x3978 | 0x397a => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7035,12 +8177,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7048,6 +8193,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7057,6 +8203,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3851 | 0x3859 | 0x3871 | 0x3879 | 0x38d1 | 0x38d9 | 0x38f1 | 0x38f9 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7072,12 +8219,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe100010
@@ -7085,6 +8235,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
@@ -7117,12 +8268,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3bdf | 0x3be1 | 0x3be3 | 0x3be5 | 0x3be7 | 0x3be9 | 0x3beb | 0x3bed | 0x3bef
         | 0x3bf1 | 0x3bf3 | 0x3bf5 | 0x3bf7 | 0x3bf9 | 0x3bfb | 0x3bfd | 0x3bff => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe100010
@@ -7130,6 +8284,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
@@ -7140,6 +8295,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3956 | 0x395c | 0x395e | 0x3974 | 0x3976 | 0x397c | 0x397e => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7155,12 +8311,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7168,6 +8327,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7178,6 +8338,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3982 | 0x3988 | 0x398a | 0x39a0 | 0x39a2 | 0x39a8 | 0x39aa => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7193,12 +8354,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7206,6 +8370,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7216,6 +8381,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3986 | 0x398c | 0x398e | 0x39a4 | 0x39a6 | 0x39ac | 0x39ae => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7231,12 +8397,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7244,6 +8413,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7254,6 +8424,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3992 | 0x3998 | 0x399a | 0x39b0 | 0x39b2 | 0x39b8 | 0x39ba => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7269,12 +8440,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7282,6 +8456,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7292,6 +8467,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3996 | 0x399c | 0x399e | 0x39b4 | 0x39b6 | 0x39bc | 0x39be => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7307,12 +8483,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7320,6 +8499,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7330,6 +8510,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x39c2 | 0x39c8 | 0x39ca | 0x39e0 | 0x39e2 | 0x39e8 | 0x39ea => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7345,12 +8526,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7358,6 +8542,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7368,6 +8553,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x39c6 | 0x39cc | 0x39ce | 0x39e4 | 0x39e6 | 0x39ec | 0x39ee => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7383,12 +8569,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7396,6 +8585,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7406,6 +8596,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x39d2 | 0x39d8 | 0x39da | 0x39f0 | 0x39f2 | 0x39f8 | 0x39fa => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7421,12 +8612,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7434,6 +8628,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7444,6 +8639,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x39d6 | 0x39dc | 0x39de | 0x39f4 | 0x39f6 | 0x39fc | 0x39fe => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7459,12 +8655,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7472,6 +8671,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7482,6 +8682,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3b02 | 0x3b08 | 0x3b0a | 0x3b20 | 0x3b22 | 0x3b28 | 0x3b2a => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7497,12 +8698,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7510,6 +8714,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7539,12 +8744,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3bd0 | 0x3bd2 | 0x3bd8 | 0x3bda | 0x3be0 | 0x3be2 | 0x3be8 | 0x3bea | 0x3bf0
         | 0x3bf2 | 0x3bf8 | 0x3bfa => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7552,6 +8760,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7562,6 +8771,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3b12 | 0x3b18 | 0x3b1a | 0x3b30 | 0x3b32 | 0x3b38 | 0x3b3a => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7577,12 +8787,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7590,6 +8803,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7599,6 +8813,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3ac4 | 0x3ac6 | 0x3bc4 | 0x3bc6 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7615,6 +8830,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7631,6 +8847,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7646,12 +8863,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7659,6 +8879,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7668,6 +8889,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3acc | 0x3ace | 0x3bcc | 0x3bce => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7684,6 +8906,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7700,6 +8923,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7716,6 +8940,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7731,12 +8956,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7744,6 +8972,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7753,6 +8982,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3ad4 | 0x3ad6 | 0x3bd4 | 0x3bd6 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7769,6 +8999,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7785,6 +9016,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7800,12 +9032,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7813,6 +9048,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7822,6 +9058,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3adc | 0x3ade | 0x3bdc | 0x3bde => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7838,6 +9075,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7854,6 +9092,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7870,6 +9109,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7885,12 +9125,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7898,6 +9141,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7907,6 +9151,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3ae4 | 0x3ae6 | 0x3be4 | 0x3be6 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7923,6 +9168,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7939,6 +9185,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7954,12 +9201,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -7967,6 +9217,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -7976,6 +9227,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3aec | 0x3aee | 0x3bec | 0x3bee => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -7992,6 +9244,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8008,6 +9261,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8023,12 +9277,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -8036,6 +9293,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -8045,6 +9303,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3af4 | 0x3af6 | 0x3bf4 | 0x3bf6 => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8061,6 +9320,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8077,6 +9337,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8092,12 +9353,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -8105,6 +9369,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -8114,6 +9379,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3afc | 0x3afe | 0x3bfc | 0x3bfe => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8130,6 +9396,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8146,6 +9413,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             }
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8161,12 +9429,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000010) == 0xfe000000
@@ -8174,6 +9445,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf000010) == 0xe000000
                 && let Some(ins) = parse_arm_cdp_0(ins, pc, options)
             {
@@ -8183,6 +9455,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3b81 | 0x3b83 | 0x3b85 | 0x3b87 | 0x3b89 | 0x3b8b | 0x3b8d | 0x3b8f => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8198,12 +9471,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe000010
@@ -8211,6 +9487,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe000010
                 && let Some(ins) = parse_arm_mcr_0(ins, pc, options)
             {
@@ -8220,6 +9497,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         0x3bc1 | 0x3bc3 | 0x3bc5 | 0x3bc7 | 0x3bc9 | 0x3bcb | 0x3bcd | 0x3bcf => {
             #[cfg(
                 all(
+                    feature = "arm",
                     feature = "vfp_v2",
                     any(
                         feature = "v5te",
@@ -8235,12 +9513,15 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff100010) == 0xfe100010
@@ -8248,6 +9529,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             {
                 return ins;
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xf100010) == 0xe100010
                 && let Some(ins) = parse_arm_mrc_0(ins, pc, options)
             {
@@ -8368,6 +9650,7 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x3fe7 | 0x3fe8 | 0x3fe9 | 0x3fea | 0x3feb | 0x3fec | 0x3fed | 0x3fee | 0x3fef
         | 0x3ff0 | 0x3ff1 | 0x3ff2 | 0x3ff3 | 0x3ff4 | 0x3ff5 | 0x3ff6 | 0x3ff7 | 0x3ff8
         | 0x3ff9 | 0x3ffa | 0x3ffb | 0x3ffc | 0x3ffd | 0x3ffe | 0x3fff => {
+            #[cfg(feature = "arm")]
             if let Some(ins) = parse_arm_svc_0(ins, pc, options) {
                 return ins;
             }
@@ -8380,31 +9663,13 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
 pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
     match (((ins) & 0xffc0) >> 6) {
         0x0 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x0
                 && let Some(ins) = parse_thumb_mov_2(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x0
                 && let Some(ins) = parse_thumb_lsl_0(ins, pc, options)
             {
@@ -8414,16 +9679,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xa | 0xb | 0xc | 0xd | 0xe
         | 0xf | 0x10 | 0x11 | 0x12 | 0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19
         | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e | 0x1f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_lsl_0(ins, pc, options) {
                 return ins;
             }
@@ -8431,16 +9687,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0x20 | 0x21 | 0x22 | 0x23 | 0x24 | 0x25 | 0x26 | 0x27 | 0x28 | 0x29 | 0x2a | 0x2b
         | 0x2c | 0x2d | 0x2e | 0x2f | 0x30 | 0x31 | 0x32 | 0x33 | 0x34 | 0x35 | 0x36
         | 0x37 | 0x38 | 0x39 | 0x3a | 0x3b | 0x3c | 0x3d | 0x3e | 0x3f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_lsr_0(ins, pc, options) {
                 return ins;
             }
@@ -8448,76 +9695,31 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0x40 | 0x41 | 0x42 | 0x43 | 0x44 | 0x45 | 0x46 | 0x47 | 0x48 | 0x49 | 0x4a | 0x4b
         | 0x4c | 0x4d | 0x4e | 0x4f | 0x50 | 0x51 | 0x52 | 0x53 | 0x54 | 0x55 | 0x56
         | 0x57 | 0x58 | 0x59 | 0x5a | 0x5b | 0x5c | 0x5d | 0x5e | 0x5f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_asr_0(ins, pc, options) {
                 return ins;
             }
         }
         0x60 | 0x61 | 0x62 | 0x63 | 0x64 | 0x65 | 0x66 | 0x67 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_2(ins, pc, options) {
                 return ins;
             }
         }
         0x68 | 0x69 | 0x6a | 0x6b | 0x6c | 0x6d | 0x6e | 0x6f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_sub_2(ins, pc, options) {
                 return ins;
             }
         }
         0x70 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x1c00
                 && let Some(ins) = parse_thumb_mov_3(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x1c00
                 && let Some(ins) = parse_thumb_add_0(ins, pc, options)
             {
@@ -8525,31 +9727,13 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x71 | 0x72 | 0x73 | 0x74 | 0x75 | 0x76 | 0x77 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_0(ins, pc, options) {
                 return ins;
             }
         }
         0x78 | 0x79 | 0x7a | 0x7b | 0x7c | 0x7d | 0x7e | 0x7f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_sub_0(ins, pc, options) {
                 return ins;
             }
@@ -8557,16 +9741,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0x80 | 0x81 | 0x82 | 0x83 | 0x84 | 0x85 | 0x86 | 0x87 | 0x88 | 0x89 | 0x8a | 0x8b
         | 0x8c | 0x8d | 0x8e | 0x8f | 0x90 | 0x91 | 0x92 | 0x93 | 0x94 | 0x95 | 0x96
         | 0x97 | 0x98 | 0x99 | 0x9a | 0x9b | 0x9c | 0x9d | 0x9e | 0x9f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_mov_0(ins, pc, options) {
                 return ins;
             }
@@ -8574,16 +9749,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0xa0 | 0xa1 | 0xa2 | 0xa3 | 0xa4 | 0xa5 | 0xa6 | 0xa7 | 0xa8 | 0xa9 | 0xaa | 0xab
         | 0xac | 0xad | 0xae | 0xaf | 0xb0 | 0xb1 | 0xb2 | 0xb3 | 0xb4 | 0xb5 | 0xb6
         | 0xb7 | 0xb8 | 0xb9 | 0xba | 0xbb | 0xbc | 0xbd | 0xbe | 0xbf => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_cmp_0(ins, pc, options) {
                 return ins;
             }
@@ -8591,16 +9757,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0xc0 | 0xc1 | 0xc2 | 0xc3 | 0xc4 | 0xc5 | 0xc6 | 0xc7 | 0xc8 | 0xc9 | 0xca | 0xcb
         | 0xcc | 0xcd | 0xce | 0xcf | 0xd0 | 0xd1 | 0xd2 | 0xd3 | 0xd4 | 0xd5 | 0xd6
         | 0xd7 | 0xd8 | 0xd9 | 0xda | 0xdb | 0xdc | 0xdd | 0xde | 0xdf => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_1(ins, pc, options) {
                 return ins;
             }
@@ -8608,181 +9765,73 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         0xe0 | 0xe1 | 0xe2 | 0xe3 | 0xe4 | 0xe5 | 0xe6 | 0xe7 | 0xe8 | 0xe9 | 0xea | 0xeb
         | 0xec | 0xed | 0xee | 0xef | 0xf0 | 0xf1 | 0xf2 | 0xf3 | 0xf4 | 0xf5 | 0xf6
         | 0xf7 | 0xf8 | 0xf9 | 0xfa | 0xfb | 0xfc | 0xfd | 0xfe | 0xff => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_sub_1(ins, pc, options) {
                 return ins;
             }
         }
         0x100 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_and_0(ins, pc, options) {
                 return ins;
             }
         }
         0x101 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_eor_0(ins, pc, options) {
                 return ins;
             }
         }
         0x102 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_lsl_1(ins, pc, options) {
                 return ins;
             }
         }
         0x103 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_lsr_1(ins, pc, options) {
                 return ins;
             }
         }
         0x104 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_asr_1(ins, pc, options) {
                 return ins;
             }
         }
         0x105 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_adc_0(ins, pc, options) {
                 return ins;
             }
         }
         0x106 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_sbc_0(ins, pc, options) {
                 return ins;
             }
         }
         0x107 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ror_0(ins, pc, options) {
                 return ins;
             }
         }
         0x108 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_tst_0(ins, pc, options) {
                 return ins;
             }
         }
         0x109 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x4240
                 && let Some(ins) = parse_thumb_neg_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x4240
                 && let Some(ins) = parse_thumb_rsb_0(ins, pc, options)
             {
@@ -8790,136 +9839,55 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x10a => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_cmp_1(ins, pc, options) {
                 return ins;
             }
         }
         0x10b => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_cmn_0(ins, pc, options) {
                 return ins;
             }
         }
         0x10c => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_orr_0(ins, pc, options) {
                 return ins;
             }
         }
         0x10d => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_mul_0(ins, pc, options) {
                 return ins;
             }
         }
         0x10e => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_bic_0(ins, pc, options) {
                 return ins;
             }
         }
         0x10f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_mvn_0(ins, pc, options) {
                 return ins;
             }
         }
         0x110 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_3(ins, pc, options) {
                 return ins;
             }
         }
         0x111 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff78) == 0x4468
                 && let Some(ins) = parse_thumb_add_6(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0x4400
                 && let Some(ins) = parse_thumb_add_3(ins, pc, options)
             {
@@ -8927,31 +9895,13 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x112 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff87) == 0x4485
                 && let Some(ins) = parse_thumb_add_7(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0x4400
                 && let Some(ins) = parse_thumb_add_3(ins, pc, options)
             {
@@ -8959,46 +9909,19 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x113 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff78) == 0x4468
                 && let Some(ins) = parse_thumb_add_6(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff87) == 0x4485
                 && let Some(ins) = parse_thumb_add_7(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0x4400
                 && let Some(ins) = parse_thumb_add_3(ins, pc, options)
             {
@@ -9006,58 +9929,34 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x114 | 0x115 | 0x116 | 0x117 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_cmp_2(ins, pc, options) {
                 return ins;
             }
         }
         0x118 | 0x119 | 0x11a | 0x11b => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_mov_1(ins, pc, options) {
                 return ins;
             }
         }
         0x11c | 0x11d => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_bx_0(ins, pc, options) {
                 return ins;
             }
         }
         0x11e | 0x11f => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "thumb",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if let Some(ins) = parse_thumb_blx_1(ins, pc, options) {
@@ -9068,136 +9967,55 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x12a | 0x12b | 0x12c | 0x12d | 0x12e | 0x12f | 0x130 | 0x131 | 0x132 | 0x133
         | 0x134 | 0x135 | 0x136 | 0x137 | 0x138 | 0x139 | 0x13a | 0x13b | 0x13c | 0x13d
         | 0x13e | 0x13f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldr_2(ins, pc, options) {
                 return ins;
             }
         }
         0x140 | 0x141 | 0x142 | 0x143 | 0x144 | 0x145 | 0x146 | 0x147 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_str_2(ins, pc, options) {
                 return ins;
             }
         }
         0x148 | 0x149 | 0x14a | 0x14b | 0x14c | 0x14d | 0x14e | 0x14f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_strh_1(ins, pc, options) {
                 return ins;
             }
         }
         0x150 | 0x151 | 0x152 | 0x153 | 0x154 | 0x155 | 0x156 | 0x157 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_strb_1(ins, pc, options) {
                 return ins;
             }
         }
         0x158 | 0x159 | 0x15a | 0x15b | 0x15c | 0x15d | 0x15e | 0x15f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldrsb_0(ins, pc, options) {
                 return ins;
             }
         }
         0x160 | 0x161 | 0x162 | 0x163 | 0x164 | 0x165 | 0x166 | 0x167 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldr_3(ins, pc, options) {
                 return ins;
             }
         }
         0x168 | 0x169 | 0x16a | 0x16b | 0x16c | 0x16d | 0x16e | 0x16f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldrh_1(ins, pc, options) {
                 return ins;
             }
         }
         0x170 | 0x171 | 0x172 | 0x173 | 0x174 | 0x175 | 0x176 | 0x177 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldrb_1(ins, pc, options) {
                 return ins;
             }
         }
         0x178 | 0x179 | 0x17a | 0x17b | 0x17c | 0x17d | 0x17e | 0x17f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldrsh_0(ins, pc, options) {
                 return ins;
             }
@@ -9206,16 +10024,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x18a | 0x18b | 0x18c | 0x18d | 0x18e | 0x18f | 0x190 | 0x191 | 0x192 | 0x193
         | 0x194 | 0x195 | 0x196 | 0x197 | 0x198 | 0x199 | 0x19a | 0x19b | 0x19c | 0x19d
         | 0x19e | 0x19f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_str_0(ins, pc, options) {
                 return ins;
             }
@@ -9224,16 +10033,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x1aa | 0x1ab | 0x1ac | 0x1ad | 0x1ae | 0x1af | 0x1b0 | 0x1b1 | 0x1b2 | 0x1b3
         | 0x1b4 | 0x1b5 | 0x1b6 | 0x1b7 | 0x1b8 | 0x1b9 | 0x1ba | 0x1bb | 0x1bc | 0x1bd
         | 0x1be | 0x1bf => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldr_0(ins, pc, options) {
                 return ins;
             }
@@ -9242,16 +10042,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x1ca | 0x1cb | 0x1cc | 0x1cd | 0x1ce | 0x1cf | 0x1d0 | 0x1d1 | 0x1d2 | 0x1d3
         | 0x1d4 | 0x1d5 | 0x1d6 | 0x1d7 | 0x1d8 | 0x1d9 | 0x1da | 0x1db | 0x1dc | 0x1dd
         | 0x1de | 0x1df => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_strb_0(ins, pc, options) {
                 return ins;
             }
@@ -9260,16 +10051,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x1ea | 0x1eb | 0x1ec | 0x1ed | 0x1ee | 0x1ef | 0x1f0 | 0x1f1 | 0x1f2 | 0x1f3
         | 0x1f4 | 0x1f5 | 0x1f6 | 0x1f7 | 0x1f8 | 0x1f9 | 0x1fa | 0x1fb | 0x1fc | 0x1fd
         | 0x1fe | 0x1ff => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldrb_0(ins, pc, options) {
                 return ins;
             }
@@ -9278,16 +10060,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x20a | 0x20b | 0x20c | 0x20d | 0x20e | 0x20f | 0x210 | 0x211 | 0x212 | 0x213
         | 0x214 | 0x215 | 0x216 | 0x217 | 0x218 | 0x219 | 0x21a | 0x21b | 0x21c | 0x21d
         | 0x21e | 0x21f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_strh_0(ins, pc, options) {
                 return ins;
             }
@@ -9296,16 +10069,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x22a | 0x22b | 0x22c | 0x22d | 0x22e | 0x22f | 0x230 | 0x231 | 0x232 | 0x233
         | 0x234 | 0x235 | 0x236 | 0x237 | 0x238 | 0x239 | 0x23a | 0x23b | 0x23c | 0x23d
         | 0x23e | 0x23f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldrh_0(ins, pc, options) {
                 return ins;
             }
@@ -9314,16 +10078,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x24a | 0x24b | 0x24c | 0x24d | 0x24e | 0x24f | 0x250 | 0x251 | 0x252 | 0x253
         | 0x254 | 0x255 | 0x256 | 0x257 | 0x258 | 0x259 | 0x25a | 0x25b | 0x25c | 0x25d
         | 0x25e | 0x25f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_str_1(ins, pc, options) {
                 return ins;
             }
@@ -9332,16 +10087,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x26a | 0x26b | 0x26c | 0x26d | 0x26e | 0x26f | 0x270 | 0x271 | 0x272 | 0x273
         | 0x274 | 0x275 | 0x276 | 0x277 | 0x278 | 0x279 | 0x27a | 0x27b | 0x27c | 0x27d
         | 0x27e | 0x27f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldr_1(ins, pc, options) {
                 return ins;
             }
@@ -9350,16 +10096,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x28a | 0x28b | 0x28c | 0x28d | 0x28e | 0x28f | 0x290 | 0x291 | 0x292 | 0x293
         | 0x294 | 0x295 | 0x296 | 0x297 | 0x298 | 0x299 | 0x29a | 0x29b | 0x29c | 0x29d
         | 0x29e | 0x29f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_8(ins, pc, options) {
                 return ins;
             }
@@ -9368,46 +10105,19 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x2aa | 0x2ab | 0x2ac | 0x2ad | 0x2ae | 0x2af | 0x2b0 | 0x2b1 | 0x2b2 | 0x2b3
         | 0x2b4 | 0x2b5 | 0x2b6 | 0x2b7 | 0x2b8 | 0x2b9 | 0x2ba | 0x2bb | 0x2bc | 0x2bd
         | 0x2be | 0x2bf => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_4(ins, pc, options) {
                 return ins;
             }
         }
         0x2c0 | 0x2c1 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_add_5(ins, pc, options) {
                 return ins;
             }
         }
         0x2c2 | 0x2c3 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_sub_3(ins, pc, options) {
                 return ins;
             }
@@ -9423,52 +10133,43 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x3f0 | 0x3f1 | 0x3f2 | 0x3f3 | 0x3f4 | 0x3f5 | 0x3f6 | 0x3f7 | 0x3f8 | 0x3f9
         | 0x3fa | 0x3fb | 0x3fc | 0x3fd | 0x3fe | 0x3ff => {}
         0x2c8 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_sxth_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2c9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_sxtb_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2ca => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_uxth_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2cb => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_uxtb_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2d0 | 0x2d1 | 0x2d2 | 0x2d3 | 0x2d4 | 0x2d5 | 0x2d6 | 0x2d7 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_push_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2d9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xffe8) == 0xb660
                 && let Some(ins) = parse_thumb_cps_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if (ins & 0xffe0) == 0xb640
                 && let Some(ins) = parse_thumb_setend_0(ins, pc, options)
             {
@@ -9476,46 +10177,40 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x2e8 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_rev_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2e9 => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_rev16_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2eb => {
-            #[cfg(any(feature = "v6", feature = "v6k"))]
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
             if let Some(ins) = parse_thumb_revsh_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2f0 | 0x2f1 | 0x2f2 | 0x2f3 | 0x2f4 | 0x2f5 | 0x2f6 | 0x2f7 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_pop_0(ins, pc, options) {
                 return ins;
             }
         }
         0x2f8 | 0x2f9 | 0x2fa | 0x2fb => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "thumb",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if let Some(ins) = parse_thumb_bkpt_0(ins, pc, options) {
@@ -9526,16 +10221,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x30a | 0x30b | 0x30c | 0x30d | 0x30e | 0x30f | 0x310 | 0x311 | 0x312 | 0x313
         | 0x314 | 0x315 | 0x316 | 0x317 | 0x318 | 0x319 | 0x31a | 0x31b | 0x31c | 0x31d
         | 0x31e | 0x31f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_stm_0(ins, pc, options) {
                 return ins;
             }
@@ -9544,16 +10230,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x32a | 0x32b | 0x32c | 0x32d | 0x32e | 0x32f | 0x330 | 0x331 | 0x332 | 0x333
         | 0x334 | 0x335 | 0x336 | 0x337 | 0x338 | 0x339 | 0x33a | 0x33b | 0x33c | 0x33d
         | 0x33e | 0x33f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_ldm_0(ins, pc, options) {
                 return ins;
             }
@@ -9564,46 +10241,19 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x35e | 0x35f | 0x360 | 0x361 | 0x362 | 0x363 | 0x364 | 0x365 | 0x366 | 0x367
         | 0x368 | 0x369 | 0x36a | 0x36b | 0x36c | 0x36d | 0x36e | 0x36f | 0x370 | 0x371
         | 0x372 | 0x373 | 0x374 | 0x375 | 0x376 | 0x377 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_b_0(ins, pc, options) {
                 return ins;
             }
         }
         0x378 | 0x379 | 0x37a | 0x37b => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0xde00
                 && let Some(ins) = parse_thumb_udf_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf000) == 0xd000
                 && let Some(ins) = parse_thumb_b_0(ins, pc, options)
             {
@@ -9611,31 +10261,13 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
             }
         }
         0x37c | 0x37d | 0x37e | 0x37f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0xdf00
                 && let Some(ins) = parse_thumb_svc_0(ins, pc, options)
             {
                 return ins;
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf000) == 0xd000
                 && let Some(ins) = parse_thumb_b_0(ins, pc, options)
             {
@@ -9646,16 +10278,7 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x38a | 0x38b | 0x38c | 0x38d | 0x38e | 0x38f | 0x390 | 0x391 | 0x392 | 0x393
         | 0x394 | 0x395 | 0x396 | 0x397 | 0x398 | 0x399 | 0x39a | 0x39b | 0x39c | 0x39d
         | 0x39e | 0x39f => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if let Some(ins) = parse_thumb_b_1(ins, pc, options) {
                 return ins;
             }
@@ -9664,28 +10287,22 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         | 0x3ca | 0x3cb | 0x3cc | 0x3cd | 0x3ce | 0x3cf | 0x3d0 | 0x3d1 | 0x3d2 | 0x3d3
         | 0x3d4 | 0x3d5 | 0x3d6 | 0x3d7 | 0x3d8 | 0x3d9 | 0x3da | 0x3db | 0x3dc | 0x3dd
         | 0x3de | 0x3df => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xd000f800) == 0xd000f000
                 && let Some(ins) = parse_thumb_bl_0(ins, pc, options)
             {
                 return ins;
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "thumb",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xd000f800) == 0xc000f000
@@ -9734,24 +10351,30 @@ pub fn parse_arm_with_discriminant(
         )]
         8 => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xfe000000) == 0xfa000000 {
                 return parse_arm_blx_0(ins, pc, options).unwrap_or(Ins::Illegal);
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff000f0) == 0x1200030 {
@@ -9769,28 +10392,37 @@ pub fn parse_arm_with_discriminant(
             )
         )]
         9 => return parse_arm_bx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(feature = "arm", any(feature = "v5tej", feature = "v6", feature = "v6k"))
+        )]
         10 => return parse_arm_bxj_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         11 => return parse_arm_cdp_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
-            any(
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
             )
         )]
         12 => return parse_arm_cdp2_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         13 => return parse_arm_clrex_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
-            any(
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
             )
         )]
         14 => return parse_arm_clz_0(ins, pc, options).unwrap_or(Ins::Illegal),
@@ -9798,154 +10430,238 @@ pub fn parse_arm_with_discriminant(
         16 => return parse_arm_cmp_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         17 => return parse_arm_cps_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         18 => return parse_arm_csdb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         19 => return parse_arm_dbg_0(ins, pc, options).unwrap_or(Ins::Illegal),
         20 => return parse_arm_eor_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         21 => return parse_arm_ldc_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
-            any(
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
             )
         )]
         22 => return parse_arm_ldc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
         23 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xe500000) == 0x8100000 {
                 return parse_arm_ldm_0(ins, pc, options).unwrap_or(Ins::Illegal);
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe708000) == 0x8500000 {
                 return parse_arm_ldm_1(ins, pc, options).unwrap_or(Ins::Illegal);
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xe508000) == 0x8508000 {
                 return parse_arm_ldm_2(ins, pc, options).unwrap_or(Ins::Illegal);
             }
         }
         24 => return parse_arm_ldr_0(ins, pc, options).unwrap_or(Ins::Illegal),
         25 => return parse_arm_ldrb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         26 => return parse_arm_ldrbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         27 => {
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe1000f0) == 0xd0 {
                 return parse_arm_ldrd_0(ins, pc, options).unwrap_or(Ins::Illegal);
             }
             #[cfg(
-                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
             )]
             if (ins & 0xe5f00f0) == 0x4f00d0 {
                 return parse_arm_ldrd_1(ins, pc, options).unwrap_or(Ins::Illegal);
             }
         }
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         28 => return parse_arm_ldrex_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         29 => return parse_arm_ldrexb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         30 => return parse_arm_ldrexd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         31 => return parse_arm_ldrexh_0(ins, pc, options).unwrap_or(Ins::Illegal),
         32 => return parse_arm_ldrh_0(ins, pc, options).unwrap_or(Ins::Illegal),
         33 => return parse_arm_ldrsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         34 => return parse_arm_ldrsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         35 => return parse_arm_ldrt_0(ins, pc, options).unwrap_or(Ins::Illegal),
         36 => return parse_arm_lsl_0(ins, pc, options).unwrap_or(Ins::Illegal),
         37 => return parse_arm_lsr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         38 => return parse_arm_mcr_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
-            any(
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
             )
         )]
         39 => return parse_arm_mcr2_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         40 => return parse_arm_mcrr_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         41 => return parse_arm_mcrr2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         42 => return parse_arm_mla_0(ins, pc, options).unwrap_or(Ins::Illegal),
         43 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00000) == 0x3a00000 {
                 return parse_arm_mov_0(ins, pc, options).unwrap_or(Ins::Illegal);
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xfe00ff0) == 0x1a00000 {
                 return parse_arm_mov_1(ins, pc, options).unwrap_or(Ins::Illegal);
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xde00000) == 0x1a00000 {
                 return parse_arm_mov_2(ins, pc, options).unwrap_or(Ins::Illegal);
             }
         }
+        #[cfg(feature = "arm")]
         44 => return parse_arm_mrc_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
-            any(
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
             )
         )]
         45 => return parse_arm_mrc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         46 => return parse_arm_mrrc_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         47 => return parse_arm_mrrc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         48 => return parse_arm_mrs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         49 => return parse_arm_msr_0(ins, pc, options).unwrap_or(Ins::Illegal),
         50 => return parse_arm_mul_0(ins, pc, options).unwrap_or(Ins::Illegal),
         51 => return parse_arm_mvn_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         53 => return parse_arm_nop_0(ins, pc, options).unwrap_or(Ins::Illegal),
         54 => return parse_arm_orr_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         55 => return parse_arm_pkhbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         56 => return parse_arm_pkhtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         57 => return parse_arm_pld_0(ins, pc, options).unwrap_or(Ins::Illegal),
         58 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0000) == 0x8bd0000 {
                 return parse_arm_pop_0(ins, pc, options).unwrap_or(Ins::Illegal);
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0fff) == 0x49d0004 {
                 return parse_arm_pop_1(ins, pc, options).unwrap_or(Ins::Illegal);
             }
         }
         59 => {
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0000) == 0x92d0000 {
                 return parse_arm_push_0(ins, pc, options).unwrap_or(Ins::Illegal);
             }
+            #[cfg(feature = "arm")]
             if (ins & 0xfff0fff) == 0x52d0004 {
                 return parse_arm_push_1(ins, pc, options).unwrap_or(Ins::Illegal);
             }
         }
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         60 => return parse_arm_qadd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         61 => return parse_arm_qadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         62 => return parse_arm_qadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         63 => return parse_arm_qasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         64 => return parse_arm_qdadd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         65 => return parse_arm_qdsub_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         66 => return parse_arm_qsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         67 => return parse_arm_qsub_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         68 => return parse_arm_qsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         69 => return parse_arm_qsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         70 => return parse_arm_rev_0(ins, pc, options).unwrap_or(Ins::Illegal),
@@ -9953,129 +10669,172 @@ pub fn parse_arm_with_discriminant(
         71 => return parse_arm_rev16_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         72 => return parse_arm_revsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         73 => return parse_arm_rfe_0(ins, pc, options).unwrap_or(Ins::Illegal),
         74 => return parse_arm_ror_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         75 => return parse_arm_rrx_0(ins, pc, options).unwrap_or(Ins::Illegal),
         76 => return parse_arm_rsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         77 => return parse_arm_rsc_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         78 => return parse_arm_sadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         79 => return parse_arm_sadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         80 => return parse_arm_sasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
         81 => return parse_arm_sbc_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         82 => return parse_arm_sel_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         83 => return parse_arm_setend_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         84 => return parse_arm_sev_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         85 => return parse_arm_shadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         86 => return parse_arm_shadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         87 => return parse_arm_shasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         88 => return parse_arm_shsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         89 => return parse_arm_shsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         90 => return parse_arm_shsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         91 => return parse_arm_smla_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         92 => return parse_arm_smlad_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         93 => return parse_arm_smlal_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         94 => return parse_arm_smlal_half_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         95 => return parse_arm_smlald_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         96 => return parse_arm_smlaw_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         97 => return parse_arm_smlsd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         98 => return parse_arm_smlsld_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         99 => return parse_arm_smmla_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         100 => return parse_arm_smmls_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         101 => return parse_arm_smmul_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         102 => return parse_arm_smuad_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         103 => return parse_arm_smul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         104 => return parse_arm_smull_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         105 => return parse_arm_smulw_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         106 => return parse_arm_smusd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         107 => return parse_arm_srs_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         108 => return parse_arm_ssat_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         109 => return parse_arm_ssat16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         110 => return parse_arm_ssax_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         111 => return parse_arm_ssub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         112 => return parse_arm_ssub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         113 => return parse_arm_stc_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
-            any(
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
             )
         )]
         114 => return parse_arm_stc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
         115 => return parse_arm_stm_0(ins, pc, options).unwrap_or(Ins::Illegal),
         116 => return parse_arm_str_0(ins, pc, options).unwrap_or(Ins::Illegal),
         117 => return parse_arm_strb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         118 => return parse_arm_strbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+        #[cfg(
+            all(
+                feature = "arm",
+                any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+            )
+        )]
         119 => return parse_arm_strd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         120 => return parse_arm_strex_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         121 => return parse_arm_strexb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         122 => return parse_arm_strexd_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         123 => return parse_arm_strexh_0(ins, pc, options).unwrap_or(Ins::Illegal),
         124 => return parse_arm_strh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         125 => return parse_arm_strt_0(ins, pc, options).unwrap_or(Ins::Illegal),
         126 => return parse_arm_sub_0(ins, pc, options).unwrap_or(Ins::Illegal),
         127 => return parse_arm_svc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         128 => return parse_arm_swp_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         129 => return parse_arm_swpb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         130 => return parse_arm_sxtab_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         131 => return parse_arm_sxtab16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         132 => return parse_arm_sxtah_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         133 => return parse_arm_sxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         134 => return parse_arm_sxtb16_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         135 => return parse_arm_sxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         136 => return parse_arm_teq_0(ins, pc, options).unwrap_or(Ins::Illegal),
         137 => return parse_arm_tst_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         138 => return parse_arm_uadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         139 => return parse_arm_uadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         140 => return parse_arm_uasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             any(
@@ -10088,62 +10847,65 @@ pub fn parse_arm_with_discriminant(
             )
         )]
         141 => return parse_arm_udf_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         142 => return parse_arm_uhadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         143 => return parse_arm_uhadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         144 => return parse_arm_uhasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         145 => return parse_arm_uhsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         146 => return parse_arm_uhsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         147 => return parse_arm_uhsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         148 => return parse_arm_umaal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         149 => return parse_arm_umlal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        #[cfg(feature = "arm")]
         150 => return parse_arm_umull_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         151 => return parse_arm_uqadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         152 => return parse_arm_uqadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         153 => return parse_arm_uqasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         154 => return parse_arm_uqsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         155 => return parse_arm_uqsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         156 => return parse_arm_uqsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         157 => return parse_arm_usad8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         158 => return parse_arm_usada8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         159 => return parse_arm_usat_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         160 => return parse_arm_usat16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         161 => return parse_arm_usax_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         162 => return parse_arm_usub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         163 => return parse_arm_usub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         164 => return parse_arm_uxtab_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         165 => return parse_arm_uxtab16_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         166 => return parse_arm_uxtah_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         167 => return parse_arm_uxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
+        #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
         168 => return parse_arm_uxtb16_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(any(feature = "v6", feature = "v6k"))]
         169 => return parse_arm_uxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10151,6 +10913,7 @@ pub fn parse_arm_with_discriminant(
         170 => return parse_arm_vabs_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10158,6 +10921,7 @@ pub fn parse_arm_with_discriminant(
         171 => return parse_arm_vabs_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10165,6 +10929,7 @@ pub fn parse_arm_with_discriminant(
         172 => return parse_arm_vadd_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10172,6 +10937,7 @@ pub fn parse_arm_with_discriminant(
         173 => return parse_arm_vadd_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10179,6 +10945,7 @@ pub fn parse_arm_with_discriminant(
         174 => return parse_arm_vcmp_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10186,6 +10953,7 @@ pub fn parse_arm_with_discriminant(
         175 => return parse_arm_vcmp_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10193,6 +10961,7 @@ pub fn parse_arm_with_discriminant(
         176 => return parse_arm_vcvt_f32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10200,6 +10969,7 @@ pub fn parse_arm_with_discriminant(
         177 => return parse_arm_vcvt_f32_s32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10207,6 +10977,7 @@ pub fn parse_arm_with_discriminant(
         178 => return parse_arm_vcvt_f32_u32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10214,6 +10985,7 @@ pub fn parse_arm_with_discriminant(
         179 => return parse_arm_vcvt_f64_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10221,6 +10993,7 @@ pub fn parse_arm_with_discriminant(
         180 => return parse_arm_vcvt_f64_s32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10228,6 +11001,7 @@ pub fn parse_arm_with_discriminant(
         181 => return parse_arm_vcvt_f64_u32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10235,6 +11009,7 @@ pub fn parse_arm_with_discriminant(
         182 => return parse_arm_vcvt_s32_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10242,6 +11017,7 @@ pub fn parse_arm_with_discriminant(
         183 => return parse_arm_vcvt_s32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10249,6 +11025,7 @@ pub fn parse_arm_with_discriminant(
         184 => return parse_arm_vcvt_u32_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10256,6 +11033,7 @@ pub fn parse_arm_with_discriminant(
         185 => return parse_arm_vcvt_u32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10263,6 +11041,7 @@ pub fn parse_arm_with_discriminant(
         186 => return parse_arm_vdiv_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10270,6 +11049,7 @@ pub fn parse_arm_with_discriminant(
         187 => return parse_arm_vdiv_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10277,6 +11057,7 @@ pub fn parse_arm_with_discriminant(
         188 => return parse_arm_vldm_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10284,6 +11065,7 @@ pub fn parse_arm_with_discriminant(
         189 => return parse_arm_vldm_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10291,6 +11073,7 @@ pub fn parse_arm_with_discriminant(
         190 => return parse_arm_vldr_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10298,6 +11081,7 @@ pub fn parse_arm_with_discriminant(
         191 => return parse_arm_vldr_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10305,6 +11089,7 @@ pub fn parse_arm_with_discriminant(
         192 => return parse_arm_vmla_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10312,6 +11097,7 @@ pub fn parse_arm_with_discriminant(
         193 => return parse_arm_vmla_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10319,6 +11105,7 @@ pub fn parse_arm_with_discriminant(
         194 => return parse_arm_vmls_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10326,6 +11113,7 @@ pub fn parse_arm_with_discriminant(
         195 => return parse_arm_vmls_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10333,6 +11121,7 @@ pub fn parse_arm_with_discriminant(
         196 => return parse_arm_vmov_32_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10340,6 +11129,7 @@ pub fn parse_arm_with_discriminant(
         197 => return parse_arm_vmov_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10347,6 +11137,7 @@ pub fn parse_arm_with_discriminant(
         198 => return parse_arm_vmov_f32_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10354,6 +11145,7 @@ pub fn parse_arm_with_discriminant(
         199 => return parse_arm_vmov_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10361,6 +11153,7 @@ pub fn parse_arm_with_discriminant(
         200 => return parse_arm_vmov_reg_32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10368,6 +11161,7 @@ pub fn parse_arm_with_discriminant(
         201 => return parse_arm_vmov_reg_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10378,6 +11172,7 @@ pub fn parse_arm_with_discriminant(
         }
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10388,6 +11183,7 @@ pub fn parse_arm_with_discriminant(
         }
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10395,6 +11191,7 @@ pub fn parse_arm_with_discriminant(
         204 => return parse_arm_vmov_reg_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10402,6 +11199,7 @@ pub fn parse_arm_with_discriminant(
         205 => return parse_arm_vmov_f64_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10409,6 +11207,7 @@ pub fn parse_arm_with_discriminant(
         206 => return parse_arm_vmrs_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10416,6 +11215,7 @@ pub fn parse_arm_with_discriminant(
         207 => return parse_arm_vmsr_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10423,6 +11223,7 @@ pub fn parse_arm_with_discriminant(
         208 => return parse_arm_vmul_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10430,6 +11231,7 @@ pub fn parse_arm_with_discriminant(
         209 => return parse_arm_vmul_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10437,6 +11239,7 @@ pub fn parse_arm_with_discriminant(
         210 => return parse_arm_vneg_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10444,6 +11247,7 @@ pub fn parse_arm_with_discriminant(
         211 => return parse_arm_vneg_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10451,6 +11255,7 @@ pub fn parse_arm_with_discriminant(
         212 => return parse_arm_vnmla_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10458,6 +11263,7 @@ pub fn parse_arm_with_discriminant(
         213 => return parse_arm_vnmla_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10465,6 +11271,7 @@ pub fn parse_arm_with_discriminant(
         214 => return parse_arm_vnmls_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10472,6 +11279,7 @@ pub fn parse_arm_with_discriminant(
         215 => return parse_arm_vnmls_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10479,6 +11287,7 @@ pub fn parse_arm_with_discriminant(
         216 => return parse_arm_vnmul_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10486,6 +11295,7 @@ pub fn parse_arm_with_discriminant(
         217 => return parse_arm_vnmul_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10493,6 +11303,7 @@ pub fn parse_arm_with_discriminant(
         218 => return parse_arm_vpop_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10500,6 +11311,7 @@ pub fn parse_arm_with_discriminant(
         219 => return parse_arm_vpop_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10507,6 +11319,7 @@ pub fn parse_arm_with_discriminant(
         220 => return parse_arm_vpush_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10514,6 +11327,7 @@ pub fn parse_arm_with_discriminant(
         221 => return parse_arm_vpush_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10521,6 +11335,7 @@ pub fn parse_arm_with_discriminant(
         222 => return parse_arm_vsqrt_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10528,6 +11343,7 @@ pub fn parse_arm_with_discriminant(
         223 => return parse_arm_vsqrt_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10535,6 +11351,7 @@ pub fn parse_arm_with_discriminant(
         224 => return parse_arm_vstm_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10542,6 +11359,7 @@ pub fn parse_arm_with_discriminant(
         225 => return parse_arm_vstm_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10549,6 +11367,7 @@ pub fn parse_arm_with_discriminant(
         226 => return parse_arm_vstr_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10556,6 +11375,7 @@ pub fn parse_arm_with_discriminant(
         227 => return parse_arm_vstr_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
@@ -10563,16 +11383,17 @@ pub fn parse_arm_with_discriminant(
         228 => return parse_arm_vsub_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(
             all(
+                feature = "arm",
                 feature = "vfp_v2",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
         229 => return parse_arm_vsub_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         230 => return parse_arm_wfe_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         231 => return parse_arm_wfi_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "v6k")]
+        #[cfg(all(feature = "arm", feature = "v6k"))]
         232 => return parse_arm_yield_0(ins, pc, options).unwrap_or(Ins::Illegal),
         233 => return Ins::Byte(ins as u8),
         234 => return Ins::HalfWord(ins as u16),
@@ -10595,136 +11416,55 @@ pub fn parse_thumb_with_discriminant(
                 .unwrap_or(Ins::Illegal);
         }
         1 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x1c00 {
                 return parse_thumb_add_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x3000 {
                 return parse_thumb_add_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x1800 {
                 return parse_thumb_add_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0x4400 {
                 return parse_thumb_add_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0xa800 {
                 return parse_thumb_add_4(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff80) == 0xb000 {
                 return parse_thumb_add_5(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff78) == 0x4468 {
                 return parse_thumb_add_6(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff87) == 0x4485 {
                 return parse_thumb_add_7(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0xa000 {
                 return parse_thumb_add_8(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -10737,31 +11477,13 @@ pub fn parse_thumb_with_discriminant(
                 .unwrap_or(Ins::Illegal);
         }
         3 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x1000 {
                 return parse_thumb_asr_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x4100 {
                 return parse_thumb_asr_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -10769,31 +11491,13 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         4 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf000) == 0xd000 {
                 return parse_thumb_b_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0xe000 {
                 return parse_thumb_b_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -10835,12 +11539,15 @@ pub fn parse_thumb_with_discriminant(
         )]
         8 => {
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "thumb",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xd000f800) == 0xc000f000 {
@@ -10849,12 +11556,15 @@ pub fn parse_thumb_with_discriminant(
                     .unwrap_or(Ins::Illegal);
             }
             #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+                all(
+                    feature = "thumb",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
                 )
             )]
             if (ins & 0xff87) == 0x4780 {
@@ -10884,46 +11594,19 @@ pub fn parse_thumb_with_discriminant(
                 .unwrap_or(Ins::Illegal);
         }
         16 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x2800 {
                 return parse_thumb_cmp_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x4280 {
                 return parse_thumb_cmp_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0x4500 {
                 return parse_thumb_cmp_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -10947,61 +11630,25 @@ pub fn parse_thumb_with_discriminant(
                 .unwrap_or(Ins::Illegal);
         }
         24 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x6800 {
                 return parse_thumb_ldr_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x9800 {
                 return parse_thumb_ldr_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x4800 {
                 return parse_thumb_ldr_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x5800 {
                 return parse_thumb_ldr_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11009,31 +11656,13 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         25 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x7800 {
                 return parse_thumb_ldrb_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x5c00 {
                 return parse_thumb_ldrb_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11041,31 +11670,13 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         32 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x8800 {
                 return parse_thumb_ldrh_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x5a00 {
                 return parse_thumb_ldrh_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11083,31 +11694,13 @@ pub fn parse_thumb_with_discriminant(
                 .unwrap_or(Ins::Illegal);
         }
         36 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x0 {
                 return parse_thumb_lsl_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x4080 {
                 return parse_thumb_lsl_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11115,31 +11708,13 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         37 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x800 {
                 return parse_thumb_lsr_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x40c0 {
                 return parse_thumb_lsr_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11147,61 +11722,25 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         43 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x2000 {
                 return parse_thumb_mov_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff00) == 0x4600 {
                 return parse_thumb_mov_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x0 {
                 return parse_thumb_mov_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xffc0) == 0x1c00 {
                 return parse_thumb_mov_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11218,16 +11757,7 @@ pub fn parse_thumb_with_discriminant(
                 .map(|(ins, _size)| ins)
                 .unwrap_or(Ins::Illegal);
         }
-        #[cfg(
-            any(
-                feature = "v4t",
-                feature = "v5t",
-                feature = "v5te",
-                feature = "v5tej",
-                feature = "v6",
-                feature = "v6k"
-            )
-        )]
+        #[cfg(feature = "thumb")]
         52 => {
             return parse_thumb_neg_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
@@ -11293,46 +11823,19 @@ pub fn parse_thumb_with_discriminant(
                 .unwrap_or(Ins::Illegal);
         }
         116 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x6000 {
                 return parse_thumb_str_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x9000 {
                 return parse_thumb_str_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x5000 {
                 return parse_thumb_str_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11340,31 +11843,13 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         117 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x7000 {
                 return parse_thumb_strb_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x5400 {
                 return parse_thumb_strb_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11372,31 +11857,13 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         124 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x8000 {
                 return parse_thumb_strh_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x5200 {
                 return parse_thumb_strh_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11404,61 +11871,25 @@ pub fn parse_thumb_with_discriminant(
             }
         }
         126 => {
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x1e00 {
                 return parse_thumb_sub_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xf800) == 0x3800 {
                 return parse_thumb_sub_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xfe00) == 0x1a00 {
                 return parse_thumb_sub_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
                     .unwrap_or(Ins::Illegal);
             }
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
+            #[cfg(feature = "thumb")]
             if (ins & 0xff80) == 0xb080 {
                 return parse_thumb_sub_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
@@ -11521,6 +11952,7 @@ pub fn parse_thumb_with_discriminant(
     };
     Ins::Illegal
 }
+#[cfg(feature = "arm")]
 fn parse_arm_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -11542,16 +11974,7 @@ fn parse_arm_adc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_adc_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11594,6 +12017,7 @@ fn parse_thumb_adc_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_add_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -11615,16 +12039,7 @@ fn parse_arm_add_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11663,16 +12078,7 @@ fn parse_thumb_add_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11711,16 +12117,7 @@ fn parse_thumb_add_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11763,16 +12160,7 @@ fn parse_thumb_add_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11815,16 +12203,7 @@ fn parse_thumb_add_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_4(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11863,16 +12242,7 @@ fn parse_thumb_add_4(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_5(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11911,16 +12281,7 @@ fn parse_thumb_add_5(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_6(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -11963,16 +12324,7 @@ fn parse_thumb_add_6(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_7(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12015,16 +12367,7 @@ fn parse_thumb_add_7(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_add_8(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12063,6 +12406,7 @@ fn parse_thumb_add_8(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -12084,16 +12428,7 @@ fn parse_arm_and_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_and_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12136,6 +12471,7 @@ fn parse_thumb_and_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_asr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -12160,16 +12496,7 @@ fn parse_arm_asr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_asr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12210,16 +12537,7 @@ fn parse_thumb_asr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_asr_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12258,6 +12576,7 @@ fn parse_thumb_asr_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_b_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -12269,16 +12588,7 @@ fn parse_arm_b_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     );
     Some(Ins::B { cond, target })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_b_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12309,16 +12619,7 @@ fn parse_thumb_b_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)>
     );
     Some((Ins::B { cond, target }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_b_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12346,6 +12647,7 @@ fn parse_thumb_b_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)>
     );
     Some((Ins::B { cond, target }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -12367,16 +12669,7 @@ fn parse_arm_bic_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_bic_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12420,12 +12713,15 @@ fn parse_thumb_bic_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     ))
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_bkpt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -12450,12 +12746,15 @@ fn parse_arm_bkpt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Bkpt { imm })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "thumb",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_thumb_bkpt_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
@@ -12479,6 +12778,7 @@ fn parse_thumb_bkpt_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let imm = (value) & 0xff;
     Some((Ins::Bkpt { imm }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_bl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -12490,16 +12790,7 @@ fn parse_arm_bl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     );
     Some(Ins::Bl { cond, target })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_bl_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12530,12 +12821,15 @@ fn parse_thumb_bl_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)
     Some((Ins::Bl { cond, target }, 4))
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_blx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -12568,12 +12862,15 @@ fn parse_arm_blx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Blx { cond, target })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_blx_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -12605,12 +12902,15 @@ fn parse_arm_blx_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Blx { cond, target })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "thumb",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_thumb_blx_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
@@ -12643,12 +12943,15 @@ fn parse_thumb_blx_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     Some((Ins::Blx { cond, target }, 4))
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "thumb",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_thumb_blx_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
@@ -12674,13 +12977,16 @@ fn parse_thumb_blx_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     Some((Ins::Blx { cond, target }, 2))
 }
 #[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v4t",
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_bx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -12713,16 +13019,7 @@ fn parse_arm_bx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Bx { cond, rm })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_bx_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12747,7 +13044,7 @@ fn parse_thumb_bx_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)
     let rm = Reg::parse(((value) >> 3) & 0xf, pc);
     Some((Ins::Bx { cond, rm }, 2))
 }
-#[cfg(any(feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v5tej", feature = "v6", feature = "v6k")))]
 fn parse_arm_bxj_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12772,6 +13069,7 @@ fn parse_arm_bxj_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Bxj { cond, rm })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_cdp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -12794,12 +13092,15 @@ fn parse_arm_cdp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_cdp2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -12835,7 +13136,7 @@ fn parse_arm_cdp2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         opc2,
     })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_clrex_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -12847,12 +13148,15 @@ fn parse_arm_clrex_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Clrex {})
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_clz_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -12884,6 +13188,7 @@ fn parse_arm_clz_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Clz { cond, rd, rm })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_cmn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf000 != 0 {
         return Some(Ins::Illegal);
@@ -12898,16 +13203,7 @@ fn parse_arm_cmn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Cmn { cond, rn, op2 })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_cmn_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12937,6 +13233,7 @@ fn parse_thumb_cmn_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     });
     Some((Ins::Cmn { cond, rn, op2 }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_cmp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf000 != 0 {
         return Some(Ins::Illegal);
@@ -12951,16 +13248,7 @@ fn parse_arm_cmp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Cmp { cond, rn, op2 })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_cmp_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -12986,16 +13274,7 @@ fn parse_thumb_cmp_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let op2 = Op2::Imm((value) & 0xff);
     Some((Ins::Cmp { cond, rn, op2 }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_cmp_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13025,16 +13304,7 @@ fn parse_thumb_cmp_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     });
     Some((Ins::Cmp { cond, rn, op2 }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_cmp_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13064,7 +13334,7 @@ fn parse_thumb_cmp_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     });
     Some((Ins::Cmp { cond, rn, op2 }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_cps_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -13082,7 +13352,7 @@ fn parse_arm_cps_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let mode = (value) & 0x1f;
     Some(Ins::Cps { effect, aif, mode })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_cps_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -13097,6 +13367,7 @@ fn parse_thumb_cps_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let mode = 0;
     Some((Ins::Cps { effect, aif, mode }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_csdb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xff00 != 0xf000 {
         return Some(Ins::Illegal);
@@ -13107,7 +13378,7 @@ fn parse_arm_csdb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     Some(Ins::Csdb { cond })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_dbg_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -13123,6 +13394,7 @@ fn parse_arm_dbg_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let option = (value) & 0xf;
     Some(Ins::Dbg { cond, option })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13144,16 +13416,7 @@ fn parse_arm_eor_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_eor_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13196,6 +13459,7 @@ fn parse_thumb_eor_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13216,12 +13480,15 @@ fn parse_arm_ldc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_ldc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -13250,6 +13517,7 @@ fn parse_arm_ldc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldc2 { l, coproc, crd, dest })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldm_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xffff == 0 {
         return Some(Ins::Illegal);
@@ -13272,6 +13540,7 @@ fn parse_arm_ldm_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         user_mode,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldm_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xffff == 0 {
         return Some(Ins::Illegal);
@@ -13294,6 +13563,7 @@ fn parse_arm_ldm_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         user_mode,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldm_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13313,16 +13583,7 @@ fn parse_arm_ldm_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         user_mode,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldm_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13364,6 +13625,7 @@ fn parse_thumb_ldm_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13375,16 +13637,7 @@ fn parse_arm_ldr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldr { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13414,16 +13667,7 @@ fn parse_thumb_ldr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Ldr { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldr_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13453,16 +13697,7 @@ fn parse_thumb_ldr_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Ldr { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldr_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13492,16 +13727,7 @@ fn parse_thumb_ldr_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Ldr { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldr_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13536,6 +13762,7 @@ fn parse_thumb_ldr_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Ldr { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldrb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13547,16 +13774,7 @@ fn parse_arm_ldrb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrb { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldrb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13586,16 +13804,7 @@ fn parse_thumb_ldrb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Ldrb { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldrb_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13630,6 +13839,7 @@ fn parse_thumb_ldrb_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Ldrb { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldrbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13641,7 +13851,12 @@ fn parse_arm_ldrbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrbt { cond, rd, addr })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_ldrd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13672,7 +13887,12 @@ fn parse_arm_ldrd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrd { cond, rd, rd2, addr })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_ldrd_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13703,7 +13923,7 @@ fn parse_arm_ldrd_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrd { cond, rd, rd2, addr })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_ldrex_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -13722,7 +13942,7 @@ fn parse_arm_ldrex_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Ldrex { cond, rd, rn })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_ldrexb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -13739,7 +13959,7 @@ fn parse_arm_ldrexb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Ldrexb { cond, rd, rn })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_ldrexd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -13757,7 +13977,7 @@ fn parse_arm_ldrexd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Ldrexd { cond, rd, rd2, rn })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_ldrexh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -13774,6 +13994,7 @@ fn parse_arm_ldrexh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Ldrexh { cond, rd, rn })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldrh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13785,16 +14006,7 @@ fn parse_arm_ldrh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrh { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldrh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13824,16 +14036,7 @@ fn parse_thumb_ldrh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Ldrh { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldrh_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13866,6 +14069,7 @@ fn parse_thumb_ldrh_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Ldrh { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldrsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13877,16 +14081,7 @@ fn parse_arm_ldrsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrsb { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldrsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13919,6 +14114,7 @@ fn parse_thumb_ldrsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u
     };
     Some((Ins::Ldrsb { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldrsh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13930,16 +14126,7 @@ fn parse_arm_ldrsh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrsh { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ldrsh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -13972,6 +14159,7 @@ fn parse_thumb_ldrsh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u
     };
     Some((Ins::Ldrsh { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ldrt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -13983,6 +14171,7 @@ fn parse_arm_ldrt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Ldrt { cond, rd, addr })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_lsl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -14007,16 +14196,7 @@ fn parse_arm_lsl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_lsl_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14055,16 +14235,7 @@ fn parse_thumb_lsl_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_lsl_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14103,6 +14274,7 @@ fn parse_thumb_lsl_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_lsr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -14127,16 +14299,7 @@ fn parse_arm_lsr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_lsr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14177,16 +14340,7 @@ fn parse_thumb_lsr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_lsr_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14225,6 +14379,7 @@ fn parse_thumb_lsr_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mcr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -14247,12 +14402,15 @@ fn parse_arm_mcr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_mcr2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -14288,7 +14446,12 @@ fn parse_arm_mcr2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         opc2,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_mcrr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14323,7 +14486,7 @@ fn parse_arm_mcrr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         crm,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_mcrr2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -14344,6 +14507,7 @@ fn parse_arm_mcrr2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         crm,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -14363,6 +14527,7 @@ fn parse_arm_mla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -14388,6 +14553,7 @@ fn parse_arm_mov_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -14413,6 +14579,7 @@ fn parse_arm_mov_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if options.ual {
         return None;
@@ -14438,16 +14605,7 @@ fn parse_arm_mov_2(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_mov_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14484,16 +14642,7 @@ fn parse_thumb_mov_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_mov_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14534,16 +14683,7 @@ fn parse_thumb_mov_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_mov_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14587,16 +14727,7 @@ fn parse_thumb_mov_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_mov_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14640,6 +14771,7 @@ fn parse_thumb_mov_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mrc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -14662,12 +14794,15 @@ fn parse_arm_mrc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_mrc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -14703,7 +14838,12 @@ fn parse_arm_mrc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         opc2,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_mrrc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14738,7 +14878,7 @@ fn parse_arm_mrrc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         crm,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_mrrc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -14759,6 +14899,7 @@ fn parse_arm_mrrc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         crm,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mrs_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0x000f0d0f != 0x000f0000 {
         return Some(Ins::Illegal);
@@ -14771,6 +14912,7 @@ fn parse_arm_mrs_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let status_reg = StatusReg::parse(((value) >> 22) & 0x1, pc);
     Some(Ins::Mrs { cond, rd, status_reg })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_msr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf000 != 0xf000 {
         return Some(Ins::Illegal);
@@ -14792,6 +14934,7 @@ fn parse_arm_msr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf000 != 0 {
         return Some(Ins::Illegal);
@@ -14814,16 +14957,7 @@ fn parse_arm_mul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_mul_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14862,6 +14996,7 @@ fn parse_thumb_mul_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000 != 0 {
         return Some(Ins::Illegal);
@@ -14884,16 +15019,7 @@ fn parse_arm_mvn_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_mvn_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14934,16 +15060,7 @@ fn parse_thumb_mvn_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_neg_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -14971,7 +15088,7 @@ fn parse_thumb_neg_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let rm = Reg::parse(((value) >> 3) & 0x7, pc);
     Some((Ins::Neg { rd, rm }, 2))
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_nop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -14986,6 +15103,7 @@ fn parse_arm_nop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     Some(Ins::Nop { cond })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -15007,16 +15125,7 @@ fn parse_arm_orr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_orr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15059,7 +15168,7 @@ fn parse_thumb_orr_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_pkhbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15085,7 +15194,7 @@ fn parse_arm_pkhbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_pkhtb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15111,7 +15220,12 @@ fn parse_arm_pkhtb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         shift,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_pld_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15136,6 +15250,7 @@ fn parse_arm_pld_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Pld { addr })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_pop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -15150,6 +15265,7 @@ fn parse_arm_pop_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let regs = RegList::parse((value) & 0xffff);
     Some(Ins::Pop { cond, regs })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_pop_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -15161,16 +15277,7 @@ fn parse_arm_pop_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let regs = RegList::parse(1 << (((value) >> 12) & 0xf));
     Some(Ins::Pop { cond, regs })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_pop_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15198,6 +15305,7 @@ fn parse_thumb_pop_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let regs = RegList::parse(((((value) >> 8) & 0x1) << 15) | ((value) & 0xff));
     Some((Ins::Pop { cond, regs }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_push_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -15212,6 +15320,7 @@ fn parse_arm_push_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let regs = RegList::parse((value) & 0xffff);
     Some(Ins::Push { cond, regs })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_push_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -15223,16 +15332,7 @@ fn parse_arm_push_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let regs = RegList::parse(1 << (((value) >> 12) & 0xf));
     Some(Ins::Push { cond, regs })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_push_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15260,7 +15360,12 @@ fn parse_thumb_push_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let regs = RegList::parse(((((value) >> 8) & 0x1) << 14) | ((value) & 0xff));
     Some((Ins::Push { cond, regs }, 2))
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_qadd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15289,7 +15394,7 @@ fn parse_arm_qadd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Qadd { cond, rd, rm, rn })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_qadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15309,7 +15414,7 @@ fn parse_arm_qadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Qadd16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_qadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15329,7 +15434,7 @@ fn parse_arm_qadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Qadd8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_qasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15349,7 +15454,12 @@ fn parse_arm_qasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Qasx { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_qdadd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15378,7 +15488,12 @@ fn parse_arm_qdadd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Qdadd { cond, rd, rm, rn })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_qdsub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15407,7 +15522,7 @@ fn parse_arm_qdsub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Qdsub { cond, rd, rm, rn })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_qsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15427,7 +15542,12 @@ fn parse_arm_qsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Qsax { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_qsub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15456,7 +15576,7 @@ fn parse_arm_qsub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Qsub { cond, rd, rm, rn })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_qsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15476,7 +15596,7 @@ fn parse_arm_qsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Qsub16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_qsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15496,7 +15616,7 @@ fn parse_arm_qsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Qsub8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_rev_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15515,7 +15635,7 @@ fn parse_arm_rev_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Rev { cond, rd, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_rev_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15528,7 +15648,7 @@ fn parse_thumb_rev_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let rm = Reg::parse(((value) >> 3) & 0x7, pc);
     Some((Ins::Rev { cond, rd, rm }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_rev16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15547,7 +15667,7 @@ fn parse_arm_rev16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Rev16 { cond, rd, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_rev16_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15560,7 +15680,7 @@ fn parse_thumb_rev16_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u
     let rm = Reg::parse(((value) >> 3) & 0x7, pc);
     Some((Ins::Rev16 { cond, rd, rm }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_revsh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15579,7 +15699,7 @@ fn parse_arm_revsh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Revsh { cond, rd, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_revsh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15592,7 +15712,7 @@ fn parse_thumb_revsh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u
     let rm = Reg::parse(((value) >> 3) & 0x7, pc);
     Some((Ins::Revsh { cond, rd, rm }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_rfe_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15612,6 +15732,7 @@ fn parse_arm_rfe_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         writeback,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_ror_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -15636,16 +15757,7 @@ fn parse_arm_ror_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_ror_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15684,6 +15796,7 @@ fn parse_thumb_ror_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_rrx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if !options.ual {
         return None;
@@ -15700,6 +15813,7 @@ fn parse_arm_rrx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Rrx { s, cond, rd, rm })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_rsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -15713,16 +15827,7 @@ fn parse_arm_rsb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Rsb { s, cond, rd, rn, op2 })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_rsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15753,6 +15858,7 @@ fn parse_thumb_rsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let op2 = Op2::Imm(0);
     Some((Ins::Rsb { s, cond, rd, rn, op2 }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_rsc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -15766,7 +15872,7 @@ fn parse_arm_rsc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Rsc { s, cond, rd, rn, op2 })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15786,7 +15892,7 @@ fn parse_arm_sadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Sadd16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15806,7 +15912,7 @@ fn parse_arm_sadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Sadd8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15826,6 +15932,7 @@ fn parse_arm_sasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Sasx { cond, rd, rn, rm })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -15847,16 +15954,7 @@ fn parse_arm_sbc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_sbc_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -15899,7 +15997,7 @@ fn parse_thumb_sbc_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sel_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15919,7 +16017,7 @@ fn parse_arm_sel_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Sel { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_setend_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15933,7 +16031,7 @@ fn parse_arm_setend_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let endian = Endianness::parse(((value) >> 9) & 0x1, pc);
     Some(Ins::Setend { endian })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_setend_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15947,7 +16045,7 @@ fn parse_thumb_setend_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, 
     let endian = Endianness::parse(((value) >> 3) & 0x1, pc);
     Some((Ins::Setend { endian }, 2))
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_sev_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -15962,7 +16060,7 @@ fn parse_arm_sev_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     Some(Ins::Sev { cond })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_shadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -15982,7 +16080,7 @@ fn parse_arm_shadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Shadd16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_shadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16002,7 +16100,7 @@ fn parse_arm_shadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Shadd8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_shasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16022,7 +16120,7 @@ fn parse_arm_shasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Shasx { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_shsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16042,7 +16140,7 @@ fn parse_arm_shsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Shsax { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_shsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16062,7 +16160,7 @@ fn parse_arm_shsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Shsub16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_shsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16082,7 +16180,12 @@ fn parse_arm_shsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Shsub8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_smla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16119,7 +16222,7 @@ fn parse_arm_smla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smlad_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16145,6 +16248,7 @@ fn parse_arm_smlad_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_smlal_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -16164,7 +16268,12 @@ fn parse_arm_smlal_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_smlal_half_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16201,7 +16310,7 @@ fn parse_arm_smlal_half_0(value: u32, pc: u32, options: &Options) -> Option<Ins>
         rm_side,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smlald_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16227,7 +16336,12 @@ fn parse_arm_smlald_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         swap_rm,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_smlaw_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16262,7 +16376,7 @@ fn parse_arm_smlaw_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smlsd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16288,7 +16402,7 @@ fn parse_arm_smlsd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smlsld_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16314,7 +16428,7 @@ fn parse_arm_smlsld_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         swap_rm,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smmla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16340,7 +16454,7 @@ fn parse_arm_smmla_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smmls_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16366,7 +16480,7 @@ fn parse_arm_smmls_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smmul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16390,7 +16504,7 @@ fn parse_arm_smmul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smuad_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16414,7 +16528,12 @@ fn parse_arm_smuad_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         swap_rm,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_smul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16452,6 +16571,7 @@ fn parse_arm_smul_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm_side,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_smull_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -16471,7 +16591,12 @@ fn parse_arm_smull_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_smulw_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16507,7 +16632,7 @@ fn parse_arm_smulw_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm_side,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_smusd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16531,7 +16656,7 @@ fn parse_arm_smusd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         swap_rm,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_srs_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16553,7 +16678,7 @@ fn parse_arm_srs_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         mode,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_ssat_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16570,7 +16695,7 @@ fn parse_arm_ssat_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let op2 = ShiftImm::parse((value) & 0xfff, pc);
     Some(Ins::Ssat { cond, rd, imm, op2 })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_ssat16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16590,7 +16715,7 @@ fn parse_arm_ssat16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse((value) & 0xf, pc);
     Some(Ins::Ssat16 { cond, rd, imm, rn })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_ssax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16610,7 +16735,7 @@ fn parse_arm_ssax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Ssax { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_ssub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16630,7 +16755,7 @@ fn parse_arm_ssub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Ssub16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_ssub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -16650,6 +16775,7 @@ fn parse_arm_ssub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Ssub8 { cond, rd, rn, rm })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_stc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -16670,12 +16796,15 @@ fn parse_arm_stc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     })
 }
 #[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_stc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -16704,6 +16833,7 @@ fn parse_arm_stc2_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Stc2 { l, coproc, crd, dest })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_stm_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xffff == 0 {
         return Some(Ins::Illegal);
@@ -16726,16 +16856,7 @@ fn parse_arm_stm_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         user_mode,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_stm_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16777,6 +16898,7 @@ fn parse_thumb_stm_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_str_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -16788,16 +16910,7 @@ fn parse_arm_str_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Str { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_str_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16827,16 +16940,7 @@ fn parse_thumb_str_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Str { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_str_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16866,16 +16970,7 @@ fn parse_thumb_str_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Str { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_str_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16910,6 +17005,7 @@ fn parse_thumb_str_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     };
     Some((Ins::Str { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_strb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -16921,16 +17017,7 @@ fn parse_arm_strb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Strb { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_strb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -16960,16 +17047,7 @@ fn parse_thumb_strb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Strb { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_strb_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17004,6 +17082,7 @@ fn parse_thumb_strb_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Strb { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_strbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -17015,7 +17094,12 @@ fn parse_arm_strbt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Strbt { cond, rd, addr })
 }
-#[cfg(any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k"))]
+#[cfg(
+    all(
+        feature = "arm",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    )
+)]
 fn parse_arm_strd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17046,7 +17130,7 @@ fn parse_arm_strd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Strd { cond, rd, rd2, addr })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_strex_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17066,7 +17150,7 @@ fn parse_arm_strex_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Strex { cond, rd, rm, rn })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_strexb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -17084,7 +17168,7 @@ fn parse_arm_strexb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Strexb { cond, rd, rm, rn })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_strexd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -17109,7 +17193,7 @@ fn parse_arm_strexd_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rn,
     })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_strexh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -17127,6 +17211,7 @@ fn parse_arm_strexh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Strexh { cond, rd, rm, rn })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_strh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -17138,16 +17223,7 @@ fn parse_arm_strh_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Strh { cond, rd, addr })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_strh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17177,16 +17253,7 @@ fn parse_thumb_strh_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Strh { cond, rd, addr }, 2))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_strh_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17219,6 +17286,7 @@ fn parse_thumb_strh_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     };
     Some((Ins::Strh { cond, rd, addr }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_strt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -17230,6 +17298,7 @@ fn parse_arm_strt_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Strt { cond, rd, addr })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -17251,16 +17320,7 @@ fn parse_arm_sub_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         op2,
     })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_sub_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17299,16 +17359,7 @@ fn parse_thumb_sub_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_sub_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17347,16 +17398,7 @@ fn parse_thumb_sub_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_sub_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17399,16 +17441,7 @@ fn parse_thumb_sub_2(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_sub_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17447,6 +17480,7 @@ fn parse_thumb_sub_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
         2,
     ))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_svc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -17455,16 +17489,7 @@ fn parse_arm_svc_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let imm = (value) & 0xffffff;
     Some(Ins::Svc { cond, imm })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_svc_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17489,6 +17514,7 @@ fn parse_thumb_svc_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let imm = (value) & 0xff;
     Some((Ins::Svc { cond, imm }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_swp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf00 != 0 {
         return Some(Ins::Illegal);
@@ -17502,6 +17528,7 @@ fn parse_arm_swp_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Swp { cond, rd, rd2, rn })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_swpb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf00 != 0 {
         return Some(Ins::Illegal);
@@ -17515,7 +17542,7 @@ fn parse_arm_swpb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
     Some(Ins::Swpb { cond, rd, rd2, rn })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sxtab_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17542,7 +17569,7 @@ fn parse_arm_sxtab_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sxtab16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17569,7 +17596,7 @@ fn parse_arm_sxtab16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sxtah_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17596,7 +17623,7 @@ fn parse_arm_sxtah_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sxtb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17616,7 +17643,7 @@ fn parse_arm_sxtb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rotate = (((value) >> 10) & 0x3) << 3;
     Some(Ins::Sxtb { cond, rd, rm, rotate })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_sxtb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17630,7 +17657,7 @@ fn parse_thumb_sxtb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let rotate = 0;
     Some((Ins::Sxtb { cond, rd, rm, rotate }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sxtb16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17655,7 +17682,7 @@ fn parse_arm_sxtb16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_sxth_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17675,7 +17702,7 @@ fn parse_arm_sxth_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rotate = (((value) >> 10) & 0x3) << 3;
     Some(Ins::Sxth { cond, rd, rm, rotate })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_sxth_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17689,6 +17716,7 @@ fn parse_thumb_sxth_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let rotate = 0;
     Some((Ins::Sxth { cond, rd, rm, rotate }, 2))
 }
+#[cfg(feature = "arm")]
 fn parse_arm_teq_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf000 != 0 {
         return Some(Ins::Illegal);
@@ -17703,6 +17731,7 @@ fn parse_arm_teq_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Teq { cond, rn, op2 })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_tst_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf000 != 0 {
         return Some(Ins::Illegal);
@@ -17717,16 +17746,7 @@ fn parse_arm_tst_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     };
     Some(Ins::Tst { cond, rn, op2 })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_tst_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17756,7 +17776,7 @@ fn parse_thumb_tst_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     });
     Some((Ins::Tst { cond, rn, op2 }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17776,7 +17796,7 @@ fn parse_arm_uadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uadd16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17796,7 +17816,7 @@ fn parse_arm_uadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uadd8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17817,13 +17837,16 @@ fn parse_arm_uasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     Some(Ins::Uasx { cond, rd, rn, rm })
 }
 #[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
+    all(
+        feature = "arm",
+        any(
+            feature = "v4t",
+            feature = "v5t",
+            feature = "v5te",
+            feature = "v5tej",
+            feature = "v6",
+            feature = "v6k"
+        )
     )
 )]
 fn parse_arm_udf_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
@@ -17849,16 +17872,7 @@ fn parse_arm_udf_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let imm = ((((value) >> 8) & 0xfff) << 4) | ((value) & 0xf);
     Some(Ins::Udf { imm })
 }
-#[cfg(
-    any(
-        feature = "v4t",
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
+#[cfg(feature = "thumb")]
 fn parse_thumb_udf_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[
@@ -17882,7 +17896,7 @@ fn parse_thumb_udf_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let imm = (value) & 0xff;
     Some((Ins::Udf { imm }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uhadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17902,7 +17916,7 @@ fn parse_arm_uhadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uhadd16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uhadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17922,7 +17936,7 @@ fn parse_arm_uhadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uhadd8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uhasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17942,7 +17956,7 @@ fn parse_arm_uhasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uhasx { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uhsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17962,7 +17976,7 @@ fn parse_arm_uhsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uhsax { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uhsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -17982,7 +17996,7 @@ fn parse_arm_uhsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uhsub16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uhsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18002,7 +18016,7 @@ fn parse_arm_uhsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uhsub8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_umaal_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18026,6 +18040,7 @@ fn parse_arm_umaal_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_umlal_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -18045,6 +18060,7 @@ fn parse_arm_umlal_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
+#[cfg(feature = "arm")]
 fn parse_arm_umull_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     if value & 0xf0000000 == 0xf0000000 {
         return Some(Ins::Illegal);
@@ -18064,7 +18080,7 @@ fn parse_arm_umull_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rm,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uqadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18084,7 +18100,7 @@ fn parse_arm_uqadd16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uqadd16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uqadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18104,7 +18120,7 @@ fn parse_arm_uqadd8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uqadd8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uqasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18124,7 +18140,7 @@ fn parse_arm_uqasx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uqasx { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uqsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18144,7 +18160,7 @@ fn parse_arm_uqsax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uqsax { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uqsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18164,7 +18180,7 @@ fn parse_arm_uqsub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uqsub16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uqsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18184,7 +18200,7 @@ fn parse_arm_uqsub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Uqsub8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usad8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18201,7 +18217,7 @@ fn parse_arm_usad8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse(((value) >> 8) & 0xf, pc);
     Some(Ins::Usad8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usada8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18225,7 +18241,7 @@ fn parse_arm_usada8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         ra,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usat_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18242,7 +18258,7 @@ fn parse_arm_usat_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let op2 = ShiftImm::parse((value) & 0xfff, pc);
     Some(Ins::Usat { cond, rd, imm, op2 })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usat16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18262,7 +18278,7 @@ fn parse_arm_usat16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rn = Reg::parse((value) & 0xf, pc);
     Some(Ins::Usat16 { cond, rd, imm, rn })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18282,7 +18298,7 @@ fn parse_arm_usax_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Usax { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18302,7 +18318,7 @@ fn parse_arm_usub16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Usub16 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_usub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18322,7 +18338,7 @@ fn parse_arm_usub8_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rm = Reg::parse((value) & 0xf, pc);
     Some(Ins::Usub8 { cond, rd, rn, rm })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uxtab_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18349,7 +18365,7 @@ fn parse_arm_uxtab_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uxtab16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18376,7 +18392,7 @@ fn parse_arm_uxtab16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uxtah_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18403,7 +18419,7 @@ fn parse_arm_uxtah_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uxtb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18423,7 +18439,7 @@ fn parse_arm_uxtb_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rotate = (((value) >> 10) & 0x3) << 3;
     Some(Ins::Uxtb { cond, rd, rm, rotate })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_uxtb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18437,7 +18453,7 @@ fn parse_thumb_uxtb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
     let rotate = 0;
     Some((Ins::Uxtb { cond, rd, rm, rotate }, 2))
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uxtb16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18462,7 +18478,7 @@ fn parse_arm_uxtb16_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
         rotate,
     })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
 fn parse_arm_uxth_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18482,7 +18498,7 @@ fn parse_arm_uxth_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let rotate = (((value) >> 10) & 0x3) << 3;
     Some(Ins::Uxth { cond, rd, rm, rotate })
 }
-#[cfg(any(feature = "v6", feature = "v6k"))]
+#[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
 fn parse_thumb_uxth_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)> {
     const VERSIONS: Versions = Versions::of(
         &[#[cfg(feature = "v6")] Version::V6, #[cfg(feature = "v6k")] Version::V6K],
@@ -18498,6 +18514,7 @@ fn parse_thumb_uxth_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u3
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18532,6 +18549,7 @@ fn parse_arm_vabs_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18566,6 +18584,7 @@ fn parse_arm_vabs_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18601,6 +18620,7 @@ fn parse_arm_vadd_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18636,6 +18656,7 @@ fn parse_arm_vadd_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18678,6 +18699,7 @@ fn parse_arm_vcmp_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18720,6 +18742,7 @@ fn parse_arm_vcmp_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18754,6 +18777,7 @@ fn parse_arm_vcvt_f32_f64_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18788,6 +18812,7 @@ fn parse_arm_vcvt_f32_s32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18822,6 +18847,7 @@ fn parse_arm_vcvt_f32_u32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18856,6 +18882,7 @@ fn parse_arm_vcvt_f64_f32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18890,6 +18917,7 @@ fn parse_arm_vcvt_f64_s32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18924,6 +18952,7 @@ fn parse_arm_vcvt_f64_u32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -18964,6 +18993,7 @@ fn parse_arm_vcvt_s32_f32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19004,6 +19034,7 @@ fn parse_arm_vcvt_s32_f64_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19044,6 +19075,7 @@ fn parse_arm_vcvt_u32_f32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19084,6 +19116,7 @@ fn parse_arm_vcvt_u32_f64_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19119,6 +19152,7 @@ fn parse_arm_vdiv_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19154,6 +19188,7 @@ fn parse_arm_vdiv_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19198,6 +19233,7 @@ fn parse_arm_vldm_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19242,6 +19278,7 @@ fn parse_arm_vldm_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19286,6 +19323,7 @@ fn parse_arm_vldr_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19330,6 +19368,7 @@ fn parse_arm_vldr_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19365,6 +19404,7 @@ fn parse_arm_vmla_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19400,6 +19440,7 @@ fn parse_arm_vmla_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19435,6 +19476,7 @@ fn parse_arm_vmls_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19470,6 +19512,7 @@ fn parse_arm_vmls_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19507,6 +19550,7 @@ fn parse_arm_vmov_32_reg_0(value: u32, pc: u32, options: &Options) -> Option<Ins
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19541,6 +19585,7 @@ fn parse_arm_vmov_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19578,6 +19623,7 @@ fn parse_arm_vmov_f32_reg_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19612,6 +19658,7 @@ fn parse_arm_vmov_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19649,6 +19696,7 @@ fn parse_arm_vmov_reg_32_0(value: u32, pc: u32, options: &Options) -> Option<Ins
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19686,6 +19734,7 @@ fn parse_arm_vmov_reg_f32_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19734,6 +19783,7 @@ fn parse_arm_vmov_reg_f32_dual_0(value: u32, pc: u32, options: &Options) -> Opti
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19782,6 +19832,7 @@ fn parse_arm_vmov_f32_reg_dual_0(value: u32, pc: u32, options: &Options) -> Opti
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19822,6 +19873,7 @@ fn parse_arm_vmov_reg_f64_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19862,6 +19914,7 @@ fn parse_arm_vmov_f64_reg_0(value: u32, pc: u32, options: &Options) -> Option<In
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19899,6 +19952,7 @@ fn parse_arm_vmrs_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19936,6 +19990,7 @@ fn parse_arm_vmsr_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -19971,6 +20026,7 @@ fn parse_arm_vmul_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20006,6 +20062,7 @@ fn parse_arm_vmul_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20040,6 +20097,7 @@ fn parse_arm_vneg_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20074,6 +20132,7 @@ fn parse_arm_vneg_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20109,6 +20168,7 @@ fn parse_arm_vnmla_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20144,6 +20204,7 @@ fn parse_arm_vnmla_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20179,6 +20240,7 @@ fn parse_arm_vnmls_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20214,6 +20276,7 @@ fn parse_arm_vnmls_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20249,6 +20312,7 @@ fn parse_arm_vnmul_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20284,6 +20348,7 @@ fn parse_arm_vnmul_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20320,6 +20385,7 @@ fn parse_arm_vpop_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20356,6 +20422,7 @@ fn parse_arm_vpop_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20392,6 +20459,7 @@ fn parse_arm_vpush_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20428,6 +20496,7 @@ fn parse_arm_vpush_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20462,6 +20531,7 @@ fn parse_arm_vsqrt_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20496,6 +20566,7 @@ fn parse_arm_vsqrt_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> 
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20540,6 +20611,7 @@ fn parse_arm_vstm_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20584,6 +20656,7 @@ fn parse_arm_vstm_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20628,6 +20701,7 @@ fn parse_arm_vstr_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20672,6 +20746,7 @@ fn parse_arm_vstr_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20707,6 +20782,7 @@ fn parse_arm_vsub_f32_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
 }
 #[cfg(
     all(
+        feature = "arm",
         feature = "vfp_v2",
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
@@ -20740,7 +20816,7 @@ fn parse_arm_vsub_f64_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let dm = Dreg::parse(((((value) >> 5) & 0x1) << 4) | ((value) & 0xf), pc);
     Some(Ins::VsubF64 { cond, dd, dn, dm })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_wfe_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -20755,7 +20831,7 @@ fn parse_arm_wfe_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     Some(Ins::Wfe { cond })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_wfi_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
@@ -20770,7 +20846,7 @@ fn parse_arm_wfi_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     Some(Ins::Wfi { cond })
 }
-#[cfg(feature = "v6k")]
+#[cfg(all(feature = "arm", feature = "v6k"))]
 fn parse_arm_yield_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     const VERSIONS: Versions = Versions::of(&[#[cfg(feature = "v6k")] Version::V6K]);
     if !VERSIONS.has(options.version) {
