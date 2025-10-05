@@ -15,7 +15,7 @@ impl RegList {
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         formatter.write_str("{")?;
         let mut iter = self.iter();
@@ -59,7 +59,7 @@ impl SregList {
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         formatter.write_str("{")?;
         let mut iter = self.iter();
@@ -103,7 +103,7 @@ impl DregList {
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         formatter.write_str("{")?;
         let mut iter = self.iter();

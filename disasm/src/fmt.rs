@@ -1,6 +1,6 @@
 use alloc::string::String;
 
-use crate::{Ins, Options, Write};
+use crate::{FormatIns, Ins, Options};
 
 pub struct Formatter<'a, 'b> {
     pub options: &'a Options,
@@ -13,7 +13,7 @@ impl core::fmt::Write for Formatter<'_, '_> {
     }
 }
 
-impl Write for Formatter<'_, '_> {
+impl FormatIns for Formatter<'_, '_> {
     fn options(&self) -> &Options {
         self.options
     }
@@ -57,7 +57,7 @@ impl core::fmt::Write for StringFormatter<'_> {
     }
 }
 
-impl Write for StringFormatter<'_> {
+impl FormatIns for StringFormatter<'_> {
     fn options(&self) -> &Options {
         self.options
     }

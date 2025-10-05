@@ -60,11 +60,11 @@ impl DataTypes {
         quote!(#(#fmt_impls)*)
     }
 
-    pub fn write_trait_tokens(&self, isa: &Isa) -> TokenStream {
+    pub fn format_ins_trait_tokens(&self, isa: &Isa) -> TokenStream {
         let data_types = self.0.iter().filter_map(|dt| dt.trait_write_fn_tokens(isa));
 
         quote! {
-            pub trait Write: core::fmt::Write {
+            pub trait FormatIns: core::fmt::Write {
                 fn options(&self) -> &Options;
 
                 fn write_space(&mut self) -> core::fmt::Result {
@@ -421,7 +421,7 @@ impl DataType {
             impl #name_ident {
                 pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
-                    F: Write + ?Sized
+                    F: FormatIns + ?Sized
                 {
                     #display_expr
                     Ok(())

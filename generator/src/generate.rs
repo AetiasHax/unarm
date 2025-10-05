@@ -77,7 +77,7 @@ impl Isa {
     }
 
     pub fn generate_display(&self) -> TokenStream {
-        let write_trait = self.types().write_trait_tokens(self);
+        let format_ins_trait = self.types().format_ins_trait_tokens(self);
 
         let data_fmt_impls = self.types().fmt_impls_tokens(self);
 
@@ -93,7 +93,7 @@ impl Isa {
 
             use crate::*;
 
-            #write_trait
+            #format_ins_trait
 
             #data_fmt_impls
 

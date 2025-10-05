@@ -4,7 +4,7 @@
 #![allow(clippy::explicit_auto_deref)]
 #![allow(unused_variables)]
 use crate::*;
-pub trait Write: core::fmt::Write {
+pub trait FormatIns: core::fmt::Write {
     fn options(&self) -> &Options;
     fn write_space(&mut self) -> core::fmt::Result {
         self.write_str(" ")
@@ -402,7 +402,7 @@ pub trait Write: core::fmt::Write {
 impl BranchTarget {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { addr } = self;
         formatter.write_str("#")?;
@@ -422,7 +422,7 @@ impl BranchTarget {
 impl BlxTarget {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Direct(target) => {
@@ -438,7 +438,7 @@ impl BlxTarget {
 impl Cond {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Eq => {
@@ -491,7 +491,7 @@ impl Cond {
 impl Reg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::R0 => {
@@ -620,7 +620,7 @@ impl Reg {
 impl StatusReg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Cpsr => {
@@ -637,7 +637,7 @@ impl StatusReg {
 impl StatusFields {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { reg, c, x, s, f } = self;
         formatter.write_status_reg(*reg)?;
@@ -661,7 +661,7 @@ impl StatusFields {
 impl MsrOp2 {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Imm(imm) => {
@@ -678,7 +678,7 @@ impl MsrOp2 {
 impl ShiftOp {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Lsl => {
@@ -701,7 +701,7 @@ impl ShiftOp {
 impl Coproc {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::P0 => {
@@ -760,7 +760,7 @@ impl Coproc {
 impl CoReg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::C0 => {
@@ -818,7 +818,7 @@ impl CoReg {
 impl Op2 {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Imm(imm) => {
@@ -838,7 +838,7 @@ impl Op2 {
 impl ShiftReg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { rm, shift_op, rs } = self;
         formatter.write_reg(*rm)?;
@@ -852,7 +852,7 @@ impl ShiftReg {
 impl ShiftImm {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { rm, shift_op, imm } = self;
         if *imm == 0 && *shift_op == ShiftOp::Lsl {
@@ -877,7 +877,7 @@ impl ShiftImm {
 impl Op2Shift {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Imm(imm) => {
@@ -895,7 +895,7 @@ impl Op2Shift {
 impl CpsEffect {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::SetMode => {}
@@ -913,7 +913,7 @@ impl CpsEffect {
 impl AifFlags {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { a, i, f } = self;
         if *a {
@@ -932,7 +932,7 @@ impl AifFlags {
 impl AddrLdcStc {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
@@ -968,7 +968,7 @@ impl AddrLdcStc {
 impl LdmStmMode {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Da => {
@@ -992,7 +992,7 @@ impl LdmStmMode {
 impl AddrLdrStr {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
@@ -1013,7 +1013,7 @@ impl AddrLdrStr {
 impl AddrLdrStrPost {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { rn, offset } = self;
         formatter.write_str("[")?;
@@ -1027,7 +1027,7 @@ impl AddrLdrStrPost {
 impl LdrStrOffset {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Imm(offset) => {
@@ -1062,7 +1062,7 @@ impl LdrStrOffset {
 impl AddrMiscLoad {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
@@ -1087,7 +1087,7 @@ impl AddrMiscLoad {
 impl MiscLoadOffset {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Imm(offset) => {
@@ -1106,7 +1106,7 @@ impl MiscLoadOffset {
 impl SrsRfeMode {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Da => {
@@ -1129,7 +1129,7 @@ impl SrsRfeMode {
 impl Endianness {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Le => {
@@ -1151,7 +1151,7 @@ impl Endianness {
 impl RegSide {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Bottom => {
@@ -1174,7 +1174,7 @@ impl RegSide {
 impl Sreg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::S0 => {
@@ -1287,7 +1287,7 @@ impl Sreg {
 impl Dreg {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::D0 => {
@@ -1400,7 +1400,7 @@ impl Dreg {
 impl VcmpF32Op2 {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Zero => {
@@ -1423,7 +1423,7 @@ impl VcmpF32Op2 {
 impl VcmpF64Op2 {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Zero => {
@@ -1446,7 +1446,7 @@ impl VcmpF64Op2 {
 impl DregIndex {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self { dreg, index } = self;
         if formatter.options().ual {
@@ -1470,7 +1470,7 @@ impl DregIndex {
 impl Fpscr {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         let Self {} = self;
         formatter.write_str("fpscr")?;
@@ -1487,7 +1487,7 @@ impl Fpscr {
 impl VldmVstmMode {
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Self::Ia => {
@@ -1503,7 +1503,7 @@ impl VldmVstmMode {
 impl Ins {
     pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Ins::Adc { s, thumb, cond, rd, rn, op2 } => {
@@ -4251,7 +4251,7 @@ impl Ins {
     }
     pub fn write_params<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
-        F: Write + ?Sized,
+        F: FormatIns + ?Sized,
     {
         match self {
             Ins::Adc { s, thumb, cond, rd, rn, op2 } => {

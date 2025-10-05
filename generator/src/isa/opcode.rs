@@ -52,7 +52,7 @@ impl Opcodes {
             impl Ins {
                 pub fn write_opcode<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
-                    F: Write + ?Sized
+                    F: FormatIns + ?Sized
                 {
                     match self {
                         #(#opcodes)*
@@ -66,7 +66,7 @@ impl Opcodes {
 
                 pub fn write_params<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
-                    F: Write + ?Sized
+                    F: FormatIns + ?Sized
                 {
                     match self {
                         #(#params)*
