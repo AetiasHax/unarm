@@ -1,1 +1,9 @@
-max_width = 127
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"
+max_width = 100
+overflow_delimited_expr = true
+reorder_impl_items = true
+use_field_init_shorthand = true
+use_small_heuristics = "Max"
+single_line_if_else_max_width = 60
+struct_lit_width = 70

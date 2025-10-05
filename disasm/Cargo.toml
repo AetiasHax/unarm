@@ -1,24 +1,35 @@
 [package]
 name = "unarm"
-version = "1.9.2"
-edition = "2021"
+version = "2.0.0"
+edition = "2024"
 authors = ["Aetias <aetias@outlook.com>"]
 license = "MIT"
-description = "Disassembles ARM instructions"
-keywords = ["arm", "disassembler"]
+description = "Parses ARM instructions"
+keywords = ["arm", "disassembler", "parser"]
 repository = "https://github.com/AetiasHax/unarm"
 readme = "../README.md"
 categories = ["no-std"]
 
 [features]
-default = ["thumb", "arm", "v4t", "v5te", "v6k"]
+default = [
+    "thumb",
+    "arm",
+    "v4",
+    "v4t",
+    "v5t",
+    "v5te",
+    "v5tej",
+    "v6",
+    "v6k",
+    "vfp_v2",
+]
 thumb = []
 arm = []
+v4 = []
 v4t = []
+v5t = []
 v5te = []
+v5tej = []
+v6 = []
 v6k = []
-
-[dependencies]
-
-[lints.clippy]
-needless_update = "allow"
+vfp_v2 = []

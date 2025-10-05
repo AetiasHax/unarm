@@ -1,13 +1,14 @@
 #![no_std]
 
-pub mod args;
-#[cfg(feature = "arm")]
-pub mod arm;
-mod display;
-pub mod parse;
-#[cfg(feature = "thumb")]
-pub mod thumb;
-mod util;
+extern crate alloc;
 
-pub use display::{DisplayOptions, LookupSymbol, R9Use, RegNames, SignedHex, Symbols};
-pub use parse::*;
+mod fmt;
+mod generated;
+mod ins;
+mod parser;
+mod reg_list;
+
+pub use fmt::*;
+pub use generated::*;
+pub use parser::*;
+pub use reg_list::*;

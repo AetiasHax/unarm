@@ -1,0 +1,6067 @@
+# region Options
+options:
+  version:
+    description: The version of ARM to use
+    kind: !version
+  extensions:
+    description: The extensions to enable
+    kind: !extensions
+  av:
+    description: If true, r0-r3 and r4-11 will display as a1-a4 and v1-v8 respectively
+    kind: !bool
+  r9_use:
+    description: How R9 should be displayed
+    kind: !enum
+      - name: r9
+        description: General purpose register
+      - name: sb
+        description: Static base (SB), used for position-independent data
+      - name: tr
+        description: TLS register (TR), used for thread-local storage
+  sl:
+    description: If true, R10 will display as SL (stack limit)
+    kind: !bool
+  fp:
+    description: If true, R11 will display as FP (frame pointer)
+    kind: !bool
+  ip:
+    description: If true, R12 will display as IP (intra-procedure call scratch register)
+    kind: !bool
+  ual:
+    description: If true, use Unified Assembly Language syntax (UAL), otherwise use divided syntax
+    kind: !bool
+      default: true
+
+versions:
+- name: v4
+  thumb: false
+- name: v4t
+- name: v5t
+- name: v5te
+- name: v5tej
+- name: v6
+- name: v6k
+
+extensions:
+- vfp_v2
+# endregion
+
+# region Types
+types:
+- name: s
+  description: Mnemonic suffix, updates status flags when present
+  kind: !bool
+- name: l
+  description: Mnemonic suffix, specifies a long load/store for LDC/STC instructions
+  kind: !bool
+- name: wb
+  description: In LDM/STM, write the last accessed address back to the base register
+  kind: !bool
+    format: !fmt "!"
+- name: user_mode
+  description: In LDM/STM, access user mode registers while in a privileged mode
+  kind: !bool
+    format: !fmt ^
+- name: subtract
+  description: In LDR/STR and similar, subtract the index register from the base register
+  kind: !bool
+    format: !fmt "-"
+- name: thumb
+  description: Only used for formatting purposes where Thumb and ARM formattings are different
+  kind: !bool
+  write: false
+- name: uimm
+  description: Unsigned immediate
+  kind: !uint bits(0..32)
+- name: simm
+  description: Signed immediate
+  kind: !int bits(0..32)
+- name: branch_target
+  description: The direct destination address of a branch instruction
+  kind: !struct
+    format: !fmt "#(addr)"
+    fields:
+    - name: addr
+      kind: !uint pc + bits(0..32)
+- name: blx_target
+  description: The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
+  no_parse: true
+  kind: !union
+    bits: 0..28
+    complete: true
+    variants:
+      101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: direct
+        description: Direct target
+        data:
+          name: target
+          kind: !type [branch_target, ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
+      0001_0010_1111_1111_1111_0011_xxxx:
+        name: indirect
+        description: Indirect target
+        data:
+          name: rm
+          kind: !type [reg, bits(0..4)]
+- name: cond
+  description: Mnemonic suffix, specifies the condition for whether to execute the instruction
+  kind: !enum
+    bits: 0..4
+    default: al
+    variants:
+    - name: eq
+      description: Equal
+    - name: ne
+      description: Not equal
+    - name: hs
+      description: Unsigned higher or same
+    - name: lo
+      description: Unsigned lower
+    - name: mi
+      description: Minus/negative
+    - name: pl
+      description: Plus/positive
+    - name: vs
+      description: Overflow set
+    - name: vc
+      description: Overflow clear
+    - name: hi
+      description: Unsigned higher
+    - name: ls
+      description: Unsigned lower or same
+    - name: ge
+      description: Signed greater than or equal
+    - name: lt
+      description: Signed less than
+    - name: gt
+      description: Signed greater than
+    - name: le
+      description: Signed less than or equal
+    - name: al
+      description: Always
+      format: !fmt ""
+- name: reg
+  description: General-purpose register
+  kind: !enum
+    bits: 0..4
+    variants:
+    - name: r0
+      format: !if
+        cond: option(av)
+        then: !fmt a1
+        else: !fmt r0
+    - name: r1
+      format: !if
+        cond: option(av)
+        then: !fmt a2
+        else: !fmt r1
+    - name: r2
+      format: !if
+        cond: option(av)
+        then: !fmt a3
+        else: !fmt r2
+    - name: r3
+      format: !if
+        cond: option(av)
+        then: !fmt a4
+        else: !fmt r3
+    - name: r4
+      format: !if
+        cond: option(av)
+        then: !fmt v1
+        else: !fmt r4
+    - name: r5
+      format: !if
+        cond: option(av)
+        then: !fmt v2
+        else: !fmt r5
+    - name: r6
+      format: !if
+        cond: option(av)
+        then: !fmt v3
+        else: !fmt r6
+    - name: r7
+      format: !if
+        cond: option(av)
+        then: !fmt v4
+        else: !fmt r7
+    - name: r8
+      format: !if
+        cond: option(av)
+        then: !fmt v5
+        else: !fmt r8
+    - name: r9
+      description: General-purpose or SB (static base) or TR (TLS register)
+      format: !match
+        value: option(r9_use)
+        option: r9_use
+        cases:
+          r9: !if
+            cond: option(av)
+            then: !fmt v6
+            else: !fmt r9
+          sb: !fmt sb
+          tr: !fmt tr
+    - name: r10
+      description: General-purpose or SL (stack limit)
+      format: !if
+        cond: option(sl)
+        then: !fmt sl
+        else: !if
+          cond: option(av)
+          then: !fmt v7
+          else: !fmt r10
+    - name: r11
+      description: General-purpose or FP (frame pointer)
+      format: !if
+        cond: option(fp)
+        then: !fmt fp
+        else: !if
+          cond: option(av)
+          then: !fmt v8
+          else: !fmt r11
+    - name: r12
+      description: General-purpose or IP (intra-procedure call scratch register)
+      format: !if
+        cond: option(ip)
+        then: !fmt ip
+        else: !fmt r12
+    - name: sp
+      description: Stack pointer
+    - name: lr
+      description: Link register
+    - name: pc
+      description: Program counter
+- name: reg_list
+  description: List of general-purpose registers, used by LDM/STM
+  kind: !custom
+    inner_types: [reg]
+- name: status_reg
+  description: Status register
+  kind: !enum
+    bits: 0..1
+    variants:
+    - name: cpsr
+      description: Current program status register
+    - name: spsr
+      description: Saved program status register
+- name: status_fields
+  description: Status register with field masks
+  kind: !struct
+    format: !fmt (reg)_(f)(x)(s)(c)
+    fields:
+    - name: reg
+      kind: !type [status_reg, bit(22)]
+    - name: c
+      description: Control field mask
+      kind: !bool
+        bits: 16
+    - name: x
+      description: Extension field mask
+      kind: !bool
+        bits: 17
+    - name: s
+      description: Status field mask
+      kind: !bool
+        bits: 18
+    - name: f
+      description: Flags field mask
+      kind: !bool
+        bits: 19
+- name: msr_op2
+  description: Second operand of the MSR instruction, can be an immediate or a register
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: imm
+        description: Immediate
+        format: !fmt "#(imm)"
+        data:
+          name: imm
+          kind: !type [uimm, bits(0..8).rotate_right(bits(8..12))]
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0000_xxxx:
+        name: reg
+        description: Register
+        illegal: ins() & 0xf00 != 0
+        data:
+          name: reg
+          kind: !type [reg, bits(0..4)]
+- name: shift_op
+  description: Shift operation
+  kind: !enum
+    bits: 0..2
+    default: lsl
+    variants:
+    - name: lsl
+      description: Logical shift left
+    - name: lsr
+      description: Logical shift right
+    - name: asr
+      description: Arithmetic shift right
+    - name: ror
+      description: Rotate right
+- name: coproc
+  description: Coprocessor
+  kind: !enum
+    bits: 0..4
+    variants:
+    - name: p0
+    - name: p1
+    - name: p2
+    - name: p3
+    - name: p4
+    - name: p5
+    - name: p6
+    - name: p7
+    - name: p8
+    - name: p9
+    - name: p10
+    - name: p11
+    - name: p12
+    - name: p13
+    - name: p14
+    - name: p15
+- name: co_reg
+  description: Coprocessor register
+  kind: !enum
+    bits: 0..4
+    variants:
+    - name: c0
+    - name: c1
+    - name: c2
+    - name: c3
+    - name: c4
+    - name: c5
+    - name: c6
+    - name: c7
+    - name: c8
+    - name: c9
+    - name: c10
+    - name: c11
+    - name: c12
+    - name: c13
+    - name: c14
+    - name: c15
+- name: op2
+  description:
+    Second operand of a data-processing operation, can be an immediate, an immediate-shifted register or a register-shifted
+    register.
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: imm
+        description: Immediate
+        format: !fmt "#(imm)"
+        data:
+          name: imm
+          kind: !type [uimm, bits(0..8).rotate_right(bits(8..12) << 1)]
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
+        name: shift_reg
+        description: Register shifted by register
+        data:
+          name: shift_reg
+          kind: !type [shift_reg, bits(0..32)]
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
+        name: shift_imm
+        description: Register shifted by immediate
+        data:
+          name: shift_imm
+          kind: !type [shift_imm, bits(0..32)]
+- name: shift_reg
+  description: Register shifted by another register
+  kind: !struct
+    format: !fmt (rm), (shift_op) (rs)
+    illegal:
+    - ins() & 0xf == 0xf # rm == pc
+    - ins() & 0xf00 == 0xf00 # rs == pc
+    - ins() & 0xf000 == 0xf000 # rd == pc
+    - ins() & 0xf0000 == 0xf0000 # rn == pc
+    fields:
+    - name: rm
+      description: Register being shifted
+      kind: !type [reg, bits(0..4)]
+    - name: shift_op
+      description: Shift operation to apply
+      kind: !type [shift_op, bits(5..7)]
+    - name: rs
+      description: Register to shift by
+      kind: !type [reg, bits(8..12)]
+- name: shift_imm
+  description: Register shifted by an immediate
+  kind: !struct
+    format: !if
+      cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
+      then: !fmt (rm)
+      else: !if
+        cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, ror)
+        then: !fmt (rm), rrx
+        else: !fmt "(rm), (shift_op) #(imm)"
+    fields:
+    - name: rm
+      description: Register being shifted
+      kind: !type [reg, bits(0..4)]
+    - name: shift_op
+      description: Shift operation to apply
+      kind: !type [shift_op, bits(5..7)]
+    - name: imm
+      description: Immediate to shift by
+      kind: !type [uimm, bits(7..12)]
+- name: op2_shift
+  description: Second operand of a shift instruction, can be an immediate or a register
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
+        name: imm
+        description: Immediate
+        format: !fmt "#(imm)"
+        data:
+          name: imm
+          kind: !type [uimm, "if bits(7..12) != 0 { bits(7..12) } else { 32 }"]
+      xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
+        name: reg
+        description: Register
+        data:
+          name: reg
+          kind: !type [reg, bits(8..12)]
+- name: cps_effect
+  description: Mnemonic suffix for CPS, specifies whether to enable/disable interrupt bits or just set the processor mode
+  kind: !union
+    bits: 0..2
+    variants:
+      00:
+        name: set_mode
+        description: Set mode
+        format: !fmt ""
+      10:
+        name: ie
+        description: Interrupt enable
+      11:
+        name: id
+        description: Interrupt disable
+- name: aif_flags
+  description: In a CPS instruction, specifies which interrupt bits to enable or disable
+  kind: !struct
+    format: !fmt (a)(i)(f)
+    fields:
+    - name: a
+      description: Imprecise data abort bit
+      kind: !bool
+        bits: 2
+    - name: i
+      description: IRQ interrupt bit
+      kind: !bool
+        bits: 1
+    - name: f
+      description: FIQ interrupt bit
+      kind: !bool
+        bits: 0
+- name: addr_ldc_stc
+  description: The memory address of an LDC/STC instruction
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: pre
+        description: Pre-indexed
+        data:
+          name: addr_ldc_stc_pre
+          kind: !struct
+            format: !fmt "[(rn), #(offset)](writeback)"
+            fields:
+            - name: rn
+              description: Base register
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [simm, (bits(0..8) << 2).negate_if(bit(23) == 0)]
+            - name: writeback
+              description: If true, write the last accessed address back to the base register
+              kind: !type [wb, bit(21)]
+      xxxx_xxx0_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: post
+        description: Post-indexed
+        data:
+          name: addr_ldc_stc_post
+          kind: !struct
+            format: !fmt "[(rn)], #(offset)"
+            fields:
+            - name: rn
+              description: Base register
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [simm, (bits(0..8) << 2).negate_if(bit(23) == 0)]
+      xxxx_xxx0_1x0x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: unidx
+        description: Unindexed
+        data:
+          name: addr_ldc_stc_unidx
+          kind: !struct
+            format: !fmt "[(rn)], {(option)}"
+            fields:
+            - name: rn
+              description: Base register
+              kind: !type [reg, bits(16..20)]
+            - name: option
+              description: Additional options to the coprocessor
+              kind: !type [uimm, bits(0..8)]
+- name: ldm_stm_mode
+  description: Mnemonic suffix for LDM/STM, specifies how to step the base address
+  kind: !enum
+    bits: 0..2
+    default: ia
+    variants:
+    - name: da
+      description: Decrement After
+    - name: ia
+      description: Increment After
+      format: !if
+        cond: option(ual)
+        then: !fmt ""
+        else: !fmt ia
+    - name: db
+      description: Decrement Before
+    - name: ib
+      description: Increment Before
+- name: addr_ldr_str
+  description: The memory address of an LDR(B)/STR(B)/PLD instruction
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: pre
+        description: Pre-indexed
+        data:
+          name: addr_ldr_str_pre
+          kind: !struct
+            format: !fmt "[(rn), (offset)](writeback)"
+            fields:
+            - name: rn
+              description: Base register
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [ldr_str_offset, bits(0..32)]
+            - name: writeback
+              description: If true, write the last accessed address back to the base register
+              kind: !type [wb, bit(21)]
+      xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: post
+        description: Post-indexed
+        data:
+          name: addr_ldr_str_post
+          kind: !type [addr_ldr_str_post, bits(0..32)]
+- name: addr_ldr_str_post
+  description: A post-indexed memory address for LDR(B)(T)/STR(B)(T)
+  kind: !struct
+    format: !fmt "[(rn)], (offset)"
+    fields:
+    - name: rn
+      description: Base register
+      kind: !type [reg, bits(16..20)]
+    - name: offset
+      kind: !type [ldr_str_offset, bits(0..32)]
+- name: ldr_str_offset
+  description: The offset value in the memory address of a LDR(B)/STR(B) instruction, can be an immediate or a register
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: imm
+        description: Immediate offset
+        format: !fmt "#(offset)"
+        data:
+          name: offset
+          kind: !type [simm, bits(0..12).negate_if(bit(23) == 0)]
+      xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx:
+        name: reg
+        description: Register offset
+        data:
+          name: ldr_str_offset_reg
+          kind: !struct
+            format: !if
+              cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, lsl)
+              then: !fmt (subtract)(rm)
+              else: !if
+                cond: field(imm) == 0 && field(shift_op) == enum_variant(shift_op, ror)
+                then: !fmt (subtract)(rm), rrx
+                else: !fmt "(subtract)(rm), (shift_op) #(imm)"
+            fields:
+            - name: subtract
+              description: If true, subtract Rm from the base register instead of adding
+              kind: !type [subtract, bit(23) ^ 1]
+            - name: rm
+              description: Index register
+              kind: !type [reg, bits(0..4)]
+            - name: shift_op
+              description: Shift operation to apply to Rm
+              kind: !type [shift_op, bits(5..7)]
+            - name: imm
+              description: Immediate to shift by
+              kind: !type [uimm, "if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }"]
+- name: addr_misc_load
+  description: The memory address of a miscellaneous load/store instruction
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: pre
+        description: Pre-indexed
+        data:
+          name: addr_misc_load_pre
+          kind: !struct
+            format: !fmt "[(rn), (offset)](writeback)"
+            fields:
+            - name: rn
+              description: Base register
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [misc_load_offset, bits(0..32)]
+            - name: writeback
+              description: If true, write the last accessed address back to the base register
+              kind: !type [wb, bit(21)]
+      xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
+        name: post
+        description: Post-indexed
+        data:
+          name: addr_misc_load_post
+          kind: !struct
+            format: !fmt "[(rn)], (offset)"
+            fields:
+            - name: rn
+              description: Base register
+              kind: !type [reg, bits(16..20)]
+            - name: offset
+              kind: !type [misc_load_offset, bits(0..32)]
+- name: misc_load_offset
+  description:
+    The offset value in the memory address of a miscellaneous load/store instruction, can be an immediate or a register
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_000x_x1xx_xxxx_xxxx_xxxx_1xx1_xxxx:
+        name: imm
+        description: Immediate offset
+        format: !fmt "#(offset)"
+        data: 
+          name: offset
+          kind: !type [simm, ((bits(8..12) << 4) | bits(0..4)).negate_if(bit(23) == 0)]
+      xxxx_000x_x0xx_xxxx_xxxx_xxxx_1xx1_xxxx:
+        name: reg
+        description: Register offset
+        illegal: ins() & 0xf00 != 0
+        data:
+          name: misc_load_offset_reg
+          kind: !struct
+            format: !fmt (subtract)(rm) 
+            fields:
+            - name: subtract
+              description: If true, subtract Rm from the base register instead of adding
+              kind: !type [subtract, bit(23) ^ 1]
+            - name: rm
+              description: Index register
+              kind: !type [reg, bits(0..4)]
+- name: srs_rfe_mode
+  description: Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
+  kind: !enum
+    bits: 0..2
+    default: ia
+    variants:
+    - name: da
+      description: Decrement After
+    - name: ia
+      description: Increment After
+    - name: db
+      description: Decrement Before
+    - name: ib
+      description: Increment Before
+- name: endianness
+  description: Used by SETEND, specifies the endianness for data accesses
+  kind: !enum
+    bits: 0..1
+    variants:
+    - name: le
+      description: Little-endian
+    - name: be
+      description: Big-endian
+- name: reg_side
+  description: Mnemonic suffix, specifies which half of a register to use as an operand
+  kind: !enum
+    bits: 0..1
+    variants:
+    - name: bottom
+      description: Bottom halfword
+      format: !fmt b
+    - name: top
+      description: Top halfword
+      format: !fmt t
+- name: swap_rm
+  description: Mnemonic suffix, when performing two 16x16 bit multiplications, swap the two halfwords of Rm
+  kind: !bool
+    bits: 0
+    format: !fmt x
+- name: round
+  description: Mnemonic suffix, round the multiplication result instead of truncating
+  kind: !bool
+    bits: 0
+    format: !fmt r
+- name: round_zero
+  description: Mnemonic suffix, when converting a floating-point number to an integer, round the result towards zero
+  kind: !bool
+    bits: 0
+    format: !if
+      cond: option(ual)
+      then: !fmt r
+      else: !fmt z
+- name: sreg
+  description: General-purpose register for single-precision floating-point numbers
+  kind: !enum
+    bits: 0..5
+    variants:
+      - name: s0
+      - name: s1
+      - name: s2
+      - name: s3
+      - name: s4
+      - name: s5
+      - name: s6
+      - name: s7
+      - name: s8
+      - name: s9
+      - name: s10
+      - name: s11
+      - name: s12
+      - name: s13
+      - name: s14
+      - name: s15
+      - name: s16
+      - name: s17
+      - name: s18
+      - name: s19
+      - name: s20
+      - name: s21
+      - name: s22
+      - name: s23
+      - name: s24
+      - name: s25
+      - name: s26
+      - name: s27
+      - name: s28
+      - name: s29
+      - name: s30
+      - name: s31
+- name: dreg
+  description: General-purpose register for double-precision floating-point numbers
+  kind: !enum
+    bits: 0..5
+    variants:
+      - name: d0
+      - name: d1
+      - name: d2
+      - name: d3
+      - name: d4
+      - name: d5
+      - name: d6
+      - name: d7
+      - name: d8
+      - name: d9
+      - name: d10
+      - name: d11
+      - name: d12
+      - name: d13
+      - name: d14
+      - name: d15
+      - name: d16
+      - name: d17
+      - name: d18
+      - name: d19
+      - name: d20
+      - name: d21
+      - name: d22
+      - name: d23
+      - name: d24
+      - name: d25
+      - name: d26
+      - name: d27
+      - name: d28
+      - name: d29
+      - name: d30
+      - name: d31
+- name: nan_exc
+  description: Mnemonic suffix, specifies that a comparison operation should cause an exception if any operand is NaN
+  kind: !bool
+    bits: 0
+    format: !fmt e
+- name: vcmp_f32_op2
+  description: Second operand of a VCMP.F32 instruction, can be zero or a register
+  kind: !union
+    bits: 0..6
+    variants:
+      xxxx_xxxx_xxxx_xxx1_xxxx_xxxx_xx00_0000:
+        name: zero
+        description: Compare with zero
+        format: !fmt "#0.0"
+      xxxx_xxxx_xxxx_xxx0_xxxx_xxxx_xxx0_xxxx:
+        name: reg
+        description: Compare with register
+        data:
+          name: sm
+          kind: !type [sreg, (bits(0..4) << 1) | bit(5)]
+- name: vcmp_f64_op2
+  description: Second operand of a VCMP.F64 instruction, can be zero or a register
+  kind: !union
+    bits: 0..32
+    variants:
+      xxxx_xxxx_xxxx_xxx1_xxxx_xxxx_xx00_0000:
+        name: zero
+        description: Compare with zero
+        format: !fmt "#0.0"
+      xxxx_xxxx_xxxx_xxx0_xxxx_xxxx_xxx0_xxxx:
+        name: reg
+        description: Compare with register
+        data:
+          name: dm
+          kind: !type [dreg, (bit(5) << 4) | bits(0..4)]
+- name: sreg_list
+  description: List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
+  kind: !custom
+    inner_types: [sreg]
+- name: dreg_list
+  description: List of general-purpose double-precision floation-point registers, used by VLDM/VSTM
+  kind: !custom
+    inner_types: [dreg]
+- name: dreg_index
+  description: A double-precision floating-point register and index (0 or 1) to move to/from
+  kind: !struct
+    format: !if
+      cond: option(ual)
+      then: !fmt (dreg)[(index)]
+      else: !fmt (dreg) # index is decided by the opcode mnemonic (e.g. fmdhr or fmdlr)
+    fields:
+    - name: dreg
+      kind: !type [dreg, (bit(7) << 4) | bits(16..20)]
+    - name: index
+      kind: !type [uimm, bit(21)]
+- name: fpscr
+  description: Floating-Point Status and Control Register
+  no_parse: true
+  kind: !struct
+    format: !fmt fpscr
+    fields: []
+- name: vldm_vstm_mode
+  description: Mnemonic suffix for VLDM/VSTM, specifies how to step the base address
+  kind: !union
+    bits: 0..2
+    variants:
+      01:
+        name: ia
+        description: Increment After
+      10:
+        name: db
+        description: Decrement Before
+# endregion
+
+# region Opcodes
+opcodes:
+- mnemonic: adc
+  description: Add with Carry
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt adc(s)(cond)
+      else: !seq
+      - !fmt adc(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5*, v6*, v7]
+    pattern: xxxx_00x0_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_01xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: add
+  description: Add
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt add(s)(cond)
+      else: !seq
+      - !fmt add(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_100x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_110x_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !bits 6..9]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0011_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 8..11
+      rn: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_100x_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [shift_imm, !struct { rm: !bits 6..9 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0100_xxxx_xxxx
+    params:
+      thumb: !const 1
+      rd: !expr (bit(7) << 3) | bits(0..3)
+      rn: !expr (bit(7) << 3) | bits(0..3)
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1010_1xxx_xxxx_xxxx
+    params:
+      thumb: !const 1
+      rd: !bits 8..11
+      rn: !const 13 # sp
+      op2: !enum [imm, !expr bits(0..8) << 2]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_0000_0xxx_xxxx
+    params:
+      thumb: !const 1
+      rd: !const 13 # sp
+      rn: !const 13 # sp
+      op2: !enum [imm, !expr bits(0..7) << 2]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0100_x110_1xxx
+    params:
+      thumb: !const 1
+      rd: !expr (bit(7) << 3) | bits(0..3)
+      rn: !const 13 # sp
+      op2: !enum [shift_imm, !struct { rm: !expr (bit(7) << 3) | bits(0..3) }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0100_1xxx_x101
+    params:
+      thumb: !const 1
+      rd: !const 13 # sp
+      rn: !const 13 # sp
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1010_0xxx_xxxx_xxxx
+    params:
+      thumb: !const 1
+      rd: !bits 8..11
+      rn: !const 15 # pc
+      op2: !enum [imm, !expr bits(0..8) << 2]
+
+- mnemonic: and
+  description: Bitwise AND
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt and(s)(cond)
+      else: !seq
+      - !fmt and(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_000x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_00xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: asr
+  description: Arithmetic Shift Right
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt asr(s)(cond)
+      else: !fmt asr(cond)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x10x_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_00xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: b
+  description: Branch
+  params: { cond: cond, target: branch_target }
+  format:
+    opcode: !fmt b(cond)
+    params: !fmt (target)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1010_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1101_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf00 == 0xf00 # illegal cond
+    params:
+      cond: !bits 8..12
+      target: !expr (bits(0..8) << 1).sign_extend(23) + 4
+  - version: [v4t, v5t*, v6*]
+    pattern: 1110_0xxx_xxxx_xxxx
+    params:
+      target: !expr (bits(0..11) << 1).sign_extend(20) + 4
+
+- mnemonic: bic
+  description: Bit Clear
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt bic(s)(cond)
+      else: !seq
+      - !fmt bic(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_110x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0011_10xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: bkpt
+  description: Breakpoint
+  params: { imm: uimm }
+  format:
+    opcode: !fmt bkpt
+    params: !fmt "#(imm)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1110_0001_0010_xxxx_xxxx_xxxx_0111_xxxx
+    params:
+      imm: !expr (bits(8..20) << 4) | bits(0..4)
+  thumb:
+  - version: [v5t*, v6*]
+    pattern: 1011_1110_xxxx_xxxx
+    params:
+      imm: !bits 0..8
+
+- mnemonic: bl
+  description: Branch with Link
+  params: { cond: cond, target: branch_target }
+  format:
+    opcode: !fmt bl(cond)
+    params: !fmt (target)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1011_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: [1111_0xxx_xxxx_xxxx, 11x1_xxxx_xxxx_xxxx]
+    params:
+      target: !expr ((bits(0..11) << 12) | (bits(16..27) << 1)).sign_extend(9) + 4
+
+- mnemonic: blx
+  description: Branch with Link and Exchange
+  params: { cond: cond, target: blx_target }
+  format:
+    opcode: !fmt blx(cond)
+    params: !fmt (target)
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      target: !enum [direct, !expr ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
+  - version: [v5t*, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - bits(8..20) != 0xfff
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      target: !enum [indirect, !bits 0..4]
+  thumb:
+  - version: [v5t*, v6*]
+    pattern: [1111_0xxx_xxxx_xxxx, 11x0_xxxx_xxxx_xxxx]
+    params:
+      target: !enum [direct, !expr ((bits(0..11) << 12) | (bits(17..27) << 2)).sign_extend(9) + 4]
+  - version: [v5t*, v6*]
+    pattern: 0100_0111_1xxx_x000
+    params:
+      target: !enum [indirect, !bits 3..7]
+
+- mnemonic: bx
+  description: Branch and Exchange
+  params: { cond: cond, rm: reg }
+  format:
+    opcode: !fmt bx(cond)
+    params: !fmt (rm)
+  arm:
+  - version: [v4t, v5t*, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - bits(8..20) != 0xfff
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rm: !bits 0..4
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0111_0xxx_x000
+    params:
+      rm: !bits 3..7
+
+- mnemonic: bxj
+  description: Branch and Exchange Jazelle
+  params: { cond: cond, rm: reg }
+  format:
+    opcode: !fmt bxj(cond)
+    params: !fmt (rm)
+  arm:
+  - version: [v5tej, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0010_xxxx
+    illegal:
+    - bits(8..20) != 0xfff
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rm: !bits 0..4
+
+- mnemonic: cdp
+  description: Coprocessor Data Processing
+  params: { cond: cond, coproc: coproc, opc1: uimm, crd: co_reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt cdp(cond)
+    params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 20..24
+      crd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: cdp2
+  description: Coprocessor Data Processing (extended)
+  params: { coproc: coproc, opc1: uimm, crd: co_reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt cdp2
+    params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
+    params:
+      coproc: !bits 8..12
+      opc1: !bits 20..24
+      crd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: clrex
+  description: Clear Exclusive
+  params: {}
+  format:
+    opcode: !fmt clrex
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: 1111_0101_0111_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xfff0f != 0xff00f
+    params: {}
+
+- mnemonic: clz
+  description: Count Leading Zeros
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt clz(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v5t*, v6*]
+    pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf0f00 != 0xf0f00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+
+- mnemonic: cmn
+  description: Compare Negative
+  params: { cond: cond, rn: reg, op2: op2 }
+  format:
+    opcode: !fmt cmn(cond)
+    params: !fmt (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0111_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_11xx_xxxx
+    params:
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: cmp
+  description: Compare
+  params: { cond: cond, rn: reg, op2: op2 }
+  format:
+    opcode: !fmt cmp(cond)
+    params: !fmt (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0101_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0010_1xxx_xxxx_xxxx
+    params:
+      rn: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_10xx_xxxx
+    params:
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0101_xxxx_xxxx
+    params:
+      rn: !expr (bit(7) << 3) | bits(0..3)
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+
+- mnemonic: cps
+  description: Change Processor State
+  params: { effect: cps_effect, aif: aif_flags, mode: uimm }
+  format:
+    opcode: !fmt cps(effect)
+    params: !if
+      cond: field(effect) == enum_variant(cps_effect, set_mode)
+      then: !fmt "#(mode)"
+      else: !if
+        cond: field(mode) == 0
+        then: !fmt (aif)
+        else: !fmt "(aif), #(mode)"
+  arm:
+  - version: [v6*]
+    pattern: 1111_0001_0000_xxx0_xxxx_xxxx_xx0x_xxxx
+    illegal:
+    - ins() & 0xfe00 != 0
+    params:
+      effect: !bits 18..20
+      aif: !bits 6..9
+      mode: !bits 0..5
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0110_011x_0xxx
+    params:
+      effect: !bits 4..6
+      aif: !bits 0..3
+
+- mnemonic: csdb
+  description: Consume of Speculative Data Barrier
+  params: { cond: cond }
+  format:
+    opcode: !fmt csdb(cond)
+    params: !fmt ""
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0001_0100
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+
+- mnemonic: dbg
+  description: Debug Hint
+  params: { cond: cond, option: uimm }
+  format:
+    opcode: !fmt dbg(cond)
+    params: !fmt "#(option)"
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond:   !bits 28..32
+      option: !bits 0..4
+
+- mnemonic: eor
+  description: Bitwise Exclusive OR
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt eor(s)(cond)
+      else: !seq
+      - !fmt eor(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_001x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_01xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: ldc
+  description: Load Coprocessor
+  params: { l: l, cond: cond, coproc: coproc, crd: co_reg, dest: addr_ldc_stc }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldc(l)(cond)
+      else: !fmt ldc(cond)(l)
+    params: !fmt (coproc), (crd), (dest)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      l: !bits 22
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      crd: !bits 12..16
+      dest: !bits 0..32
+
+- mnemonic: ldc2
+  description: Load Coprocessor (extended)
+  params: { l: l, coproc: coproc, crd: co_reg, dest: addr_ldc_stc }
+  format:
+    opcode: !fmt ldc2(l)
+    params: !fmt (coproc), (crd), (dest)
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      l: !bits 22
+      coproc: !bits 8..12
+      crd: !bits 12..16
+      dest: !bits 0..32
+
+- mnemonic: ldm
+  description: Load Multiple
+  params: { mode: ldm_stm_mode, cond: cond, rn: reg, writeback: wb, regs: reg_list, user_mode: user_mode }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldm(mode)(cond)
+      else: !fmt ldm(cond)(mode)
+    params: !fmt (rn)(writeback), (regs)(user_mode)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xffff == 0 # empty register list
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..16
+      user_mode: !const 0
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_x101_xxxx_0xxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xffff == 0 # empty register list
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !const 0
+      regs: !bits 0..15
+      user_mode: !const 1
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_x1x1_xxxx_1xxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..16
+      user_mode: !const 1
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1100_1xxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xff == 0 # empty register list
+    params:
+      rn: !bits 8..11
+      writeback: !expr (!bits(0..8) >> bits(8..11)) & 1
+      regs: !bits 0..8
+      user_mode: !const 0
+
+- mnemonic: ldr
+  description: Load Register
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !fmt ldr(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01xx_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0110_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1001_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      addr: !enum [pre, !struct { rn: !const 13, offset: !enum [imm, !expr bits(0..8) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      addr: !enum [pre, !struct { rn: !const 15, offset: !enum [imm, !expr bits(0..8) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_100x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrb
+  description: Load Register Byte
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrb(cond)
+      else: !fmt ldr(cond)b
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01xx_x1x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0111_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11)] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_110x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrbt
+  description: Load Register Byte with Translation
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrbt(cond)
+      else: !fmt ldr(cond)bt
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01x0_x111_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+
+- mnemonic: ldrd
+  description: Load Register Dual
+  params: { cond: cond, rd: reg, rd2: reg, addr: addr_misc_load }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrd(cond)
+      else: !fmt ldr(cond)d
+    params: !if
+      cond: option(ual)
+      then: !fmt (rd), (rd2), (addr)
+      else: !fmt (rd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1101_xxxx
+    illegal:
+    - ins() & 0x1000 != 0 # odd-numbered rd
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
+      addr: !bits 0..32
+  - version: [v5te*, v6*]
+    pattern: xxxx_000x_x1x0_1111_xxxx_xxxx_1101_xxxx
+    illegal:
+    - ins() & 0x01201000 != 0x01000000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
+      addr: !bits 0..32
+
+- mnemonic: ldrex
+  description: Load Register Exclusive
+  params: { cond: cond, rd: reg, rn: reg }
+  format:
+    opcode: !fmt ldrex(cond)
+    params: !fmt (rd), [(rn)]
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0001_1001_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0f != 0xf0f
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+
+- mnemonic: ldrexb
+  description: Load Register Exclusive Byte
+  params: { cond: cond, rd: reg, rn: reg }
+  format:
+    opcode: !fmt ldrexb(cond)
+    params: !fmt (rd), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1101_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0f != 0xf0f
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+
+- mnemonic: ldrexd
+  description: Load Register Exclusive Doubleword
+  params: { cond: cond, rd: reg, rd2: reg, rn: reg }
+  format:
+    opcode: !fmt ldrexd(cond)
+    params: !fmt (rd), (rd2), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1011_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0x1f0f != 0xf0f # SBO or odd-numbered rd
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
+      rn: !bits 16..20
+
+- mnemonic: ldrexh
+  description: Load Register Exclusive Halfword
+  params: { cond: cond, rd: reg, rn: reg }
+  format:
+    opcode: !fmt ldrexh(cond)
+    params: !fmt (rd), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1111_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0f != 0xf0f
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+
+- mnemonic: ldrh
+  description: Load Register Halfword
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrh(cond)
+      else: !fmt ldr(cond)h
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1011_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1000_1xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11) << 1] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_101x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrsb
+  description: Load Register Signed Byte
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrsb(cond)
+      else: !fmt ldr(cond)sb
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1101_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_011x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrsh
+  description: Load Register Signed Halfword
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrsh(cond)
+      else: !fmt ldr(cond)sh
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_111x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: ldrt
+  description: Load Register with Translation
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ldrt(cond)
+      else: !fmt ldr(cond)t
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01x0_x011_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+
+- mnemonic: lsl
+  description: Logical Shift Left
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt lsl(s)(cond)
+      else: !fmt lsl(cond)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x00x_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0000_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !bits 6..11]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_10xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: lsr
+  description: Logical Shift Right
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !fmt lsr(s)(cond)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x01x_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0000_1xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0000_11xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: mcr
+  description: Move to Coprocessor from ARM Register
+  params: { cond: cond, coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mcr(cond)
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1110_xxx0_xxxx_xxxx_xxxx_xxx1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mcr2
+  description: Move to Coprocessor from ARM Register (extended)
+  params: { coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mcr2
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_1110_xxx0_xxxx_xxxx_xxxx_xxx1_xxxx
+    params:
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mcrr
+  description: Move to Coprocessor from two ARM Registers
+  params: { cond: cond, coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mcrr(cond)
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc: !bits 20..24
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mcrr2
+  description: Move to Coprocessor from two ARM Registers (extended)
+  params: { coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mcrr2
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v6*]
+    pattern: 1111_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      coproc: !bits 8..12
+      opc: !bits 20..24
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mla
+  description: Multiply Accumulate
+  params: { s: s, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt mla(s)(cond)
+      else: !fmt mla(cond)(s)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_001x_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      ra: !bits 12..16
+
+- mnemonic: mov
+  description: Move
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt mov(s)(cond)
+      else: !seq
+      - !fmt mov(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0011_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_xxxx_xxxx_0000_0000_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_101x_xxxx_xxxx_xxxx_xxxx_xxxx
+    ignore: "option(ual)"
+    illegal:
+    - ins() & 0xf0000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0010_0xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0110_xxxx_xxxx
+    params:
+      s: !const 0
+      thumb: !const 1
+      rd: !expr (bit(7) << 3) | bits(0..3)
+      op2: !enum [shift_imm, !struct { rm: !bits 3..7 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0000_0000_00xx_xxxx
+    ignore: "!option(ual)"
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_1100_00xx_xxxx
+    ignore: option(ual)
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: mrc
+  description: Move to ARM Register from Coprocessor
+  params: { cond: cond, coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mrc(cond)
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1110_xxx1_xxxx_xxxx_xxxx_xxx1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mrc2
+  description: Move to ARM Register from Coprocessor (extended)
+  params: { coproc: coproc, opc1: uimm, rd: reg, crn: co_reg, crm: co_reg, opc2: uimm }
+  format:
+    opcode: !fmt mrc2
+    params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_1110_xxx1_xxxx_xxxx_xxxx_xxx1_xxxx
+    params:
+      coproc: !bits 8..12
+      opc1: !bits 21..24
+      rd: !bits 12..16
+      crn: !bits 16..20
+      crm: !bits 0..4
+      opc2: !bits 5..8
+
+- mnemonic: mrrc
+  description: Move to two ARM Registers from Coprocessor
+  params: { cond: cond, coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mrrc(cond)
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      opc: !bits 4..8
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mrrc2
+  description: Move to two ARM Registers from Coprocessor (extended)
+  params: { coproc: coproc, opc: uimm, rd: reg, rd2: reg, crm: co_reg }
+  format:
+    opcode: !fmt mrrc2
+    params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  arm:
+  - version: [v6*]
+    pattern: 1111_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      coproc: !bits 8..12
+      opc: !bits 4..8
+      rd: !bits 12..16
+      rd2: !bits 16..20
+      crm: !bits 0..4
+
+- mnemonic: mrs
+  description: Move to Register from Status register
+  params: { cond: cond, rd: reg, status_reg: status_reg }
+  format:
+    opcode: !fmt mrs(cond)
+    params: !fmt (rd), (status_reg)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_0x00_xxxx_xxxx_xx0x_0000_xxxx
+    illegal:
+    - ins() & 0x000f0d0f != 0x000f0000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      status_reg: !bits 22
+
+- mnemonic: msr
+  description: Move to Status register
+  params: { cond: cond, status_fields: status_fields, op2: msr_op2 }
+  format:
+    opcode: !fmt msr(cond)
+    params: !fmt (status_fields), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0x10_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf000 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    - ins() & 0x4f0000 == 0 # cpsr with no masks
+    params:
+      cond: !bits 28..32
+      status_fields: !bits 0..32
+      op2: !bits 0..32
+
+- mnemonic: mul
+  description: Multiply
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt mul(s)(cond)
+      else: !seq
+      - !fmt mul(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (rm)
+      else: !fmt (rd), (rn)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_000x_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0011_01xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      rm: !bits 0..3
+
+- mnemonic: mvn
+  description: Move Negative
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt mvn(s)(cond)
+      else: !seq
+      - !fmt mvn(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_111x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0011_11xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: neg
+  description: Negate
+  params: { rd: reg, rm: reg }
+  format:
+    opcode: !fmt neg
+    params: !fmt (rd), (rm)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_01xx_xxxx
+    ignore: option(ual)
+    params:
+      rd: !bits 0..3
+      rm: !bits 3..6
+
+- mnemonic: nop
+  description: No Operation
+  params: { cond: cond }
+  format:
+    opcode: !fmt nop(cond)
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0000
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params: 
+      cond: !bits 28..32
+
+- mnemonic: orr
+  description: Bitwise OR
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt orr(s)(cond)
+      else: !seq
+      - !fmt orr(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_100x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0011_00xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: pkhbt
+  description: Pack Halfword Bottom Top
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, shift_op: shift_op, shift: uimm }
+  format:
+    opcode: !fmt pkhbt(cond)
+    params: !seq
+    - !fmt "(rd), (rn), (rm)"
+    - !if
+      cond: field(shift) != 0
+      then: !fmt ", (shift_op) #(shift)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      form: !bits 6
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      shift_op: !const 0 # lsl
+      shift: !bits 7..12
+
+- mnemonic: pkhtb
+  description: Pack Halfword Top Bottom
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, shift_op: shift_op, shift: uimm }
+  format:
+    opcode: !fmt pkhtb(cond)
+    params: !seq
+    - !fmt "(rd), (rn), (rm)"
+    - !fmt ", (shift_op) #(shift)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x101_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      form: !bits 6
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      shift_op: !const 2 # asr
+      shift: !expr if bits(7..12) != 0 { bits(7..12) } else { 32 }
+
+- mnemonic: pld
+  description: Preload Data
+  params: { addr: addr_ldr_str }
+  format:
+    opcode: !fmt pld
+    params: !fmt (addr)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: 1111_01x1_x101_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf000 != 0xf000
+    params:
+      addr: !bits 0..32
+
+- mnemonic: pop
+  description: Pop multiple registers
+  params: { cond: cond, regs: reg_list }
+  format:
+    opcode: !fmt pop(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1000_1011_1101_xxxx_xxxx_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xffff == 0 # empty register list
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..16
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0100_1001_1101_xxxx_0000_0000_0100
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !expr 1 << bits(12..16)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_110x_xxxx_xxxx
+    illegal:
+    - ins() & 0x1ff == 0 # empty register list
+    params:
+      cond: !const 14 # al
+      regs: !expr (bit(8) << 15) | bits(0..8) # may include pc
+
+- mnemonic: push
+  description: Push multiple registers
+  params: { cond: cond, regs: reg_list }
+  format:
+    opcode: !fmt push(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1001_0010_1101_xxxx_xxxx_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xffff == 0 # empty register list
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..16
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0101_0010_1101_xxxx_0000_0000_0100
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !expr 1 << bits(12..16)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_010x_xxxx_xxxx
+    illegal:
+    - ins() & 0x1ff == 0 # empty register list
+    params:
+      cond: !const 14 # al
+      regs: !expr (bit(8) << 14) | bits(0..8) # may include lr
+
+- mnemonic: qadd
+  description: Saturating Add
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qadd(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qadd16
+  description: Saturating Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qadd8
+  description: Saturating Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qasx
+  description: Saturating Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt qasx(cond)
+      else: !fmt qaddsubx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qdadd
+  description: Saturating Double and Add
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qdadd(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qdsub
+  description: Saturating Double and Subtract
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qdsub(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsax
+  description: Saturating Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt qsax(cond)
+      else: !fmt qsubaddx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsub
+  description: Saturating Subtract
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt qsub(cond)
+    params: !fmt (rd), (rm), (rn)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsub16
+  description: Saturating Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qsub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: qsub8
+  description: Saturating Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt qsub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: rev
+  description: Reverse bytes in word
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt rev(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf0f00 != 0xf0f00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+  thumb:
+  - version: [v6*]
+    pattern: 1011_1010_00xx_xxxx
+    params:
+      cond: !const 14 # al
+      rd: !bits 0..3
+      rm: !bits 3..6
+
+- mnemonic: rev16
+  description: Reverse bytes in packed halfwords
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt rev16(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_1011_xxxx
+    illegal:
+    - ins() & 0xf0f00 != 0xf0f00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+  thumb:
+  - version: [v6*]
+    pattern: 1011_1010_01xx_xxxx
+    params:
+      cond: !const 14 # al
+      rd: !bits 0..3
+      rm: !bits 3..6
+
+- mnemonic: revsh
+  description: Reverse bytes in signed halfword
+  params: { cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt revsh(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1111_xxxx_xxxx_xxxx_1011_xxxx
+    illegal:
+    - ins() & 0xf0f00 != 0xf0f00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+  thumb:
+  - version: [v6*]
+    pattern: 1011_1010_11xx_xxxx
+    params:
+      cond: !const 14 # al
+      rd: !bits 0..3
+      rm: !bits 3..6
+
+- mnemonic: rfe
+  description: Return From Exception
+  params: { addr_mode: srs_rfe_mode, rn: reg, writeback: wb }
+  format:
+    opcode: !fmt rfe(addr_mode)
+    params: !fmt (rn)(writeback)
+  arm:
+  - version: [v6*]
+    pattern: 1111_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xffff != 0x0a00
+    params:
+      addr_mode: !bits 23..25
+      rn: !bits 16..20
+      writeback: !bits 21
+
+- mnemonic: ror
+  description: Rotate Right
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ror(s)(cond)
+      else: !fmt ror(cond)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_0000_xxxx_xxxx_x11x_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 0..4
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_11xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [reg, !bits 3..6]
+
+- mnemonic: rrx
+  description: Rotate Right with Extend
+  params: { s: s, cond: cond, rd: reg, rm: reg }
+  format:
+    opcode: !fmt rrx(s)(cond)
+    params: !fmt (rd), (rm)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_101x_xxxx_xxxx_0000_0110_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+
+- mnemonic: rsb
+  description: Reverse Subtract
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt rsb(s)(cond)
+      else: !fmt rsb(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_011x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_01xx_xxxx
+    ignore: "!option(ual)"
+    params:
+      s: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !const 0]
+
+- mnemonic: rsc
+  description: Reverse Subtract with Carry
+  params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt rsc(s)(cond)
+      else: !fmt rsc(cond)(s)
+    params: !fmt (rd), (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_111x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+
+- mnemonic: sadd16
+  description: Signed Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sadd8
+  description: Signed Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sasx
+  description: Signed Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt sasx(cond)
+      else: !fmt saddsubx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sbc
+  description: Subtract with Carry
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt sbc(s)(cond)
+      else: !seq
+      - !fmt sbc(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_110x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0001_10xx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: sel
+  description: Select
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt sel(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_1011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+
+- mnemonic: setend
+  description: Set Endianness
+  params: { endian: endianness }
+  format:
+    opcode: !fmt setend
+    params: !fmt (endian)
+  arm:
+  - version: [v6*]
+    pattern: 1111_0001_0000_xxx1_xxxx_xxxx_0000_xxxx
+    illegal:
+    - ins() & 0xefd0f != 0
+    params:
+      endian: !bits 9
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0110_010x_xxxx
+    illegal:
+    - ins() & 0x17 != 0x10
+    params:
+      endian: !bits 3
+
+- mnemonic: sev
+  description: Send Event
+  params: { cond: cond }
+  format:
+    opcode: !fmt sev(cond)
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0100
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+
+- mnemonic: shadd16
+  description: Signed Halving Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shadd8
+  description: Signed Halving Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shasx
+  description: Signed Halving Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt shasx(cond)
+      else: !fmt shaddsubx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shsax
+  description: Signed Halving Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt shsax(cond)
+      else: !fmt shsubaddx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shsub16
+  description: Signed Halving Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shsub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: shsub8
+  description: Signed Halving Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt shsub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: smla
+  description: Signed Multiply Accumulate halfwords
+  params: { cond: cond, rd: reg, rn: reg, rn_side: reg_side, rm: reg, rm_side: reg_side, ra: reg }
+  format:
+    opcode: !fmt smla(rn_side)(rm_side)(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_1xx0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rn_side: !bits 5
+      rm: !bits 8..12
+      rm_side: !bits 6
+      ra: !bits 12..16
+
+- mnemonic: smlad
+  description: Signed Multiply Accumulate Dual
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm, ra: reg }
+  format:
+    opcode: !fmt smlad(swap_rm)(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0000_xxxx_xxxx_xxxx_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      swap_rm: !bits 5
+      ra: !bits 12..16
+
+- mnemonic: smlal
+  description: Signed Multiply Accumulate Long
+  params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt smlal(s)(cond)
+      else: !fmt smlal(cond)(s)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_111x_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+
+- mnemonic: smlal_half
+  description: Signed Multiply Accumulate Long halfwords
+  params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rn_side: reg_side, rm: reg, rm_side: reg_side }
+  format:
+    opcode: !fmt smlal(rn_side)(rm_side)(cond)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_1xx0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rn_side: !bits 5
+      rm: !bits 8..12
+      rm_side: !bits 6
+
+- mnemonic: smlald
+  description: Signed Multiply Accumulate Long Dual
+  params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg, swap_rm: swap_rm }
+  format:
+    opcode: !fmt smlald(swap_rm)(cond)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0100_xxxx_xxxx_xxxx_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      swap_rm: !bits 5
+
+- mnemonic: smlaw
+  description: Signed Multiply Accumulate Word by halfword
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rm_side: reg_side, ra: reg }
+  format:
+    opcode: !fmt smlaw(rm_side)(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_1x00_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      rm_side: !bits 6
+      ra: !bits 12..16
+
+- mnemonic: smlsd
+  description: Signed Multiply Subtract Dual
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm, ra: reg }
+  format:
+    opcode: !fmt smlsd(swap_rm)(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0000_xxxx_xxxx_xxxx_01x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      swap_rm: !bits 5
+      ra: !bits 12..16
+
+- mnemonic: smlsld
+  description: Signed Multiply Subtract Long Dual
+  params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg, swap_rm: swap_rm }
+  format:
+    opcode: !fmt smlsld(swap_rm)(cond)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0100_xxxx_xxxx_xxxx_01x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      swap_rm: !bits 5
+
+- mnemonic: smmla
+  description: Signed Most significant word Multiply Accumulate
+  params: { round: round, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
+  format:
+    opcode: !fmt smmla(round)(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0101_xxxx_xxxx_xxxx_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round: !bits 5
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      ra: !bits 12..16
+
+- mnemonic: smmls
+  description: Signed Most significant word Multiply Subtract
+  params: { round: round, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
+  format:
+    opcode: !fmt smmls(round)(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0101_xxxx_xxxx_xxxx_11x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round: !bits 5
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      ra: !bits 12..16
+
+- mnemonic: smmul
+  description: Signed Most significant word Multiply
+  params: { round: round, cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt smmul(round)(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0101_xxxx_1111_xxxx_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round: !bits 5
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+
+- mnemonic: smuad
+  description: Signed Multiply Add Dual
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm }
+  format:
+    opcode: !fmt smuad(swap_rm)(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0000_xxxx_1111_xxxx_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      swap_rm: !bits 5
+
+- mnemonic: smul
+  description: Signed Multiply
+  params: { cond: cond, rd: reg, rn: reg, rn_side: reg_side, rm: reg, rm_side: reg_side }
+  format:
+    opcode: !fmt smul(rn_side)(rm_side)(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_1xx0_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rn_side: !bits 5
+      rm: !bits 8..12
+      rm_side: !bits 6
+
+- mnemonic: smull
+  description: Signed Multiply Long
+  params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt smull(s)(cond)
+      else: !fmt smull(cond)(s)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_110x_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+
+- mnemonic: smulw
+  description: Signed Multiply Word by halfword
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rm_side: reg_side }
+  format:
+    opcode: !fmt smulw(rm_side)(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_1x10_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      rm_side: !bits 6
+
+- mnemonic: smusd
+  description: Signed Multiply Subtract Dual
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm }
+  format:
+    opcode: !fmt smusd(swap_rm)(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_0000_xxxx_1111_xxxx_01x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+      swap_rm: !bits 5
+
+- mnemonic: srs
+  description: Store Return State
+  params: { addr_mode: srs_rfe_mode, rn: reg, writeback: wb, mode: uimm }
+  format:
+    opcode: !fmt srs(addr_mode)
+    params: !fmt "(rn)(writeback), #(mode)"
+  arm:
+  - version: [v6*]
+    pattern: 1111_100x_x1x0_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xfffe0 != 0xd0500
+    params:
+      addr_mode: !bits 23..25
+      rn: !const 13 # sp
+      writeback: !bits 21
+      mode: !bits 0..5
+
+- mnemonic: ssat
+  description: Signed Saturate
+  params: { cond: cond, rd: reg, imm: uimm, op2: shift_imm }
+  format:
+    opcode: !fmt ssat(cond)
+    params: !fmt "(rd), #(imm), (op2)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_101x_xxxx_xxxx_xxxx_xx01_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      imm: !expr bits(16..21) + 1
+      op2: !bits 0..12
+
+- mnemonic: ssat16
+  description: Signed Saturate two 16-bit values
+  params: { cond: cond, rd: reg, imm: uimm, rn: reg }
+  format:
+    opcode: !fmt ssat16(cond)
+    params: !fmt "(rd), #(imm), (rn)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1010_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      imm: !expr bits(16..21) + 1
+      rn: !bits 0..4
+
+- mnemonic: ssax
+  description: Signed Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt ssax(cond)
+      else: !fmt ssubaddx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: ssub16
+  description: Signed Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt ssub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: ssub8
+  description: Signed Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt ssub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: stc
+  description: Store Coprocessor
+  params: { l: l, cond: cond, coproc: coproc, crd: co_reg, dest: addr_ldc_stc }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt stc(l)(cond)
+      else: !fmt stc(cond)(l)
+    params: !fmt (coproc), (crd), (dest)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_110x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      l: !bits 22
+      cond: !bits 28..32
+      coproc: !bits 8..12
+      crd: !bits 12..16
+      dest: !bits 0..32
+
+- mnemonic: stc2
+  description: Store Coprocessor (extended)
+  params: { l: l, coproc: coproc, crd: co_reg, dest: addr_ldc_stc }
+  format:
+    opcode: !fmt stc2(l)
+    params: !fmt (coproc), (crd), (dest)
+  arm:
+  - version: [v5t*, v6*]
+    pattern: 1111_110x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
+    params:
+      l: !bits 22
+      coproc: !bits 8..12
+      crd: !bits 12..16
+      dest: !bits 0..32
+
+- mnemonic: stm
+  description: Store Multiple
+  params: { mode: ldm_stm_mode, cond: cond, rn: reg, writeback: wb, regs: reg_list, user_mode: user_mode }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt stm(mode)(cond)
+      else: !fmt stm(cond)(mode)
+    params: !fmt (rn)(writeback), (regs)(user_mode)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_100x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xffff == 0 # empty register list
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..16
+      user_mode: !bits 22 # non-standard to allow both user_mode and writeback, but some platforms use it
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1100_0xxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xff == 0 # empty register list
+    params:
+      rn: !bits 8..11
+      writeback: !const 1
+      regs: !bits 0..8
+      user_mode: !const 0
+
+- mnemonic: str
+  description: Store Register
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !fmt str(cond)
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01xx_x0x0_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0110_0xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1001_0xxx_xxxx_xxxx
+    params:
+      rd: !bits 8..11
+      addr: !enum [pre, !struct { rn: !const 13, offset: !enum [imm, !expr bits(0..8) << 2] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_000x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: strb
+  description: Store Register Byte
+  params: { cond: cond, rd: reg, addr: addr_ldr_str }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strb(cond)
+      else: !fmt str(cond)b
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01xx_x1x0_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0111_0xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11)] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_010x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: strbt
+  description: Store Register Byte with Translation
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strbt(cond)
+      else: !fmt str(cond)bt
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01x0_x110_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+
+- mnemonic: strd
+  description: Store Register Dual
+  params: { cond: cond, rd: reg, rd2: reg, addr: addr_misc_load }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strd(cond)
+      else: !fmt str(cond)d
+    params: !if
+      cond: option(ual)
+      then: !fmt (rd), (rd2), (addr)
+      else: !fmt (rd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0x1000 != 0 # odd-numbered rd
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !expr bits(12..16) + 1
+      addr: !bits 0..32
+
+- mnemonic: strex
+  description: Store Register Exclusive
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt strex(cond)
+    params: !fmt (rd), (rm), [(rn)]
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0001_1000_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: strexb
+  description: Store Register Exclusive Byte
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt strexb(cond)
+    params: !fmt (rd), (rm), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1100_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: strexd
+  description: Store Register Exclusive Doubleword
+  params: { cond: cond, rd: reg, rm: reg, rm2: reg, rn: reg }
+  format:
+    opcode: !fmt strexd(cond)
+    params: !fmt (rd), (rm), (rm2), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1010_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf01 != 0xf00 # SBO or odd-numbered rm
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rm2: !expr bits(0..4) + 1
+      rn: !bits 16..20
+
+- mnemonic: strexh
+  description: Store Register Exclusive Halfword
+  params: { cond: cond, rd: reg, rm: reg, rn: reg }
+  format:
+    opcode: !fmt strexh(cond)
+    params: !fmt (rd), (rm), [(rn)]
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0001_1110_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf01 != 0xf01 # SBO or odd-numbered rm
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: strh
+  description: Store Register Halfword
+  params: { cond: cond, rd: reg, addr: addr_misc_load }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strh(cond)
+      else: !fmt str(cond)h
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1011_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1000_0xxx_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [imm, !expr bits(6..11) << 1] }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0101_001x_xxxx_xxxx
+    params:
+      rd: !bits 0..3
+      addr: !enum [pre, !struct { rn: !bits 3..6, offset: !enum [reg, !struct { rm: !bits 6..9 }] }]
+
+- mnemonic: strt
+  description: Store Register with Translation
+  params: { cond: cond, rd: reg, addr: addr_ldr_str_post }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt strt(cond)
+      else: !fmt str(cond)t
+    params: !fmt (rd), (addr)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_01x0_x010_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      addr: !bits 0..32
+
+- mnemonic: sub
+  description: Subtract
+  params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt sub(s)(cond)
+      else: !seq
+      - !fmt sub(cond)
+      - !if
+        cond: "!field(thumb)"
+        then: !fmt (s)
+    params: !if
+      cond: option(ual) || !field(thumb) || field(rd) != field(rn)
+      then: !fmt (rd), (rn), (op2)
+      else: !fmt (rd), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x0_010x_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_111x_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [imm, !bits 6..9]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0011_1xxx_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 8..11
+      rn: !bits 8..11
+      op2: !enum [imm, !bits 0..8]
+  - version: [v4t, v5t*, v6*]
+    pattern: 0001_101x_xxxx_xxxx
+    params:
+      s: !const 1
+      thumb: !const 1
+      rd: !bits 0..3
+      rn: !bits 3..6
+      op2: !enum [shift_imm, !struct { rm: !bits 6..9 }]
+  - version: [v4t, v5t*, v6*]
+    pattern: 1011_0000_1xxx_xxxx
+    params:
+      thumb: !const 1
+      rd: !const 13 # sp
+      rn: !const 13 # sp
+      op2: !enum [imm, !expr bits(0..7) << 2]
+
+- mnemonic: svc
+  description: Supervisor Call
+  params: { cond: cond, imm: uimm }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt svc(cond)
+      else: !fmt swi(cond)
+    params: !fmt "#(imm)"
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_1111_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      imm: !bits 0..24
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1101_1111_xxxx_xxxx
+    params:
+      imm: !bits 0..8
+
+- mnemonic: swp
+  description: Swap
+  params: { cond: cond, rd: reg, rd2: reg, rn: reg }
+  format:
+    opcode: !fmt swp(cond)
+    params: !fmt (rd), (rd2), [(rn)]
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: swpb
+  description: Swap Byte
+  params: { cond: cond, rd: reg, rd2: reg, rn: reg }
+  format:
+    opcode: !fmt swpb(cond)
+    params: !fmt (rd), (rd2), [(rn)]
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rd2: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: sxtab
+  description: Sign Extend and Add Byte
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt sxtab(cond)
+    params: !seq
+    - !fmt (rd), (rn), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1010_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: sxtab16
+  description: Sign Extend to 16 bits and Add Byte
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt sxtab16(cond)
+    params: !seq
+    - !fmt (rd), (rn), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: sxtah
+  description: Sign Extend and Add Halfword
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt sxtah(cond)
+    params: !seq
+    - !fmt (rd), (rn), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: sxtb
+  description: Sign Extend Byte
+  params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt sxtb(cond)
+    params: !seq
+    - !fmt (rd), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1010_1111_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0010_01xx_xxxx
+    params:
+      rd: !bits 0..3
+      rm: !bits 3..6
+      rotate: !const 0
+
+- mnemonic: sxtb16
+  description: Sign Extend Byte to 16 bits
+  params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt sxtb16(cond)
+    params: !seq
+    - !fmt (rd), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1000_1111_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: sxth
+  description: Sign Extend Halfword
+  params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt sxth(cond)
+    params: !seq
+    - !fmt (rd), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1011_1111_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0010_00xx_xxxx
+    params:
+      rd: !bits 0..3
+      rm: !bits 3..6
+      rotate: !const 0
+
+- mnemonic: teq
+  description: Test Equivalence
+  params: { cond: cond, rn: reg, op2: op2 }
+  format:
+    opcode: !fmt teq(cond)
+    params: !fmt (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0011_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rn: !bits 16..20
+      op2: !bits 0..32
+
+- mnemonic: tst
+  description: Test
+  params: { cond: cond, rn: reg, op2: op2 }
+  format:
+    opcode: !fmt tst(cond)
+    params: !fmt (rn), (op2)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_00x1_0001_xxxx_xxxx_xxxx_xxxx_xxxx
+    illegal:
+    - ins() & 0xf000 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rn: !bits 16..20
+      op2: !bits 0..32
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 0100_0010_00xx_xxxx
+    params:
+      rn: !bits 0..3
+      op2: !enum [shift_imm, !struct { rm: !bits 3..6 }]
+
+- mnemonic: uadd16
+  description: Unsigned Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uadd8
+  description: Unsigned Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uasx
+  description: Unsigned Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uasx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: udf
+  description: Undefined Permanently
+  params: { imm: uimm }
+  format:
+    opcode: !fmt udf
+    params: !fmt "#(imm)"
+  arm:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1110_0111_1111_xxxx_xxxx_xxxx_1111_xxxx
+    params:
+      imm: !expr (bits(8..20) << 4) | bits(0..4)
+  thumb:
+  - version: [v4t, v5t*, v6*]
+    pattern: 1101_1110_xxxx_xxxx
+    params:
+      imm: !bits 0..8
+
+- mnemonic: uhadd16
+  description: Unsigned Halving Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uhadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uhadd8
+  description: Unsigned Halving Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uhadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uhasx
+  description: Unsigned Halving Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uhasx(cond)
+      else: !fmt uhaddsubx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uhsax
+  description: Unsigned Halving Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uhsax(cond)
+      else: !fmt uhsubaddx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uhsub16
+  description: Unsigned Halving Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uhsub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uhsub8
+  description: Unsigned Halving Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uhsub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: umaal
+  description: Unsigned Multiply Accumulate Accumulate Long
+  params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt umaal(cond)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0000_0100_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+
+- mnemonic: umlal
+  description: Unsigned Multiply Accumulate Long
+  params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt umlal(s)(cond)
+      else: !fmt umlal(cond)(s)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_101x_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+
+- mnemonic: umull
+  description: Unsigned Multiply Long
+  params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt umull(s)(cond)
+      else: !fmt umull(cond)(s)
+    params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  arm:
+  - version: [v4*, v5t*, v6*]
+    pattern: xxxx_0000_100x_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      s: !bits 20
+      cond: !bits 28..32
+      rd_lo: !bits 12..16
+      rd_hi: !bits 16..20
+      rn: !bits 0..4
+      rm: !bits 8..12
+
+- mnemonic: uqadd16
+  description: Unsigned Saturating Add two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uqadd16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uqadd8
+  description: Unsigned Saturating Add four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uqadd8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_1001_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uqasx
+  description: Unsigned Saturating Add and Subtract with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uqasx(cond)
+      else: !fmt uqaddsubx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uqsax
+  description: Unsigned Saturating Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt uqsax(cond)
+      else: !fmt uqsubaddx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uqsub16
+  description: Unsigned Saturating Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uqsub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uqsub8
+  description: Unsigned Saturating Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt uqsub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: usad8
+  description: Unsigned Sum of Absolute Differences for four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt usad8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_1000_xxxx_1111_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rm: !bits 8..12
+      rn: !bits 0..4
+
+- mnemonic: usada8
+  description: Unsigned Sum of Absolute Differences and Accumulate four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
+  format:
+    opcode: !fmt usada8(cond)
+    params: !fmt (rd), (rn), (rm), (ra)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0111_1000_xxxx_xxxx_xxxx_0001_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 16..20
+      rm: !bits 8..12
+      rn: !bits 0..4
+      ra: !bits 12..16
+
+- mnemonic: usat
+  description: Unsigned Saturate
+  params: { cond: cond, rd: reg, imm: uimm, op2: shift_imm }
+  format:
+    opcode: !fmt usat(cond)
+    params: !fmt "(rd), #(imm), (op2)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_111x_xxxx_xxxx_xxxx_xx01_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      imm: !expr bits(16..21)
+      op2: !bits 0..12
+
+- mnemonic: usat16
+  description: Unsigned Saturate two 16-bit values
+  params: { cond: cond, rd: reg, imm: uimm, rn: reg }
+  format:
+    opcode: !fmt usat16(cond)
+    params: !fmt "(rd), #(imm), (rn)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1110_xxxx_xxxx_xxxx_0011_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      imm: !expr bits(16..21)
+      rn: !bits 0..4
+
+- mnemonic: usax
+  description: Unsigned Subtract and Add with Exchange
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt usax(cond)
+      else: !fmt usubaddx(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0101_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: usub16
+  description: Unsigned Subtract two 16-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt usub16(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: usub8
+  description: Unsigned Subtract four 8-bit values
+  params: { cond: cond, rd: reg, rn: reg, rm: reg }
+  format:
+    opcode: !fmt usub8(cond)
+    params: !fmt (rd), (rn), (rm)
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_1111_xxxx
+    illegal:
+    - ins() & 0xf00 != 0xf00
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rn: !bits 16..20
+
+- mnemonic: uxtab
+  description: Unsigned Extend and Add Byte
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt uxtab(cond)
+    params: !seq
+    - !fmt (rd), (rn), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1110_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: uxtab16
+  description: Unsigned Extend to 16 bits and Add Byte
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt uxtab16(cond)
+    params: !seq
+    - !fmt (rd), (rn), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1100_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: uxtah
+  description: Unsigned Extend and Add Halfword
+  params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt uxtah(cond)
+    params: !seq
+    - !fmt (rd), (rn), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1111_xxxx_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rn: !bits 16..20
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: uxtb
+  description: Unsigned Extend Byte
+  params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt uxtb(cond)
+    params: !seq
+    - !fmt (rd), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1110_1111_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0010_11xx_xxxx
+    params:
+      rd: !bits 0..3
+      rm: !bits 3..6
+      rotate: !const 0
+
+- mnemonic: uxtb16
+  description: Unsigned Extend Byte to 16 bits
+  params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt uxtb16(cond)
+    params: !seq
+    - !fmt (rd), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1100_1111_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+
+- mnemonic: uxth
+  description: Unsigned Extend Halfword
+  params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
+  format:
+    opcode: !fmt uxth(cond)
+    params: !seq
+    - !fmt (rd), (rm)
+    - !if
+      cond: field(rotate) != 0
+      then: !fmt ", ror #(rotate)"
+  arm:
+  - version: [v6*]
+    pattern: xxxx_0110_1111_1111_xxxx_xxxx_0111_xxxx
+    illegal:
+    - ins() & 0x300 != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+      rm: !bits 0..4
+      rotate: !expr bits(10..12) << 3
+  thumb:
+  - version: [v6*]
+    pattern: 1011_0010_10xx_xxxx
+    params:
+      rd: !bits 0..3
+      rm: !bits 3..6
+      rotate: !const 0
+
+- mnemonic: vabs_f32
+  description: Vector Absolute 32-bit
+  params: { cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vabs(cond).f32
+      else: !fmt fabss(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0000_xxxx_1010_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vabs_f64
+  description: Vector Absolute 64-bit
+  params: { cond: cond, dd: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vabs(cond).f64
+      else: !fmt fabsd(cond)
+    params: !fmt (dd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0000_xxxx_1011_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vadd_f32
+  description: Vector Add 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vadd(cond).f32
+      else: !fmt fadds(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x11_xxxx_xxxx_1010_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vadd_f64
+  description: Vector Add 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vadd(cond).f64
+      else: !fmt faddd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x11_xxxx_xxxx_1011_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vcmp_f32
+  description: Vector Compare 32-bit
+  params: { nan_exc: nan_exc, cond: cond, sd: sreg, op2: vcmp_f32_op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcmp(nan_exc)(cond).f32
+      else: !seq
+      - !fmt fcmp(nan_exc)
+      - !if
+        cond: field(op2) == enum_variant(vcmp_f32_op2, zero)
+        then: !fmt z
+      - !fmt s(cond)
+    params: !seq
+    - !fmt (sd)
+    - !if
+      cond: option(ual) || field(op2) != enum_variant(vcmp_f32_op2, zero)
+      then: !fmt ", (op2)"
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_010x_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      nan_exc: !bits 7
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      op2: !bits 0..32
+
+- mnemonic: vcmp_f64
+  description: Vector Compare 64-bit
+  params: { nan_exc: nan_exc, cond: cond, dd: dreg, op2: vcmp_f64_op2 }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcmp(nan_exc)(cond).f64
+      else: !seq
+      - !fmt fcmp(nan_exc)
+      - !if
+        cond: field(op2) == enum_variant(vcmp_f64_op2, zero)
+        then: !fmt z
+      - !fmt d(cond)
+    params: !seq
+    - !fmt (dd)
+    - !if
+      cond: option(ual) || field(op2) != enum_variant(vcmp_f64_op2, zero)
+      then: !fmt ", (op2)"
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_010x_xxxx_1011_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      nan_exc: !bits 7
+      cond: !bits 28..32
+      dd: !expr (bits(12..16) << 1) | bit(22)
+      op2: !bits 0..32
+
+- mnemonic: vcvt_f32_f64
+  description: Vector Convert to Floating-point 32-bit from Floating-point 64-bit
+  params: { cond: cond, sd: sreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f32.f64
+      else: !fmt fcvtsd(cond)
+    params: !fmt (sd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0111_xxxx_1011_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vcvt_f32_s32
+  description: Vector Convert to Floating-point 32-bit from Signed 32-bit integer
+  params: { cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f32.s32
+      else: !fmt fsitos(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_10xx_xxxx_1010_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_f32_u32
+  description: Vector Convert to Floating-point 32-bit from Unsigned 32-bit integer
+  params: { cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f32.u32
+      else: !fmt fuitos(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_10xx_xxxx_1010_01x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_f64_f32
+  description: Vector Convert to Floating-point 64-bit from Floating-point 32-bit
+  params: { cond: cond, dd: dreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f64.f32
+      else: !fmt fcvtds(cond)
+    params: !fmt (dd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0111_xxxx_1010_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_f64_s32
+  description: Vector Convert to Floating-point 64-bit from Signed 32-bit integer
+  params: { cond: cond, dd: dreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f64.s32
+      else: !fmt fsitod(cond)
+    params: !fmt (dd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_10xx_xxxx_1011_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_f64_u32
+  description: Vector Convert to Floating-point 64-bit from Unsigned 32-bit integer
+  params: { cond: cond, dd: dreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(cond).f64.u32
+      else: !fmt fuitod(cond)
+    params: !fmt (dd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_10xx_xxxx_1011_01x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_s32_f32
+  description: Vector Convert to Signed 32-bit integer from Floating-point 32-bit
+  params: { round_zero: round_zero, cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).s32.f32
+      else: !fmt ftosi(round_zero)s(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_11x1_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round_zero: !expr bit(7) ^ 1
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_s32_f64
+  description: Vector Convert to Signed 32-bit integer from Floating-point 64-bit
+  params: { round_zero: round_zero, cond: cond, sd: sreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).s32.f64
+      else: !fmt ftosi(round_zero)d(cond)
+    params: !fmt (sd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_11x1_xxxx_1011_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round_zero: !expr bit(7) ^ 1
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vcvt_u32_f32
+  description: Vector Convert to Unsigned 32-bit integer from Floating-point 32-bit
+  params: { round_zero: round_zero, cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).u32.f32
+      else: !fmt ftoui(round_zero)s(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_11x0_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round_zero: !expr bit(7) ^ 1
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vcvt_u32_f64
+  description: Vector Convert to Unsigned 32-bit integer from Floating-point 64-bit
+  params: { round_zero: round_zero, cond: cond, sd: sreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vcvt(round_zero)(cond).u32.f64
+      else: !fmt ftoui(round_zero)d(cond)
+    params: !fmt (sd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_11x0_xxxx_1011_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      round_zero: !expr bit(7) ^ 1
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vdiv_f32
+  description: Vector Divide Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vdiv(cond).f32
+      else: !fmt fdivs(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x00_xxxx_xxxx_1010_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vdiv_f64
+  description: Vector Divide Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vdiv(cond).f64
+      else: !fmt fdivd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x00_xxxx_xxxx_1011_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vldm_f32
+  description: Vector Load Multiple Floating-point 32-bit
+  params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: sreg_list }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldm(mode)(cond)
+      else: !fmt fldm(mode)s(cond)
+    params: !fmt (rn)(writeback), (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_110x_xxx1_xxxx_xxxx_1010_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..32
+
+- mnemonic: vldm_f64
+  description: Vector Load Multiple Floating-point 64-bit
+  params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: dreg_list }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldm(mode)(cond)
+      else: !fmt fldm(mode)d(cond)
+    params: !fmt (rn)(writeback), (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_110x_xxx1_xxxx_xxxx_1011_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..32
+
+- mnemonic: vldr_f32
+  description: Vector Load Register Floating-point 32-bit
+  params: { cond: cond, sd: sreg, addr: addr_ldr_str }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldr(cond)
+      else: !fmt flds(cond)
+    params: !fmt (sd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1101_xx01_xxxx_xxxx_1010_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      addr: !enum [pre, !struct { rn: !bits 16..20, offset: !enum [imm, !expr (bits(0..8) << 2).negate_if(bit(23) == 0)] }]
+
+- mnemonic: vldr_f64
+  description: Vector Load Register Floating-point 64-bit
+  params: { cond: cond, dd: dreg, addr: addr_ldr_str }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vldr(cond)
+      else: !fmt fldd(cond)
+    params: !fmt (dd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1101_xx01_xxxx_xxxx_1011_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      addr: !enum [pre, !struct { rn: !bits 16..20, offset: !enum [imm, !expr (bits(0..8) << 2).negate_if(bit(23) == 0)] }]
+
+- mnemonic: vmla_f32
+  description: Vector Multiply Accumulate Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmla(cond).f32
+      else: !fmt fmacs(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x00_xxxx_xxxx_1010_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vmla_f64
+  description: Vector Multiply Accumulate Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmla(cond).f64
+      else: !fmt fmacd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x00_xxxx_xxxx_1011_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vmls_f32
+  description: Vector Multiply Subtract Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmls(cond).f32
+      else: !fmt fmscs(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x00_xxxx_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vmls_f64
+  description: Vector Multiply Subtract Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmls(cond).f64
+      else: !fmt fmscd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x00_xxxx_xxxx_1011_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vmov_32_reg
+  description: Vector Move to 32-bit scalar from register
+  params: { cond: cond, dd: dreg_index, rt: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).32
+      else: !if
+        cond: field(dd).index == 0
+        then: !fmt fmdlr(cond)
+        else: !fmt fmdhr(cond)
+    params: !fmt (dd), (rt)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_00x0_xxxx_xxxx_1011_x001_xxxx
+    illegal:
+    - ins() & 0xf != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !bits 0..32
+      rt: !bits 12..16
+
+- mnemonic: vmov_f32
+  description: Vector Move Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).f32
+      else: !fmt fcpys(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0000_xxxx_1010_01x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vmov_f32_reg
+  description: Vector Move to Floating-point 32-bit from register
+  params: { cond: cond, sn: sreg, rt: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmsr(cond)
+    params: !fmt (sn), (rt)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0000_xxxx_xxxx_1010_xxx1_xxxx
+    illegal:
+    - ins() & 0x6f != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      rt: !bits 12..16
+
+- mnemonic: vmov_f64
+  description: Vector Move Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).f64
+      else: !fmt fcpyd(cond)
+    params: !fmt (dd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0000_xxxx_1011_01x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vmov_reg_32
+  description: Vector Move to register from 32-bit scalar
+  params: { cond: cond, rt: reg, dn: dreg_index }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond).32
+      else: !if
+        cond: field(dn).index == 0
+        then: !fmt fmrdl(cond)
+        else: !fmt fmrdh(cond)
+    params: !fmt (rt), (dn)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_00x1_xxxx_xxxx_1011_x001_xxxx
+    illegal:
+    - ins() & 0xf != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rt: !bits 12..16
+      dn: !bits 0..32
+
+- mnemonic: vmov_reg_f32
+  description: Vector Move to register from floating-point 32-bit
+  params: { cond: cond, rt: reg, sn: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmrs(cond)
+    params: !fmt (rt), (sn)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0001_xxxx_xxxx_1010_xxx1_xxxx
+    illegal:
+    - ins() & 0x6f != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rt: !bits 12..16
+      sn: !expr (bits(16..20) << 1) | bit(7)
+
+- mnemonic: vmov_reg_f32_dual
+  description: Vector Move to two registers from two floating-point 32-bit
+  params: { cond: cond, rt: reg, rt2: reg, sm: sreg, sm2: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmrrs(cond)
+    params: !fmt (rt), (rt2), (sm), (sm2)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1100_0101_xxxx_xxxx_1010_00x1_xxxx
+    illegal:
+    - ins() & 0x2f == 0x2f # sm cannot be s31
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rt: !bits 12..16
+      rt2: !bits 16..20
+      sm: !expr (bits(0..4) << 1) | bit(5)
+      sm2: !expr ((bits(0..4) << 1) | bit(5)) + 1
+
+- mnemonic: vmov_f32_reg_dual
+  description: Vector Move to two floating-point 32-bit from two registers
+  params: { cond: cond, sm: sreg, sm2: sreg, rt: reg, rt2: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmsrr(cond)
+    params: !fmt (sm), (sm2), (rt), (rt2)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1100_0100_xxxx_xxxx_1010_00x1_xxxx
+    illegal:
+    - ins() & 0x2f == 0x2f # sm cannot be s31
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sm: !expr (bits(0..4) << 1) | bit(5)
+      sm2: !expr ((bits(0..4) << 1) | bit(5)) + 1
+      rt: !bits 12..16
+      rt2: !bits 16..20
+
+- mnemonic: vmov_reg_f64
+  description: Vector Move to two registers from one floating-point 64-bit
+  params: { cond: cond, rt: reg, rt2: reg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmrrd(cond)
+    params: !fmt (rt), (rt2), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1100_0101_xxxx_xxxx_1011_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rt: !bits 12..16
+      rt2: !bits 16..20
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vmov_f64_reg
+  description: Vector Move to one floating-point 64-bit from two registers
+  params: { cond: cond, dm: dreg, rt: reg, rt2: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmov(cond)
+      else: !fmt fmdrr(cond)
+    params: !fmt (dm), (rt), (rt2)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1100_0100_xxxx_xxxx_1011_00x1_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dm: !expr (bit(5) << 4) | bits(0..4)
+      rt: !bits 12..16
+      rt2: !bits 16..20
+
+- mnemonic: vmrs
+  description: Vector Move to Register from Status register
+  params: { cond: cond, rd: reg, fpscr: fpscr }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmrs(cond)
+      else: !fmt fmrx(cond)
+    params: !fmt (rd), (fpscr)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1111_0001_xxxx_1010_xxx1_xxxx
+    illegal:
+    - ins() & 0xef != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+
+- mnemonic: vmsr
+  description: Vector Move to Status register from Register
+  params: { cond: cond, fpscr: fpscr, rd: reg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmsr(cond)
+      else: !fmt fmxr(cond)
+    params: !fmt (fpscr), (rd)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1110_0001_xxxx_1010_xxx1_xxxx
+    illegal:
+    - ins() & 0xef != 0
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      rd: !bits 12..16
+
+- mnemonic: vmul_f32
+  description: Vector Multiply Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmul(cond).f32
+      else: !fmt fmuls(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x10_xxxx_xxxx_1010_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vmul_f64
+  description: Vector Multiply Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vmul(cond).f64
+      else: !fmt fmuld(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x10_xxxx_xxxx_1011_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vneg_f32
+  description: Vector Negate Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vneg(cond).f32
+      else: !fmt fnegs(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0001_xxxx_1010_01x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vneg_f64
+  description: Vector Negate Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vneg(cond).f64
+      else: !fmt fnegd(cond)
+    params: !fmt (dd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0001_xxxx_1011_01x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vnmla_f32
+  description: Vector Negate Multiply Accumulate Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmla(cond).f32
+      else: !fmt fnmacs(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x01_xxxx_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vnmla_f64
+  description: Vector Negate Multiply Accumulate Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmla(cond).f64
+      else: !fmt fnmacd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x01_xxxx_xxxx_1011_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vnmls_f32
+  description: Vector Negate Multiply Subtract Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmls(cond).f32
+      else: !fmt fnmscs(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x01_xxxx_xxxx_1010_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vnmls_f64
+  description: Vector Negate Multiply Subtract Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmls(cond).f64
+      else: !fmt fnmscd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x01_xxxx_xxxx_1011_x0x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vnmul_f32
+  description: Vector Negate Multiply Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmul(cond).f32
+      else: !fmt fnmuls(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x10_xxxx_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vnmul_f64
+  description: Vector Negate Multiply Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vnmul(cond).f64
+      else: !fmt fnmuld(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x10_xxxx_xxxx_1011_x1x0_xxxx
+
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vpop_f32
+  description: Vector Pop Floating-point 32-bit
+  params: { cond: cond, regs: sreg_list }
+  format:
+    opcode: !fmt vpop(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1100_1x11_1101_xxxx_1010_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..32
+
+- mnemonic: vpop_f64
+  description: Vector Pop Floating-point 64-bit
+  params: { cond: cond, regs: dreg_list }
+  format:
+    opcode: !fmt vpop(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1100_1x11_1101_xxxx_1011_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..32
+
+- mnemonic: vpush_f32
+  description: Vector Push Floating-point 32-bit
+  params: { cond: cond, regs: sreg_list }
+  format:
+    opcode: !fmt vpush(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1101_0x10_1101_xxxx_1010_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..32
+
+- mnemonic: vpush_f64
+  description: Vector Push Floating-point 64-bit
+  params: { cond: cond, regs: dreg_list }
+  format:
+    opcode: !fmt vpush(cond)
+    params: !fmt (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1101_0x10_1101_xxxx_1011_xxxx_xxxx
+    ignore: "!option(ual)"
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      regs: !bits 0..32
+
+- mnemonic: vsqrt_f32
+  description: Vector Square Root Floating-point 32-bit
+  params: { cond: cond, sd: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsqrt(cond).f32
+      else: !fmt fsqrts(cond)
+    params: !fmt (sd), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0001_xxxx_1010_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vsqrt_f64
+  description: Vector Square Root Floating-point 64-bit
+  params: { cond: cond, dd: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsqrt(cond).f64
+      else: !fmt fsqrtd(cond)
+    params: !fmt (dd), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_1x11_0001_xxxx_1011_11x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: vstm_f32
+  description: Vector Store Multiple Floating-point 32-bit
+  params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: sreg_list }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstm(mode)(cond)
+      else: !fmt fstm(mode)s(cond)
+    params: !fmt (rn)(writeback), (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_110x_xxx0_xxxx_xxxx_1010_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..32
+
+- mnemonic: vstm_f64
+  description: Vector Store Multiple Floating-point 64-bit
+  params: { mode: vldm_vstm_mode, cond: cond, rn: reg, writeback: wb, regs: dreg_list }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstm(mode)(cond)
+      else: !fmt fstm(mode)d(cond)
+    params: !fmt (rn)(writeback), (regs)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_110x_xxx0_xxxx_xxxx_1011_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      mode: !bits 23..25
+      cond: !bits 28..32
+      rn: !bits 16..20
+      writeback: !bits 21
+      regs: !bits 0..32
+
+- mnemonic: vstr_f32
+  description: Vector Store Register Floating-point 32-bit
+  params: { cond: cond, sd: sreg, addr: addr_ldr_str }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstr(cond)
+      else: !fmt fsts(cond)
+    params: !fmt (sd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1101_xx00_xxxx_xxxx_1010_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      addr: !enum [pre, !struct { rn: !bits 16..20, offset: !enum [imm, !expr (bits(0..8) << 2).negate_if(bit(23) == 0)] }]
+
+- mnemonic: vstr_f64
+  description: Vector Store Register Floating-point 64-bit
+  params: { cond: cond, dd: dreg, addr: addr_ldr_str }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vstr(cond)
+      else: !fmt fstd(cond)
+    params: !fmt (dd), (addr)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1101_xx00_xxxx_xxxx_1011_xxxx_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      addr: !enum [pre, !struct { rn: !bits 16..20, offset: !enum [imm, !expr (bits(0..8) << 2).negate_if(bit(23) == 0)] }]
+
+- mnemonic: vsub_f32
+  description: Vector Subtract 32-bit
+  params: { cond: cond, sd: sreg, sn: sreg, sm: sreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsub(cond).f32
+      else: !fmt fsubs(cond)
+    params: !fmt (sd), (sn), (sm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x11_xxxx_xxxx_1010_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      sd: !expr (bits(12..16) << 1) | bit(22)
+      sn: !expr (bits(16..20) << 1) | bit(7)
+      sm: !expr (bits(0..4) << 1) | bit(5)
+
+- mnemonic: vsub_f64
+  description: Vector Subtract 64-bit
+  params: { cond: cond, dd: dreg, dn: dreg, dm: dreg }
+  format:
+    opcode: !if
+      cond: option(ual)
+      then: !fmt vsub(cond).f64
+      else: !fmt fsubd(cond)
+    params: !fmt (dd), (dn), (dm)
+  arm:
+  - version: [v5te*, v6*]
+    extensions: [vfp*]
+    pattern: xxxx_1110_0x11_xxxx_xxxx_1011_x1x0_xxxx
+    illegal:
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+      dd: !expr (bit(22) << 4) | bits(12..16)
+      dn: !expr (bit(7) << 4) | bits(16..20)
+      dm: !expr (bit(5) << 4) | bits(0..4)
+
+- mnemonic: wfe
+  description: Wait For Event
+  params: { cond: cond }
+  format:
+    opcode: !fmt wfe(cond)
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0010
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+
+- mnemonic: wfi
+  description: Wait For Interrupt
+  params: { cond: cond }
+  format:
+    opcode: !fmt wfi(cond)
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0011
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+
+- mnemonic: yield
+  description: Yield
+  params: { cond: cond }
+  format:
+    opcode: !fmt yield(cond)
+    params: !fmt ""
+  arm:
+  - version: [v6k]
+    pattern: xxxx_0011_0010_0000_xxxx_xxxx_0000_0001
+    illegal:
+    - ins() & 0xff00 != 0xf000
+    - ins() & 0xf0000000 == 0xf0000000 # illegal cond
+    params:
+      cond: !bits 28..32
+# endregion
