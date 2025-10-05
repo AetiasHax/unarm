@@ -1,79 +1,122 @@
 # unarm
 
-Disassembler for the ARM instruction set, inspired by [ppc750cl](https://github.com/encounter/ppc750cl). It currently supports
+Parser for the ARM instruction set, inspired by [powerpc-rs](https://github.com/encounter/powerpc-rs). It currently supports
 the following versions:
 
+- ARMv4
 - ARMv4T
+- ARMv5T
 - ARMv5TE
+- ARMv5TEJ
+- ARMv6
 - ARMv6K
+
+It also supports these extensions:
+
+- VFPv2
 
 ## Contents
 
-- [Disassemblers](#disassemblers)
-  - [Performance (ARM)](#performance-arm)
-  - [Performance (Thumb)](#performance-thumb)
+- [About](#about)
+- [Performance](#performance)
 - [Usage](#usage)
-  - [32-bit Thumb instructions](#32-bit-thumb-instructions)
+  - [Parsing one instruction](#parsing-one-instruction)
+  - [4-byte Thumb instructions](#4-byte-thumb-instructions)
+  - [The FormatIns trait](#the-formatins-trait)
 
-## Disassemblers
+## About
 
-The [`/disasm/`](/disasm/) module has disassemblers for ARM and Thumb instructions of the supported versions of ARM.
-
-- They are generated from `arm.yaml` files in the [`/specs/`](/specs/) directory by the [`/generator/`](/generator/) module.
-- They accept all 2^32 possible ARM instructions and 2^16 Thumb instructions without errors.
+- Most of the parser is generated from [`isa.yaml`](/generator/assets/isa.yaml) by the [`/generator/`](/generator/) module.
+- It accepts all 2^32 possible ARM instructions and 2^16 Thumb instructions (plus the 4-byte instructions) without errors.
 - No promises that the output is 100% correct.
   - Some illegal instructions may not be parsed as illegal.
   - Some instructions may not stringify correctly.
   - (more, probably)
 
-### Performance (ARM)
+## Performance
 
-Tested on all 2^32 ARM instructions in each supported version using the [`/fuzz/`](/fuzz/) module on a single thread:
+Tested on all 2^32 ARM and Thumb instructions in ARMv6K using the [`/fuzz/`](/fuzz/) module on a single thread.
 
-- AMD Ryzen 7 7700X: 160 million insn/s (~610 MB/s)
-
-### Performance (Thumb)
-
-Tested on all 2^16 Thumb instructions in each supported version using the [`/fuzz/`](/fuzz/) module on a single thread,
-averaged after 100,000 iterations:
-
-- AMD Ryzen 7 7700X: 300 million insn/s (~572 MB/s)
+AMD Ryzen 7 7700X:
+| Test                      | Duration | Throughput |
+|:-------------------------:|:--------:|:----------:|
+| Parse ARM                 | 27.11s   | ~604 MB/s  |
+| Parse and stringify ARM   | 379.15s  | ~43 MB/s   |
+| Parse Thumb               | 20.89s   | ~392 MB/s  |
+| Parse and stringify Thumb | 305.58s  | ~27 MB/s   |
 
 ## Usage
 
-Below is an example of using `unarm` to parse an ARMv5TE instruction.
+### Parsing one instruction
 
 ```rust
-use unarm::{args::*, v5te::arm::{Ins, Opcode}};
+use unarm::*;
 
-let ins = Ins::new(0xe5902268, &Default::default());
-assert_eq!(ins.op, Opcode::Ldr);
-
-let parsed = ins.parse(&Default::default());
+let pc = 0;
+let options = Options::default();
+let ins = parse_arm(0xe5902268, pc, &options);
 assert_eq!(
-    parsed.args[0],
-    Argument::Reg(Reg { reg: Register::R2, deref: false, writeback: false })
+    ins,
+    Ins::Ldr {
+        cond: Cond::Al,
+        rd: Reg::R2,
+        addr: AddrLdrStr::Pre {
+            rn: Reg::R0,
+            offset: LdrStrOffset::Imm(0x268),
+            writeback: false
+        }
+    }
 );
-assert_eq!(
-    parsed.args[1],
-    Argument::Reg(Reg { reg: Register::R0, deref: true, writeback: false })
-);
-assert!(matches!(
-    parsed.args[2],
-    Argument::OffsetImm(OffsetImm { value: 0x268, post_indexed: false })
-));
-assert_eq!(parsed.display(Default::default()).to_string(), "ldr r2, [r0, #0x268]");
+assert_eq!(ins.display(&options).to_string(), "ldr r2, [r0, #0x268]");
 ```
 
-### 32-bit Thumb instructions
+### 4-byte Thumb instructions
 
-Thumb uses 16-bit instructions, trading a subset of ARM instructions for smaller code size. However, this leaves little room
-for BL/BLX target offsets. This would mean that function calls further than ±1KB away would only be possible using
-a register as target address, which could take 3 or 4 instructions in total.
+Some instructions in Thumb are 4 bytes long instead of 2. To parse them properly, put the second
+half of the instruction in the upper half of the code passed to `parse_thumb`. 
 
-To solve this, Thumb includes "32-bit" BL and BLX instructions with a maximum offset of ±4MB. In truth, these are just two
-16-bit instructions strung together. For BL, we call them `Opcode::BlH` and `Opcode::Bl`. For BLX, we call them `Opcode::BlH`
-and `Opcode::BlxI`. The first instruction is the same for BL and BLX.
+```rust
+let first = 0xf099;
+let second = 0xe866;
+let (ins, _size) = parse_thumb(first | (second << 16), 0, &options);
+```
 
-To tell if an instruction needs to be combined, you can use `Ins::is_half_bl(&self)`, which simply checks if the opcode is
-`Opcode::BlH`. To combine two instructions into a BL/BLX, use `ParsedIns::combine_thumb_bl(&self, second: &Self)`.
+You can do this for 2-byte instructions as well by passing two consecutive instructions in the same way. `parse_thumb` returns both the parsed instruction and its size, so you can tell if only one or both of the 16-bit words were parsed.
+
+### The FormatIns trait
+
+The `FormatIns` trait is used for formatting an instruction. You can implement this trait yourself to
+customize the formatted output. Here is an example:
+
+```rust
+pub struct MyFormatter {
+    options: unarm::Options,
+}
+
+// Write is a supertrait of FormatIns
+impl std::fmt::Write for MyFormatter {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        println!("{s}");
+        Ok(())
+    }
+}
+
+impl unarm::FormatIns for MyFormatter {
+    fn options(&self) -> &unarm::Options {
+        &self.options
+    }
+
+    // Override the default behavior
+    fn write_reg(&mut self, reg: unarm::Reg) -> core::fmt::Result {
+        // Add custom behavior here
+        self.write_str("REG:")?;
+        reg.write(self)
+    }
+
+    // Override any other trait functions as needed
+}
+
+let mut formatter = MyFormatter { options: Default::default() };
+let ins = parse_arm(0xe5902268, 0, &formatter.options);
+formatter.write_ins(&ins).unwrap();
+```
