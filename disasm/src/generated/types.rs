@@ -19,6 +19,20 @@ pub struct Options {
     ///If true, use Unified Assembly Language syntax (UAL), otherwise use divided syntax
     pub ual: bool,
 }
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            version: Version::default(),
+            extensions: Extensions::default(),
+            av: false,
+            r9_use: R9Use::default(),
+            sl: false,
+            fp: false,
+            ip: false,
+            ual: true,
+        }
+    }
+}
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Version {
     #[cfg(feature = "v4")]
@@ -69,6 +83,17 @@ impl Versions {
         (self.0 & version.bit()) != 0
     }
 }
+impl Default for Version {
+    fn default() -> Self {
+        #[cfg(feature = "v6k")] return Self::V6K;
+        #[cfg(feature = "v6")] return Self::V6;
+        #[cfg(feature = "v5tej")] return Self::V5Tej;
+        #[cfg(feature = "v5te")] return Self::V5Te;
+        #[cfg(feature = "v5t")] return Self::V5T;
+        #[cfg(feature = "v4t")] return Self::V4T;
+        #[cfg(feature = "v4")] return Self::V4;
+    }
+}
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Extension {
     #[cfg(feature = "vfp_v2")]
@@ -107,8 +132,14 @@ impl Extensions {
         (self.0 & extensions.0) == self.0
     }
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl Default for Extensions {
+    fn default() -> Self {
+        Self::all()
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum R9Use {
+    #[default]
     ///General purpose register
     R9,
     ///Static base (SB), used for position-independent data

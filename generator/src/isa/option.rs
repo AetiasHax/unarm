@@ -24,6 +24,23 @@ impl IsaOptions {
         let types = self.0.iter().filter_map(|(name, option)| option.internal_type_tokens(name));
         quote!(#(#types)*)
     }
+
+    pub fn default_impls_tokens(&self) -> TokenStream {
+        let fields = self.0.iter().map(|(name, option)| {
+            let ident = Ident::new(name, Span::call_site());
+            let value = option.kind.default_value_tokens(name);
+            quote!(#ident: #value)
+        });
+        quote! {
+            impl Default for Options {
+                fn default() -> Self {
+                    Self {
+                        #(#fields),*
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -53,7 +70,7 @@ impl IsaOption {
 #[derive(Deserialize, Debug)]
 pub enum OptionKind {
     #[serde(rename = "bool")]
-    Bool,
+    Bool(OptionBool),
     #[serde(rename = "enum")]
     Enum(Vec<OptionEnumVariant>),
     #[serde(rename = "version")]
@@ -65,7 +82,7 @@ pub enum OptionKind {
 impl OptionKind {
     fn type_tokens(&self, name: &str) -> TokenStream {
         match self {
-            OptionKind::Bool => quote!(bool),
+            OptionKind::Bool(_) => quote!(bool),
             OptionKind::Enum(_) => {
                 let type_name = Ident::new(&snake_to_pascal_case(name), Span::call_site());
                 quote!(#type_name)
@@ -77,13 +94,16 @@ impl OptionKind {
 
     fn internal_type_tokens(&self, name: &str) -> Option<TokenStream> {
         match self {
-            OptionKind::Bool => None,
+            OptionKind::Bool(_) => None,
             OptionKind::Enum(variants) => {
                 let type_name = Ident::new(&snake_to_pascal_case(name), Span::call_site());
-                let variants = variants.iter().map(|v| v.variant_tokens());
+                let mut variants = variants.iter().map(|v| v.variant_tokens());
+                let first_variant = variants.next();
                 Some(quote! {
-                    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+                    #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
                     pub enum #type_name {
+                        #[default]
+                        #first_variant,
                         #(#variants),*
                     }
                 })
@@ -92,6 +112,31 @@ impl OptionKind {
             OptionKind::Extensions => None,
         }
     }
+
+    fn default_value_tokens(&self, name: &str) -> TokenStream {
+        match self {
+            OptionKind::Bool(option_bool) => {
+                if option_bool.default_value {
+                    quote!(true)
+                } else {
+                    quote!(false)
+                }
+            }
+            OptionKind::Enum(_) => {
+                let type_name = Ident::new(&snake_to_pascal_case(name), Span::call_site());
+                quote!(#type_name::default())
+            }
+            OptionKind::Version => quote!(Version::default()),
+            OptionKind::Extensions => quote!(Extensions::default()),
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct OptionBool {
+    #[serde(rename = "default", default)]
+    default_value: bool,
 }
 
 #[derive(Deserialize, Debug)]

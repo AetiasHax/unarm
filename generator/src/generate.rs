@@ -6,10 +6,13 @@ use crate::isa::{Arch, Isa};
 impl Isa {
     pub fn generate_types(&self) -> TokenStream {
         let options_struct = self.options().struct_tokens();
+        let options_default_impl = self.options().default_impls_tokens();
         let version_enum = self.versions().enum_tokens();
         let versions_struct = self.versions().struct_tokens();
+        let version_default_impl = self.versions().default_impl_tokens();
         let extension_enum = self.extensions().enum_tokens();
         let extensions_struct = self.extensions().struct_tokens();
+        let extension_default_impl = self.extensions().default_impl_tokens();
         let internal_option_types = self.options().internal_types_tokens();
 
         let data_types = self.types().types_tokens(self);
@@ -22,10 +25,13 @@ impl Isa {
             use crate::*;
 
             #options_struct
+            #options_default_impl
             #version_enum
             #versions_struct
+            #version_default_impl
             #extension_enum
             #extensions_struct
+            #extension_default_impl
             #internal_option_types
 
             #data_types

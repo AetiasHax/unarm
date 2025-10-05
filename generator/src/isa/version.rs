@@ -100,6 +100,24 @@ impl IsaVersions {
             .filter(|v| arch != Some(Arch::Thumb) || v.thumb)
             .all(|v| versions.0.contains(v))
     }
+
+    pub fn default_impl_tokens(&self) -> TokenStream {
+        let versions = self.0.iter().rev().map(|v| {
+            let version = v.name();
+            let ident = v.as_ident();
+            quote! {
+                #[cfg(feature = #version)]
+                return Self::#ident;
+            }
+        });
+        quote! {
+            impl Default for Version {
+                fn default() -> Self {
+                    #(#versions)*
+                }
+            }
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

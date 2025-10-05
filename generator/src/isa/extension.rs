@@ -85,6 +85,16 @@ impl IsaExtensions {
             }
         }
     }
+
+    pub fn default_impl_tokens(&self) -> TokenStream {
+        quote! {
+            impl Default for Extensions {
+                fn default() -> Self {
+                    Self::all()
+                }
+            }
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

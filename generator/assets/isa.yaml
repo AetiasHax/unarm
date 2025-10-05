@@ -30,6 +30,7 @@ options:
   ual:
     description: If true, use Unified Assembly Language syntax (UAL), otherwise use divided syntax
     kind: !bool
+      default: true
 
 versions:
 - name: v4
