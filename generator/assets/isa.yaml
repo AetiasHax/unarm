@@ -85,6 +85,7 @@ types:
       kind: !uint pc + bits(0..32)
 - name: blx_target
   description: The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
+  no_parse: true
   kind: !union
     bits: 0..28
     complete: true
@@ -842,6 +843,7 @@ types:
       kind: !type [uimm, bit(21)]
 - name: fpscr
   description: Floating-Point Status and Control Register
+  no_parse: true
   kind: !struct
     format: !fmt fpscr
     fields: []

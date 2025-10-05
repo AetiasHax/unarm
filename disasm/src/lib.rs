@@ -1,6 +1,5 @@
 #![no_std]
 
-#[macro_use]
 extern crate alloc;
 
 mod fmt;
@@ -11,6 +10,5 @@ mod reg_list;
 
 pub use fmt::*;
 pub use generated::*;
-pub use ins::*;
 pub use parser::*;
 pub use reg_list::*;

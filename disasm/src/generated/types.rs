@@ -84,6 +84,7 @@ impl Versions {
     }
 }
 impl Default for Version {
+    #[allow(unreachable_code)]
     fn default() -> Self {
         #[cfg(feature = "v6k")] return Self::V6K;
         #[cfg(feature = "v6")] return Self::V6;

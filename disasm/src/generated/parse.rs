@@ -16,34 +16,6 @@ impl BranchTarget {
         }
     }
 }
-#[cfg(
-    any(
-        feature = "v5t",
-        feature = "v5te",
-        feature = "v5tej",
-        feature = "v6",
-        feature = "v6k"
-    )
-)]
-impl BlxTarget {
-    #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        if (value & 0xe000000) == 0xa000000 {
-            Self::Direct(
-                BranchTarget::parse(
-                    (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1))
-                        as i32) << 6 >> 6) as u32)
-                        .wrapping_add(8),
-                    pc,
-                ),
-            )
-        } else if (value & 0xffffff0) == 0x12fff30 {
-            Self::Indirect(Reg::parse(((value) & 0xf), pc))
-        } else {
-            unreachable!()
-        }
-    }
-}
 impl Cond {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
@@ -466,19 +438,6 @@ impl DregIndex {
             ),
             index: (((value) >> 21) & 0x1),
         }
-    }
-}
-#[cfg(
-    all(
-        feature = "arm",
-        feature = "vfp_v2",
-        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
-    )
-)]
-impl Fpscr {
-    #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        Self {}
     }
 }
 #[cfg(

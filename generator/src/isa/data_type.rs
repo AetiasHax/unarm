@@ -116,6 +116,9 @@ pub struct DataType {
     write: bool,
     #[serde(skip)]
     top_level: bool,
+    /// If true, do not generate a parse function for this type
+    #[serde(default)]
+    no_parse: bool,
 }
 
 fn default_data_type_write() -> bool {
@@ -203,6 +206,10 @@ impl DataType {
     }
 
     fn parse_impl_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+        if self.no_parse {
+            return None;
+        }
+
         let body = match &self.kind {
             DataTypeKind::Bool { .. } => return None,
             DataTypeKind::UInt(_) => return None,

@@ -112,6 +112,7 @@ impl IsaVersions {
         });
         quote! {
             impl Default for Version {
+                #[allow(unreachable_code)]
                 fn default() -> Self {
                     #(#versions)*
                 }
