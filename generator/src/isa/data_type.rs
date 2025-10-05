@@ -425,8 +425,8 @@ impl DataType {
         let cfg = self.cfg_attribute_tokens(isa);
         Some(quote! {
             #cfg
-            impl #name_ident {
-                pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+            impl FormatValue for #name_ident {
+                fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
                 where
                     F: FormatIns + ?Sized
                 {

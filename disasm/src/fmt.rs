@@ -62,3 +62,9 @@ impl FormatIns for StringFormatter<'_> {
         self.options
     }
 }
+
+pub trait FormatValue {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: FormatIns + ?Sized;
+}

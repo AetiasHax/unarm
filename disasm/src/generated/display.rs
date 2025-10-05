@@ -399,8 +399,8 @@ pub trait FormatIns: core::fmt::Write {
         Ok(())
     }
 }
-impl BranchTarget {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for BranchTarget {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -419,8 +419,8 @@ impl BranchTarget {
         feature = "v6k"
     )
 )]
-impl BlxTarget {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for BlxTarget {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -435,8 +435,8 @@ impl BlxTarget {
         Ok(())
     }
 }
-impl Cond {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Cond {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -488,8 +488,8 @@ impl Cond {
         Ok(())
     }
 }
-impl Reg {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Reg {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -617,8 +617,8 @@ impl Reg {
     }
 }
 #[cfg(feature = "arm")]
-impl StatusReg {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for StatusReg {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -634,8 +634,8 @@ impl StatusReg {
     }
 }
 #[cfg(feature = "arm")]
-impl StatusFields {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for StatusFields {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -658,8 +658,8 @@ impl StatusFields {
     }
 }
 #[cfg(feature = "arm")]
-impl MsrOp2 {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for MsrOp2 {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -675,8 +675,8 @@ impl MsrOp2 {
         Ok(())
     }
 }
-impl ShiftOp {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for ShiftOp {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -698,8 +698,8 @@ impl ShiftOp {
     }
 }
 #[cfg(feature = "arm")]
-impl Coproc {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Coproc {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -757,8 +757,8 @@ impl Coproc {
     }
 }
 #[cfg(feature = "arm")]
-impl CoReg {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for CoReg {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -815,8 +815,8 @@ impl CoReg {
         Ok(())
     }
 }
-impl Op2 {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Op2 {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -835,8 +835,8 @@ impl Op2 {
         Ok(())
     }
 }
-impl ShiftReg {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for ShiftReg {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -849,8 +849,8 @@ impl ShiftReg {
         Ok(())
     }
 }
-impl ShiftImm {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for ShiftImm {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -874,8 +874,8 @@ impl ShiftImm {
         Ok(())
     }
 }
-impl Op2Shift {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Op2Shift {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -892,8 +892,8 @@ impl Op2Shift {
     }
 }
 #[cfg(any(feature = "v6", feature = "v6k"))]
-impl CpsEffect {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for CpsEffect {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -910,8 +910,8 @@ impl CpsEffect {
     }
 }
 #[cfg(any(feature = "v6", feature = "v6k"))]
-impl AifFlags {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for AifFlags {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -929,8 +929,8 @@ impl AifFlags {
     }
 }
 #[cfg(feature = "arm")]
-impl AddrLdcStc {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for AddrLdcStc {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -965,8 +965,8 @@ impl AddrLdcStc {
         Ok(())
     }
 }
-impl LdmStmMode {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for LdmStmMode {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -989,8 +989,8 @@ impl LdmStmMode {
         Ok(())
     }
 }
-impl AddrLdrStr {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for AddrLdrStr {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1010,8 +1010,8 @@ impl AddrLdrStr {
         Ok(())
     }
 }
-impl AddrLdrStrPost {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for AddrLdrStrPost {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1024,8 +1024,8 @@ impl AddrLdrStrPost {
         Ok(())
     }
 }
-impl LdrStrOffset {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for LdrStrOffset {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1059,8 +1059,8 @@ impl LdrStrOffset {
         Ok(())
     }
 }
-impl AddrMiscLoad {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for AddrMiscLoad {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1084,8 +1084,8 @@ impl AddrMiscLoad {
         Ok(())
     }
 }
-impl MiscLoadOffset {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for MiscLoadOffset {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1103,8 +1103,8 @@ impl MiscLoadOffset {
     }
 }
 #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-impl SrsRfeMode {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for SrsRfeMode {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1126,8 +1126,8 @@ impl SrsRfeMode {
     }
 }
 #[cfg(any(feature = "v6", feature = "v6k"))]
-impl Endianness {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Endianness {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1148,8 +1148,8 @@ impl Endianness {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl RegSide {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for RegSide {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1171,8 +1171,8 @@ impl RegSide {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl Sreg {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Sreg {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1284,8 +1284,8 @@ impl Sreg {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl Dreg {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Dreg {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1397,8 +1397,8 @@ impl Dreg {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl VcmpF32Op2 {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for VcmpF32Op2 {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1420,8 +1420,8 @@ impl VcmpF32Op2 {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl VcmpF64Op2 {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for VcmpF64Op2 {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1443,8 +1443,8 @@ impl VcmpF64Op2 {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl DregIndex {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for DregIndex {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1467,8 +1467,8 @@ impl DregIndex {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl Fpscr {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for Fpscr {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
@@ -1484,8 +1484,8 @@ impl Fpscr {
         any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
     )
 )]
-impl VldmVstmMode {
-    pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+impl FormatValue for VldmVstmMode {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
     {
