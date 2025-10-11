@@ -294,26 +294,40 @@ impl Opcode {
             Arch::Arm => &self.arm,
             Arch::Thumb => &self.thumb,
         };
+        let mut encodings: Vec<(usize, &OpcodeEncoding)> = encodings.iter().enumerate().collect();
+        encodings.sort_by(|(_, a), (_, b)| {
+            let a_pattern = a.pattern().combined();
+            let b_pattern = b.pattern().combined();
+            b_pattern.num_bits().cmp(&a_pattern.num_bits())
+        });
 
         let parse_encoding = match encodings.len() {
             0 => return None,
-            1 => self.with_discriminant_encoding_parse_fn(arch, 0),
+            1 => {
+                let (_, encoding) = &encodings[0];
+                let cfg = encoding.cfg_attribute_tokens(isa, arch);
+                let parse_fn = self.with_discriminant_encoding_parse_fn(arch, 0);
+                quote! {
+                    #cfg
+                    if let Some(ins) = #parse_fn {
+                        return ins;
+                    }
+                }
+            }
             _ => {
-                let encoding_ifs = encodings.iter().enumerate().map(|(index, encoding)| {
+                let encoding_ifs = encodings.iter().map(|(index, encoding)| {
                     let condition = encoding.pattern.condition_tokens(quote!(ins));
-                    let parse_fn = self.with_discriminant_encoding_parse_fn(arch, index);
+                    let parse_fn = self.with_discriminant_encoding_parse_fn(arch, *index);
                     let cfg = encoding.cfg_attribute_tokens(isa, arch);
                     quote! {
                         #cfg
-                        if #condition {
-                            #parse_fn;
+                        if #condition && let Some(ins) = #parse_fn {
+                            return ins;
                         }
                     }
                 });
                 quote! {
-                    {
-                        #(#encoding_ifs)*
-                    }
+                    #(#encoding_ifs)*
                 }
             }
         };
@@ -322,7 +336,7 @@ impl Opcode {
         let discriminant_lit = Literal::u16_unsuffixed(discriminant);
         Some(quote! {
             #cfg
-            #discriminant_lit => #parse_encoding
+            #discriminant_lit => { #parse_encoding }
         })
     }
 
@@ -333,12 +347,10 @@ impl Opcode {
     ) -> TokenStream {
         let parse_fn_ident = self.parse_fn_ident(arch, encoding_index);
         match arch {
-            Arch::Arm => quote! {
-                return #parse_fn_ident(ins, pc, options).unwrap_or(Ins::Illegal)
-            },
-            Arch::Thumb => quote! {
-                return #parse_fn_ident(ins, pc, options).map(|(ins, _size)| ins).unwrap_or(Ins::Illegal)
-            },
+            Arch::Arm => quote!(#parse_fn_ident(ins, pc, options)),
+            Arch::Thumb => {
+                quote!(#parse_fn_ident(ins, pc, options).map(|(ins, _size)| ins))
+            }
         }
     }
 

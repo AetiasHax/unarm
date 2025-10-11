@@ -10282,12 +10282,42 @@ pub fn parse_arm_with_discriminant(
     options: &Options,
 ) -> Ins {
     match discriminant {
-        0 => return parse_arm_adc_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        1 => return parse_arm_add_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        2 => return parse_arm_and_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        3 => return parse_arm_asr_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        4 => return parse_arm_b_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        5 => return parse_arm_bic_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        0 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_adc_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        1 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_add_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        2 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_and_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        3 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_asr_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        4 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_b_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        5 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_bic_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             any(
                 feature = "v5t",
@@ -10297,8 +10327,29 @@ pub fn parse_arm_with_discriminant(
                 feature = "v6k"
             )
         )]
-        6 => return parse_arm_bkpt_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        7 => return parse_arm_bl_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        6 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_bkpt_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        7 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_bl_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             any(
                 feature = "v5t",
@@ -10321,8 +10372,10 @@ pub fn parse_arm_with_discriminant(
                     )
                 )
             )]
-            if (ins & 0xfe000000) == 0xfa000000 {
-                return parse_arm_blx_0(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xff000f0) == 0x1200030
+                && let Some(ins) = parse_arm_blx_1(ins, pc, options)
+            {
+                return ins;
             }
             #[cfg(
                 all(
@@ -10336,8 +10389,10 @@ pub fn parse_arm_with_discriminant(
                     )
                 )
             )]
-            if (ins & 0xff000f0) == 0x1200030 {
-                return parse_arm_blx_1(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfe000000) == 0xfa000000
+                && let Some(ins) = parse_arm_blx_0(ins, pc, options)
+            {
+                return ins;
             }
         }
         #[cfg(
@@ -10350,83 +10405,224 @@ pub fn parse_arm_with_discriminant(
                 feature = "v6k"
             )
         )]
-        9 => return parse_arm_bx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        9 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v4t",
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_bx_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(feature = "arm", any(feature = "v5tej", feature = "v6", feature = "v6k"))
         )]
-        10 => return parse_arm_bxj_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "arm")]
-        11 => return parse_arm_cdp_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(
-            all(
-                feature = "arm",
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
+        10 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(feature = "v5tej", feature = "v6", feature = "v6k")
                 )
-            )
-        )]
-        12 => return parse_arm_cdp2_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(all(feature = "arm", feature = "v6k"))]
-        13 => return parse_arm_clrex_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(
-            all(
-                feature = "arm",
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )
-        )]
-        14 => return parse_arm_clz_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        15 => return parse_arm_cmn_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        16 => return parse_arm_cmp_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(any(feature = "v6", feature = "v6k"))]
-        17 => return parse_arm_cps_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "arm")]
-        18 => return parse_arm_csdb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(all(feature = "arm", feature = "v6k"))]
-        19 => return parse_arm_dbg_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        20 => return parse_arm_eor_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(feature = "arm")]
-        21 => return parse_arm_ldc_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        #[cfg(
-            all(
-                feature = "arm",
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )
-        )]
-        22 => return parse_arm_ldc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        23 => {
-            #[cfg(feature = "arm")]
-            if (ins & 0xe500000) == 0x8100000 {
-                return parse_arm_ldm_0(ins, pc, options).unwrap_or(Ins::Illegal);
-            }
-            #[cfg(feature = "arm")]
-            if (ins & 0xe708000) == 0x8500000 {
-                return parse_arm_ldm_1(ins, pc, options).unwrap_or(Ins::Illegal);
-            }
-            #[cfg(feature = "arm")]
-            if (ins & 0xe508000) == 0x8508000 {
-                return parse_arm_ldm_2(ins, pc, options).unwrap_or(Ins::Illegal);
+            )]
+            if let Some(ins) = parse_arm_bxj_0(ins, pc, options) {
+                return ins;
             }
         }
-        24 => return parse_arm_ldr_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        25 => return parse_arm_ldrb_0(ins, pc, options).unwrap_or(Ins::Illegal),
         #[cfg(feature = "arm")]
-        26 => return parse_arm_ldrbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        11 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_cdp_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )
+        )]
+        12 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_cdp2_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(all(feature = "arm", feature = "v6k"))]
+        13 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_clrex_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )
+        )]
+        14 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_clz_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        15 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_cmn_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        16 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_cmp_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(any(feature = "v6", feature = "v6k"))]
+        17 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_cps_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(feature = "arm")]
+        18 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_csdb_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(all(feature = "arm", feature = "v6k"))]
+        19 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_dbg_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        20 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_eor_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(feature = "arm")]
+        21 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldc_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(
+            all(
+                feature = "arm",
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )
+        )]
+        22 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_ldc2_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        23 => {
+            #[cfg(feature = "arm")]
+            if (ins & 0xe708000) == 0x8500000
+                && let Some(ins) = parse_arm_ldm_1(ins, pc, options)
+            {
+                return ins;
+            }
+            #[cfg(feature = "arm")]
+            if (ins & 0xe508000) == 0x8508000
+                && let Some(ins) = parse_arm_ldm_2(ins, pc, options)
+            {
+                return ins;
+            }
+            #[cfg(feature = "arm")]
+            if (ins & 0xe500000) == 0x8100000
+                && let Some(ins) = parse_arm_ldm_0(ins, pc, options)
+            {
+                return ins;
+            }
+        }
+        24 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldr_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        25 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldrb_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        #[cfg(feature = "arm")]
+        26 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldrbt_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10445,8 +10641,10 @@ pub fn parse_arm_with_discriminant(
                     )
                 )
             )]
-            if (ins & 0xe1000f0) == 0xd0 {
-                return parse_arm_ldrd_0(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xe5f00f0) == 0x4f00d0
+                && let Some(ins) = parse_arm_ldrd_1(ins, pc, options)
+            {
+                return ins;
             }
             #[cfg(
                 all(
@@ -10459,27 +10657,84 @@ pub fn parse_arm_with_discriminant(
                     )
                 )
             )]
-            if (ins & 0xe5f00f0) == 0x4f00d0 {
-                return parse_arm_ldrd_1(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xe1000f0) == 0xd0
+                && let Some(ins) = parse_arm_ldrd_0(ins, pc, options)
+            {
+                return ins;
             }
         }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        28 => return parse_arm_ldrex_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        28 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_ldrex_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        29 => return parse_arm_ldrexb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        29 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_ldrexb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        30 => return parse_arm_ldrexd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        30 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_ldrexd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        31 => return parse_arm_ldrexh_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        32 => return parse_arm_ldrh_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        33 => return parse_arm_ldrsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        34 => return parse_arm_ldrsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        31 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_ldrexh_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        32 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldrh_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        33 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldrsb_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        34 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldrsh_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        35 => return parse_arm_ldrt_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        36 => return parse_arm_lsl_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        37 => return parse_arm_lsr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        35 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ldrt_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        36 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_lsl_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        37 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_lsr_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        38 => return parse_arm_mcr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        38 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_mcr_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10492,34 +10747,86 @@ pub fn parse_arm_with_discriminant(
                 )
             )
         )]
-        39 => return parse_arm_mcr2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        39 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_mcr2_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        40 => return parse_arm_mcrr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        40 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_mcrr_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        41 => return parse_arm_mcrr2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        41 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_mcrr2_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        42 => return parse_arm_mla_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        42 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_mla_0(ins, pc, options) {
+                return ins;
+            }
+        }
         43 => {
             #[cfg(feature = "arm")]
-            if (ins & 0xfe00000) == 0x3a00000 {
-                return parse_arm_mov_0(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfe00ff0) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_1(ins, pc, options)
+            {
+                return ins;
             }
             #[cfg(feature = "arm")]
-            if (ins & 0xfe00ff0) == 0x1a00000 {
-                return parse_arm_mov_1(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfe00000) == 0x3a00000
+                && let Some(ins) = parse_arm_mov_0(ins, pc, options)
+            {
+                return ins;
             }
             #[cfg(feature = "arm")]
-            if (ins & 0xde00000) == 0x1a00000 {
-                return parse_arm_mov_2(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xde00000) == 0x1a00000
+                && let Some(ins) = parse_arm_mov_2(ins, pc, options)
+            {
+                return ins;
             }
         }
         #[cfg(feature = "arm")]
-        44 => return parse_arm_mrc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        44 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_mrc_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10532,54 +10839,153 @@ pub fn parse_arm_with_discriminant(
                 )
             )
         )]
-        45 => return parse_arm_mrc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        45 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_mrc2_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        46 => return parse_arm_mrrc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        46 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_mrrc_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        47 => return parse_arm_mrrc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        47 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_mrrc2_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        48 => return parse_arm_mrs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        48 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_mrs_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        49 => return parse_arm_msr_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        50 => return parse_arm_mul_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        51 => return parse_arm_mvn_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        49 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_msr_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        50 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_mul_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        51 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_mvn_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        53 => return parse_arm_nop_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        54 => return parse_arm_orr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        53 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_nop_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        54 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_orr_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        55 => return parse_arm_pkhbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        55 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_pkhbt_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        56 => return parse_arm_pkhtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        56 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_pkhtb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        57 => return parse_arm_pld_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        57 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_pld_0(ins, pc, options) {
+                return ins;
+            }
+        }
         58 => {
             #[cfg(feature = "arm")]
-            if (ins & 0xfff0000) == 0x8bd0000 {
-                return parse_arm_pop_0(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfff0fff) == 0x49d0004
+                && let Some(ins) = parse_arm_pop_1(ins, pc, options)
+            {
+                return ins;
             }
             #[cfg(feature = "arm")]
-            if (ins & 0xfff0fff) == 0x49d0004 {
-                return parse_arm_pop_1(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfff0000) == 0x8bd0000
+                && let Some(ins) = parse_arm_pop_0(ins, pc, options)
+            {
+                return ins;
             }
         }
         59 => {
             #[cfg(feature = "arm")]
-            if (ins & 0xfff0000) == 0x92d0000 {
-                return parse_arm_push_0(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfff0fff) == 0x52d0004
+                && let Some(ins) = parse_arm_push_1(ins, pc, options)
+            {
+                return ins;
             }
             #[cfg(feature = "arm")]
-            if (ins & 0xfff0fff) == 0x52d0004 {
-                return parse_arm_push_1(ins, pc, options).unwrap_or(Ins::Illegal);
+            if (ins & 0xfff0000) == 0x92d0000
+                && let Some(ins) = parse_arm_push_0(ins, pc, options)
+            {
+                return ins;
             }
         }
         #[cfg(
@@ -10588,150 +10994,510 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        60 => return parse_arm_qadd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        60 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_qadd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        61 => return parse_arm_qadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        61 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_qadd16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        62 => return parse_arm_qadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        62 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_qadd8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        63 => return parse_arm_qasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        63 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_qasx_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        64 => return parse_arm_qdadd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        64 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_qdadd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        65 => return parse_arm_qdsub_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        65 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_qdsub_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        66 => return parse_arm_qsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        66 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_qsax_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        67 => return parse_arm_qsub_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        67 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_qsub_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        68 => return parse_arm_qsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        68 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_qsub16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        69 => return parse_arm_qsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        69 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_qsub8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        70 => return parse_arm_rev_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        70 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_rev_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        71 => return parse_arm_rev16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        71 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_rev16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        72 => return parse_arm_revsh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        72 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_revsh_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        73 => return parse_arm_rfe_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        74 => return parse_arm_ror_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        73 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_rfe_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        74 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_ror_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        75 => return parse_arm_rrx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        76 => return parse_arm_rsb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        75 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_rrx_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        76 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_rsb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        77 => return parse_arm_rsc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        77 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_rsc_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        78 => return parse_arm_sadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        78 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sadd16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        79 => return parse_arm_sadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        79 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sadd8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        80 => return parse_arm_sasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        81 => return parse_arm_sbc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        80 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sasx_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        81 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_sbc_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        82 => return parse_arm_sel_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        82 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sel_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        83 => return parse_arm_setend_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        83 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_setend_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        84 => return parse_arm_sev_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        84 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_sev_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        85 => return parse_arm_shadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        85 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_shadd16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        86 => return parse_arm_shadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        86 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_shadd8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        87 => return parse_arm_shasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        87 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_shasx_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        88 => return parse_arm_shsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        88 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_shsax_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        89 => return parse_arm_shsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        89 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_shsub16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        90 => return parse_arm_shsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        90 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_shsub8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        91 => return parse_arm_smla_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        91 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_smla_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        92 => return parse_arm_smlad_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        92 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smlad_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        93 => return parse_arm_smlal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        93 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_smlal_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        94 => return parse_arm_smlal_half_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        94 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_smlal_half_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        95 => return parse_arm_smlald_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        95 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smlald_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        96 => return parse_arm_smlaw_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        96 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_smlaw_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        97 => return parse_arm_smlsd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        97 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smlsd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        98 => return parse_arm_smlsld_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        98 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smlsld_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        99 => return parse_arm_smmla_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        99 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smmla_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        100 => return parse_arm_smmls_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        100 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smmls_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        101 => return parse_arm_smmul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        101 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smmul_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        102 => return parse_arm_smuad_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        102 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smuad_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        103 => return parse_arm_smul_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        103 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_smul_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        104 => return parse_arm_smull_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        104 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_smull_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        105 => return parse_arm_smulw_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        105 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_smulw_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        106 => return parse_arm_smusd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        106 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_smusd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        107 => return parse_arm_srs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        107 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_srs_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        108 => return parse_arm_ssat_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        108 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_ssat_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        109 => return parse_arm_ssat16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        109 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_ssat16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        110 => return parse_arm_ssax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        110 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_ssax_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        111 => return parse_arm_ssub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        111 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_ssub16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        112 => return parse_arm_ssub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        112 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_ssub8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        113 => return parse_arm_stc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        113 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_stc_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10744,57 +11510,213 @@ pub fn parse_arm_with_discriminant(
                 )
             )
         )]
-        114 => return parse_arm_stc2_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        115 => return parse_arm_stm_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        116 => return parse_arm_str_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        117 => return parse_arm_strb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        114 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_stc2_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        115 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_stm_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        116 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_str_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        117 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_strb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        118 => return parse_arm_strbt_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        118 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_strbt_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        119 => return parse_arm_strd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        119 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_strd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        120 => return parse_arm_strex_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        120 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_strex_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        121 => return parse_arm_strexb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        121 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_strexb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        122 => return parse_arm_strexd_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        122 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_strexd_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        123 => return parse_arm_strexh_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        124 => return parse_arm_strh_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        123 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_strexh_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        124 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_strh_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        125 => return parse_arm_strt_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        126 => return parse_arm_sub_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        127 => return parse_arm_svc_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        125 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_strt_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        126 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_sub_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        127 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_svc_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        128 => return parse_arm_swp_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        128 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_swp_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        129 => return parse_arm_swpb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        129 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_swpb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        130 => return parse_arm_sxtab_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        130 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sxtab_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        131 => return parse_arm_sxtab16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        131 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sxtab16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        132 => return parse_arm_sxtah_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        132 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sxtah_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        133 => return parse_arm_sxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        133 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sxtb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        134 => return parse_arm_sxtb16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        134 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sxtb16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        135 => return parse_arm_sxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        135 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_sxth_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        136 => return parse_arm_teq_0(ins, pc, options).unwrap_or(Ins::Illegal),
-        137 => return parse_arm_tst_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        136 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_teq_0(ins, pc, options) {
+                return ins;
+            }
+        }
+        137 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_tst_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        138 => return parse_arm_uadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        138 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uadd16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        139 => return parse_arm_uadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        139 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uadd8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        140 => return parse_arm_uasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        140 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uasx_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             any(
                 feature = "v4t",
@@ -10805,63 +11727,220 @@ pub fn parse_arm_with_discriminant(
                 feature = "v6k"
             )
         )]
-        141 => return parse_arm_udf_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        141 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v4t",
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_udf_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        142 => return parse_arm_uhadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        142 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uhadd16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        143 => return parse_arm_uhadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        143 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uhadd8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        144 => return parse_arm_uhasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        144 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uhasx_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        145 => return parse_arm_uhsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        145 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uhsax_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        146 => return parse_arm_uhsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        146 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uhsub16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        147 => return parse_arm_uhsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        147 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uhsub8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        148 => return parse_arm_umaal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        148 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_umaal_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        149 => return parse_arm_umlal_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        149 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_umlal_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(feature = "arm")]
-        150 => return parse_arm_umull_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        150 => {
+            #[cfg(feature = "arm")]
+            if let Some(ins) = parse_arm_umull_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        151 => return parse_arm_uqadd16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        151 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uqadd16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        152 => return parse_arm_uqadd8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        152 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uqadd8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        153 => return parse_arm_uqasx_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        153 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uqasx_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        154 => return parse_arm_uqsax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        154 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uqsax_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        155 => return parse_arm_uqsub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        155 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uqsub16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        156 => return parse_arm_uqsub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        156 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uqsub8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        157 => return parse_arm_usad8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        157 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usad8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        158 => return parse_arm_usada8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        158 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usada8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        159 => return parse_arm_usat_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        159 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usat_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        160 => return parse_arm_usat16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        160 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usat16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        161 => return parse_arm_usax_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        161 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usax_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        162 => return parse_arm_usub16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        162 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usub16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        163 => return parse_arm_usub8_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        163 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_usub8_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        164 => return parse_arm_uxtab_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        164 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uxtab_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        165 => return parse_arm_uxtab16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        165 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uxtab16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        166 => return parse_arm_uxtah_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        166 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uxtah_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        167 => return parse_arm_uxtb_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        167 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uxtb_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-        168 => return parse_arm_uxtb16_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        168 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uxtb16_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(any(feature = "v6", feature = "v6k"))]
-        169 => return parse_arm_uxth_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        169 => {
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_arm_uxth_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10869,7 +11948,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        170 => return parse_arm_vabs_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        170 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vabs_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10877,7 +11972,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        171 => return parse_arm_vabs_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        171 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vabs_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10885,7 +11996,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        172 => return parse_arm_vadd_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        172 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vadd_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10893,7 +12020,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        173 => return parse_arm_vadd_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        173 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vadd_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10901,7 +12044,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        174 => return parse_arm_vcmp_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        174 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcmp_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10909,7 +12068,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        175 => return parse_arm_vcmp_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        175 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcmp_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10917,7 +12092,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        176 => return parse_arm_vcvt_f32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        176 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_f32_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10925,7 +12116,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        177 => return parse_arm_vcvt_f32_s32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        177 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_f32_s32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10933,7 +12140,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        178 => return parse_arm_vcvt_f32_u32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        178 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_f32_u32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10941,7 +12164,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        179 => return parse_arm_vcvt_f64_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        179 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_f64_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10949,7 +12188,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        180 => return parse_arm_vcvt_f64_s32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        180 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_f64_s32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10957,7 +12212,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        181 => return parse_arm_vcvt_f64_u32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        181 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_f64_u32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10965,7 +12236,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        182 => return parse_arm_vcvt_s32_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        182 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_s32_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10973,7 +12260,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        183 => return parse_arm_vcvt_s32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        183 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_s32_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10981,7 +12284,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        184 => return parse_arm_vcvt_u32_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        184 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_u32_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10989,7 +12308,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        185 => return parse_arm_vcvt_u32_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        185 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vcvt_u32_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -10997,7 +12332,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        186 => return parse_arm_vdiv_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        186 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vdiv_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11005,7 +12356,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        187 => return parse_arm_vdiv_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        187 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vdiv_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11013,7 +12380,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        188 => return parse_arm_vldm_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        188 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vldm_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11021,7 +12404,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        189 => return parse_arm_vldm_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        189 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vldm_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11029,7 +12428,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        190 => return parse_arm_vldr_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        190 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vldr_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11037,7 +12452,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        191 => return parse_arm_vldr_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        191 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vldr_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11045,7 +12476,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        192 => return parse_arm_vmla_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        192 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmla_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11053,7 +12500,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        193 => return parse_arm_vmla_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        193 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmla_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11061,7 +12524,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        194 => return parse_arm_vmls_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        194 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmls_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11069,7 +12548,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        195 => return parse_arm_vmls_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        195 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmls_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11077,7 +12572,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        196 => return parse_arm_vmov_32_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        196 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_32_reg_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11085,7 +12596,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        197 => return parse_arm_vmov_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        197 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11093,7 +12620,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        198 => return parse_arm_vmov_f32_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        198 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_f32_reg_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11101,7 +12644,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        199 => return parse_arm_vmov_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        199 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11109,7 +12668,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        200 => return parse_arm_vmov_reg_32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        200 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_reg_32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11117,7 +12692,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        201 => return parse_arm_vmov_reg_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        201 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_reg_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11126,8 +12717,21 @@ pub fn parse_arm_with_discriminant(
             )
         )]
         202 => {
-            return parse_arm_vmov_reg_f32_dual_0(ins, pc, options)
-                .unwrap_or(Ins::Illegal);
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_reg_f32_dual_0(ins, pc, options) {
+                return ins;
+            }
         }
         #[cfg(
             all(
@@ -11137,8 +12741,21 @@ pub fn parse_arm_with_discriminant(
             )
         )]
         203 => {
-            return parse_arm_vmov_f32_reg_dual_0(ins, pc, options)
-                .unwrap_or(Ins::Illegal);
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_f32_reg_dual_0(ins, pc, options) {
+                return ins;
+            }
         }
         #[cfg(
             all(
@@ -11147,7 +12764,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        204 => return parse_arm_vmov_reg_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        204 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_reg_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11155,7 +12788,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        205 => return parse_arm_vmov_f64_reg_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        205 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmov_f64_reg_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11163,7 +12812,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        206 => return parse_arm_vmrs_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        206 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmrs_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11171,7 +12836,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        207 => return parse_arm_vmsr_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        207 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmsr_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11179,7 +12860,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        208 => return parse_arm_vmul_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        208 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmul_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11187,7 +12884,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        209 => return parse_arm_vmul_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        209 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vmul_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11195,7 +12908,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        210 => return parse_arm_vneg_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        210 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vneg_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11203,7 +12932,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        211 => return parse_arm_vneg_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        211 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vneg_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11211,7 +12956,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        212 => return parse_arm_vnmla_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        212 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vnmla_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11219,7 +12980,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        213 => return parse_arm_vnmla_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        213 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vnmla_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11227,7 +13004,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        214 => return parse_arm_vnmls_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        214 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vnmls_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11235,7 +13028,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        215 => return parse_arm_vnmls_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        215 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vnmls_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11243,7 +13052,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        216 => return parse_arm_vnmul_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        216 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vnmul_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11251,7 +13076,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        217 => return parse_arm_vnmul_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        217 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vnmul_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11259,7 +13100,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        218 => return parse_arm_vpop_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        218 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vpop_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11267,7 +13124,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        219 => return parse_arm_vpop_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        219 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vpop_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11275,7 +13148,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        220 => return parse_arm_vpush_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        220 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vpush_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11283,7 +13172,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        221 => return parse_arm_vpush_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        221 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vpush_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11291,7 +13196,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        222 => return parse_arm_vsqrt_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        222 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vsqrt_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11299,7 +13220,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        223 => return parse_arm_vsqrt_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        223 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vsqrt_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11307,7 +13244,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        224 => return parse_arm_vstm_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        224 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vstm_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11315,7 +13268,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        225 => return parse_arm_vstm_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        225 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vstm_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11323,7 +13292,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        226 => return parse_arm_vstr_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        226 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vstr_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11331,7 +13316,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        227 => return parse_arm_vstr_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        227 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vstr_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11339,7 +13340,23 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        228 => return parse_arm_vsub_f32_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        228 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vsub_f32_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(
             all(
                 feature = "arm",
@@ -11347,13 +13364,44 @@ pub fn parse_arm_with_discriminant(
                 any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
             )
         )]
-        229 => return parse_arm_vsub_f64_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        229 => {
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_arm_vsub_f64_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        230 => return parse_arm_wfe_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        230 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_wfe_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        231 => return parse_arm_wfi_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        231 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_wfi_0(ins, pc, options) {
+                return ins;
+            }
+        }
         #[cfg(all(feature = "arm", feature = "v6k"))]
-        232 => return parse_arm_yield_0(ins, pc, options).unwrap_or(Ins::Illegal),
+        232 => {
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            if let Some(ins) = parse_arm_yield_0(ins, pc, options) {
+                return ins;
+            }
+        }
         233 => return Ins::Byte(ins as u8),
         234 => return Ins::HalfWord(ins as u16),
         235 => return Ins::Word(ins),
@@ -11370,103 +13418,125 @@ pub fn parse_thumb_with_discriminant(
 ) -> Ins {
     match discriminant {
         0 => {
-            return parse_thumb_adc_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_adc_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         1 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x1c00 {
-                return parse_thumb_add_0(ins, pc, options)
+            if (ins & 0xff78) == 0x4468
+                && let Some(ins) = parse_thumb_add_6(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x3000 {
-                return parse_thumb_add_1(ins, pc, options)
+            if (ins & 0xff87) == 0x4485
+                && let Some(ins) = parse_thumb_add_7(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x1800 {
-                return parse_thumb_add_2(ins, pc, options)
+            if (ins & 0xff80) == 0xb000
+                && let Some(ins) = parse_thumb_add_5(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff00) == 0x4400 {
-                return parse_thumb_add_3(ins, pc, options)
+            if (ins & 0xff00) == 0x4400
+                && let Some(ins) = parse_thumb_add_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0xa800 {
-                return parse_thumb_add_4(ins, pc, options)
+            if (ins & 0xfe00) == 0x1c00
+                && let Some(ins) = parse_thumb_add_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff80) == 0xb000 {
-                return parse_thumb_add_5(ins, pc, options)
+            if (ins & 0xfe00) == 0x1800
+                && let Some(ins) = parse_thumb_add_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff78) == 0x4468 {
-                return parse_thumb_add_6(ins, pc, options)
+            if (ins & 0xf800) == 0x3000
+                && let Some(ins) = parse_thumb_add_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff87) == 0x4485 {
-                return parse_thumb_add_7(ins, pc, options)
+            if (ins & 0xf800) == 0xa800
+                && let Some(ins) = parse_thumb_add_4(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0xa000 {
-                return parse_thumb_add_8(ins, pc, options)
+            if (ins & 0xf800) == 0xa000
+                && let Some(ins) = parse_thumb_add_8(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         2 => {
-            return parse_thumb_and_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_and_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         3 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x1000 {
-                return parse_thumb_asr_0(ins, pc, options)
+            if (ins & 0xffc0) == 0x4100
+                && let Some(ins) = parse_thumb_asr_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xffc0) == 0x4100 {
-                return parse_thumb_asr_1(ins, pc, options)
+            if (ins & 0xf800) == 0x1000
+                && let Some(ins) = parse_thumb_asr_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         4 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf000) == 0xd000 {
-                return parse_thumb_b_0(ins, pc, options)
+            if (ins & 0xf800) == 0xe000
+                && let Some(ins) = parse_thumb_b_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0xe000 {
-                return parse_thumb_b_1(ins, pc, options)
+            if (ins & 0xf000) == 0xd000
+                && let Some(ins) = parse_thumb_b_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         5 => {
-            return parse_thumb_bic_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_bic_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(
             any(
@@ -11478,14 +13548,30 @@ pub fn parse_thumb_with_discriminant(
             )
         )]
         6 => {
-            return parse_thumb_bkpt_0(ins, pc, options)
+            #[cfg(
+                all(
+                    feature = "thumb",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            if let Some(ins) = parse_thumb_bkpt_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         7 => {
-            return parse_thumb_bl_0(ins, pc, options)
-                .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_bl_0(ins, pc, options).map(|(ins, _size)| ins)
+            {
+                return ins;
+            }
         }
         #[cfg(
             any(
@@ -11509,10 +13595,11 @@ pub fn parse_thumb_with_discriminant(
                     )
                 )
             )]
-            if (ins & 0xd000f800) == 0xc000f000 {
-                return parse_thumb_blx_0(ins, pc, options)
+            if (ins & 0xff87) == 0x4780
+                && let Some(ins) = parse_thumb_blx_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(
                 all(
@@ -11526,10 +13613,11 @@ pub fn parse_thumb_with_discriminant(
                     )
                 )
             )]
-            if (ins & 0xff87) == 0x4780 {
-                return parse_thumb_blx_1(ins, pc, options)
+            if (ins & 0xd000f800) == 0xc000f000
+                && let Some(ins) = parse_thumb_blx_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         #[cfg(
@@ -11543,339 +13631,443 @@ pub fn parse_thumb_with_discriminant(
             )
         )]
         9 => {
-            return parse_thumb_bx_0(ins, pc, options)
-                .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_bx_0(ins, pc, options).map(|(ins, _size)| ins)
+            {
+                return ins;
+            }
         }
         15 => {
-            return parse_thumb_cmn_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_cmn_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         16 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x2800 {
-                return parse_thumb_cmp_0(ins, pc, options)
+            if (ins & 0xffc0) == 0x4280
+                && let Some(ins) = parse_thumb_cmp_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xffc0) == 0x4280 {
-                return parse_thumb_cmp_1(ins, pc, options)
+            if (ins & 0xff00) == 0x4500
+                && let Some(ins) = parse_thumb_cmp_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff00) == 0x4500 {
-                return parse_thumb_cmp_2(ins, pc, options)
+            if (ins & 0xf800) == 0x2800
+                && let Some(ins) = parse_thumb_cmp_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         17 => {
-            return parse_thumb_cps_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_cps_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         20 => {
-            return parse_thumb_eor_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_eor_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         23 => {
-            return parse_thumb_ldm_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_ldm_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         24 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x6800 {
-                return parse_thumb_ldr_0(ins, pc, options)
+            if (ins & 0xfe00) == 0x5800
+                && let Some(ins) = parse_thumb_ldr_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x9800 {
-                return parse_thumb_ldr_1(ins, pc, options)
+            if (ins & 0xf800) == 0x6800
+                && let Some(ins) = parse_thumb_ldr_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x4800 {
-                return parse_thumb_ldr_2(ins, pc, options)
+            if (ins & 0xf800) == 0x9800
+                && let Some(ins) = parse_thumb_ldr_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x5800 {
-                return parse_thumb_ldr_3(ins, pc, options)
+            if (ins & 0xf800) == 0x4800
+                && let Some(ins) = parse_thumb_ldr_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         25 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x7800 {
-                return parse_thumb_ldrb_0(ins, pc, options)
+            if (ins & 0xfe00) == 0x5c00
+                && let Some(ins) = parse_thumb_ldrb_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x5c00 {
-                return parse_thumb_ldrb_1(ins, pc, options)
+            if (ins & 0xf800) == 0x7800
+                && let Some(ins) = parse_thumb_ldrb_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         32 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x8800 {
-                return parse_thumb_ldrh_0(ins, pc, options)
+            if (ins & 0xfe00) == 0x5a00
+                && let Some(ins) = parse_thumb_ldrh_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x5a00 {
-                return parse_thumb_ldrh_1(ins, pc, options)
+            if (ins & 0xf800) == 0x8800
+                && let Some(ins) = parse_thumb_ldrh_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         33 => {
-            return parse_thumb_ldrsb_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_ldrsb_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         34 => {
-            return parse_thumb_ldrsh_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_ldrsh_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         36 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x0 {
-                return parse_thumb_lsl_0(ins, pc, options)
+            if (ins & 0xffc0) == 0x4080
+                && let Some(ins) = parse_thumb_lsl_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xffc0) == 0x4080 {
-                return parse_thumb_lsl_1(ins, pc, options)
+            if (ins & 0xf800) == 0x0
+                && let Some(ins) = parse_thumb_lsl_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         37 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x800 {
-                return parse_thumb_lsr_0(ins, pc, options)
+            if (ins & 0xffc0) == 0x40c0
+                && let Some(ins) = parse_thumb_lsr_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xffc0) == 0x40c0 {
-                return parse_thumb_lsr_1(ins, pc, options)
+            if (ins & 0xf800) == 0x800
+                && let Some(ins) = parse_thumb_lsr_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         43 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x2000 {
-                return parse_thumb_mov_0(ins, pc, options)
+            if (ins & 0xffc0) == 0x0
+                && let Some(ins) = parse_thumb_mov_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff00) == 0x4600 {
-                return parse_thumb_mov_1(ins, pc, options)
+            if (ins & 0xffc0) == 0x1c00
+                && let Some(ins) = parse_thumb_mov_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xffc0) == 0x0 {
-                return parse_thumb_mov_2(ins, pc, options)
+            if (ins & 0xff00) == 0x4600
+                && let Some(ins) = parse_thumb_mov_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xffc0) == 0x1c00 {
-                return parse_thumb_mov_3(ins, pc, options)
+            if (ins & 0xf800) == 0x2000
+                && let Some(ins) = parse_thumb_mov_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         50 => {
-            return parse_thumb_mul_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_mul_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         51 => {
-            return parse_thumb_mvn_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_mvn_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(feature = "thumb")]
         52 => {
-            return parse_thumb_neg_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_neg_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         54 => {
-            return parse_thumb_orr_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_orr_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         58 => {
-            return parse_thumb_pop_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_pop_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         59 => {
-            return parse_thumb_push_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_push_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         70 => {
-            return parse_thumb_rev_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_rev_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         71 => {
-            return parse_thumb_rev16_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_rev16_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         72 => {
-            return parse_thumb_revsh_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_revsh_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         74 => {
-            return parse_thumb_ror_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_ror_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         76 => {
-            return parse_thumb_rsb_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_rsb_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         81 => {
-            return parse_thumb_sbc_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_sbc_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         83 => {
-            return parse_thumb_setend_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_setend_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         115 => {
-            return parse_thumb_stm_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_stm_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         116 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x6000 {
-                return parse_thumb_str_0(ins, pc, options)
+            if (ins & 0xfe00) == 0x5000
+                && let Some(ins) = parse_thumb_str_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x9000 {
-                return parse_thumb_str_1(ins, pc, options)
+            if (ins & 0xf800) == 0x6000
+                && let Some(ins) = parse_thumb_str_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x5000 {
-                return parse_thumb_str_2(ins, pc, options)
+            if (ins & 0xf800) == 0x9000
+                && let Some(ins) = parse_thumb_str_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         117 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x7000 {
-                return parse_thumb_strb_0(ins, pc, options)
+            if (ins & 0xfe00) == 0x5400
+                && let Some(ins) = parse_thumb_strb_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x5400 {
-                return parse_thumb_strb_1(ins, pc, options)
+            if (ins & 0xf800) == 0x7000
+                && let Some(ins) = parse_thumb_strb_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         124 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x8000 {
-                return parse_thumb_strh_0(ins, pc, options)
+            if (ins & 0xfe00) == 0x5200
+                && let Some(ins) = parse_thumb_strh_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x5200 {
-                return parse_thumb_strh_1(ins, pc, options)
+            if (ins & 0xf800) == 0x8000
+                && let Some(ins) = parse_thumb_strh_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         126 => {
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x1e00 {
-                return parse_thumb_sub_0(ins, pc, options)
+            if (ins & 0xff80) == 0xb080
+                && let Some(ins) = parse_thumb_sub_3(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xf800) == 0x3800 {
-                return parse_thumb_sub_1(ins, pc, options)
+            if (ins & 0xfe00) == 0x1e00
+                && let Some(ins) = parse_thumb_sub_0(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xfe00) == 0x1a00 {
-                return parse_thumb_sub_2(ins, pc, options)
+            if (ins & 0xfe00) == 0x1a00
+                && let Some(ins) = parse_thumb_sub_2(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
             #[cfg(feature = "thumb")]
-            if (ins & 0xff80) == 0xb080 {
-                return parse_thumb_sub_3(ins, pc, options)
+            if (ins & 0xf800) == 0x3800
+                && let Some(ins) = parse_thumb_sub_1(ins, pc, options)
                     .map(|(ins, _size)| ins)
-                    .unwrap_or(Ins::Illegal);
+            {
+                return ins;
             }
         }
         127 => {
-            return parse_thumb_svc_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_svc_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         133 => {
-            return parse_thumb_sxtb_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_sxtb_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         135 => {
-            return parse_thumb_sxth_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_sxth_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         137 => {
-            return parse_thumb_tst_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_tst_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(
             any(
@@ -11888,21 +14080,30 @@ pub fn parse_thumb_with_discriminant(
             )
         )]
         141 => {
-            return parse_thumb_udf_0(ins, pc, options)
+            #[cfg(feature = "thumb")]
+            if let Some(ins) = parse_thumb_udf_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         167 => {
-            return parse_thumb_uxtb_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_uxtb_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         #[cfg(any(feature = "v6", feature = "v6k"))]
         169 => {
-            return parse_thumb_uxth_0(ins, pc, options)
+            #[cfg(all(feature = "thumb", any(feature = "v6", feature = "v6k")))]
+            if let Some(ins) = parse_thumb_uxth_0(ins, pc, options)
                 .map(|(ins, _size)| ins)
-                .unwrap_or(Ins::Illegal);
+            {
+                return ins;
+            }
         }
         233 => return Ins::Byte(ins as u8),
         234 => return Ins::HalfWord(ins as u16),

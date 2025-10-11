@@ -62,6 +62,9 @@ mod tests {
         assert_arm!(0x00912003, UNIFIED, "addseq r2, r1, r3");
         assert_arm!(0x00912003, DIVIDED, "addeqs r2, r1, r3");
 
+        assert_arm!(0xe1a05000, UNIFIED, "mov r5, r0");
+        assert_arm!(0xe1a05000, DIVIDED, "mov r5, r0");
+
         assert_thumb!(0x1cca, UNIFIED, "adds r2, r1, #0x3");
         assert_thumb!(0x1cca, DIVIDED, "add r2, r1, #0x3");
 
