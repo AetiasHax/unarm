@@ -1858,9 +1858,14 @@ impl Ins {
                 }
             }
             Ins::Lsr { s, thumb, cond, rd, rn, op2 } => {
-                formatter.write_str("lsr")?;
-                formatter.write_s(*s)?;
-                formatter.write_cond(*cond)?;
+                if formatter.options().ual {
+                    formatter.write_str("lsr")?;
+                    formatter.write_s(*s)?;
+                    formatter.write_cond(*cond)?;
+                } else {
+                    formatter.write_str("lsr")?;
+                    formatter.write_cond(*cond)?;
+                }
             }
             #[cfg(feature = "arm")]
             Ins::Mcr { cond, coproc, opc1, rd, crn, crm, opc2 } => {

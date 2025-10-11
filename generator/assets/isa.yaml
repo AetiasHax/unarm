@@ -1885,7 +1885,10 @@ opcodes:
   description: Logical Shift Right
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
-    opcode: !fmt lsr(s)(cond)
+    opcode: !if
+      cond: option(ual)
+      then: !fmt lsr(s)(cond)
+      else: !fmt lsr(cond)
     params: !if
       cond: option(ual) || !field(thumb) || field(rd) != field(rn)
       then: !fmt (rd), (rn), (op2)
