@@ -1,11 +1,17 @@
 #[cfg(test)]
 mod tests {
-    use unarm::{Options, parse_arm, parse_thumb};
+    use unarm::{
+        Options, parse_arm, parse_arm_with_discriminant, parse_thumb, parse_thumb_with_discriminant,
+    };
 
     macro_rules! assert_ins {
         ($ins:ident, $disasm:literal, $options:ident) => {{
             let s = $ins.display(&$options).to_string();
             assert_eq!(s, $disasm)
+        }};
+        ($ins:ident, $disasm:literal, $options:ident, $msg:literal) => {{
+            let s = $ins.display(&$options).to_string();
+            assert_eq!(s, $disasm, $msg)
         }};
     }
 
@@ -28,7 +34,10 @@ mod tests {
         ($code:literal, $pc:literal, $disasm:literal) => {{
             let options = options!();
             let ins = parse_arm($code, $pc, &options);
-            assert_ins!(ins, $disasm, options)
+            assert_ins!(ins, $disasm, options);
+            let discriminant = ins.discriminant();
+            let ins = parse_arm_with_discriminant($code, discriminant, $pc, &options);
+            assert_ins!(ins, $disasm, options, "mismatched parse with discriminant")
         }};
     }
 
@@ -36,7 +45,10 @@ mod tests {
         ($code:literal, $pc:literal, $disasm:literal) => {{
             let options = options!();
             let (ins, _size) = parse_thumb($code, $pc, &options);
-            assert_ins!(ins, $disasm, options)
+            assert_ins!(ins, $disasm, options);
+            let discriminant = ins.discriminant();
+            let ins = parse_thumb_with_discriminant($code, discriminant, $pc, &options);
+            assert_ins!(ins, $disasm, options, "mismatched parse with discriminant")
         }};
     }
 

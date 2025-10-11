@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use unarm::{Options, parse_thumb};
+    use unarm::{Options, parse_thumb, parse_thumb_with_discriminant};
 
     macro_rules! options {
         () => {{
@@ -22,13 +22,22 @@ mod tests {
             let options = options!();
             let (ins, _size) = parse_thumb($code, 0, &options);
             let s = ins.display(&options).to_string();
-            assert_eq!(s, $disasm)
+            assert_eq!(s, $disasm);
+            let discriminant = ins.discriminant();
+            let ins = parse_thumb_with_discriminant($code, discriminant, 0, &options);
+            let s = ins.display(&options).to_string();
+            assert_eq!(s, $disasm, "mismatched parse with discriminant");
         }};
         ($code:literal, $next:literal, $disasm:literal) => {{
             let options = options!();
             let (ins, _size) = parse_thumb($code | ($next << 16), 0, &options);
             let s = ins.display(&options).to_string();
-            assert_eq!(s, $disasm)
+            assert_eq!(s, $disasm);
+            let discriminant = ins.discriminant();
+            let ins =
+                parse_thumb_with_discriminant($code | ($next << 16), discriminant, 0, &options);
+            let s = ins.display(&options).to_string();
+            assert_eq!(s, $disasm, "mismatched parse with discriminant");
         }};
     }
 
