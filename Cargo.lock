@@ -201,7 +201,7 @@ dependencies = [
 
 [[package]]
 name = "unarm"
-version = "2.0.0"
+version = "2.0.1"
 
 [[package]]
 name = "unarm-fuzz"
@@ -214,7 +214,7 @@ dependencies = [
 
 [[package]]
 name = "unarm-generator"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "anyhow",
  "indexmap",
