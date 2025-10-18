@@ -10,8 +10,8 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension, IsaExtensionPatterns,
-        IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
+        DefsUses, Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension,
+        IsaExtensionPatterns, IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
         cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
     },
     util::str::snake_to_pascal_case,
@@ -155,6 +155,8 @@ pub struct Opcode {
     description: String,
     params: IndexMap<OpcodeParamName, DataTypeName>,
     format: OpcodeFormat,
+    defs: Option<DefsUses>,
+    uses: Option<DefsUses>,
     #[serde(default)]
     arm: Vec<OpcodeEncoding>,
     #[serde(default)]

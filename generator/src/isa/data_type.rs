@@ -9,8 +9,8 @@ use syn::{Ident, visit_mut::VisitMut};
 
 use crate::{
     isa::{
-        Arch, BitRange, Format, FormatParams, IllegalChecks, Isa, IsaExtension, IsaVersionSet,
-        OpcodeParamValue, Pattern, SynExpr, cfg_attribute_tokens,
+        Arch, BitRange, DefsUses, Format, FormatParams, IllegalChecks, Isa, IsaExtension,
+        IsaVersionSet, OpcodeParamValue, Pattern, SynExpr, cfg_attribute_tokens,
     },
     util::{hex_literal::HexLiteral, str::snake_to_pascal_case},
 };
@@ -858,6 +858,8 @@ pub struct DataTypeEnumVariant {
     illegal: Option<DataExpr>,
     format: Option<Format>,
     data: Option<DataType>,
+    defs: Option<DefsUses>,
+    uses: Option<DefsUses>,
 }
 
 impl DataTypeEnumVariant {
@@ -1073,6 +1075,8 @@ pub struct DataTypeStruct {
     #[serde(default)]
     illegal: IllegalChecks,
     fields: Vec<DataType>,
+    defs: Option<DefsUses>,
+    uses: Option<DefsUses>,
 }
 
 impl DataTypeStruct {

@@ -1,11 +1,17 @@
-use crate::{CoReg, Dreg, Reg, Sreg};
+use crate::{CoReg, Dreg, DregIndex, DregList, Fpscr, Reg, RegList, Sreg, SregList, StatusReg};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DefUseArgument {
     Reg(Reg),
-    CoReg(CoReg),
     Sreg(Sreg),
     Dreg(Dreg),
+    RegList(RegList),
+    SregList(SregList),
+    DregList(DregList),
+    DregIndex(DregIndex),
+    CoReg(CoReg),
+    StatusReg(StatusReg),
+    Fpscr(Fpscr),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

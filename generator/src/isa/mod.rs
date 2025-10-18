@@ -1,6 +1,7 @@
 mod bit_range;
 mod cfg;
 mod data_type;
+mod defs_uses;
 mod extension;
 mod format;
 mod illegal;
@@ -19,6 +20,7 @@ use serde::Deserialize;
 pub use bit_range::*;
 pub use cfg::*;
 pub use data_type::*;
+pub use defs_uses::*;
 pub use extension::*;
 pub use format::*;
 pub use illegal::*;

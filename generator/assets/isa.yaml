@@ -102,6 +102,8 @@ types:
         data:
           name: rm
           kind: !type [reg, bits(0..4)]
+        uses:
+        - !always field(rm)
 - name: cond
   description: Mnemonic suffix, specifies the condition for whether to execute the instruction
   kind: !enum
@@ -286,6 +288,8 @@ types:
         data:
           name: reg
           kind: !type [reg, bits(0..4)]
+        uses:
+        - !always field(reg)
 - name: shift_op
   description: Shift operation
   kind: !enum
@@ -387,6 +391,9 @@ types:
     - name: rs
       description: Register to shift by
       kind: !type [reg, bits(8..12)]
+    uses:
+    - !always field(rm)
+    - !always field(rs)
 - name: shift_imm
   description: Register shifted by an immediate
   kind: !struct
@@ -407,6 +414,8 @@ types:
     - name: imm
       description: Immediate to shift by
       kind: !type [uimm, bits(7..12)]
+    uses:
+    - !always field(rm)
 - name: op2_shift
   description: Second operand of a shift instruction, can be an immediate or a register
   kind: !union
@@ -425,6 +434,8 @@ types:
         data:
           name: reg
           kind: !type [reg, bits(8..12)]
+        uses:
+        - !always field(reg)
 - name: cps_effect
   description: Mnemonic suffix for CPS, specifies whether to enable/disable interrupt bits or just set the processor mode
   kind: !union
@@ -478,6 +489,10 @@ types:
             - name: writeback
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
+            defs:
+            - !if [field(wb), rn]
+            uses:
+            - !always field(rn)
       xxxx_xxx0_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
         description: Post-indexed
@@ -491,6 +506,8 @@ types:
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !type [simm, (bits(0..8) << 2).negate_if(bit(23) == 0)]
+            uses:
+            - !always field(rn)
       xxxx_xxx0_1x0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: unidx
         description: Unindexed
@@ -505,6 +522,8 @@ types:
             - name: option
               description: Additional options to the coprocessor
               kind: !type [uimm, bits(0..8)]
+            uses:
+            - !always field(rn)
 - name: ldm_stm_mode
   description: Mnemonic suffix for LDM/STM, specifies how to step the base address
   kind: !enum
@@ -544,6 +563,10 @@ types:
             - name: writeback
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
+            defs:
+            - !if [field(writeback), rn]
+            uses:
+            - !always field(rn)
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
         description: Post-indexed
@@ -560,6 +583,8 @@ types:
       kind: !type [reg, bits(16..20)]
     - name: offset
       kind: !type [ldr_str_offset, bits(0..32)]
+    uses:
+    - !always field(rn)
 - name: ldr_str_offset
   description: The offset value in the memory address of a LDR(B)/STR(B) instruction, can be an immediate or a register
   kind: !union
@@ -598,6 +623,8 @@ types:
             - name: imm
               description: Immediate to shift by
               kind: !type [uimm, "if bits(5..7) == 1 && bits(7..12) == 0 { 0x20 } else { bits(7..12) }"]
+            uses:
+            - !always field(rm)
 - name: addr_misc_load
   description: The memory address of a miscellaneous load/store instruction
   kind: !union
@@ -619,6 +646,10 @@ types:
             - name: writeback
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
+            defs:
+            - !if [field(writeback), rn]
+            uses:
+            - !always field(rn)
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: post
         description: Post-indexed
@@ -632,6 +663,8 @@ types:
               kind: !type [reg, bits(16..20)]
             - name: offset
               kind: !type [misc_load_offset, bits(0..32)]
+            uses:
+            - !always field(rn)
 - name: misc_load_offset
   description:
     The offset value in the memory address of a miscellaneous load/store instruction, can be an immediate or a register
@@ -660,6 +693,8 @@ types:
             - name: rm
               description: Index register
               kind: !type [reg, bits(0..4)]
+            uses:
+            - !always field(rm)
 - name: srs_rfe_mode
   description: Mnemonic suffix for SRS/RFE, specifies how to step the stack pointer
   kind: !enum
@@ -806,6 +841,8 @@ types:
         data:
           name: sm
           kind: !type [sreg, (bits(0..4) << 1) | bit(5)]
+        uses:
+        - !always field(sm)
 - name: vcmp_f64_op2
   description: Second operand of a VCMP.F64 instruction, can be zero or a register
   kind: !union
@@ -821,6 +858,8 @@ types:
         data:
           name: dm
           kind: !type [dreg, (bit(5) << 4) | bits(0..4)]
+        uses:
+        - !always field(dm)
 - name: sreg_list
   description: List of general-purpose single-precision floation-point registers, used by VLDM/VSTM
   kind: !custom
@@ -878,6 +917,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5*, v6*, v7]
     pattern: xxxx_00x0_101x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -915,6 +958,10 @@ opcodes:
       cond: option(ual) || !field(thumb) || field(rd) != field(rn)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rm)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_100x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1010,6 +1057,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_000x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1043,6 +1094,10 @@ opcodes:
       cond: option(ual) || !field(thumb) || field(rd) != field(rn)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rm)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x10x_xxxx
@@ -1079,6 +1134,8 @@ opcodes:
   format:
     opcode: !fmt b(cond)
     params: !fmt (target)
+  defs:
+  - !always enum_variant(reg, pc)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1010_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1116,6 +1173,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rm)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_110x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1160,6 +1221,8 @@ opcodes:
   format:
     opcode: !fmt bl(cond)
     params: !fmt (target)
+  defs:
+  - !always enum_variant(reg, pc)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1011_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1180,6 +1243,8 @@ opcodes:
   format:
     opcode: !fmt blx(cond)
     params: !fmt (target)
+  defs:
+  - !always enum_variant(reg, pc)
   arm:
   - version: [v5t*, v6*]
     pattern: 1111_101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1209,6 +1274,8 @@ opcodes:
   format:
     opcode: !fmt bx(cond)
     params: !fmt (rm)
+  defs:
+  - !always enum_variant(reg, pc)
   arm:
   - version: [v4t, v5t*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0001_xxxx
@@ -1230,6 +1297,10 @@ opcodes:
   format:
     opcode: !fmt bxj(cond)
     params: !fmt (rm)
+  defs:
+  - !always enum_variant(reg, pc)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v5tej, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0010_xxxx
@@ -1246,6 +1317,11 @@ opcodes:
   format:
     opcode: !fmt cdp(cond)
     params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
+  defs:
+  - !always field(crd)
+  uses:
+  - !always field(crn)
+  - !always field(crm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
@@ -1266,6 +1342,11 @@ opcodes:
   format:
     opcode: !fmt cdp2
     params: !fmt "(coproc), #(opc1), (crd), (crn), (crm), #(opc2)"
+  defs:
+  - !always field(crd)
+  uses:
+  - !always field(crn)
+  - !always field(crm)
   arm:
   - version: [v5t*, v6*]
     pattern: 1111_1110_xxxx_xxxx_xxxx_xxxx_xxx0_xxxx
@@ -1296,6 +1377,10 @@ opcodes:
   format:
     opcode: !fmt clz(cond)
     params: !fmt (rd), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v5t*, v6*]
     pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0001_xxxx
@@ -1313,6 +1398,8 @@ opcodes:
   format:
     opcode: !fmt cmn(cond)
     params: !fmt (rn), (op2)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_0111_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1336,6 +1423,8 @@ opcodes:
   format:
     opcode: !fmt cmp(cond)
     params: !fmt (rn), (op2)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_0101_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1438,6 +1527,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_001x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1468,6 +1561,8 @@ opcodes:
       then: !fmt ldc(l)(cond)
       else: !fmt ldc(cond)(l)
     params: !fmt (coproc), (crd), (dest)
+  defs:
+  - !always field(crd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1486,6 +1581,8 @@ opcodes:
   format:
     opcode: !fmt ldc2(l)
     params: !fmt (coproc), (crd), (dest)
+  defs:
+  - !always field(crd)
   arm:
   - version: [v5t*, v6*]
     pattern: 1111_110x_xxx1_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1504,6 +1601,11 @@ opcodes:
       then: !fmt ldm(mode)(cond)
       else: !fmt ldm(cond)(mode)
     params: !fmt (rn)(writeback), (regs)(user_mode)
+  defs:
+  - !always field(regs)
+  - !if [field(writeback), field(rn)]
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1557,6 +1659,8 @@ opcodes:
   format:
     opcode: !fmt ldr(cond)
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01xx_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1597,6 +1701,8 @@ opcodes:
       then: !fmt ldrb(cond)
       else: !fmt ldr(cond)b
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01xx_x1x1_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1627,6 +1733,8 @@ opcodes:
       then: !fmt ldrbt(cond)
       else: !fmt ldr(cond)bt
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01x0_x111_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1649,6 +1757,9 @@ opcodes:
       cond: option(ual)
       then: !fmt (rd), (rd2), (addr)
       else: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
+  - !always field(rd2)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1101_xxxx
@@ -1677,6 +1788,10 @@ opcodes:
   format:
     opcode: !fmt ldrex(cond)
     params: !fmt (rd), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6*]
     pattern: xxxx_0001_1001_xxxx_xxxx_xxxx_1001_xxxx
@@ -1694,6 +1809,10 @@ opcodes:
   format:
     opcode: !fmt ldrexb(cond)
     params: !fmt (rd), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1101_xxxx_xxxx_xxxx_1001_xxxx
@@ -1711,6 +1830,11 @@ opcodes:
   format:
     opcode: !fmt ldrexd(cond)
     params: !fmt (rd), (rd2), [(rn)]
+  defs:
+  - !always field(rd)
+  - !always field(rd2)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1011_xxxx_xxxx_xxxx_1001_xxxx
@@ -1729,6 +1853,10 @@ opcodes:
   format:
     opcode: !fmt ldrexh(cond)
     params: !fmt (rd), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1111_xxxx_xxxx_xxxx_1001_xxxx
@@ -1749,6 +1877,8 @@ opcodes:
       then: !fmt ldrh(cond)
       else: !fmt ldr(cond)h
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1011_xxxx
@@ -1779,6 +1909,8 @@ opcodes:
       then: !fmt ldrsb(cond)
       else: !fmt ldr(cond)sb
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1101_xxxx
@@ -1804,6 +1936,8 @@ opcodes:
       then: !fmt ldrsh(cond)
       else: !fmt ldr(cond)sh
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_000x_xxx1_xxxx_xxxx_xxxx_1111_xxxx
@@ -1829,6 +1963,8 @@ opcodes:
       then: !fmt ldrt(cond)
       else: !fmt ldr(cond)t
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01x0_x011_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1851,6 +1987,10 @@ opcodes:
       cond: option(ual) || !field(thumb) || field(rd) != field(rn)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x00x_xxxx
@@ -1893,6 +2033,10 @@ opcodes:
       cond: option(ual) || !field(thumb) || field(rd) != field(rn)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x01x_xxxx
@@ -1929,6 +2073,12 @@ opcodes:
   format:
     opcode: !fmt mcr(cond)
     params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  defs:
+  - !always field(crn)
+  - !always field(crm)
+  uses:
+  - !always field(rd)
+  - !always field(crm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1110_xxx0_xxxx_xxxx_xxxx_xxx1_xxxx
@@ -1949,6 +2099,12 @@ opcodes:
   format:
     opcode: !fmt mcr2
     params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  defs:
+  - !always field(crn)
+  - !always field(crm)
+  uses:
+  - !always field(rd)
+  - !always field(crm)
   arm:
   - version: [v5t*, v6*]
     pattern: 1111_1110_xxx0_xxxx_xxxx_xxxx_xxx1_xxxx
@@ -1966,6 +2122,11 @@ opcodes:
   format:
     opcode: !fmt mcrr(cond)
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  defs:
+  - !always field(crm)
+  uses:
+  - !always field(rd)
+  - !always field(rd, rd2)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -1985,6 +2146,11 @@ opcodes:
   format:
     opcode: !fmt mcrr2
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  defs:
+  - !always field(crm)
+  uses:
+  - !always field(rd)
+  - !always field(rd, rd2)
   arm:
   - version: [v6*]
     pattern: 1111_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2004,6 +2170,12 @@ opcodes:
       then: !fmt mla(s)(cond)
       else: !fmt mla(cond)(s)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_001x_xxxx_xxxx_xxxx_1001_xxxx
@@ -2030,6 +2202,8 @@ opcodes:
         cond: "!field(thumb)"
         then: !fmt (s)
     params: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0011_101x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2102,6 +2276,12 @@ opcodes:
   format:
     opcode: !fmt mrc(cond)
     params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  defs:
+  - !always field(rd)
+  - !always field(crm)
+  uses:
+  - !always field(crn)
+  - !always field(crm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1110_xxx1_xxxx_xxxx_xxxx_xxx1_xxxx
@@ -2122,6 +2302,12 @@ opcodes:
   format:
     opcode: !fmt mrc2
     params: !fmt "(coproc), #(opc1), (rd), (crn), (crm), #(opc2)"
+  defs:
+  - !always field(rd)
+  - !always field(crm)
+  uses:
+  - !always field(crn)
+  - !always field(crm)
   arm:
   - version: [v5t*, v6*]
     pattern: 1111_1110_xxx1_xxxx_xxxx_xxxx_xxx1_xxxx
@@ -2139,6 +2325,11 @@ opcodes:
   format:
     opcode: !fmt mrrc(cond)
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  defs:
+  - !always field(rd)
+  - !always field(rd2)
+  uses:
+  - !always field(crm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2158,6 +2349,11 @@ opcodes:
   format:
     opcode: !fmt mrrc2
     params: !fmt "(coproc), #(opc), (rd), (rd2), (crm)"
+  defs:
+  - !always field(rd)
+  - !always field(rd2)
+  uses:
+  - !always field(crm)
   arm:
   - version: [v6*]
     pattern: 1111_1100_0101_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2174,6 +2370,10 @@ opcodes:
   format:
     opcode: !fmt mrs(cond)
     params: !fmt (rd), (status_reg)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(status_reg)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_0x00_xxxx_xxxx_xx0x_0000_xxxx
@@ -2191,6 +2391,8 @@ opcodes:
   format:
     opcode: !fmt msr(cond)
     params: !fmt (status_fields), (op2)
+  defs:
+  - !always field(status_reg)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_0x10_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2219,6 +2421,11 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (rm)
       else: !fmt (rd), (rn)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_000x_xxxx_xxxx_xxxx_1001_xxxx
@@ -2254,6 +2461,8 @@ opcodes:
         cond: "!field(thumb)"
         then: !fmt (s)
     params: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_111x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2280,6 +2489,10 @@ opcodes:
   format:
     opcode: !fmt neg
     params: !fmt (rd), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0010_01xx_xxxx
@@ -2319,6 +2532,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_100x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2350,6 +2567,11 @@ opcodes:
     - !if
       cond: field(shift) != 0
       then: !fmt ", (shift_op) #(shift)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x001_xxxx
@@ -2372,6 +2594,11 @@ opcodes:
     params: !seq
     - !fmt "(rd), (rn), (rm)"
     - !fmt ", (shift_op) #(shift)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_x101_xxxx
@@ -2406,6 +2633,11 @@ opcodes:
   format:
     opcode: !fmt pop(cond)
     params: !fmt (regs)
+  defs:
+  - !always enum_variant(reg, sp)
+  - !always field(regs)
+  uses:
+  - !always enum_variant(reg, sp)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1000_1011_1101_xxxx_xxxx_xxxx_xxxx
@@ -2439,6 +2671,11 @@ opcodes:
   format:
     opcode: !fmt push(cond)
     params: !fmt (regs)
+  defs:
+  - !always enum_variant(reg, sp)
+  uses:
+  - !always enum_variant(reg, sp)
+  - !always field(regs)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_1001_0010_1101_xxxx_xxxx_xxxx_xxxx
@@ -2472,6 +2709,11 @@ opcodes:
   format:
     opcode: !fmt qadd(cond)
     params: !fmt (rd), (rm), (rn)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_0101_xxxx
@@ -2490,6 +2732,11 @@ opcodes:
   format:
     opcode: !fmt qadd16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0001_xxxx
@@ -2508,6 +2755,11 @@ opcodes:
   format:
     opcode: !fmt qadd8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_1001_xxxx
@@ -2529,6 +2781,11 @@ opcodes:
       then: !fmt qasx(cond)
       else: !fmt qaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0011_xxxx
@@ -2547,6 +2804,11 @@ opcodes:
   format:
     opcode: !fmt qdadd(cond)
     params: !fmt (rd), (rm), (rn)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_0101_xxxx
@@ -2565,6 +2827,11 @@ opcodes:
   format:
     opcode: !fmt qdsub(cond)
     params: !fmt (rd), (rm), (rn)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0101_xxxx
@@ -2586,6 +2853,11 @@ opcodes:
       then: !fmt qsax(cond)
       else: !fmt qsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0101_xxxx
@@ -2604,6 +2876,11 @@ opcodes:
   format:
     opcode: !fmt qsub(cond)
     params: !fmt (rd), (rm), (rn)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0101_xxxx
@@ -2622,6 +2899,11 @@ opcodes:
   format:
     opcode: !fmt qsub16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_0111_xxxx
@@ -2640,6 +2922,11 @@ opcodes:
   format:
     opcode: !fmt qsub8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0010_xxxx_xxxx_xxxx_1111_xxxx
@@ -2658,6 +2945,10 @@ opcodes:
   format:
     opcode: !fmt rev(cond)
     params: !fmt (rd), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_0011_xxxx
@@ -2682,6 +2973,10 @@ opcodes:
   format:
     opcode: !fmt rev16(cond)
     params: !fmt (rd), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_1011_xxxx
@@ -2706,6 +3001,10 @@ opcodes:
   format:
     opcode: !fmt revsh(cond)
     params: !fmt (rd), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1111_xxxx_xxxx_xxxx_1011_xxxx
@@ -2730,6 +3029,10 @@ opcodes:
   format:
     opcode: !fmt rfe(addr_mode)
     params: !fmt (rn)(writeback)
+  defs:
+  - !if [field(wb), field(rn)]
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6*]
     pattern: 1111_100x_x0x1_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2752,6 +3055,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_0000_xxxx_xxxx_x11x_xxxx
@@ -2780,6 +3087,10 @@ opcodes:
   format:
     opcode: !fmt rrx(s)(cond)
     params: !fmt (rd), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_101x_xxxx_xxxx_0000_0110_xxxx
@@ -2802,6 +3113,10 @@ opcodes:
       then: !fmt rsb(s)(cond)
       else: !fmt rsb(cond)(s)
     params: !fmt (rd), (rn), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_011x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2832,6 +3147,10 @@ opcodes:
       then: !fmt rsc(s)(cond)
       else: !fmt rsc(cond)(s)
     params: !fmt (rd), (rn), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_111x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2850,6 +3169,11 @@ opcodes:
   format:
     opcode: !fmt sadd16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0001_xxxx
@@ -2868,6 +3192,11 @@ opcodes:
   format:
     opcode: !fmt sadd8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_1001_xxxx
@@ -2889,6 +3218,11 @@ opcodes:
       then: !fmt sasx(cond)
       else: !fmt saddsubx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0011_xxxx
@@ -2917,6 +3251,10 @@ opcodes:
       cond: option(ual) || !field(thumb)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_110x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2944,6 +3282,11 @@ opcodes:
   format:
     opcode: !fmt sel(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_1011_xxxx
@@ -2998,6 +3341,11 @@ opcodes:
   format:
     opcode: !fmt shadd16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0001_xxxx
@@ -3016,6 +3364,11 @@ opcodes:
   format:
     opcode: !fmt shadd8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_1001_xxxx
@@ -3037,6 +3390,11 @@ opcodes:
       then: !fmt shasx(cond)
       else: !fmt shaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0011_xxxx
@@ -3058,6 +3416,11 @@ opcodes:
       then: !fmt shsax(cond)
       else: !fmt shsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0101_xxxx
@@ -3076,6 +3439,11 @@ opcodes:
   format:
     opcode: !fmt shsub16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_0111_xxxx
@@ -3094,6 +3462,11 @@ opcodes:
   format:
     opcode: !fmt shsub8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0011_xxxx_xxxx_xxxx_1111_xxxx
@@ -3112,6 +3485,12 @@ opcodes:
   format:
     opcode: !fmt smla(rn_side)(rm_side)(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_1xx0_xxxx
@@ -3132,6 +3511,12 @@ opcodes:
   format:
     opcode: !fmt smlad(swap_rm)(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0000_xxxx_xxxx_xxxx_00x1_xxxx
@@ -3154,6 +3539,12 @@ opcodes:
       then: !fmt smlal(s)(cond)
       else: !fmt smlal(cond)(s)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_111x_xxxx_xxxx_xxxx_1001_xxxx
@@ -3173,6 +3564,12 @@ opcodes:
   format:
     opcode: !fmt smlal(rn_side)(rm_side)(cond)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_1xx0_xxxx
@@ -3193,6 +3590,12 @@ opcodes:
   format:
     opcode: !fmt smlald(swap_rm)(cond)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0100_xxxx_xxxx_xxxx_00x1_xxxx
@@ -3212,6 +3615,12 @@ opcodes:
   format:
     opcode: !fmt smlaw(rm_side)(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_1x00_xxxx
@@ -3231,6 +3640,12 @@ opcodes:
   format:
     opcode: !fmt smlsd(swap_rm)(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0000_xxxx_xxxx_xxxx_01x1_xxxx
@@ -3250,6 +3665,12 @@ opcodes:
   format:
     opcode: !fmt smlsld(swap_rm)(cond)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0100_xxxx_xxxx_xxxx_01x1_xxxx
@@ -3269,6 +3690,12 @@ opcodes:
   format:
     opcode: !fmt smmla(round)(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0101_xxxx_xxxx_xxxx_00x1_xxxx
@@ -3288,6 +3715,12 @@ opcodes:
   format:
     opcode: !fmt smmls(round)(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0101_xxxx_xxxx_xxxx_11x1_xxxx
@@ -3307,6 +3740,11 @@ opcodes:
   format:
     opcode: !fmt smmul(round)(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0101_xxxx_1111_xxxx_00x1_xxxx
@@ -3325,6 +3763,11 @@ opcodes:
   format:
     opcode: !fmt smuad(swap_rm)(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0000_xxxx_1111_xxxx_00x1_xxxx
@@ -3343,6 +3786,11 @@ opcodes:
   format:
     opcode: !fmt smul(rn_side)(rm_side)(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_1xx0_xxxx
@@ -3366,6 +3814,12 @@ opcodes:
       then: !fmt smull(s)(cond)
       else: !fmt smull(cond)(s)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_110x_xxxx_xxxx_xxxx_1001_xxxx
@@ -3385,6 +3839,11 @@ opcodes:
   format:
     opcode: !fmt smulw(rm_side)(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_1x10_xxxx
@@ -3404,6 +3863,11 @@ opcodes:
   format:
     opcode: !fmt smusd(swap_rm)(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_0000_xxxx_1111_xxxx_01x1_xxxx
@@ -3422,6 +3886,10 @@ opcodes:
   format:
     opcode: !fmt srs(addr_mode)
     params: !fmt "(rn)(writeback), #(mode)"
+  defs:
+  - !if [field(wb), field(rn)]
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6*]
     pattern: 1111_100x_x1x0_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3439,6 +3907,8 @@ opcodes:
   format:
     opcode: !fmt ssat(cond)
     params: !fmt "(rd), #(imm), (op2)"
+  defs:
+  - !always field(rd)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_101x_xxxx_xxxx_xxxx_xx01_xxxx
@@ -3456,6 +3926,8 @@ opcodes:
   format:
     opcode: !fmt ssat16(cond)
     params: !fmt "(rd), #(imm), (rn)"
+  defs:
+  - !always field(rd)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1010_xxxx_xxxx_xxxx_0011_xxxx
@@ -3477,6 +3949,11 @@ opcodes:
       then: !fmt ssax(cond)
       else: !fmt ssubaddx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0101_xxxx
@@ -3495,6 +3972,11 @@ opcodes:
   format:
     opcode: !fmt ssub16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_0111_xxxx
@@ -3513,6 +3995,11 @@ opcodes:
   format:
     opcode: !fmt ssub8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0001_xxxx_xxxx_xxxx_1111_xxxx
@@ -3534,6 +4021,8 @@ opcodes:
       then: !fmt stc(l)(cond)
       else: !fmt stc(cond)(l)
     params: !fmt (coproc), (crd), (dest)
+  defs:
+  - !always field(crd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_110x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3552,6 +4041,8 @@ opcodes:
   format:
     opcode: !fmt stc2(l)
     params: !fmt (coproc), (crd), (dest)
+  defs:
+  - !always field(crd)
   arm:
   - version: [v5t*, v6*]
     pattern: 1111_110x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3570,6 +4061,11 @@ opcodes:
       then: !fmt stm(mode)(cond)
       else: !fmt stm(cond)(mode)
     params: !fmt (rn)(writeback), (regs)(user_mode)
+  defs:
+  - !if [field(writeback), field(rn)]
+  uses:
+  - !always field(regs)
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_100x_xxx0_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3600,6 +4096,8 @@ opcodes:
   format:
     opcode: !fmt str(cond)
     params: !fmt (rd), (addr)
+  uses:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01xx_x0x0_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3635,6 +4133,8 @@ opcodes:
       then: !fmt strb(cond)
       else: !fmt str(cond)b
     params: !fmt (rd), (addr)
+  uses:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01xx_x1x0_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3665,6 +4165,8 @@ opcodes:
       then: !fmt strbt(cond)
       else: !fmt str(cond)bt
     params: !fmt (rd), (addr)
+  uses:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01x0_x110_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3687,6 +4189,9 @@ opcodes:
       cond: option(ual)
       then: !fmt (rd), (rd2), (addr)
       else: !fmt (rd), (addr)
+  uses:
+  - !always field(rd)
+  - !always field(rd2)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1111_xxxx
@@ -3705,6 +4210,11 @@ opcodes:
   format:
     opcode: !fmt strex(cond)
     params: !fmt (rd), (rm), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0001_1000_xxxx_xxxx_xxxx_1001_xxxx
@@ -3723,6 +4233,11 @@ opcodes:
   format:
     opcode: !fmt strexb(cond)
     params: !fmt (rd), (rm), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1100_xxxx_xxxx_xxxx_1001_xxxx
@@ -3741,6 +4256,12 @@ opcodes:
   format:
     opcode: !fmt strexd(cond)
     params: !fmt (rd), (rm), (rm2), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(rm2)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1010_xxxx_xxxx_xxxx_1001_xxxx
@@ -3760,6 +4281,11 @@ opcodes:
   format:
     opcode: !fmt strexh(cond)
     params: !fmt (rd), (rm), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1110_xxxx_xxxx_xxxx_1001_xxxx
@@ -3781,6 +4307,8 @@ opcodes:
       then: !fmt strh(cond)
       else: !fmt str(cond)h
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_000x_xxx0_xxxx_xxxx_xxxx_1011_xxxx
@@ -3811,6 +4339,8 @@ opcodes:
       then: !fmt strt(cond)
       else: !fmt str(cond)t
     params: !fmt (rd), (addr)
+  defs:
+  - !always field(rd)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_01x0_x010_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3837,6 +4367,10 @@ opcodes:
       cond: option(ual) || !field(thumb) || field(rd) != field(rn)
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x0_010x_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3910,6 +4444,11 @@ opcodes:
   format:
     opcode: !fmt swp(cond)
     params: !fmt (rd), (rd2), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rd2)
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_1001_xxxx
@@ -3928,6 +4467,11 @@ opcodes:
   format:
     opcode: !fmt swpb(cond)
     params: !fmt (rd), (rd2), [(rn)]
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rd2)
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_1001_xxxx
@@ -3950,6 +4494,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1010_xxxx_xxxx_xxxx_0111_xxxx
@@ -3973,6 +4522,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1000_xxxx_xxxx_xxxx_0111_xxxx
@@ -3996,6 +4550,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1011_xxxx_xxxx_xxxx_0111_xxxx
@@ -4019,6 +4578,10 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1010_1111_xxxx_xxxx_0111_xxxx
@@ -4048,6 +4611,10 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1000_1111_xxxx_xxxx_0111_xxxx
@@ -4070,6 +4637,10 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1011_1111_xxxx_xxxx_0111_xxxx
@@ -4095,6 +4666,8 @@ opcodes:
   format:
     opcode: !fmt teq(cond)
     params: !fmt (rn), (op2)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_0011_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -4112,6 +4685,8 @@ opcodes:
   format:
     opcode: !fmt tst(cond)
     params: !fmt (rn), (op2)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_0001_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -4135,6 +4710,8 @@ opcodes:
   format:
     opcode: !fmt uadd16(cond)
     params: !fmt (rd), (rn), (rm)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0001_xxxx
@@ -4153,6 +4730,11 @@ opcodes:
   format:
     opcode: !fmt uadd8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_1001_xxxx
@@ -4171,6 +4753,11 @@ opcodes:
   format:
     opcode: !fmt uasx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0011_xxxx
@@ -4206,6 +4793,11 @@ opcodes:
   format:
     opcode: !fmt uhadd16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0001_xxxx
@@ -4224,6 +4816,11 @@ opcodes:
   format:
     opcode: !fmt uhadd8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_1001_xxxx
@@ -4245,6 +4842,11 @@ opcodes:
       then: !fmt uhasx(cond)
       else: !fmt uhaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0011_xxxx
@@ -4266,6 +4868,11 @@ opcodes:
       then: !fmt uhsax(cond)
       else: !fmt uhsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0101_xxxx
@@ -4284,6 +4891,11 @@ opcodes:
   format:
     opcode: !fmt uhsub16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_0111_xxxx
@@ -4302,6 +4914,11 @@ opcodes:
   format:
     opcode: !fmt uhsub8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0111_xxxx_xxxx_xxxx_1111_xxxx
@@ -4320,6 +4937,12 @@ opcodes:
   format:
     opcode: !fmt umaal(cond)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0000_0100_xxxx_xxxx_xxxx_1001_xxxx
@@ -4341,6 +4964,12 @@ opcodes:
       then: !fmt umlal(s)(cond)
       else: !fmt umlal(cond)(s)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_101x_xxxx_xxxx_xxxx_1001_xxxx
@@ -4363,6 +4992,12 @@ opcodes:
       then: !fmt umull(s)(cond)
       else: !fmt umull(cond)(s)
     params: !fmt (rd_lo), (rd_hi), (rn), (rm)
+  defs:
+  - !always field(rd_lo)
+  - !always field(rd_hi)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_0000_100x_xxxx_xxxx_xxxx_1001_xxxx
@@ -4382,6 +5017,11 @@ opcodes:
   format:
     opcode: !fmt uqadd16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0001_xxxx
@@ -4400,6 +5040,11 @@ opcodes:
   format:
     opcode: !fmt uqadd8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_1001_xxxx
@@ -4421,6 +5066,11 @@ opcodes:
       then: !fmt uqasx(cond)
       else: !fmt uqaddsubx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0011_xxxx
@@ -4442,6 +5092,11 @@ opcodes:
       then: !fmt uqsax(cond)
       else: !fmt uqsubaddx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0101_xxxx
@@ -4460,6 +5115,11 @@ opcodes:
   format:
     opcode: !fmt uqsub16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_0111_xxxx
@@ -4478,6 +5138,11 @@ opcodes:
   format:
     opcode: !fmt uqsub8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0110_xxxx_xxxx_xxxx_1111_xxxx
@@ -4496,6 +5161,11 @@ opcodes:
   format:
     opcode: !fmt usad8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_1000_xxxx_1111_xxxx_0001_xxxx
@@ -4513,6 +5183,12 @@ opcodes:
   format:
     opcode: !fmt usada8(cond)
     params: !fmt (rd), (rn), (rm), (ra)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
+  - !always field(ra)
   arm:
   - version: [v6*]
     pattern: xxxx_0111_1000_xxxx_xxxx_xxxx_0001_xxxx
@@ -4531,6 +5207,8 @@ opcodes:
   format:
     opcode: !fmt usat(cond)
     params: !fmt "(rd), #(imm), (op2)"
+  defs:
+  - !always field(rd)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_111x_xxxx_xxxx_xxxx_xx01_xxxx
@@ -4548,6 +5226,10 @@ opcodes:
   format:
     opcode: !fmt usat16(cond)
     params: !fmt "(rd), #(imm), (rn)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1110_xxxx_xxxx_xxxx_0011_xxxx
@@ -4569,6 +5251,11 @@ opcodes:
       then: !fmt usax(cond)
       else: !fmt usubaddx(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0101_xxxx
@@ -4587,6 +5274,11 @@ opcodes:
   format:
     opcode: !fmt usub16(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_0111_xxxx
@@ -4605,6 +5297,11 @@ opcodes:
   format:
     opcode: !fmt usub8(cond)
     params: !fmt (rd), (rn), (rm)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_0101_xxxx_xxxx_xxxx_1111_xxxx
@@ -4627,6 +5324,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1110_xxxx_xxxx_xxxx_0111_xxxx
@@ -4650,6 +5352,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1100_xxxx_xxxx_xxxx_0111_xxxx
@@ -4673,6 +5380,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1111_xxxx_xxxx_xxxx_0111_xxxx
@@ -4696,6 +5408,11 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rn)
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1110_1111_xxxx_xxxx_0111_xxxx
@@ -4725,6 +5442,10 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1100_1111_xxxx_xxxx_0111_xxxx
@@ -4747,6 +5468,10 @@ opcodes:
     - !if
       cond: field(rotate) != 0
       then: !fmt ", ror #(rotate)"
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v6*]
     pattern: xxxx_0110_1111_1111_xxxx_xxxx_0111_xxxx
@@ -4775,6 +5500,10 @@ opcodes:
       then: !fmt vabs(cond).f32
       else: !fmt fabss(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4795,6 +5524,10 @@ opcodes:
       then: !fmt vabs(cond).f64
       else: !fmt fabsd(cond)
     params: !fmt (dd), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4815,6 +5548,11 @@ opcodes:
       then: !fmt vadd(cond).f32
       else: !fmt fadds(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4836,6 +5574,11 @@ opcodes:
       then: !fmt vadd(cond).f64
       else: !fmt faddd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4866,6 +5609,8 @@ opcodes:
     - !if
       cond: option(ual) || field(op2) != enum_variant(vcmp_f32_op2, zero)
       then: !fmt ", (op2)"
+  uses:
+  - !always field(sd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4896,6 +5641,8 @@ opcodes:
     - !if
       cond: option(ual) || field(op2) != enum_variant(vcmp_f64_op2, zero)
       then: !fmt ", (op2)"
+  uses:
+  - !always field(dd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4917,6 +5664,10 @@ opcodes:
       then: !fmt vcvt(cond).f32.f64
       else: !fmt fcvtsd(cond)
     params: !fmt (sd), (dm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4937,6 +5688,10 @@ opcodes:
       then: !fmt vcvt(cond).f32.s32
       else: !fmt fsitos(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4957,6 +5712,10 @@ opcodes:
       then: !fmt vcvt(cond).f32.u32
       else: !fmt fuitos(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4977,6 +5736,10 @@ opcodes:
       then: !fmt vcvt(cond).f64.f32
       else: !fmt fcvtds(cond)
     params: !fmt (dd), (sm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -4997,6 +5760,10 @@ opcodes:
       then: !fmt vcvt(cond).f64.s32
       else: !fmt fsitod(cond)
     params: !fmt (dd), (sm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5017,6 +5784,10 @@ opcodes:
       then: !fmt vcvt(cond).f64.u32
       else: !fmt fuitod(cond)
     params: !fmt (dd), (sm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5037,6 +5808,10 @@ opcodes:
       then: !fmt vcvt(round_zero)(cond).s32.f32
       else: !fmt ftosi(round_zero)s(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5058,6 +5833,10 @@ opcodes:
       then: !fmt vcvt(round_zero)(cond).s32.f64
       else: !fmt ftosi(round_zero)d(cond)
     params: !fmt (sd), (dm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5079,6 +5858,10 @@ opcodes:
       then: !fmt vcvt(round_zero)(cond).u32.f32
       else: !fmt ftoui(round_zero)s(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5100,6 +5883,10 @@ opcodes:
       then: !fmt vcvt(round_zero)(cond).u32.f64
       else: !fmt ftoui(round_zero)d(cond)
     params: !fmt (sd), (dm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5121,6 +5908,11 @@ opcodes:
       then: !fmt vdiv(cond).f32
       else: !fmt fdivs(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5142,6 +5934,11 @@ opcodes:
       then: !fmt vdiv(cond).f64
       else: !fmt fdivd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5163,6 +5960,11 @@ opcodes:
       then: !fmt vldm(mode)(cond)
       else: !fmt fldm(mode)s(cond)
     params: !fmt (rn)(writeback), (regs)
+  defs:
+  - !always field(regs)
+  - !if [field(writeback), field(rn)]
+  uses:
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5185,6 +5987,11 @@ opcodes:
       then: !fmt vldm(mode)(cond)
       else: !fmt fldm(mode)d(cond)
     params: !fmt (rn)(writeback), (regs)
+  defs:
+  - !always field(regs)
+  - !if [field(writeback), field(rn)]
+  uses:
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5207,6 +6014,8 @@ opcodes:
       then: !fmt vldr(cond)
       else: !fmt flds(cond)
     params: !fmt (sd), (addr)
+  defs:
+  - !always field(sd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5227,6 +6036,8 @@ opcodes:
       then: !fmt vldr(cond)
       else: !fmt fldd(cond)
     params: !fmt (dd), (addr)
+  defs:
+  - !always field(dd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5247,6 +6058,11 @@ opcodes:
       then: !fmt vmla(cond).f32
       else: !fmt fmacs(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5268,6 +6084,11 @@ opcodes:
       then: !fmt vmla(cond).f64
       else: !fmt fmacd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5289,6 +6110,11 @@ opcodes:
       then: !fmt vmls(cond).f32
       else: !fmt fmscs(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5310,6 +6136,11 @@ opcodes:
       then: !fmt vmls(cond).f64
       else: !fmt fmscd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5334,6 +6165,10 @@ opcodes:
         then: !fmt fmdlr(cond)
         else: !fmt fmdhr(cond)
     params: !fmt (dd), (rt)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(rt)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5355,6 +6190,10 @@ opcodes:
       then: !fmt vmov(cond).f32
       else: !fmt fcpys(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5375,6 +6214,10 @@ opcodes:
       then: !fmt vmov(cond)
       else: !fmt fmsr(cond)
     params: !fmt (sn), (rt)
+  defs:
+  - !always field(sn)
+  uses:
+  - !always field(rt)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5396,6 +6239,10 @@ opcodes:
       then: !fmt vmov(cond).f64
       else: !fmt fcpyd(cond)
     params: !fmt (dd), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5419,6 +6266,10 @@ opcodes:
         then: !fmt fmrdl(cond)
         else: !fmt fmrdh(cond)
     params: !fmt (rt), (dn)
+  defs:
+  - !always field(rt)
+  uses:
+  - !always field(dn)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5440,6 +6291,10 @@ opcodes:
       then: !fmt vmov(cond)
       else: !fmt fmrs(cond)
     params: !fmt (rt), (sn)
+  defs:
+  - !always field(rt)
+  uses:
+  - !always field(sn)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5461,6 +6316,12 @@ opcodes:
       then: !fmt vmov(cond)
       else: !fmt fmrrs(cond)
     params: !fmt (rt), (rt2), (sm), (sm2)
+  defs:
+  - !always field(rt)
+  - !always field(rt2)
+  uses:
+  - !always field(sm)
+  - !always field(sm2)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5484,6 +6345,12 @@ opcodes:
       then: !fmt vmov(cond)
       else: !fmt fmsrr(cond)
     params: !fmt (sm), (sm2), (rt), (rt2)
+  defs:
+  - !always field(sm)
+  - !always field(sm2)
+  uses:
+  - !always field(rt)
+  - !always field(rt2)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5507,6 +6374,11 @@ opcodes:
       then: !fmt vmov(cond)
       else: !fmt fmrrd(cond)
     params: !fmt (rt), (rt2), (dm)
+  defs:
+  - !always field(rt)
+  - !always field(rt2)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5528,6 +6400,11 @@ opcodes:
       then: !fmt vmov(cond)
       else: !fmt fmdrr(cond)
     params: !fmt (dm), (rt), (rt2)
+  defs:
+  - !always field(dm)
+  uses:
+  - !always field(rt)
+  - !always field(rt2)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5549,6 +6426,10 @@ opcodes:
       then: !fmt vmrs(cond)
       else: !fmt fmrx(cond)
     params: !fmt (rd), (fpscr)
+  defs:
+  - !always field(rd)
+  uses:
+  - !always field(fpscr)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5569,6 +6450,10 @@ opcodes:
       then: !fmt vmsr(cond)
       else: !fmt fmxr(cond)
     params: !fmt (fpscr), (rd)
+  defs:
+  - !always field(fpscr)
+  uses:
+  - !always field(rd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5589,6 +6474,11 @@ opcodes:
       then: !fmt vmul(cond).f32
       else: !fmt fmuls(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5610,6 +6500,11 @@ opcodes:
       then: !fmt vmul(cond).f64
       else: !fmt fmuld(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5631,6 +6526,10 @@ opcodes:
       then: !fmt vneg(cond).f32
       else: !fmt fnegs(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5651,6 +6550,10 @@ opcodes:
       then: !fmt vneg(cond).f64
       else: !fmt fnegd(cond)
     params: !fmt (dd), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5671,6 +6574,11 @@ opcodes:
       then: !fmt vnmla(cond).f32
       else: !fmt fnmacs(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5692,6 +6600,11 @@ opcodes:
       then: !fmt vnmla(cond).f64
       else: !fmt fnmacd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5713,6 +6626,11 @@ opcodes:
       then: !fmt vnmls(cond).f32
       else: !fmt fnmscs(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5734,6 +6652,11 @@ opcodes:
       then: !fmt vnmls(cond).f64
       else: !fmt fnmscd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5755,6 +6678,11 @@ opcodes:
       then: !fmt vnmul(cond).f32
       else: !fmt fnmuls(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5776,6 +6704,11 @@ opcodes:
       then: !fmt vnmul(cond).f64
       else: !fmt fnmuld(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5795,6 +6728,11 @@ opcodes:
   format:
     opcode: !fmt vpop(cond)
     params: !fmt (regs)
+  defs:
+  - !always enum_variant(reg, sp)
+  - !always field(regs)
+  uses:
+  - !always enum_variant(reg, sp)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5812,6 +6750,11 @@ opcodes:
   format:
     opcode: !fmt vpop(cond)
     params: !fmt (regs)
+  defs:
+  - !always enum_variant(reg, sp)
+  - !always field(regs)
+  uses:
+  - !always enum_variant(reg, sp)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5829,6 +6772,11 @@ opcodes:
   format:
     opcode: !fmt vpush(cond)
     params: !fmt (regs)
+  defs:
+  - !always enum_variant(reg, sp)
+  uses:
+  - !always enum_variant(reg, sp)
+  - !always field(regs)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5846,6 +6794,11 @@ opcodes:
   format:
     opcode: !fmt vpush(cond)
     params: !fmt (regs)
+  defs:
+  - !always enum_variant(reg, sp)
+  uses:
+  - !always enum_variant(reg, sp)
+  - !always field(regs)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5866,6 +6819,10 @@ opcodes:
       then: !fmt vsqrt(cond).f32
       else: !fmt fsqrts(cond)
     params: !fmt (sd), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5886,6 +6843,10 @@ opcodes:
       then: !fmt vsqrt(cond).f64
       else: !fmt fsqrtd(cond)
     params: !fmt (dd), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5906,6 +6867,11 @@ opcodes:
       then: !fmt vstm(mode)(cond)
       else: !fmt fstm(mode)s(cond)
     params: !fmt (rn)(writeback), (regs)
+  defs:
+  - !if [field(writeback), field(rn)]
+  uses:
+  - !always field(regs)
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5928,6 +6894,11 @@ opcodes:
       then: !fmt vstm(mode)(cond)
       else: !fmt fstm(mode)d(cond)
     params: !fmt (rn)(writeback), (regs)
+  defs:
+  - !if [field(writeback), field(rn)]
+  uses:
+  - !always field(regs)
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5950,6 +6921,8 @@ opcodes:
       then: !fmt vstr(cond)
       else: !fmt fsts(cond)
     params: !fmt (sd), (addr)
+  uses:
+  - !always field(sd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5970,6 +6943,8 @@ opcodes:
       then: !fmt vstr(cond)
       else: !fmt fstd(cond)
     params: !fmt (dd), (addr)
+  uses:
+  - !always field(dd)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -5990,6 +6965,11 @@ opcodes:
       then: !fmt vsub(cond).f32
       else: !fmt fsubs(cond)
     params: !fmt (sd), (sn), (sm)
+  defs:
+  - !always field(sd)
+  uses:
+  - !always field(sn)
+  - !always field(sm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
@@ -6011,6 +6991,11 @@ opcodes:
       then: !fmt vsub(cond).f64
       else: !fmt fsubd(cond)
     params: !fmt (dd), (dn), (dm)
+  defs:
+  - !always field(dd)
+  uses:
+  - !always field(dn)
+  - !always field(dm)
   arm:
   - version: [v5te*, v6*]
     extensions: [vfp*]
