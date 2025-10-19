@@ -348,6 +348,13 @@ mod tests {
             uses!(Reg::R2, Reg::R1, Reg::R3)
         );
 
+        assert_arm!(
+            0xe10120f3,
+            "strd r2, r3, [r1, -r3]",
+            defs!(),
+            uses!(Reg::R2, Reg::R3, Reg::R1, Reg::R3)
+        );
+
         assert_arm!(0xe1012093, "swp r2, r3, [r1]", defs!(Reg::R2), uses!(Reg::R3, Reg::R1));
 
         assert_arm!(0xe6a12073, "sxtab r2, r1, r3", defs!(Reg::R2), uses!(Reg::R1, Reg::R3));

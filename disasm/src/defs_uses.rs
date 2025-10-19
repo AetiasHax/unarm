@@ -17,7 +17,7 @@ pub enum DefUseArgument {
     Fpscr(Fpscr),
 }
 
-const MAX_ARGS: usize = 3;
+const MAX_ARGS: usize = 4;
 
 /// List of registers/arguments that an instruction either defines or uses, see [`crate::Ins::defs`]
 /// and [`crate::Ins::uses`].
