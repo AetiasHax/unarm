@@ -490,7 +490,7 @@ types:
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
             defs:
-            - !if [field(wb), rn]
+            - !if [field(writeback), field(rn)]
             uses:
             - !always field(rn)
       xxxx_xxx0_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -564,7 +564,7 @@ types:
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
             defs:
-            - !if [field(writeback), rn]
+            - !if [field(writeback), field(rn)]
             uses:
             - !always field(rn)
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -647,7 +647,7 @@ types:
               description: If true, write the last accessed address back to the base register
               kind: !type [wb, bit(21)]
             defs:
-            - !if [field(writeback), rn]
+            - !if [field(writeback), field(rn)]
             uses:
             - !always field(rn)
       xxxx_xxx0_xx0x_xxxx_xxxx_xxxx_xxxx_xxxx:
@@ -959,7 +959,7 @@ opcodes:
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
   defs:
-  - !always field(rm)
+  - !always field(rd)
   uses:
   - !always field(rn)
   arm:
@@ -1095,7 +1095,7 @@ opcodes:
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
   defs:
-  - !always field(rm)
+  - !always field(rd)
   uses:
   - !always field(rn)
   arm:
@@ -1174,7 +1174,7 @@ opcodes:
       then: !fmt (rd), (rn), (op2)
       else: !fmt (rd), (op2)
   defs:
-  - !always field(rm)
+  - !always field(rd)
   uses:
   - !always field(rn)
   arm:
@@ -2126,7 +2126,8 @@ opcodes:
   - !always field(crm)
   uses:
   - !always field(rd)
-  - !always field(rd, rd2)
+  - !always field(rd)
+  - !always field(rd2)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2150,7 +2151,8 @@ opcodes:
   - !always field(crm)
   uses:
   - !always field(rd)
-  - !always field(rd, rd2)
+  - !always field(rd)
+  - !always field(rd2)
   arm:
   - version: [v6*]
     pattern: 1111_1100_0100_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -2392,7 +2394,7 @@ opcodes:
     opcode: !fmt msr(cond)
     params: !fmt (status_fields), (op2)
   defs:
-  - !always field(status_reg)
+  - !always field(status_fields)
   arm:
   - version: [v4*, v5t*, v6*]
     pattern: xxxx_00x1_0x10_xxxx_xxxx_xxxx_xxxx_xxxx
@@ -3030,7 +3032,7 @@ opcodes:
     opcode: !fmt rfe(addr_mode)
     params: !fmt (rn)(writeback)
   defs:
-  - !if [field(wb), field(rn)]
+  - !if [field(writeback), field(rn)]
   uses:
   - !always field(rn)
   arm:
@@ -3887,7 +3889,7 @@ opcodes:
     opcode: !fmt srs(addr_mode)
     params: !fmt "(rn)(writeback), #(mode)"
   defs:
-  - !if [field(wb), field(rn)]
+  - !if [field(writeback), field(rn)]
   uses:
   - !always field(rn)
   arm:
@@ -5411,7 +5413,6 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
   arm:
   - version: [v6*]
