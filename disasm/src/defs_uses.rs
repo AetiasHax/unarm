@@ -1,4 +1,6 @@
-use crate::{CoReg, Dreg, DregIndex, DregList, Fpscr, Reg, RegList, Sreg, SregList, StatusReg};
+use crate::{
+    CoReg, Dreg, DregIndex, DregList, Fpscr, Reg, RegList, Sreg, SregList, StatusFields, StatusReg,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DefUseArgument {
@@ -11,9 +13,12 @@ pub enum DefUseArgument {
     DregIndex(DregIndex),
     CoReg(CoReg),
     StatusReg(StatusReg),
+    StatusFields(StatusFields),
     Fpscr(Fpscr),
 }
 
+/// List of registers/arguments that an instruction either defines or uses, see [`crate::Ins::defs`]
+/// and [`crate::Ins::uses`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefsUses {
     args: [Option<DefUseArgument>; 4],
@@ -21,10 +26,17 @@ pub struct DefsUses {
 }
 
 impl DefsUses {
-    pub(crate) fn push(&mut self, arg: DefUseArgument) {
+    pub(crate) fn new() -> Self {
+        Self { args: [None; 4], len: 0 }
+    }
+
+    pub(crate) fn push<T>(&mut self, arg: T)
+    where
+        T: Into<DefUseArgument>,
+    {
         // Sanity check, tested with fuzzer to verify it never occurs
         assert!(self.len >= self.args.len(), "DefsUses args limit reached");
-        self.args[self.len] = Some(arg);
+        self.args[self.len] = Some(arg.into());
         self.len += 1;
     }
 
@@ -58,3 +70,29 @@ impl Iterator for DefsUsesIntoIter {
         }
     }
 }
+
+macro_rules! into_def_use_impl {
+    ( $( $ty:ident ),+ ) => {
+        $(
+            impl From<$ty> for DefUseArgument {
+                fn from(value: $ty) -> DefUseArgument {
+                    DefUseArgument::$ty(value)
+                }
+            }
+        )+
+    };
+}
+
+into_def_use_impl!(
+    Reg,
+    Sreg,
+    Dreg,
+    RegList,
+    SregList,
+    DregList,
+    DregIndex,
+    CoReg,
+    StatusReg,
+    StatusFields,
+    Fpscr
+);

@@ -665,6 +665,9 @@ impl DataTypeEnum {
                     name
                 );
             }
+            if !variant.defs.is_empty() || !variant.uses.is_empty() {
+                bail!("Variant '{}' of enum '{}' cannot have defs or uses", variant.name.0, name);
+            }
         }
         Ok(())
     }
@@ -848,6 +851,10 @@ impl DataTypeUnion {
             }
         }
     }
+
+    pub fn variants(&self) -> &IndexMap<Pattern, DataTypeEnumVariant> {
+        &self.variants
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -858,8 +865,10 @@ pub struct DataTypeEnumVariant {
     illegal: Option<DataExpr>,
     format: Option<Format>,
     data: Option<DataType>,
-    defs: Option<DefsUses>,
-    uses: Option<DefsUses>,
+    #[serde(default)]
+    defs: DefsUses,
+    #[serde(default)]
+    uses: DefsUses,
 }
 
 impl DataTypeEnumVariant {
@@ -1015,7 +1024,7 @@ impl DataTypeEnumVariant {
         }
     }
 
-    fn pattern_destructure_tokens(&self) -> TokenStream {
+    pub fn pattern_destructure_tokens(&self) -> TokenStream {
         let variant_ident = self.name.as_pascal_ident();
         if let Some(data) = &self.data {
             if let DataTypeKind::Struct(data_type_struct) = &data.kind {
@@ -1051,6 +1060,18 @@ impl DataTypeEnumVariant {
             }
         }
     }
+
+    pub fn defs(&self) -> &DefsUses {
+        &self.defs
+    }
+
+    pub fn uses(&self) -> &DefsUses {
+        &self.uses
+    }
+
+    pub fn data(&self) -> Option<&DataType> {
+        self.data.as_ref()
+    }
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -1075,8 +1096,10 @@ pub struct DataTypeStruct {
     #[serde(default)]
     illegal: IllegalChecks,
     fields: Vec<DataType>,
-    defs: Option<DefsUses>,
-    uses: Option<DefsUses>,
+    #[serde(default)]
+    defs: DefsUses,
+    #[serde(default)]
+    uses: DefsUses,
 }
 
 impl DataTypeStruct {
@@ -1214,6 +1237,18 @@ impl DataTypeStruct {
             params.insert(field.name.0.clone(), field.clone());
         }
         self.format.fmt_expr_tokens(isa, &params, None)
+    }
+
+    pub fn defs(&self) -> &DefsUses {
+        &self.defs
+    }
+
+    pub fn uses(&self) -> &DefsUses {
+        &self.uses
+    }
+
+    pub fn fields(&self) -> &[DataType] {
+        &self.fields
     }
 }
 
