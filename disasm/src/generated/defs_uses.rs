@@ -5,7 +5,7 @@
 use crate::*;
 impl Ins {
     /// Returns a [`DefsUses`] object containing all the registers this instruction
-    /// defines.
+    /// defines, in no particular order.
     pub fn defs(&self) -> DefsUses {
         let mut defs = DefsUses::new();
         match self {
@@ -348,11 +348,9 @@ impl Ins {
                 defs.push(*rd);
             }
             Ins::Stc { l, cond, coproc, crd, dest } => {
-                defs.push(*crd);
                 dest.defs(&mut defs);
             }
             Ins::Stc2 { l, coproc, crd, dest } => {
-                defs.push(*crd);
                 dest.defs(&mut defs);
             }
             Ins::Stm { mode, cond, rn, writeback, regs, user_mode } => {
@@ -704,7 +702,7 @@ impl Ins {
         defs
     }
     /// Returns a [`DefsUses`] object containing all the registers this instruction
-    /// uses.
+    /// uses, in no particular order.
     pub fn uses(&self) -> DefsUses {
         let mut uses = DefsUses::new();
         match self {
@@ -730,6 +728,9 @@ impl Ins {
             }
             Ins::Blx { cond, target } => {
                 target.uses(&mut uses);
+            }
+            Ins::Bx { cond, rm } => {
+                uses.push(*rm);
             }
             Ins::Bxj { cond, rm } => {
                 uses.push(*rm);
@@ -820,11 +821,9 @@ impl Ins {
             }
             Ins::Mcrr { cond, coproc, opc, rd, rd2, crm } => {
                 uses.push(*rd);
-                uses.push(*rd);
                 uses.push(*rd2);
             }
             Ins::Mcrr2 { coproc, opc, rd, rd2, crm } => {
-                uses.push(*rd);
                 uses.push(*rd);
                 uses.push(*rd2);
             }
@@ -889,8 +888,8 @@ impl Ins {
                 uses.push(*regs);
             }
             Ins::Qadd { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Qadd16 { cond, rd, rn, rm } => {
                 uses.push(*rn);
@@ -905,20 +904,20 @@ impl Ins {
                 uses.push(*rm);
             }
             Ins::Qdadd { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Qdsub { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Qsax { cond, rd, rn, rm } => {
                 uses.push(*rn);
                 uses.push(*rm);
             }
             Ins::Qsub { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Qsub16 { cond, rd, rn, rm } => {
                 uses.push(*rn);
@@ -1088,9 +1087,11 @@ impl Ins {
                 uses.push(*rm);
             }
             Ins::Stc { l, cond, coproc, crd, dest } => {
+                uses.push(*crd);
                 dest.uses(&mut uses);
             }
             Ins::Stc2 { l, coproc, crd, dest } => {
+                uses.push(*crd);
                 dest.uses(&mut uses);
             }
             Ins::Stm { mode, cond, rn, writeback, regs, user_mode } => {
@@ -1115,12 +1116,12 @@ impl Ins {
                 addr.uses(&mut uses);
             }
             Ins::Strex { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Strexb { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Strexd { cond, rd, rm, rm2, rn } => {
                 uses.push(*rn);
@@ -1128,8 +1129,8 @@ impl Ins {
                 uses.push(*rm2);
             }
             Ins::Strexh { cond, rd, rm, rn } => {
-                uses.push(*rn);
                 uses.push(*rm);
+                uses.push(*rn);
             }
             Ins::Strh { cond, rd, addr } => {
                 addr.uses(&mut uses);

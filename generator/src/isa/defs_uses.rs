@@ -73,7 +73,7 @@ impl Opcodes {
         quote! {
             impl Ins {
                 /// Returns a [`DefsUses`] object containing all the registers this instruction
-                /// defines.
+                /// defines, in no particular order.
                 pub fn defs(&self) -> DefsUses {
                     let mut defs = DefsUses::new();
                     match self {
@@ -84,7 +84,7 @@ impl Opcodes {
                 }
 
                 /// Returns a [`DefsUses`] object containing all the registers this instruction
-                /// uses.
+                /// uses, in no particular order.
                 pub fn uses(&self) -> DefsUses {
                     let mut uses = DefsUses::new();
                     match self {

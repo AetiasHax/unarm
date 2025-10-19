@@ -1276,6 +1276,8 @@ opcodes:
     params: !fmt (rm)
   defs:
   - !always enum_variant(reg, pc)
+  uses:
+  - !always field(rm)
   arm:
   - version: [v4t, v5t*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0001_xxxx
@@ -2126,7 +2128,6 @@ opcodes:
   - !always field(crm)
   uses:
   - !always field(rd)
-  - !always field(rd)
   - !always field(rd2)
   arm:
   - version: [v5te*, v6*]
@@ -2150,7 +2151,6 @@ opcodes:
   defs:
   - !always field(crm)
   uses:
-  - !always field(rd)
   - !always field(rd)
   - !always field(rd2)
   arm:
@@ -2714,8 +2714,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0000_xxxx_xxxx_xxxx_0101_xxxx
@@ -2809,8 +2809,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0100_xxxx_xxxx_xxxx_0101_xxxx
@@ -2832,8 +2832,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0110_xxxx_xxxx_xxxx_0101_xxxx
@@ -2881,8 +2881,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v5te*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0101_xxxx
@@ -4023,7 +4023,7 @@ opcodes:
       then: !fmt stc(l)(cond)
       else: !fmt stc(cond)(l)
     params: !fmt (coproc), (crd), (dest)
-  defs:
+  uses:
   - !always field(crd)
   arm:
   - version: [v4*, v5t*, v6*]
@@ -4043,7 +4043,7 @@ opcodes:
   format:
     opcode: !fmt stc2(l)
     params: !fmt (coproc), (crd), (dest)
-  defs:
+  uses:
   - !always field(crd)
   arm:
   - version: [v5t*, v6*]
@@ -4215,8 +4215,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v6*]
     pattern: xxxx_0001_1000_xxxx_xxxx_xxxx_1001_xxxx
@@ -4238,8 +4238,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1100_xxxx_xxxx_xxxx_1001_xxxx
@@ -4286,8 +4286,8 @@ opcodes:
   defs:
   - !always field(rd)
   uses:
-  - !always field(rn)
   - !always field(rm)
+  - !always field(rn)
   arm:
   - version: [v6k]
     pattern: xxxx_0001_1110_xxxx_xxxx_xxxx_1001_xxxx

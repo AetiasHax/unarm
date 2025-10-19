@@ -17,17 +17,19 @@ pub enum DefUseArgument {
     Fpscr(Fpscr),
 }
 
+const MAX_ARGS: usize = 3;
+
 /// List of registers/arguments that an instruction either defines or uses, see [`crate::Ins::defs`]
 /// and [`crate::Ins::uses`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefsUses {
-    args: [Option<DefUseArgument>; 4],
+    args: [Option<DefUseArgument>; MAX_ARGS],
     len: usize,
 }
 
 impl DefsUses {
     pub(crate) fn new() -> Self {
-        Self { args: [None; 4], len: 0 }
+        Self { args: [None; MAX_ARGS], len: 0 }
     }
 
     pub(crate) fn push<T>(&mut self, arg: T)
@@ -35,7 +37,7 @@ impl DefsUses {
         T: Into<DefUseArgument>,
     {
         // Sanity check, tested with fuzzer to verify it never occurs
-        assert!(self.len >= self.args.len(), "DefsUses args limit reached");
+        assert!(self.len < self.args.len(), "DefsUses args limit reached");
         self.args[self.len] = Some(arg.into());
         self.len += 1;
     }
@@ -46,7 +48,7 @@ impl DefsUses {
 }
 
 pub struct DefsUsesIntoIter {
-    args: [Option<DefUseArgument>; 4],
+    args: [Option<DefUseArgument>; MAX_ARGS],
     pos: usize,
 }
 
@@ -64,7 +66,9 @@ impl Iterator for DefsUsesIntoIter {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos < self.args.len() {
-            self.args[self.pos]
+            let value = self.args[self.pos];
+            self.pos += 1;
+            value
         } else {
             None
         }
