@@ -19,6 +19,8 @@ pub fn fuzz(num_threads: usize, iterations: usize, options: Options, test: Test)
         Test::ParseRandom => fuzzers.iter().map(|f| f.parse_random()).collect(),
         Test::ParseAndWrite => fuzzers.iter().map(|f| f.parse_and_write()).collect(),
         Test::Reparse => fuzzers.iter().map(|f| f.reparse()).collect(),
+        Test::Defs => fuzzers.iter().map(|f| f.defs()).collect(),
+        Test::Uses => fuzzers.iter().map(|f| f.uses()).collect(),
     };
     for handle in handles {
         handle.join().unwrap();
@@ -88,6 +90,34 @@ impl Fuzzer {
                     let (ins, _size) = parse_thumb(code, 0, &options);
                     let discriminant = ins.discriminant();
                     black_box(parse_thumb_with_discriminant(code, discriminant, 0, &options));
+                }
+            }
+        })
+    }
+
+    fn defs(&self) -> std::thread::JoinHandle<()> {
+        let range = self.range.clone();
+        let iterations = self.iterations;
+        let options = self.options.clone();
+        std::thread::spawn(move || {
+            for _ in 0..iterations {
+                for code in range.clone() {
+                    let (ins, _size) = parse_thumb(code, 0, &options);
+                    black_box(ins.defs());
+                }
+            }
+        })
+    }
+
+    fn uses(&self) -> std::thread::JoinHandle<()> {
+        let range = self.range.clone();
+        let iterations = self.iterations;
+        let options = self.options.clone();
+        std::thread::spawn(move || {
+            for _ in 0..iterations {
+                for code in range.clone() {
+                    let (ins, _size) = parse_thumb(code, 0, &options);
+                    black_box(ins.uses());
                 }
             }
         })

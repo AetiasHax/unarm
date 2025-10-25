@@ -11,6 +11,8 @@ pub enum Test {
     ParseRandom,
     ParseAndWrite,
     Reparse,
+    Defs,
+    Uses,
 }
 
 fn main() {
@@ -48,6 +50,8 @@ fn main() {
                 "parse-random" => test = Some(Test::ParseRandom),
                 "parse-and-write" => test = Some(Test::ParseAndWrite),
                 "reparse" => test = Some(Test::Reparse),
+                "defs" => test = Some(Test::Defs),
+                "uses" => test = Some(Test::Uses),
                 _ => panic!("Unknown argument '{}'", arg),
             }
         }

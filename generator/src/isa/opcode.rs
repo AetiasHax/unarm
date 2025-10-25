@@ -10,8 +10,8 @@ use syn::Ident;
 use crate::{
     isa::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
-        Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension, IsaExtensionPatterns,
-        IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
+        DefsUses, Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension,
+        IsaExtensionPatterns, IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
         cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
     },
     util::str::snake_to_pascal_case,
@@ -155,6 +155,10 @@ pub struct Opcode {
     description: String,
     params: IndexMap<OpcodeParamName, DataTypeName>,
     format: OpcodeFormat,
+    #[serde(default)]
+    defs: DefsUses,
+    #[serde(default)]
+    uses: DefsUses,
     #[serde(default)]
     arm: Vec<OpcodeEncoding>,
     #[serde(default)]
@@ -402,10 +406,24 @@ impl Opcode {
             isa,
         )
     }
+
+    pub fn defs(&self) -> &DefsUses {
+        &self.defs
+    }
+
+    pub fn uses(&self) -> &DefsUses {
+        &self.uses
+    }
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq, Hash)]
 pub struct OpcodeParamName(pub String);
+
+impl OpcodeParamName {
+    pub fn as_ident(&self) -> Ident {
+        Ident::new(&self.0, Span::call_site())
+    }
+}
 
 impl Display for OpcodeParamName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -490,7 +508,7 @@ impl OpcodeEncoding {
             }
         });
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
-        let param_names = opcode.params.keys().map(|k| Ident::new(&k.0, Span::call_site()));
+        let param_names = opcode.params.keys().map(|k| k.as_ident());
 
         let version_check = if isa.versions().matches_all(&self.version) {
             quote!()

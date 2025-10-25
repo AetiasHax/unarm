@@ -100,4 +100,22 @@ impl Isa {
             #ins_fmt_impl
         }
     }
+
+    pub fn generate_defs_uses(&self) -> TokenStream {
+        let ins_defs_uses_impl = self.opcodes().defs_uses_impl_tokens(self);
+        let type_defs_uses_impls = self.types().defs_uses_impl_tokens(self);
+
+        quote! {
+            #![cfg_attr(rustfmt, rustfmt_skip)]
+
+            #![allow(unused_variables)]
+            #![allow(unreachable_patterns)]
+            #![allow(clippy::single_match)]
+
+            use crate::*;
+
+            #ins_defs_uses_impl
+            #type_defs_uses_impls
+        }
+    }
 }

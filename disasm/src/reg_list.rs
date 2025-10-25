@@ -5,6 +5,19 @@ use crate::*;
 pub struct RegList(u16);
 
 impl RegList {
+    pub const fn of(regs: &[Reg]) -> Self {
+        let mut bits = 0;
+        let mut i = 0;
+        loop {
+            if i >= regs.len() {
+                break;
+            }
+            bits |= 1 << regs[i] as u16;
+            i += 1;
+        }
+        Self(bits)
+    }
+
     pub fn parse(value: u32) -> Self {
         Self(value as u16)
     }
@@ -47,6 +60,10 @@ pub struct SregList {
     any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
 ))]
 impl SregList {
+    pub fn range(first: Sreg, last: Sreg) -> Self {
+        Self { start: first as u8, end: last as u8 + 1 }
+    }
+
     pub fn parse(value: u32) -> Self {
         let start = (((value >> 22) & 0x1) | ((value >> 11) & 0x1e)) as u8;
         let end = start.wrapping_add(value as u8).clamp(1, 31);
@@ -91,6 +108,10 @@ pub struct DregList {
     any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
 ))]
 impl DregList {
+    pub fn range(first: Dreg, last: Dreg) -> Self {
+        Self { start: first as u8, end: last as u8 + 1 }
+    }
+
     pub fn parse(value: u32) -> Self {
         let start = (((value >> 18) & 0x10) | ((value >> 12) & 0xf)) as u8;
         let end = start.wrapping_add(((value & 0xfe) >> 1) as u8).clamp(1, 31);
