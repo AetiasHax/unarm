@@ -23,13 +23,13 @@ const MAX_ARGS: usize = 4;
 /// and [`crate::Ins::uses`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefsUses {
-    args: [Option<DefUseArgument>; MAX_ARGS],
+    args: [DefUseArgument; MAX_ARGS],
     len: usize,
 }
 
 impl DefsUses {
     pub(crate) fn new() -> Self {
-        Self { args: [None; MAX_ARGS], len: 0 }
+        Self { args: [DefUseArgument::Reg(Reg::R0); MAX_ARGS], len: 0 }
     }
 
     pub(crate) fn push<T>(&mut self, arg: T)
@@ -38,17 +38,22 @@ impl DefsUses {
     {
         // Sanity check, tested with fuzzer to verify it never occurs
         assert!(self.len < self.args.len(), "DefsUses args limit reached");
-        self.args[self.len] = Some(arg.into());
+        self.args[self.len] = arg.into();
         self.len += 1;
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &DefUseArgument> {
-        self.args.iter().take(self.len).map(|arg| arg.as_ref().unwrap())
+        self.args.iter().take(self.len)
+    }
+
+    pub fn as_slice(&self) -> &[DefUseArgument] {
+        &self.args[..self.len]
     }
 }
 
 pub struct DefsUsesIntoIter {
-    args: [Option<DefUseArgument>; MAX_ARGS],
+    args: [DefUseArgument; MAX_ARGS],
+    len: usize,
     pos: usize,
 }
 
@@ -57,7 +62,7 @@ impl IntoIterator for DefsUses {
     type IntoIter = DefsUsesIntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        DefsUsesIntoIter { args: self.args, pos: 0 }
+        DefsUsesIntoIter { args: self.args, len: self.len, pos: 0 }
     }
 }
 
@@ -65,10 +70,10 @@ impl Iterator for DefsUsesIntoIter {
     type Item = DefUseArgument;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.args.len() {
+        if self.pos < self.len {
             let value = self.args[self.pos];
             self.pos += 1;
-            value
+            Some(value)
         } else {
             None
         }
