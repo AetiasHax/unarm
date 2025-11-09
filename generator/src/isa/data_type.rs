@@ -518,7 +518,7 @@ impl DataType {
         }
     }
 
-    fn cfg_attribute_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+    pub fn cfg_attribute_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         let arm_versions = self.versions(isa, Arch::Arm);
         let thumb_versions = self.versions(isa, Arch::Thumb);
         let arm_extensions = self.extensions(isa, Arch::Arm);
