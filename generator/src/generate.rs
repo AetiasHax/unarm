@@ -1,3 +1,4 @@
+use anyhow::Result;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -40,7 +41,7 @@ impl Isa {
         }
     }
 
-    pub fn generate_parser(&self) -> TokenStream {
+    pub fn generate_parser(&self) -> Result<TokenStream> {
         let data_parse_impls = self.types().parse_impls_tokens(self);
         let data_default_impls = self.types().default_impls_tokens(self);
         let parse_arm_fn = self.opcodes().parse_arm_lookup_match_tokens(self);
@@ -49,9 +50,9 @@ impl Isa {
             self.opcodes().parse_with_discriminant_tokens(self, Arch::Arm);
         let parse_thumb_with_discriminant_fn =
             self.opcodes().parse_with_discriminant_tokens(self, Arch::Thumb);
-        let opcode_parse_fns = self.opcodes().parse_fns_tokens(self);
+        let opcode_parse_fns = self.opcodes().parse_fns_tokens(self)?;
 
-        quote! {
+        Ok(quote! {
             #![cfg_attr(rustfmt, rustfmt_skip)]
 
             #![allow(clippy::eq_op)]
@@ -73,7 +74,7 @@ impl Isa {
             #parse_arm_with_discriminant_fn
             #parse_thumb_with_discriminant_fn
             #opcode_parse_fns
-        }
+        })
     }
 
     pub fn generate_display(&self) -> TokenStream {

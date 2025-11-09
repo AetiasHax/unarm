@@ -972,7 +972,7 @@ impl DataTypeEnumVariant {
         isa: &Isa,
         enum_name: &DataTypeName,
         value: &OpcodeParamValue,
-    ) -> TokenStream {
+    ) -> Result<TokenStream> {
         let enum_ident = enum_name.as_pascal_ident();
         let variant_ident = self.name.as_pascal_ident();
         if let Some(data) = &self.data {
@@ -982,23 +982,25 @@ impl DataTypeEnumVariant {
                     && let OpcodeParamValue::Struct(struct_params) = value
                 {
                     let record =
-                        data_type_struct.param_record_tokens(isa, &data.name, struct_params);
+                        data_type_struct.param_record_tokens(isa, &data.name, struct_params)?;
                     let struct_ident = canonical_data.name.as_pascal_ident();
-                    return quote!(#enum_ident::#variant_ident(#struct_ident #record));
+                    return Ok(quote!(#enum_ident::#variant_ident(#struct_ident #record)));
                 };
             }
 
             match &data.kind {
                 DataTypeKind::Struct(data_type_struct) => {
                     let OpcodeParamValue::Struct(struct_params) = value else {
-                        panic!(
-                            "Expected struct param for variant '{}' of enum '{}'",
-                            self.name.0, enum_name.0
+                        bail!(
+                            "Expected struct param for variant '{}' of enum '{}', but got {:?}",
+                            self.name.0,
+                            enum_name.0,
+                            value
                         );
                     };
                     let record =
-                        data_type_struct.param_record_tokens(isa, &data.name, struct_params);
-                    quote!(#enum_ident::#variant_ident #record)
+                        data_type_struct.param_record_tokens(isa, &data.name, struct_params)?;
+                    Ok(quote!(#enum_ident::#variant_ident #record))
                 }
                 _ => {
                     let value_tokens = match value {
@@ -1011,16 +1013,16 @@ impl DataTypeEnumVariant {
                             data_expr.as_tokens(Ident::new("value", Span::call_site()))
                         }
                         OpcodeParamValue::Enum(_, _) => {
-                            panic!()
+                            bail!("Enum not supported")
                         }
-                        OpcodeParamValue::Struct(_) => panic!(),
+                        OpcodeParamValue::Struct(_) => bail!("Struct not supported"),
                     };
                     let parse_expr = data.parse_expr_tokens(isa, Some(value_tokens));
-                    quote!(#enum_ident::#variant_ident(#parse_expr))
+                    Ok(quote!(#enum_ident::#variant_ident(#parse_expr)))
                 }
             }
         } else {
-            quote!(#enum_ident::#variant_ident)
+            Ok(quote!(#enum_ident::#variant_ident))
         }
     }
 
@@ -1193,20 +1195,24 @@ impl DataTypeStruct {
         isa: &Isa,
         type_name: &DataTypeName,
         params: &IndexMap<String, OpcodeParamValue>,
-    ) -> TokenStream {
-        let fields = self.fields.iter().map(|field| {
-            let name = &field.name.0;
-            let field_ident = field.name.as_ident();
-            let param_expr = if let Some(value) = params.get(name) {
-                value.parse_expr_tokens(isa, field)
-            } else {
-                field.default_expr_tokens(isa).unwrap_or_else(|| {
-                    panic!("Field '{}' in struct '{}' has no default value", name, type_name.0)
-                })
-            };
-            quote!(#field_ident: #param_expr)
-        });
-        quote!({ #(#fields),* })
+    ) -> Result<TokenStream> {
+        let fields = self
+            .fields
+            .iter()
+            .map(|field| {
+                let name = &field.name.0;
+                let field_ident = field.name.as_ident();
+                let param_expr = if let Some(value) = params.get(name) {
+                    value.parse_expr_tokens(isa, field)?
+                } else {
+                    field.default_expr_tokens(isa).ok_or_else(|| {
+                        anyhow!("Field '{}' in struct '{}' has no default value", name, type_name.0)
+                    })?
+                };
+                Ok(quote!(#field_ident: #param_expr))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(quote!({ #(#fields),* }))
     }
 
     pub fn param_tokens(
@@ -1214,12 +1220,12 @@ impl DataTypeStruct {
         isa: &Isa,
         type_name: &DataTypeName,
         params: &IndexMap<String, OpcodeParamValue>,
-    ) -> TokenStream {
+    ) -> Result<TokenStream> {
         let type_name_ident = type_name.as_pascal_ident();
-        let record = self.param_record_tokens(isa, type_name, params);
-        quote! {
+        let record = self.param_record_tokens(isa, type_name, params)?;
+        Ok(quote! {
             #type_name_ident #record
-        }
+        })
     }
 
     fn write_impl_body_tokens(&self, isa: &Isa) -> TokenStream {

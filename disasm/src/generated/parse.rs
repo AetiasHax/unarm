@@ -94,13 +94,22 @@ impl Op2 {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
         if (value & 0x2000000) == 0x2000000 {
-            Some(Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1)))
+            Some(Self::Imm(Op2Imm::parse((value), pc)))
         } else if (value & 0x2000090) == 0x10 {
             Some(Self::ShiftReg(ShiftReg::parse((value), pc)?))
         } else if (value & 0x2000010) == 0x0 {
             Some(Self::ShiftImm(ShiftImm::parse((value), pc)))
         } else {
             None
+        }
+    }
+}
+impl Op2Imm {
+    #[inline(always)]
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
+            imm: ((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1),
+            rotate_imm: (((value) >> 8) & 0xf) << 1,
         }
     }
 }
@@ -470,6 +479,11 @@ impl Default for Cond {
 impl Default for ShiftOp {
     fn default() -> Self {
         Self::Lsl
+    }
+}
+impl Default for Op2Imm {
+    fn default() -> Self {
+        Self { imm: 0, rotate_imm: 0 }
     }
 }
 #[cfg(any(feature = "v6", feature = "v6k"))]
@@ -14225,7 +14239,10 @@ fn parse_thumb_add_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::Imm(((value) >> 6) & 0x7);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) >> 6) & 0x7,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14264,7 +14281,10 @@ fn parse_thumb_add_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14389,7 +14409,10 @@ fn parse_thumb_add_4(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::Imm(((value) & 0xff) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0xff) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14428,7 +14451,10 @@ fn parse_thumb_add_5(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::Imm(((value) & 0x7f) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0x7f) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14553,7 +14579,10 @@ fn parse_thumb_add_8(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(15, pc);
-    let op2 = Op2::Imm(((value) & 0xff) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0xff) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -15431,7 +15460,10 @@ fn parse_thumb_cmp_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     }
     let cond = Cond::default();
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((Ins::Cmp { cond, rn, op2 }, 2))
 }
 #[cfg(feature = "thumb")]
@@ -16790,7 +16822,10 @@ fn parse_thumb_mov_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Mov {
             s,
@@ -18015,7 +18050,7 @@ fn parse_thumb_rsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::Imm(0);
+    let op2 = Op2::Imm(Op2Imm { imm: 0, rotate_imm: 0 });
     Some((Ins::Rsb { s, cond, rd, rn, op2 }, 2))
 }
 #[cfg(feature = "arm")]
@@ -19506,7 +19541,10 @@ fn parse_thumb_sub_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::Imm(((value) >> 6) & 0x7);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) >> 6) & 0x7,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Sub {
             s,
@@ -19545,7 +19583,10 @@ fn parse_thumb_sub_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Sub {
             s,
@@ -19627,7 +19668,10 @@ fn parse_thumb_sub_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::Imm(((value) & 0x7f) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0x7f) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Sub {
             s,

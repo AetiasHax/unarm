@@ -356,10 +356,9 @@ types:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
         description: Immediate
-        format: !fmt "#(imm)"
         data:
           name: imm
-          kind: !type [uimm, bits(0..8).rotate_right(bits(8..12) << 1)]
+          kind: !type [op2_imm, bits(0..32)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
         name: shift_reg
         description: Register shifted by register
@@ -372,6 +371,17 @@ types:
         data:
           name: shift_imm
           kind: !type [shift_imm, bits(0..32)]
+- name: op2_imm
+  description: Immediate second operand
+  kind: !struct
+    format: !fmt "#(imm)"
+    fields:
+    - name: imm
+      description: Immediate value, already rotated by `rotate_imm`
+      kind: !type [uimm, bits(0..8).rotate_right(bits(8..12) << 1)]
+    - name: rotate_imm
+      description: Immediate rotation amount
+      kind: !type [uimm, bits(8..12) << 1]
 - name: shift_reg
   description: Register shifted by another register
   kind: !struct
@@ -981,7 +991,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !bits 6..9]
+      op2: !enum [imm, !struct { imm: !bits 6..9 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0011_0xxx_xxxx_xxxx
     params:
@@ -989,7 +999,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0001_100x_xxxx_xxxx
     params:
@@ -1011,14 +1021,14 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !const 13 # sp
-      op2: !enum [imm, !expr bits(0..8) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..8) << 2 }]
   - version: [v4t, v5t*, v6*]
     pattern: 1011_0000_0xxx_xxxx
     params:
       thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
-      op2: !enum [imm, !expr bits(0..7) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..7) << 2 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0100_x110_1xxx
     params:
@@ -1039,7 +1049,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !const 15 # pc
-      op2: !enum [imm, !expr bits(0..8) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..8) << 2 }]
 
 - mnemonic: and
   description: Bitwise AND
@@ -1442,7 +1452,7 @@ opcodes:
     pattern: 0010_1xxx_xxxx_xxxx
     params:
       rn: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0010_10xx_xxxx
     params:
@@ -2059,7 +2069,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
+      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }" ]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0000_11xx_xxxx
     params:
@@ -2247,7 +2257,7 @@ opcodes:
       s: !const 1
       thumb: !const 1
       rd: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0110_xxxx_xxxx
     params:
@@ -3138,7 +3148,7 @@ opcodes:
       s: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !const 0]
+      op2: !enum [imm, !struct { imm: !const 0 }]
 
 - mnemonic: rsc
   description: Reverse Subtract with Carry
@@ -4392,7 +4402,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !bits 6..9]
+      op2: !enum [imm, !struct { imm: !bits 6..9 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0011_1xxx_xxxx_xxxx
     params:
@@ -4400,7 +4410,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0001_101x_xxxx_xxxx
     params:
@@ -4415,7 +4425,7 @@ opcodes:
       thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
-      op2: !enum [imm, !expr bits(0..7) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..7) << 2 }]
 
 - mnemonic: svc
   description: Supervisor Call

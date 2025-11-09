@@ -327,11 +327,19 @@ pub enum CoReg {
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Op2 {
     ///Immediate
-    Imm(u32),
+    Imm(Op2Imm),
     ///Register shifted by register
     ShiftReg(ShiftReg),
     ///Register shifted by immediate
     ShiftImm(ShiftImm),
+}
+///Immediate second operand
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct Op2Imm {
+    ///Immediate value, already rotated by `rotate_imm`
+    pub imm: u32,
+    ///Immediate rotation amount
+    pub rotate_imm: u32,
 }
 ///Register shifted by another register
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
