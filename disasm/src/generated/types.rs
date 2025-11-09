@@ -1951,3 +1951,1347 @@ pub enum Ins {
     Byte(u8),
     Illegal,
 }
+impl Ins {
+    pub fn cond(&self) -> Cond {
+        match self {
+            Ins::Adc { cond, .. } => *cond,
+            Ins::Add { cond, .. } => *cond,
+            Ins::And { cond, .. } => *cond,
+            Ins::Asr { cond, .. } => *cond,
+            Ins::B { cond, .. } => *cond,
+            Ins::Bic { cond, .. } => *cond,
+            #[cfg(
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )]
+            Ins::Bkpt { .. } => Cond::Al,
+            Ins::Bl { cond, .. } => *cond,
+            #[cfg(
+                any(
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )]
+            Ins::Blx { cond, .. } => *cond,
+            #[cfg(
+                any(
+                    feature = "v4t",
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )]
+            Ins::Bx { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(feature = "v5tej", feature = "v6", feature = "v6k")
+                )
+            )]
+            Ins::Bxj { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Cdp { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Cdp2 { .. } => Cond::Al,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Clrex { .. } => Cond::Al,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Clz { cond, .. } => *cond,
+            Ins::Cmn { cond, .. } => *cond,
+            Ins::Cmp { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Cps { .. } => Cond::Al,
+            #[cfg(feature = "arm")]
+            Ins::Csdb { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Dbg { cond, .. } => *cond,
+            Ins::Eor { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Ldc { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Ldc2 { .. } => Cond::Al,
+            Ins::Ldm { cond, .. } => *cond,
+            Ins::Ldr { cond, .. } => *cond,
+            Ins::Ldrb { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Ldrbt { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Ldrd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ldrex { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Ldrexb { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Ldrexd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Ldrexh { cond, .. } => *cond,
+            Ins::Ldrh { cond, .. } => *cond,
+            Ins::Ldrsb { cond, .. } => *cond,
+            Ins::Ldrsh { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Ldrt { cond, .. } => *cond,
+            Ins::Lsl { cond, .. } => *cond,
+            Ins::Lsr { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Mcr { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Mcr2 { .. } => Cond::Al,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Mcrr { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Mcrr2 { .. } => Cond::Al,
+            #[cfg(feature = "arm")]
+            Ins::Mla { cond, .. } => *cond,
+            Ins::Mov { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Mrc { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Mrc2 { .. } => Cond::Al,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Mrrc { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Mrrc2 { .. } => Cond::Al,
+            #[cfg(feature = "arm")]
+            Ins::Mrs { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Msr { cond, .. } => *cond,
+            Ins::Mul { cond, .. } => *cond,
+            Ins::Mvn { cond, .. } => *cond,
+            #[cfg(feature = "thumb")]
+            Ins::Neg { .. } => Cond::Al,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Nop { cond, .. } => *cond,
+            Ins::Orr { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Pkhbt { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Pkhtb { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Pld { .. } => Cond::Al,
+            Ins::Pop { cond, .. } => *cond,
+            Ins::Push { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qadd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qadd16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qadd8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qasx { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qdadd { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qdsub { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qsax { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qsub { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qsub16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qsub8 { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Rev { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Rev16 { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Revsh { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Rfe { .. } => Cond::Al,
+            Ins::Ror { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Rrx { cond, .. } => *cond,
+            Ins::Rsb { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Rsc { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sadd16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sadd8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sasx { cond, .. } => *cond,
+            Ins::Sbc { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sel { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Setend { .. } => Cond::Al,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Sev { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shadd16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shadd8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shasx { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shsax { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shsub16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shsub8 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smla { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlad { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Smlal { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::SmlalHalf { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlald { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smlaw { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlsd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlsld { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smmla { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smmls { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smmul { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smuad { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smul { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Smull { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smulw { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smusd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Srs { .. } => Cond::Al,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssat { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssat16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssax { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssub16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssub8 { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Stc { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Stc2 { .. } => Cond::Al,
+            Ins::Stm { cond, .. } => *cond,
+            Ins::Str { cond, .. } => *cond,
+            Ins::Strb { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Strbt { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Strd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Strex { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Strexb { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Strexd { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Strexh { cond, .. } => *cond,
+            Ins::Strh { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Strt { cond, .. } => *cond,
+            Ins::Sub { cond, .. } => *cond,
+            Ins::Svc { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Swp { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Swpb { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtab { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtab16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtah { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Sxtb { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtb16 { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Sxth { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Teq { cond, .. } => *cond,
+            Ins::Tst { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uadd16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uadd8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uasx { cond, .. } => *cond,
+            #[cfg(
+                any(
+                    feature = "v4t",
+                    feature = "v5t",
+                    feature = "v5te",
+                    feature = "v5tej",
+                    feature = "v6",
+                    feature = "v6k"
+                )
+            )]
+            Ins::Udf { .. } => Cond::Al,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhadd16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhadd8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhasx { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhsax { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhsub16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhsub8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Umaal { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Umlal { cond, .. } => *cond,
+            #[cfg(feature = "arm")]
+            Ins::Umull { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqadd16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqadd8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqasx { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqsax { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqsub16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqsub8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usad8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usada8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usat { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usat16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usax { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usub16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usub8 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtab { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtab16 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtah { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Uxtb { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtb16 { cond, .. } => *cond,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Uxth { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VabsF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VabsF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VaddF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VaddF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcmpF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcmpF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtF32F64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtF32S32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtF32U32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtF64F32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtF64S32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtF64U32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtS32F32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtS32F64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtU32F32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VcvtU32F64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VdivF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VdivF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VldmF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VldmF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VldrF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VldrF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmlaF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmlaF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmlsF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmlsF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Vmov32Reg { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovF32Reg { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovReg32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovRegF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovRegF32Dual { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovF32RegDual { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovRegF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmovF64Reg { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Vmrs { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Vmsr { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmulF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VmulF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnegF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnegF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnmlaF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnmlaF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnmlsF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnmlsF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnmulF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VnmulF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VpopF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VpopF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VpushF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VpushF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VsqrtF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VsqrtF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VstmF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VstmF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VstrF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VstrF64 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VsubF32 { cond, .. } => *cond,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    feature = "vfp_v2",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::VsubF64 { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Wfe { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Wfi { cond, .. } => *cond,
+            #[cfg(all(feature = "arm", feature = "v6k"))]
+            Ins::Yield { cond, .. } => *cond,
+            Ins::Word(_) | Ins::HalfWord(_) | Ins::Byte(_) | Ins::Illegal => Cond::Al,
+        }
+    }
+}
