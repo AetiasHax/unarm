@@ -2,6 +2,7 @@
 
 extern crate alloc;
 
+mod cond;
 mod defs_uses;
 mod fmt;
 mod generated;
