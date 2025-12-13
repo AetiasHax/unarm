@@ -26,6 +26,14 @@ impl RegList {
         (0..16).filter(|i| (self.0 & (1 << i)) != 0).map(|i| Reg::parse(i, 0))
     }
 
+    pub fn len(&self) -> u32 {
+        self.0.count_ones()
+    }
+
+    pub fn contains(&self, reg: Reg) -> bool {
+        (self.0 & (1 << (reg as u16))) != 0
+    }
+
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
@@ -74,6 +82,14 @@ impl SregList {
         (self.start..self.end).map(|i| Sreg::parse(i as u32, 0))
     }
 
+    pub fn len(&self) -> u32 {
+        (self.end - self.start) as u32
+    }
+
+    pub fn contains(&self, reg: Sreg) -> bool {
+        (reg as u8) >= self.start && (reg as u8) < self.end
+    }
+
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
     where
         F: FormatIns + ?Sized,
@@ -120,6 +136,14 @@ impl DregList {
 
     pub fn iter(&self) -> impl Iterator<Item = Dreg> {
         (self.start..self.end).map(|i| Dreg::parse(i as u32, 0))
+    }
+
+    pub fn len(&self) -> u32 {
+        (self.end - self.start) as u32
+    }
+
+    pub fn contains(&self, reg: Dreg) -> bool {
+        (reg as u8) >= self.start && (reg as u8) < self.end
     }
 
     pub fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
