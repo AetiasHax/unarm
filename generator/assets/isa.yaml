@@ -82,7 +82,7 @@ types:
     format: !fmt "#(addr)"
     fields:
     - name: addr
-      kind: !uint pc + bits(0..32)
+      kind: !uint bits(0..32)
 - name: blx_target
   description: The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
   no_parse: true
@@ -1153,7 +1153,7 @@ opcodes:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       cond: !bits 28..32
-      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+      target: !expr pc.wrapping_add((bits(0..24) << 2).sign_extend(6) + 8)
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: 1101_xxxx_xxxx_xxxx
@@ -1161,11 +1161,11 @@ opcodes:
     - ins() & 0xf00 == 0xf00 # illegal cond
     params:
       cond: !bits 8..12
-      target: !expr (bits(0..8) << 1).sign_extend(23) + 4
+      target: !expr pc.wrapping_add((bits(0..8) << 1).sign_extend(23) + 4)
   - version: [v4t, v5t*, v6*]
     pattern: 1110_0xxx_xxxx_xxxx
     params:
-      target: !expr (bits(0..11) << 1).sign_extend(20) + 4
+      target: !expr pc.wrapping_add((bits(0..11) << 1).sign_extend(20) + 4)
 
 - mnemonic: bic
   description: Bit Clear
@@ -1240,12 +1240,12 @@ opcodes:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       cond: !bits 28..32
-      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+      target: !expr pc.wrapping_add((bits(0..24) << 2).sign_extend(6) + 8)
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: [1111_0xxx_xxxx_xxxx, 11x1_xxxx_xxxx_xxxx]
     params:
-      target: !expr ((bits(0..11) << 12) | (bits(16..27) << 1)).sign_extend(9) + 4
+      target: !expr pc.wrapping_add(((bits(0..11) << 12) | (bits(16..27) << 1)).sign_extend(9) + 4)
 
 - mnemonic: blx
   description: Branch with Link and Exchange
@@ -1259,7 +1259,7 @@ opcodes:
   - version: [v5t*, v6*]
     pattern: 1111_101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
-      target: !enum [direct, !expr ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
+      target: !enum [direct, !expr pc.wrapping_add(((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8)]
   - version: [v5t*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0011_xxxx
     illegal:
@@ -1272,7 +1272,7 @@ opcodes:
   - version: [v5t*, v6*]
     pattern: [1111_0xxx_xxxx_xxxx, 11x0_xxxx_xxxx_xxxx]
     params:
-      target: !enum [direct, !expr ((bits(0..11) << 12) | (bits(17..27) << 2)).sign_extend(9) + 4]
+      target: !enum [direct, !expr (pc & !3).wrapping_add(((bits(0..11) << 12) | (bits(17..27) << 2)).sign_extend(9) + 4)]
   - version: [v5t*, v6*]
     pattern: 0100_0111_1xxx_x000
     params:

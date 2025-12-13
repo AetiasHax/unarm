@@ -11,9 +11,7 @@ use crate::*;
 impl BranchTarget {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        Self {
-            addr: pc.wrapping_add((value)),
-        }
+        Self { addr: (value) }
     }
 }
 impl Cond {
@@ -14772,7 +14770,10 @@ fn parse_arm_b_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let target = BranchTarget::parse(
-        ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+        pc
+            .wrapping_add(
+                ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+            ),
         pc,
     );
     Some(Ins::B { cond, target })
@@ -14803,7 +14804,10 @@ fn parse_thumb_b_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)>
     }
     let cond = Cond::parse(((value) >> 8) & 0xf, pc);
     let target = BranchTarget::parse(
-        ((((((value) & 0xff) << 1) as i32) << 23 >> 23) as u32).wrapping_add(4),
+        pc
+            .wrapping_add(
+                ((((((value) & 0xff) << 1) as i32) << 23 >> 23) as u32).wrapping_add(4),
+            ),
         pc,
     );
     Some((Ins::B { cond, target }, 2))
@@ -14831,7 +14835,10 @@ fn parse_thumb_b_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)>
     }
     let cond = Cond::default();
     let target = BranchTarget::parse(
-        ((((((value) & 0x7ff) << 1) as i32) << 20 >> 20) as u32).wrapping_add(4),
+        pc
+            .wrapping_add(
+                ((((((value) & 0x7ff) << 1) as i32) << 20 >> 20) as u32).wrapping_add(4),
+            ),
         pc,
     );
     Some((Ins::B { cond, target }, 2))
@@ -14974,7 +14981,10 @@ fn parse_arm_bl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let target = BranchTarget::parse(
-        ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+        pc
+            .wrapping_add(
+                ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+            ),
         pc,
     );
     Some(Ins::Bl { cond, target })
@@ -15002,9 +15012,12 @@ fn parse_thumb_bl_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)
     }
     let cond = Cond::default();
     let target = BranchTarget::parse(
-        (((((((value) & 0x7ff) << 12) | ((((value) >> 16) & 0x7ff) << 1)) as i32) << 9
-            >> 9) as u32)
-            .wrapping_add(4),
+        pc
+            .wrapping_add(
+                (((((((value) & 0x7ff) << 12) | ((((value) >> 16) & 0x7ff) << 1)) as i32)
+                    << 9 >> 9) as u32)
+                    .wrapping_add(4),
+            ),
         pc,
     );
     Some((Ins::Bl { cond, target }, 4))
@@ -15042,9 +15055,12 @@ fn parse_arm_blx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::default();
     let target = BlxTarget::Direct(
         BranchTarget::parse(
-            (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1)) as i32)
-                << 6 >> 6) as u32)
-                .wrapping_add(8),
+            pc
+                .wrapping_add(
+                    (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1))
+                        as i32) << 6 >> 6) as u32)
+                        .wrapping_add(8),
+                ),
             pc,
         ),
     );
@@ -15123,9 +15139,12 @@ fn parse_thumb_blx_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let target = BlxTarget::Direct(
         BranchTarget::parse(
-            (((((((value) & 0x7ff) << 12) | ((((value) >> 17) & 0x3ff) << 2)) as i32)
-                << 9 >> 9) as u32)
-                .wrapping_add(4),
+            (pc & !3)
+                .wrapping_add(
+                    (((((((value) & 0x7ff) << 12) | ((((value) >> 17) & 0x3ff) << 2))
+                        as i32) << 9 >> 9) as u32)
+                        .wrapping_add(4),
+                ),
             pc,
         ),
     );

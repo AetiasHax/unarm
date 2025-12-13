@@ -50,6 +50,15 @@ mod tests {
             let ins = parse_thumb_with_discriminant($code, discriminant, $pc, &options);
             assert_ins!(ins, $disasm, options, "mismatched parse with discriminant")
         }};
+        ($code:literal, $next:literal, $pc:literal, $disasm:literal) => {{
+            let options = options!();
+            let (ins, _size) = parse_thumb($code | ($next << 16), $pc, &options);
+            assert_ins!(ins, $disasm, options);
+            let discriminant = ins.discriminant();
+            let ins =
+                parse_thumb_with_discriminant($code | ($next << 16), discriminant, $pc, &options);
+            assert_ins!(ins, $disasm, options, "mismatched parse with discriminant")
+        }};
     }
 
     #[test]
@@ -65,5 +74,12 @@ mod tests {
         assert_thumb!(0xdc42, 0x4000000, "bgt #0x4000088");
         assert_thumb!(0xdbf3, 0x16, "blt #0x0");
         assert_thumb!(0xe5ee, 0x0, "b #0xfffffbe0");
+
+        assert_arm!(0xeb000000, 0x100, "bl #0x108");
+        assert_arm!(0xfa000000, 0x100, "blx #0x108");
+        assert_arm!(0xfb000000, 0x100, "blx #0x10a");
+        assert_thumb!(0xf000, 0xf800, 0x100, "bl #0x104");
+        assert_thumb!(0xf000, 0xe800, 0x100, "blx #0x104");
+        assert_thumb!(0xf000, 0xe800, 0x102, "blx #0x104");
     }
 }
