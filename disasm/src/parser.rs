@@ -28,6 +28,7 @@ pub enum ParseEndian {
     Big,
 }
 
+#[derive(Clone)]
 pub struct Parser<'a> {
     bytes: &'a [u8],
     options: Options,
