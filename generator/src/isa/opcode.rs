@@ -12,7 +12,7 @@ use crate::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
         DefsUses, Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension,
         IsaExtensionPatterns, IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
-        cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
+        TagName, cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
     },
     util::str::snake_to_pascal_case,
 };
@@ -153,6 +153,8 @@ impl Opcodes {
 pub struct Opcode {
     mnemonic: String,
     description: String,
+    #[serde(default)]
+    tags: Vec<TagName>,
     params: IndexMap<OpcodeParamName, DataTypeName>,
     format: OpcodeFormat,
     #[serde(default)]
@@ -171,11 +173,20 @@ impl Opcode {
         &self.mnemonic
     }
 
+    pub fn tags(&self) -> &[TagName] {
+        &self.tags
+    }
+
     pub fn params(&self) -> &IndexMap<OpcodeParamName, DataTypeName> {
         &self.params
     }
 
     pub fn validate(&self, isa: &Isa) -> Result<()> {
+        for tag_name in &self.tags {
+            isa.tags().get(tag_name).ok_or_else(|| {
+                anyhow!("Tag '{}' not found for opcode '{}'", tag_name.0, self.mnemonic)
+            })?;
+        }
         for (param, type_name) in self.params.iter() {
             isa.types().get(type_name).ok_or_else(|| {
                 anyhow!(

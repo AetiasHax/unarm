@@ -3220,3 +3220,315 @@ impl Ins {
         }
     }
 }
+impl Ins {
+    ///Returns whether this instruction is a comparison. Does not include VCMP.
+    pub fn is_comparison(&self) -> bool {
+        match self {
+            Ins::Cmn { .. } => true,
+            Ins::Cmp { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Teq { .. } => true,
+            Ins::Tst { .. } => true,
+            _ => false,
+        }
+    }
+    ///Returns whether this instruction is a data operation storing its result in a register. Does not include VFP instructions.
+    pub fn is_data_operation(&self) -> bool {
+        match self {
+            Ins::Adc { .. } => true,
+            Ins::Add { .. } => true,
+            Ins::And { .. } => true,
+            Ins::Asr { .. } => true,
+            Ins::Bic { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5t",
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Clz { .. } => true,
+            Ins::Eor { .. } => true,
+            Ins::Lsl { .. } => true,
+            Ins::Lsr { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Mla { .. } => true,
+            Ins::Mov { .. } => true,
+            Ins::Mul { .. } => true,
+            Ins::Mvn { .. } => true,
+            #[cfg(feature = "thumb")]
+            Ins::Neg { .. } => true,
+            Ins::Orr { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Pkhbt { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Pkhtb { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qadd { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qadd16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qadd8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qasx { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qdadd { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qdsub { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qsax { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Qsub { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qsub16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Qsub8 { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Rev { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Rev16 { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Revsh { .. } => true,
+            Ins::Ror { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Rrx { .. } => true,
+            Ins::Rsb { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Rsc { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sadd16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sadd8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sasx { .. } => true,
+            Ins::Sbc { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sel { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shadd16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shadd8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shasx { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shsax { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shsub16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Shsub8 { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smla { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlad { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Smlal { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::SmlalHalf { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlald { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smlaw { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlsd { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smlsld { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smmla { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smmls { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smmul { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smuad { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smul { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Smull { .. } => true,
+            #[cfg(
+                all(
+                    feature = "arm",
+                    any(
+                        feature = "v5te",
+                        feature = "v5tej",
+                        feature = "v6",
+                        feature = "v6k"
+                    )
+                )
+            )]
+            Ins::Smulw { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Smusd { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssat { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssat16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssax { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssub16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Ssub8 { .. } => true,
+            Ins::Sub { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtab { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtab16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtah { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Sxtb { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Sxtb16 { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Sxth { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uadd16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uadd8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uasx { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhadd16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhadd8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhasx { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhsax { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhsub16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uhsub8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Umaal { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Umlal { .. } => true,
+            #[cfg(feature = "arm")]
+            Ins::Umull { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqadd16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqadd8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqasx { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqsax { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqsub16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uqsub8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usad8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usada8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usat { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usat16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usax { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usub16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Usub8 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtab { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtab16 { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtah { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Uxtb { .. } => true,
+            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
+            Ins::Uxtb16 { .. } => true,
+            #[cfg(any(feature = "v6", feature = "v6k"))]
+            Ins::Uxth { .. } => true,
+            _ => false,
+        }
+    }
+}

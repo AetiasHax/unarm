@@ -20,6 +20,7 @@ impl Isa {
 
         let ins_enum = self.opcodes().ins_enum_tokens(self);
         let getter_impls = self.getters().impl_tokens(self);
+        let tags_impl = self.tags().impl_tokens(self);
 
         quote! {
             #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -41,6 +42,7 @@ impl Isa {
             #ins_enum
 
             #getter_impls
+            #tags_impl
         }
     }
 

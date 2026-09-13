@@ -11,6 +11,7 @@ mod opcode;
 mod option;
 mod pattern;
 mod syn;
+mod tag;
 mod version;
 
 use std::{fmt::Display, io::Read};
@@ -30,6 +31,7 @@ pub use option::*;
 pub use pattern::*;
 use serde::Deserialize;
 pub use syn::*;
+pub use tag::*;
 pub use version::*;
 
 #[derive(Deserialize, Debug)]
@@ -40,6 +42,7 @@ pub struct Isa {
     extensions: IsaExtensions,
     types: DataTypes,
     getters: Getters,
+    tags: Tags,
     opcodes: Opcodes,
 }
 
@@ -84,6 +87,10 @@ impl Isa {
 
     pub fn getters(&self) -> &Getters {
         &self.getters
+    }
+
+    pub fn tags(&self) -> &Tags {
+        &self.tags
     }
 }
 
