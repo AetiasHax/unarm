@@ -909,6 +909,17 @@ types:
         description: Decrement Before
 # endregion
 
+# region Getters
+getters:
+- name: cond
+  description: Returns the condition code of this instruction.
+  kind: !ins_param_of_type cond
+- name: s
+  description: Returns the S flag of this instruction.
+  kind: !ins_param_of_type s
+
+# endregion
+
 # region Opcodes
 opcodes:
 - mnemonic: adc

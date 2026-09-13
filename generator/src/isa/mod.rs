@@ -4,6 +4,7 @@ mod data_type;
 mod defs_uses;
 mod extension;
 mod format;
+mod getter;
 mod illegal;
 mod lookup_table;
 mod opcode;
@@ -15,19 +16,19 @@ mod version;
 use std::{fmt::Display, io::Read};
 
 use anyhow::Result;
-use serde::Deserialize;
-
 pub use bit_range::*;
 pub use cfg::*;
 pub use data_type::*;
 pub use defs_uses::*;
 pub use extension::*;
 pub use format::*;
+pub use getter::*;
 pub use illegal::*;
 pub use lookup_table::*;
 pub use opcode::*;
 pub use option::*;
 pub use pattern::*;
+use serde::Deserialize;
 pub use syn::*;
 pub use version::*;
 
@@ -38,6 +39,7 @@ pub struct Isa {
     versions: IsaVersions,
     extensions: IsaExtensions,
     types: DataTypes,
+    getters: Getters,
     opcodes: Opcodes,
 }
 
@@ -56,6 +58,7 @@ impl Isa {
         for opcode in self.opcodes.iter() {
             opcode.validate(self)?;
         }
+        self.getters.validate(self)?;
         Ok(())
     }
 
@@ -77,6 +80,10 @@ impl Isa {
 
     pub fn opcodes(&self) -> &Opcodes {
         &self.opcodes
+    }
+
+    pub fn getters(&self) -> &Getters {
+        &self.getters
     }
 }
 

@@ -19,7 +19,7 @@ impl Isa {
         let data_types = self.types().types_tokens(self);
 
         let ins_enum = self.opcodes().ins_enum_tokens(self);
-        let ins_cond_impl = self.opcodes().ins_cond_impl_tokens(self);
+        let getter_impls = self.getters().impl_tokens(self);
 
         quote! {
             #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -39,7 +39,8 @@ impl Isa {
             #data_types
 
             #ins_enum
-            #ins_cond_impl
+
+            #getter_impls
         }
     }
 

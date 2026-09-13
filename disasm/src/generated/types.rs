@@ -1952,6 +1952,7 @@ pub enum Ins {
     Illegal,
 }
 impl Ins {
+    ///Returns the condition code of this instruction.
     pub fn cond(&self) -> Cond {
         match self {
             Ins::Adc { cond, .. } => *cond,
@@ -1960,16 +1961,6 @@ impl Ins {
             Ins::Asr { cond, .. } => *cond,
             Ins::B { cond, .. } => *cond,
             Ins::Bic { cond, .. } => *cond,
-            #[cfg(
-                any(
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
-            Ins::Bkpt { .. } => Cond::Al,
             Ins::Bl { cond, .. } => *cond,
             #[cfg(
                 any(
@@ -2013,26 +2004,9 @@ impl Ins {
                     )
                 )
             )]
-            Ins::Cdp2 { .. } => Cond::Al,
-            #[cfg(all(feature = "arm", feature = "v6k"))]
-            Ins::Clrex { .. } => Cond::Al,
-            #[cfg(
-                all(
-                    feature = "arm",
-                    any(
-                        feature = "v5t",
-                        feature = "v5te",
-                        feature = "v5tej",
-                        feature = "v6",
-                        feature = "v6k"
-                    )
-                )
-            )]
             Ins::Clz { cond, .. } => *cond,
             Ins::Cmn { cond, .. } => *cond,
             Ins::Cmp { cond, .. } => *cond,
-            #[cfg(any(feature = "v6", feature = "v6k"))]
-            Ins::Cps { .. } => Cond::Al,
             #[cfg(feature = "arm")]
             Ins::Csdb { cond, .. } => *cond,
             #[cfg(all(feature = "arm", feature = "v6k"))]
@@ -2040,19 +2014,6 @@ impl Ins {
             Ins::Eor { cond, .. } => *cond,
             #[cfg(feature = "arm")]
             Ins::Ldc { cond, .. } => *cond,
-            #[cfg(
-                all(
-                    feature = "arm",
-                    any(
-                        feature = "v5t",
-                        feature = "v5te",
-                        feature = "v5tej",
-                        feature = "v6",
-                        feature = "v6k"
-                    )
-                )
-            )]
-            Ins::Ldc2 { .. } => Cond::Al,
             Ins::Ldm { cond, .. } => *cond,
             Ins::Ldr { cond, .. } => *cond,
             Ins::Ldrb { cond, .. } => *cond,
@@ -2091,19 +2052,6 @@ impl Ins {
                 all(
                     feature = "arm",
                     any(
-                        feature = "v5t",
-                        feature = "v5te",
-                        feature = "v5tej",
-                        feature = "v6",
-                        feature = "v6k"
-                    )
-                )
-            )]
-            Ins::Mcr2 { .. } => Cond::Al,
-            #[cfg(
-                all(
-                    feature = "arm",
-                    any(
                         feature = "v5te",
                         feature = "v5tej",
                         feature = "v6",
@@ -2112,26 +2060,11 @@ impl Ins {
                 )
             )]
             Ins::Mcrr { cond, .. } => *cond,
-            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-            Ins::Mcrr2 { .. } => Cond::Al,
             #[cfg(feature = "arm")]
             Ins::Mla { cond, .. } => *cond,
             Ins::Mov { cond, .. } => *cond,
             #[cfg(feature = "arm")]
             Ins::Mrc { cond, .. } => *cond,
-            #[cfg(
-                all(
-                    feature = "arm",
-                    any(
-                        feature = "v5t",
-                        feature = "v5te",
-                        feature = "v5tej",
-                        feature = "v6",
-                        feature = "v6k"
-                    )
-                )
-            )]
-            Ins::Mrc2 { .. } => Cond::Al,
             #[cfg(
                 all(
                     feature = "arm",
@@ -2144,16 +2077,12 @@ impl Ins {
                 )
             )]
             Ins::Mrrc { cond, .. } => *cond,
-            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-            Ins::Mrrc2 { .. } => Cond::Al,
             #[cfg(feature = "arm")]
             Ins::Mrs { cond, .. } => *cond,
             #[cfg(feature = "arm")]
             Ins::Msr { cond, .. } => *cond,
             Ins::Mul { cond, .. } => *cond,
             Ins::Mvn { cond, .. } => *cond,
-            #[cfg(feature = "thumb")]
-            Ins::Neg { .. } => Cond::Al,
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Nop { cond, .. } => *cond,
             Ins::Orr { cond, .. } => *cond,
@@ -2161,18 +2090,6 @@ impl Ins {
             Ins::Pkhbt { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Pkhtb { cond, .. } => *cond,
-            #[cfg(
-                all(
-                    feature = "arm",
-                    any(
-                        feature = "v5te",
-                        feature = "v5tej",
-                        feature = "v6",
-                        feature = "v6k"
-                    )
-                )
-            )]
-            Ins::Pld { .. } => Cond::Al,
             Ins::Pop { cond, .. } => *cond,
             Ins::Push { cond, .. } => *cond,
             #[cfg(
@@ -2241,8 +2158,6 @@ impl Ins {
             Ins::Rev16 { cond, .. } => *cond,
             #[cfg(any(feature = "v6", feature = "v6k"))]
             Ins::Revsh { cond, .. } => *cond,
-            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-            Ins::Rfe { .. } => Cond::Al,
             Ins::Ror { cond, .. } => *cond,
             #[cfg(feature = "arm")]
             Ins::Rrx { cond, .. } => *cond,
@@ -2258,8 +2173,6 @@ impl Ins {
             Ins::Sbc { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sel { cond, .. } => *cond,
-            #[cfg(any(feature = "v6", feature = "v6k"))]
-            Ins::Setend { .. } => Cond::Al,
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Sev { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
@@ -2357,8 +2270,6 @@ impl Ins {
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Smusd { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-            Ins::Srs { .. } => Cond::Al,
-            #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssat { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Ssat16 { cond, .. } => *cond,
@@ -2370,19 +2281,6 @@ impl Ins {
             Ins::Ssub8 { cond, .. } => *cond,
             #[cfg(feature = "arm")]
             Ins::Stc { cond, .. } => *cond,
-            #[cfg(
-                all(
-                    feature = "arm",
-                    any(
-                        feature = "v5t",
-                        feature = "v5te",
-                        feature = "v5tej",
-                        feature = "v6",
-                        feature = "v6k"
-                    )
-                )
-            )]
-            Ins::Stc2 { .. } => Cond::Al,
             Ins::Stm { cond, .. } => *cond,
             Ins::Str { cond, .. } => *cond,
             Ins::Strb { cond, .. } => *cond,
@@ -2438,17 +2336,6 @@ impl Ins {
             Ins::Uadd8 { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uasx { cond, .. } => *cond,
-            #[cfg(
-                any(
-                    feature = "v4t",
-                    feature = "v5t",
-                    feature = "v5te",
-                    feature = "v5tej",
-                    feature = "v6",
-                    feature = "v6k"
-                )
-            )]
-            Ins::Udf { .. } => Cond::Al,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Uhadd16 { cond, .. } => *cond,
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
@@ -3291,7 +3178,45 @@ impl Ins {
             Ins::Wfi { cond, .. } => *cond,
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Yield { cond, .. } => *cond,
-            Ins::Word(_) | Ins::HalfWord(_) | Ins::Byte(_) | Ins::Illegal => Cond::Al,
+            _ => Cond::default(),
+        }
+    }
+}
+impl Ins {
+    ///Returns the S flag of this instruction.
+    pub fn s(&self) -> bool {
+        match self {
+            Ins::Adc { s, .. } => *s,
+            Ins::Add { s, .. } => *s,
+            Ins::And { s, .. } => *s,
+            Ins::Asr { s, .. } => *s,
+            Ins::Bic { s, .. } => *s,
+            Ins::Eor { s, .. } => *s,
+            Ins::Lsl { s, .. } => *s,
+            Ins::Lsr { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Mla { s, .. } => *s,
+            Ins::Mov { s, .. } => *s,
+            Ins::Mul { s, .. } => *s,
+            Ins::Mvn { s, .. } => *s,
+            Ins::Orr { s, .. } => *s,
+            Ins::Ror { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Rrx { s, .. } => *s,
+            Ins::Rsb { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Rsc { s, .. } => *s,
+            Ins::Sbc { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Smlal { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Smull { s, .. } => *s,
+            Ins::Sub { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Umlal { s, .. } => *s,
+            #[cfg(feature = "arm")]
+            Ins::Umull { s, .. } => *s,
+            _ => false,
         }
     }
 }

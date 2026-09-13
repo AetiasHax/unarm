@@ -40,36 +40,6 @@ impl Opcodes {
         }
     }
 
-    pub fn ins_cond_impl_tokens(&self, isa: &Isa) -> TokenStream {
-        let cases = self.iter().map(|o| {
-            let ident = Ident::new(&snake_to_pascal_case(&o.mnemonic), Span::call_site());
-            let cfg = o.cfg_attribute_tokens(isa);
-            if let Some(cond_ident) = o.params.iter().find_map(|(name, type_name)| {
-                (type_name.0 == "cond").then(|| Ident::new(&name.0, Span::call_site()))
-            }) {
-                quote! {
-                    #cfg
-                    Ins::#ident { #cond_ident, .. } => *#cond_ident
-                }
-            } else {
-                quote! {
-                    #cfg
-                    Ins::#ident { .. } => Cond::Al
-                }
-            }
-        });
-        quote! {
-            impl Ins {
-                pub fn cond(&self) -> Cond {
-                    match self {
-                        #(#cases),*,
-                        Ins::Word(_) | Ins::HalfWord(_) | Ins::Byte(_) | Ins::Illegal => Cond::Al,
-                    }
-                }
-            }
-        }
-    }
-
     pub fn parse_fns_tokens(&self, isa: &Isa) -> Result<TokenStream> {
         let parse_fns = self.iter().map(|o| o.parse_fns_tokens(isa)).collect::<Result<Vec<_>>>()?;
         Ok(quote!(#(#parse_fns)*))
