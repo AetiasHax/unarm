@@ -917,6 +917,9 @@ getters:
 - name: s
   description: Returns the S flag of this instruction.
   kind: !ins_param_of_type s
+- name: rn
+  description: Returns the "rn" source register of this instruction.
+  kind: !field_with_name rn
 # endregion
 
 # region Tags

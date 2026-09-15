@@ -9,6 +9,7 @@ mod generated;
 mod ins;
 mod parser;
 mod reg_list;
+mod types;
 
 pub use defs_uses::*;
 pub use fmt::*;
