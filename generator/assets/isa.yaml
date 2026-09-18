@@ -1662,7 +1662,7 @@ opcodes:
       regs: !bits 0..16
       user_mode: !const 0
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_100x_x101_xxxx_0xxx_xxxx_xxxx_xxxx
+    pattern: xxxx_100x_x1x1_xxxx_0xxx_xxxx_xxxx_xxxx
     illegal:
     - ins() & 0xffff == 0 # empty register list
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -1670,7 +1670,7 @@ opcodes:
       mode: !bits 23..25
       cond: !bits 28..32
       rn: !bits 16..20
-      writeback: !const 0
+      writeback: !bits 21 # non-standard to allow both user_mode and writeback, but some platforms use it
       regs: !bits 0..15
       user_mode: !const 1
   - version: [v4*, v5t*, v6*]
