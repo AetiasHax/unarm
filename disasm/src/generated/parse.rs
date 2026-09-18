@@ -1855,7 +1855,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x401 | 0x404 | 0x411 | 0x414 | 0x421 | 0x424 | 0x431 | 0x434 => {
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-            if let Some(ins) = parse_arm_cps_0(ins, pc, options) {
+            if (ins & 0xfff10020) == 0xf1000000
+                && let Some(ins) = parse_arm_cps_0(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -2371,7 +2373,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x500 | 0x510 | 0x520 | 0x530 => {
             #[cfg(feature = "arm")]
-            if let Some(ins) = parse_arm_mrs_0(ins, pc, options) {
+            if (ins & 0xfb002f0) == 0x1000000
+                && let Some(ins) = parse_arm_mrs_0(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -5933,7 +5937,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x27f3 | 0x27f4 | 0x27f5 | 0x27f6 | 0x27f7 | 0x27f8 | 0x27f9 | 0x27fa | 0x27fb
         | 0x27fc | 0x27fd | 0x27fe | 0x27ff => {
             #[cfg(feature = "arm")]
-            if let Some(ins) = parse_arm_ldm_2(ins, pc, options) {
+            if (ins & 0xe508000) == 0x8508000
+                && let Some(ins) = parse_arm_ldm_2(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -9913,7 +9919,9 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         }
         0x11c | 0x11d => {
             #[cfg(feature = "thumb")]
-            if let Some(ins) = parse_thumb_bx_0(ins, pc, options) {
+            if (ins & 0xff87) == 0x4700
+                && let Some(ins) = parse_thumb_bx_0(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -9930,7 +9938,9 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
                     )
                 )
             )]
-            if let Some(ins) = parse_thumb_blx_1(ins, pc, options) {
+            if (ins & 0xff87) == 0x4780
+                && let Some(ins) = parse_thumb_blx_1(ins, pc, options)
+            {
                 return ins;
             }
         }

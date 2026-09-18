@@ -125,7 +125,7 @@ impl<'a> OpcodeLookupTable<'a> {
             let pattern_literals = clones.iter().map(|k| HexLiteral(*k));
 
             let bucket = self.buckets.get(*key).unwrap();
-            let body_tokens = bucket.parse_bucket_tokens(self.arch, isa);
+            let body_tokens = bucket.parse_bucket_tokens(self.arch, self.bitmask, isa);
 
             quote! {
                 #(#pattern_literals)|* => #body_tokens
@@ -150,17 +150,29 @@ impl<'a> OpcodeLookupTable<'a> {
 }
 
 impl<'a> Bucket<'a> {
-    pub fn parse_bucket_tokens(&self, arch: Arch, isa: &Isa) -> TokenStream {
+    pub fn parse_bucket_tokens(&self, arch: Arch, bitmask: u32, isa: &Isa) -> TokenStream {
         if self.encodings.is_empty() {
             quote!({})
         } else if self.encodings.len() == 1 {
             let encoding = &self.encodings[0];
+            let pattern = encoding.encoding.pattern().combined();
             let parse_fn_ident = encoding.opcode.parse_fn_ident(arch, encoding.index_opcode);
             let cfg = encoding.encoding.cfg_attribute_tokens(isa, arch);
-            quote! {
-                #cfg
-                if let Some(ins) = #parse_fn_ident(ins, pc, options) {
-                    return ins;
+            if (pattern.bitmask() & !bitmask) == 0 {
+                // The lookup table key already verifies every fixed bit of the pattern
+                quote! {
+                    #cfg
+                    if let Some(ins) = #parse_fn_ident(ins, pc, options) {
+                        return ins;
+                    }
+                }
+            } else {
+                let condition = pattern.condition_tokens(quote!(ins));
+                quote! {
+                    #cfg
+                    if #condition && let Some(ins) = #parse_fn_ident(ins, pc, options) {
+                        return ins;
+                    }
                 }
             }
         } else {
