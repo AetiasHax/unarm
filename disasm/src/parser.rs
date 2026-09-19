@@ -92,6 +92,11 @@ impl<'a> Parser<'a> {
         self.offset = self.offset.wrapping_add(delta);
         self.pc = self.pc.wrapping_add(delta as u32);
     }
+
+    pub fn goto(&mut self, address: u32) {
+        let delta = address as isize - self.pc as isize;
+        self.jump(delta);
+    }
 }
 
 impl<'a> Iterator for Parser<'a> {
