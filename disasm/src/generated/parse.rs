@@ -94,7 +94,7 @@ impl Op2 {
         if (value & 0x2000000) == 0x2000000 {
             Some(Self::Imm(Op2Imm::parse((value), pc)))
         } else if (value & 0x2000090) == 0x10 {
-            Some(Self::ShiftReg(ShiftReg::parse((value), pc)?))
+            Some(Self::ShiftReg(ShiftReg::parse((value), pc)))
         } else if (value & 0x2000010) == 0x0 {
             Some(Self::ShiftImm(ShiftImm::parse((value), pc)))
         } else {
@@ -113,24 +113,12 @@ impl Op2Imm {
 }
 impl ShiftReg {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        if value & 0xf == 0xf {
-            return None;
-        }
-        if value & 0xf00 == 0xf00 {
-            return None;
-        }
-        if value & 0xf000 == 0xf000 {
-            return None;
-        }
-        if value & 0xf0000 == 0xf0000 {
-            return None;
-        }
-        Some(Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
             rm: Reg::parse(((value) & 0xf), pc),
             shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
             rs: Reg::parse((((value) >> 8) & 0xf), pc),
-        })
+        }
     }
 }
 impl ShiftImm {

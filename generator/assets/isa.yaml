@@ -386,11 +386,6 @@ types:
   description: Register shifted by another register
   kind: !struct
     format: !fmt (rm), (shift_op) (rs)
-    illegal:
-    - ins() & 0xf == 0xf # rm == pc
-    - ins() & 0xf00 == 0xf00 # rs == pc
-    - ins() & 0xf000 == 0xf000 # rd == pc
-    - ins() & 0xf0000 == 0xf0000 # rn == pc
     fields:
     - name: rm
       description: Register being shifted
