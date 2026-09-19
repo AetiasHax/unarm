@@ -650,11 +650,11 @@ impl FormatValue for StatusFields {
         if *f {
             formatter.write_str("f")?;
         }
-        if *x {
-            formatter.write_str("x")?;
-        }
         if *s {
             formatter.write_str("s")?;
+        }
+        if *x {
+            formatter.write_str("x")?;
         }
         if *c {
             formatter.write_str("c")?;

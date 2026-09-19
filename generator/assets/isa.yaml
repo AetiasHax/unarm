@@ -249,7 +249,7 @@ types:
 - name: status_fields
   description: Status register with field masks
   kind: !struct
-    format: !fmt (reg)_(f)(x)(s)(c)
+    format: !fmt (reg)_(f)(s)(x)(c)
     fields:
     - name: reg
       kind: !type [status_reg, bit(22)]
