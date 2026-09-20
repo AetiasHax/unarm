@@ -82,7 +82,7 @@ types:
     format: !fmt "#(addr)"
     fields:
     - name: addr
-      kind: !uint pc + bits(0..32)
+      kind: !uint bits(0..32)
 - name: blx_target
   description: The destination of a BLX instruction, which can be direct (immediate) or indirect (register)
   no_parse: true
@@ -249,7 +249,7 @@ types:
 - name: status_fields
   description: Status register with field masks
   kind: !struct
-    format: !fmt (reg)_(f)(x)(s)(c)
+    format: !fmt (reg)_(f)(s)(x)(c)
     fields:
     - name: reg
       kind: !type [status_reg, bit(22)]
@@ -356,10 +356,9 @@ types:
       xxxx_xx1x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx:
         name: imm
         description: Immediate
-        format: !fmt "#(imm)"
         data:
           name: imm
-          kind: !type [uimm, bits(0..8).rotate_right(bits(8..12) << 1)]
+          kind: !type [op2_imm, bits(0..32)]
       xxxx_xx0x_xxxx_xxxx_xxxx_xxxx_0xx1_xxxx:
         name: shift_reg
         description: Register shifted by register
@@ -372,15 +371,21 @@ types:
         data:
           name: shift_imm
           kind: !type [shift_imm, bits(0..32)]
+- name: op2_imm
+  description: Immediate second operand
+  kind: !struct
+    format: !fmt "#(imm)"
+    fields:
+    - name: imm
+      description: Immediate value, already rotated by `rotate_imm`
+      kind: !type [uimm, bits(0..8).rotate_right(bits(8..12) << 1)]
+    - name: rotate_imm
+      description: Immediate rotation amount
+      kind: !type [uimm, bits(8..12) << 1]
 - name: shift_reg
   description: Register shifted by another register
   kind: !struct
     format: !fmt (rm), (shift_op) (rs)
-    illegal:
-    - ins() & 0xf == 0xf # rm == pc
-    - ins() & 0xf00 == 0xf00 # rs == pc
-    - ins() & 0xf000 == 0xf000 # rd == pc
-    - ins() & 0xf0000 == 0xf0000 # rn == pc
     fields:
     - name: rm
       description: Register being shifted
@@ -413,7 +418,8 @@ types:
       kind: !type [shift_op, bits(5..7)]
     - name: imm
       description: Immediate to shift by
-      kind: !type [uimm, bits(7..12)]
+      # lsr/asr shifts by 32 if immediate is 0
+      kind: !type [uimm, "if bits(7..12) != 0 { bits(7..12) } else if bits(5..7) == 1 || bits(5..7) == 2 { 32 } else { 0 }"]
     uses:
     - !always field(rm)
 - name: op2_shift
@@ -899,10 +905,32 @@ types:
         description: Decrement Before
 # endregion
 
+# region Getters
+getters:
+- name: cond
+  description: Returns the condition code of this instruction.
+  kind: !ins_param_of_type cond
+- name: s
+  description: Returns the S flag of this instruction.
+  kind: !ins_param_of_type s
+- name: rn
+  description: Returns the "rn" source register of this instruction.
+  kind: !field_with_name rn
+# endregion
+
+# region Tags
+tags:
+- name: is_comparison
+  description: Returns whether this instruction is a comparison. Does not include VCMP.
+- name: is_data_operation
+  description: Returns whether this instruction is a data operation storing its result in a register. Does not include VFP instructions.
+# endregion
+
 # region Opcodes
 opcodes:
 - mnemonic: adc
   description: Add with Carry
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -944,6 +972,7 @@ opcodes:
 
 - mnemonic: add
   description: Add
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -981,7 +1010,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !bits 6..9]
+      op2: !enum [imm, !struct { imm: !bits 6..9 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0011_0xxx_xxxx_xxxx
     params:
@@ -989,7 +1018,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0001_100x_xxxx_xxxx
     params:
@@ -1011,14 +1040,14 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !const 13 # sp
-      op2: !enum [imm, !expr bits(0..8) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..8) << 2 }]
   - version: [v4t, v5t*, v6*]
     pattern: 1011_0000_0xxx_xxxx
     params:
       thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
-      op2: !enum [imm, !expr bits(0..7) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..7) << 2 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0100_x110_1xxx
     params:
@@ -1039,10 +1068,11 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !const 15 # pc
-      op2: !enum [imm, !expr bits(0..8) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..8) << 2 }]
 
 - mnemonic: and
   description: Bitwise AND
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -1084,6 +1114,7 @@ opcodes:
 
 - mnemonic: asr
   description: Arithmetic Shift Right
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
     opcode: !if
@@ -1143,7 +1174,7 @@ opcodes:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       cond: !bits 28..32
-      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+      target: !expr pc.wrapping_add((bits(0..24) << 2).sign_extend(6) + 8)
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: 1101_xxxx_xxxx_xxxx
@@ -1151,14 +1182,15 @@ opcodes:
     - ins() & 0xf00 == 0xf00 # illegal cond
     params:
       cond: !bits 8..12
-      target: !expr (bits(0..8) << 1).sign_extend(23) + 4
+      target: !expr pc.wrapping_add((bits(0..8) << 1).sign_extend(23) + 4)
   - version: [v4t, v5t*, v6*]
     pattern: 1110_0xxx_xxxx_xxxx
     params:
-      target: !expr (bits(0..11) << 1).sign_extend(20) + 4
+      target: !expr pc.wrapping_add((bits(0..11) << 1).sign_extend(20) + 4)
 
 - mnemonic: bic
   description: Bit Clear
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -1230,12 +1262,12 @@ opcodes:
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
     params:
       cond: !bits 28..32
-      target: !expr (bits(0..24) << 2).sign_extend(6) + 8
+      target: !expr pc.wrapping_add((bits(0..24) << 2).sign_extend(6) + 8)
   thumb:
   - version: [v4t, v5t*, v6*]
     pattern: [1111_0xxx_xxxx_xxxx, 11x1_xxxx_xxxx_xxxx]
     params:
-      target: !expr ((bits(0..11) << 12) | (bits(16..27) << 1)).sign_extend(9) + 4
+      target: !expr pc.wrapping_add(((bits(0..11) << 12) | (bits(16..27) << 1)).sign_extend(9) + 4)
 
 - mnemonic: blx
   description: Branch with Link and Exchange
@@ -1249,7 +1281,7 @@ opcodes:
   - version: [v5t*, v6*]
     pattern: 1111_101x_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
     params:
-      target: !enum [direct, !expr ((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8]
+      target: !enum [direct, !expr pc.wrapping_add(((bits(0..24) << 2) | (bit(24) << 1)).sign_extend(6) + 8)]
   - version: [v5t*, v6*]
     pattern: xxxx_0001_0010_xxxx_xxxx_xxxx_0011_xxxx
     illegal:
@@ -1262,7 +1294,7 @@ opcodes:
   - version: [v5t*, v6*]
     pattern: [1111_0xxx_xxxx_xxxx, 11x0_xxxx_xxxx_xxxx]
     params:
-      target: !enum [direct, !expr ((bits(0..11) << 12) | (bits(17..27) << 2)).sign_extend(9) + 4]
+      target: !enum [direct, !expr (pc & !3).wrapping_add(((bits(0..11) << 12) | (bits(17..27) << 2)).sign_extend(9) + 4)]
   - version: [v5t*, v6*]
     pattern: 0100_0111_1xxx_x000
     params:
@@ -1375,6 +1407,7 @@ opcodes:
 
 - mnemonic: clz
   description: Count Leading Zeros
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg }
   format:
     opcode: !fmt clz(cond)
@@ -1396,6 +1429,7 @@ opcodes:
 
 - mnemonic: cmn
   description: Compare Negative
+  tags: [is_comparison]
   params: { cond: cond, rn: reg, op2: op2 }
   format:
     opcode: !fmt cmn(cond)
@@ -1421,6 +1455,7 @@ opcodes:
 
 - mnemonic: cmp
   description: Compare
+  tags: [is_comparison]
   params: { cond: cond, rn: reg, op2: op2 }
   format:
     opcode: !fmt cmp(cond)
@@ -1442,7 +1477,7 @@ opcodes:
     pattern: 0010_1xxx_xxxx_xxxx
     params:
       rn: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0010_10xx_xxxx
     params:
@@ -1515,6 +1550,7 @@ opcodes:
 
 - mnemonic: eor
   description: Bitwise Exclusive OR
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -1622,7 +1658,7 @@ opcodes:
       regs: !bits 0..16
       user_mode: !const 0
   - version: [v4*, v5t*, v6*]
-    pattern: xxxx_100x_x101_xxxx_0xxx_xxxx_xxxx_xxxx
+    pattern: xxxx_100x_x1x1_xxxx_0xxx_xxxx_xxxx_xxxx
     illegal:
     - ins() & 0xffff == 0 # empty register list
     - ins() & 0xf0000000 == 0xf0000000 # illegal cond
@@ -1630,7 +1666,7 @@ opcodes:
       mode: !bits 23..25
       cond: !bits 28..32
       rn: !bits 16..20
-      writeback: !const 0
+      writeback: !bits 21 # non-standard to allow both user_mode and writeback, but some platforms use it
       regs: !bits 0..15
       user_mode: !const 1
   - version: [v4*, v5t*, v6*]
@@ -1979,6 +2015,7 @@ opcodes:
 
 - mnemonic: lsl
   description: Logical Shift Left
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
     opcode: !if
@@ -2025,6 +2062,7 @@ opcodes:
 
 - mnemonic: lsr
   description: Logical Shift Right
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
     opcode: !if
@@ -2059,7 +2097,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }"]
+      op2: !enum [imm, !expr "if bits(6..11) != 0 { bits(6..11) } else { 32 }" ]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0000_11xx_xxxx
     params:
@@ -2165,6 +2203,7 @@ opcodes:
 
 - mnemonic: mla
   description: Multiply Accumulate
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
   format:
     opcode: !if
@@ -2193,6 +2232,7 @@ opcodes:
 
 - mnemonic: mov
   description: Move
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, op2: op2 }
   format:
     opcode: !if
@@ -2247,7 +2287,7 @@ opcodes:
       s: !const 1
       thumb: !const 1
       rd: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0100_0110_xxxx_xxxx
     params:
@@ -2409,6 +2449,7 @@ opcodes:
 
 - mnemonic: mul
   description: Multiply
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -2452,6 +2493,7 @@ opcodes:
 
 - mnemonic: mvn
   description: Move Negative
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, op2: op2 }
   format:
     opcode: !if
@@ -2487,6 +2529,7 @@ opcodes:
 
 - mnemonic: neg
   description: Negate
+  tags: [is_data_operation]
   params: { rd: reg, rm: reg }
   format:
     opcode: !fmt neg
@@ -2520,6 +2563,7 @@ opcodes:
 
 - mnemonic: orr
   description: Bitwise OR
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -2561,6 +2605,7 @@ opcodes:
 
 - mnemonic: pkhbt
   description: Pack Halfword Bottom Top
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, shift_op: shift_op, shift: uimm }
   format:
     opcode: !fmt pkhbt(cond)
@@ -2590,6 +2635,7 @@ opcodes:
 
 - mnemonic: pkhtb
   description: Pack Halfword Top Bottom
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, shift_op: shift_op, shift: uimm }
   format:
     opcode: !fmt pkhtb(cond)
@@ -2707,6 +2753,7 @@ opcodes:
 
 - mnemonic: qadd
   description: Saturating Add
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rn: reg }
   format:
     opcode: !fmt qadd(cond)
@@ -2730,6 +2777,7 @@ opcodes:
 
 - mnemonic: qadd16
   description: Saturating Add two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt qadd16(cond)
@@ -2753,6 +2801,7 @@ opcodes:
 
 - mnemonic: qadd8
   description: Saturating Add four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt qadd8(cond)
@@ -2776,6 +2825,7 @@ opcodes:
 
 - mnemonic: qasx
   description: Saturating Add and Subtract with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -2802,6 +2852,7 @@ opcodes:
 
 - mnemonic: qdadd
   description: Saturating Double and Add
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rn: reg }
   format:
     opcode: !fmt qdadd(cond)
@@ -2825,6 +2876,7 @@ opcodes:
 
 - mnemonic: qdsub
   description: Saturating Double and Subtract
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rn: reg }
   format:
     opcode: !fmt qdsub(cond)
@@ -2848,6 +2900,7 @@ opcodes:
 
 - mnemonic: qsax
   description: Saturating Subtract and Add with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -2874,6 +2927,7 @@ opcodes:
 
 - mnemonic: qsub
   description: Saturating Subtract
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rn: reg }
   format:
     opcode: !fmt qsub(cond)
@@ -2897,6 +2951,7 @@ opcodes:
 
 - mnemonic: qsub16
   description: Saturating Subtract two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt qsub16(cond)
@@ -2920,6 +2975,7 @@ opcodes:
 
 - mnemonic: qsub8
   description: Saturating Subtract four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt qsub8(cond)
@@ -2943,6 +2999,7 @@ opcodes:
 
 - mnemonic: rev
   description: Reverse bytes in word
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg }
   format:
     opcode: !fmt rev(cond)
@@ -2971,6 +3028,7 @@ opcodes:
 
 - mnemonic: rev16
   description: Reverse bytes in packed halfwords
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg }
   format:
     opcode: !fmt rev16(cond)
@@ -2999,6 +3057,7 @@ opcodes:
 
 - mnemonic: revsh
   description: Reverse bytes in signed halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg }
   format:
     opcode: !fmt revsh(cond)
@@ -3047,6 +3106,7 @@ opcodes:
 
 - mnemonic: ror
   description: Rotate Right
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2_shift }
   format:
     opcode: !if
@@ -3085,6 +3145,7 @@ opcodes:
 
 - mnemonic: rrx
   description: Rotate Right with Extend
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd: reg, rm: reg }
   format:
     opcode: !fmt rrx(s)(cond)
@@ -3108,6 +3169,7 @@ opcodes:
 
 - mnemonic: rsb
   description: Reverse Subtract
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -3138,10 +3200,11 @@ opcodes:
       s: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !const 0]
+      op2: !enum [imm, !struct { imm: !const 0 }]
 
 - mnemonic: rsc
   description: Reverse Subtract with Carry
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -3167,6 +3230,7 @@ opcodes:
 
 - mnemonic: sadd16
   description: Signed Add two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt sadd16(cond)
@@ -3190,6 +3254,7 @@ opcodes:
 
 - mnemonic: sadd8
   description: Signed Add four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt sadd8(cond)
@@ -3213,6 +3278,7 @@ opcodes:
 
 - mnemonic: sasx
   description: Signed Add and Subtract with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -3239,6 +3305,7 @@ opcodes:
 
 - mnemonic: sbc
   description: Subtract with Carry
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -3280,6 +3347,7 @@ opcodes:
 
 - mnemonic: sel
   description: Select
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt sel(cond)
@@ -3339,6 +3407,7 @@ opcodes:
 
 - mnemonic: shadd16
   description: Signed Halving Add two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt shadd16(cond)
@@ -3362,6 +3431,7 @@ opcodes:
 
 - mnemonic: shadd8
   description: Signed Halving Add four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt shadd8(cond)
@@ -3385,6 +3455,7 @@ opcodes:
 
 - mnemonic: shasx
   description: Signed Halving Add and Subtract with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -3411,6 +3482,7 @@ opcodes:
 
 - mnemonic: shsax
   description: Signed Halving Subtract and Add with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -3437,6 +3509,7 @@ opcodes:
 
 - mnemonic: shsub16
   description: Signed Halving Subtract two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt shsub16(cond)
@@ -3460,6 +3533,7 @@ opcodes:
 
 - mnemonic: shsub8
   description: Signed Halving Subtract four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt shsub8(cond)
@@ -3483,6 +3557,7 @@ opcodes:
 
 - mnemonic: smla
   description: Signed Multiply Accumulate halfwords
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rn_side: reg_side, rm: reg, rm_side: reg_side, ra: reg }
   format:
     opcode: !fmt smla(rn_side)(rm_side)(cond)
@@ -3509,6 +3584,7 @@ opcodes:
 
 - mnemonic: smlad
   description: Signed Multiply Accumulate Dual
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm, ra: reg }
   format:
     opcode: !fmt smlad(swap_rm)(cond)
@@ -3534,6 +3610,7 @@ opcodes:
 
 - mnemonic: smlal
   description: Signed Multiply Accumulate Long
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -3562,6 +3639,7 @@ opcodes:
 
 - mnemonic: smlal_half
   description: Signed Multiply Accumulate Long halfwords
+  tags: [is_data_operation]
   params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rn_side: reg_side, rm: reg, rm_side: reg_side }
   format:
     opcode: !fmt smlal(rn_side)(rm_side)(cond)
@@ -3588,6 +3666,7 @@ opcodes:
 
 - mnemonic: smlald
   description: Signed Multiply Accumulate Long Dual
+  tags: [is_data_operation]
   params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg, swap_rm: swap_rm }
   format:
     opcode: !fmt smlald(swap_rm)(cond)
@@ -3613,6 +3692,7 @@ opcodes:
 
 - mnemonic: smlaw
   description: Signed Multiply Accumulate Word by halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rm_side: reg_side, ra: reg }
   format:
     opcode: !fmt smlaw(rm_side)(cond)
@@ -3638,6 +3718,7 @@ opcodes:
 
 - mnemonic: smlsd
   description: Signed Multiply Subtract Dual
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm, ra: reg }
   format:
     opcode: !fmt smlsd(swap_rm)(cond)
@@ -3663,6 +3744,7 @@ opcodes:
 
 - mnemonic: smlsld
   description: Signed Multiply Subtract Long Dual
+  tags: [is_data_operation]
   params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg, swap_rm: swap_rm }
   format:
     opcode: !fmt smlsld(swap_rm)(cond)
@@ -3688,6 +3770,7 @@ opcodes:
 
 - mnemonic: smmla
   description: Signed Most significant word Multiply Accumulate
+  tags: [is_data_operation]
   params: { round: round, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
   format:
     opcode: !fmt smmla(round)(cond)
@@ -3713,6 +3796,7 @@ opcodes:
 
 - mnemonic: smmls
   description: Signed Most significant word Multiply Subtract
+  tags: [is_data_operation]
   params: { round: round, cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
   format:
     opcode: !fmt smmls(round)(cond)
@@ -3738,6 +3822,7 @@ opcodes:
 
 - mnemonic: smmul
   description: Signed Most significant word Multiply
+  tags: [is_data_operation]
   params: { round: round, cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt smmul(round)(cond)
@@ -3761,6 +3846,7 @@ opcodes:
 
 - mnemonic: smuad
   description: Signed Multiply Add Dual
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm }
   format:
     opcode: !fmt smuad(swap_rm)(cond)
@@ -3784,6 +3870,7 @@ opcodes:
 
 - mnemonic: smul
   description: Signed Multiply
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rn_side: reg_side, rm: reg, rm_side: reg_side }
   format:
     opcode: !fmt smul(rn_side)(rm_side)(cond)
@@ -3809,6 +3896,7 @@ opcodes:
 
 - mnemonic: smull
   description: Signed Multiply Long
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -3837,6 +3925,7 @@ opcodes:
 
 - mnemonic: smulw
   description: Signed Multiply Word by halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rm_side: reg_side }
   format:
     opcode: !fmt smulw(rm_side)(cond)
@@ -3861,6 +3950,7 @@ opcodes:
 
 - mnemonic: smusd
   description: Signed Multiply Subtract Dual
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, swap_rm: swap_rm }
   format:
     opcode: !fmt smusd(swap_rm)(cond)
@@ -3905,6 +3995,7 @@ opcodes:
 
 - mnemonic: ssat
   description: Signed Saturate
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, imm: uimm, op2: shift_imm }
   format:
     opcode: !fmt ssat(cond)
@@ -3924,6 +4015,7 @@ opcodes:
 
 - mnemonic: ssat16
   description: Signed Saturate two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, imm: uimm, rn: reg }
   format:
     opcode: !fmt ssat16(cond)
@@ -3944,6 +4036,7 @@ opcodes:
 
 - mnemonic: ssax
   description: Signed Subtract and Add with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -3970,6 +4063,7 @@ opcodes:
 
 - mnemonic: ssub16
   description: Signed Subtract two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt ssub16(cond)
@@ -3993,6 +4087,7 @@ opcodes:
 
 - mnemonic: ssub8
   description: Signed Subtract four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt ssub8(cond)
@@ -4355,6 +4450,7 @@ opcodes:
 
 - mnemonic: sub
   description: Subtract
+  tags: [is_data_operation]
   params: { s: s, thumb: thumb, cond: cond, rd: reg, rn: reg, op2: op2 }
   format:
     opcode: !if
@@ -4392,7 +4488,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 0..3
       rn: !bits 3..6
-      op2: !enum [imm, !bits 6..9]
+      op2: !enum [imm, !struct { imm: !bits 6..9 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0011_1xxx_xxxx_xxxx
     params:
@@ -4400,7 +4496,7 @@ opcodes:
       thumb: !const 1
       rd: !bits 8..11
       rn: !bits 8..11
-      op2: !enum [imm, !bits 0..8]
+      op2: !enum [imm, !struct { imm: !bits 0..8 }]
   - version: [v4t, v5t*, v6*]
     pattern: 0001_101x_xxxx_xxxx
     params:
@@ -4415,7 +4511,7 @@ opcodes:
       thumb: !const 1
       rd: !const 13 # sp
       rn: !const 13 # sp
-      op2: !enum [imm, !expr bits(0..7) << 2]
+      op2: !enum [imm, !struct { imm: !expr bits(0..7) << 2 }]
 
 - mnemonic: svc
   description: Supervisor Call
@@ -4488,6 +4584,7 @@ opcodes:
 
 - mnemonic: sxtab
   description: Sign Extend and Add Byte
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt sxtab(cond)
@@ -4516,6 +4613,7 @@ opcodes:
 
 - mnemonic: sxtab16
   description: Sign Extend to 16 bits and Add Byte
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt sxtab16(cond)
@@ -4544,6 +4642,7 @@ opcodes:
 
 - mnemonic: sxtah
   description: Sign Extend and Add Halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt sxtah(cond)
@@ -4572,6 +4671,7 @@ opcodes:
 
 - mnemonic: sxtb
   description: Sign Extend Byte
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt sxtb(cond)
@@ -4605,6 +4705,7 @@ opcodes:
 
 - mnemonic: sxtb16
   description: Sign Extend Byte to 16 bits
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt sxtb16(cond)
@@ -4631,6 +4732,7 @@ opcodes:
 
 - mnemonic: sxth
   description: Sign Extend Halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt sxth(cond)
@@ -4664,6 +4766,7 @@ opcodes:
 
 - mnemonic: teq
   description: Test Equivalence
+  tags: [is_comparison]
   params: { cond: cond, rn: reg, op2: op2 }
   format:
     opcode: !fmt teq(cond)
@@ -4683,6 +4786,7 @@ opcodes:
 
 - mnemonic: tst
   description: Test
+  tags: [is_comparison]
   params: { cond: cond, rn: reg, op2: op2 }
   format:
     opcode: !fmt tst(cond)
@@ -4708,6 +4812,7 @@ opcodes:
 
 - mnemonic: uadd16
   description: Unsigned Add two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uadd16(cond)
@@ -4728,6 +4833,7 @@ opcodes:
 
 - mnemonic: uadd8
   description: Unsigned Add four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uadd8(cond)
@@ -4751,6 +4857,7 @@ opcodes:
 
 - mnemonic: uasx
   description: Unsigned Add and Subtract with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uasx(cond)
@@ -4791,6 +4898,7 @@ opcodes:
 
 - mnemonic: uhadd16
   description: Unsigned Halving Add two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uhadd16(cond)
@@ -4814,6 +4922,7 @@ opcodes:
 
 - mnemonic: uhadd8
   description: Unsigned Halving Add four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uhadd8(cond)
@@ -4837,6 +4946,7 @@ opcodes:
 
 - mnemonic: uhasx
   description: Unsigned Halving Add and Subtract with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -4863,6 +4973,7 @@ opcodes:
 
 - mnemonic: uhsax
   description: Unsigned Halving Subtract and Add with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -4889,6 +5000,7 @@ opcodes:
 
 - mnemonic: uhsub16
   description: Unsigned Halving Subtract two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uhsub16(cond)
@@ -4912,6 +5024,7 @@ opcodes:
 
 - mnemonic: uhsub8
   description: Unsigned Halving Subtract four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uhsub8(cond)
@@ -4935,6 +5048,7 @@ opcodes:
 
 - mnemonic: umaal
   description: Unsigned Multiply Accumulate Accumulate Long
+  tags: [is_data_operation]
   params: { cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt umaal(cond)
@@ -4959,6 +5073,7 @@ opcodes:
 
 - mnemonic: umlal
   description: Unsigned Multiply Accumulate Long
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -4987,6 +5102,7 @@ opcodes:
 
 - mnemonic: umull
   description: Unsigned Multiply Long
+  tags: [is_data_operation]
   params: { s: s, cond: cond, rd_lo: reg, rd_hi: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -5015,6 +5131,7 @@ opcodes:
 
 - mnemonic: uqadd16
   description: Unsigned Saturating Add two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uqadd16(cond)
@@ -5038,6 +5155,7 @@ opcodes:
 
 - mnemonic: uqadd8
   description: Unsigned Saturating Add four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uqadd8(cond)
@@ -5061,6 +5179,7 @@ opcodes:
 
 - mnemonic: uqasx
   description: Unsigned Saturating Add and Subtract with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -5087,6 +5206,7 @@ opcodes:
 
 - mnemonic: uqsax
   description: Unsigned Saturating Subtract and Add with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -5113,6 +5233,7 @@ opcodes:
 
 - mnemonic: uqsub16
   description: Unsigned Saturating Subtract two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uqsub16(cond)
@@ -5136,6 +5257,7 @@ opcodes:
 
 - mnemonic: uqsub8
   description: Unsigned Saturating Subtract four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt uqsub8(cond)
@@ -5159,6 +5281,7 @@ opcodes:
 
 - mnemonic: usad8
   description: Unsigned Sum of Absolute Differences for four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt usad8(cond)
@@ -5181,6 +5304,7 @@ opcodes:
 
 - mnemonic: usada8
   description: Unsigned Sum of Absolute Differences and Accumulate four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, ra: reg }
   format:
     opcode: !fmt usada8(cond)
@@ -5205,6 +5329,7 @@ opcodes:
 
 - mnemonic: usat
   description: Unsigned Saturate
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, imm: uimm, op2: shift_imm }
   format:
     opcode: !fmt usat(cond)
@@ -5224,6 +5349,7 @@ opcodes:
 
 - mnemonic: usat16
   description: Unsigned Saturate two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, imm: uimm, rn: reg }
   format:
     opcode: !fmt usat16(cond)
@@ -5246,6 +5372,7 @@ opcodes:
 
 - mnemonic: usax
   description: Unsigned Subtract and Add with Exchange
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !if
@@ -5272,6 +5399,7 @@ opcodes:
 
 - mnemonic: usub16
   description: Unsigned Subtract two 16-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt usub16(cond)
@@ -5295,6 +5423,7 @@ opcodes:
 
 - mnemonic: usub8
   description: Unsigned Subtract four 8-bit values
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg }
   format:
     opcode: !fmt usub8(cond)
@@ -5318,6 +5447,7 @@ opcodes:
 
 - mnemonic: uxtab
   description: Unsigned Extend and Add Byte
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt uxtab(cond)
@@ -5346,6 +5476,7 @@ opcodes:
 
 - mnemonic: uxtab16
   description: Unsigned Extend to 16 bits and Add Byte
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt uxtab16(cond)
@@ -5374,6 +5505,7 @@ opcodes:
 
 - mnemonic: uxtah
   description: Unsigned Extend and Add Halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rn: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt uxtah(cond)
@@ -5402,6 +5534,7 @@ opcodes:
 
 - mnemonic: uxtb
   description: Unsigned Extend Byte
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt uxtb(cond)
@@ -5435,6 +5568,7 @@ opcodes:
 
 - mnemonic: uxtb16
   description: Unsigned Extend Byte to 16 bits
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt uxtb16(cond)
@@ -5461,6 +5595,7 @@ opcodes:
 
 - mnemonic: uxth
   description: Unsigned Extend Halfword
+  tags: [is_data_operation]
   params: { cond: cond, rd: reg, rm: reg, rotate: uimm }
   format:
     opcode: !fmt uxth(cond)

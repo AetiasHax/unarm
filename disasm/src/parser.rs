@@ -28,6 +28,7 @@ pub enum ParseEndian {
     Big,
 }
 
+#[derive(Clone)]
 pub struct Parser<'a> {
     bytes: &'a [u8],
     options: Options,
@@ -90,6 +91,11 @@ impl<'a> Parser<'a> {
         let delta = delta as usize;
         self.offset = self.offset.wrapping_add(delta);
         self.pc = self.pc.wrapping_add(delta as u32);
+    }
+
+    pub fn goto(&mut self, address: u32) {
+        let delta = address as isize - self.pc as isize;
+        self.jump(delta);
     }
 }
 

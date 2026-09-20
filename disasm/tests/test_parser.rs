@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use unarm::{
-        AddrLdrStr, AddrMiscLoad, Cond, Extensions, Ins, LdrStrOffset, MiscLoadOffset, Op2,
+        AddrLdrStr, AddrMiscLoad, Cond, Extensions, Ins, LdrStrOffset, MiscLoadOffset, Op2, Op2Imm,
         Op2Shift, Options, ParseEndian, ParseMode, Parser, R9Use, Reg, RegList, ShiftImm, ShiftOp,
         Version,
     };
@@ -23,21 +23,16 @@ mod tests {
             0x04, 0x00, 0x81, 0xe5, // str r0, [r1, #0x4]
             0x1e, 0xff, 0x2f, 0xe1, // bx lr
         ];
-        let mut parser = Parser::new(
-            code,
-            ParseMode::Arm,
-            ParseEndian::Little,
-            Options {
-                version: Version::V6K,
-                extensions: Extensions::all(),
-                av: false,
-                r9_use: R9Use::R9,
-                sl: false,
-                fp: false,
-                ip: false,
-                ual: true,
-            },
-        );
+        let mut parser = Parser::new(code, ParseMode::Arm, ParseEndian::Little, Options {
+            version: Version::V6K,
+            extensions: Extensions::all(),
+            av: false,
+            r9_use: R9Use::R9,
+            sl: false,
+            fp: false,
+            ip: false,
+            ual: true,
+        });
         // 0x00
         assert_eq!(
             parser.next(),
@@ -60,7 +55,7 @@ mod tests {
                 cond: Cond::Al,
                 rd: Reg::R2,
                 rn: Reg::R0,
-                op2: Op2::Imm(0x100)
+                op2: Op2::Imm(Op2Imm { imm: 0x100, rotate_imm: 24 })
             })
         );
         // 0x08
@@ -207,21 +202,16 @@ mod tests {
             0x30, 0xbc, // pop {r4, r5}
             0x70, 0x47, // bx lr
         ];
-        let mut parser = Parser::new(
-            code,
-            ParseMode::Thumb,
-            ParseEndian::Little,
-            Options {
-                version: Version::V6K,
-                extensions: Extensions::all(),
-                av: false,
-                r9_use: R9Use::R9,
-                sl: false,
-                fp: false,
-                ip: false,
-                ual: true,
-            },
-        );
+        let mut parser = Parser::new(code, ParseMode::Thumb, ParseEndian::Little, Options {
+            version: Version::V6K,
+            extensions: Extensions::all(),
+            av: false,
+            r9_use: R9Use::R9,
+            sl: false,
+            fp: false,
+            ip: false,
+            ual: true,
+        });
         // 0x00
         assert_eq!(
             parser.next(),
@@ -235,7 +225,7 @@ mod tests {
                 thumb: true,
                 cond: Cond::Al,
                 rd: Reg::R2,
-                op2: Op2::Imm(0x4a)
+                op2: Op2::Imm(Op2Imm { imm: 0x4a, rotate_imm: 0 })
             })
         );
         // 0x04
@@ -294,7 +284,7 @@ mod tests {
                 thumb: true,
                 cond: Cond::Al,
                 rd: Reg::R3,
-                op2: Op2::Imm(0x1f)
+                op2: Op2::Imm(Op2Imm { imm: 0x1f, rotate_imm: 0 })
             })
         );
         // 0x0e
@@ -305,7 +295,7 @@ mod tests {
                 thumb: true,
                 cond: Cond::Al,
                 rd: Reg::R4,
-                op2: Op2::Imm(0x1)
+                op2: Op2::Imm(Op2Imm { imm: 0x1, rotate_imm: 0 })
             })
         );
         // 0x10
@@ -329,7 +319,7 @@ mod tests {
                 cond: Cond::Al,
                 rd: Reg::R3,
                 rn: Reg::R4,
-                op2: Op2::Imm(0x0)
+                op2: Op2::Imm(Op2Imm { imm: 0x0, rotate_imm: 0 })
             })
         );
         // 0x14
@@ -371,7 +361,7 @@ mod tests {
                 cond: Cond::Al,
                 rd: Reg::R1,
                 rn: Reg::R5,
-                op2: Op2::Imm(0x0)
+                op2: Op2::Imm(Op2Imm { imm: 0x0, rotate_imm: 0 })
             })
         );
         // 0x1a
@@ -423,21 +413,16 @@ mod tests {
             0x05, 0x06,             // .hword 0x0605
             0x07,                   // .byte 0x07
         ];
-        let mut parser = Parser::new(
-            code,
-            ParseMode::Data,
-            ParseEndian::Little,
-            Options {
-                version: Version::V6K,
-                extensions: Extensions::all(),
-                av: false,
-                r9_use: R9Use::R9,
-                sl: false,
-                fp: false,
-                ip: false,
-                ual: true,
-            },
-        );
+        let mut parser = Parser::new(code, ParseMode::Data, ParseEndian::Little, Options {
+            version: Version::V6K,
+            extensions: Extensions::all(),
+            av: false,
+            r9_use: R9Use::R9,
+            sl: false,
+            fp: false,
+            ip: false,
+            ual: true,
+        });
         // 0x00
         assert_eq!(parser.next(), Some(Ins::Word(0x0403_0201)));
         // 0x04

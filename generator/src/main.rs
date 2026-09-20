@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
 
     generate_file("disasm/src/generated/types.rs", isa.generate_types())?;
     // println!("{}", isa.generate_parser());
-    generate_file("disasm/src/generated/parse.rs", isa.generate_parser())?;
+    generate_file("disasm/src/generated/parse.rs", isa.generate_parser()?)?;
     // println!("{}", isa.generate_display());
     generate_file("disasm/src/generated/display.rs", isa.generate_display())?;
     // println!("{}", isa.generate_defs_uses());

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use indexmap::{IndexMap, IndexSet};
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::{ToTokens, quote};
@@ -12,7 +12,7 @@ use crate::{
         Arch, BitRange, DataExpr, DataType, DataTypeEnumVariantName, DataTypeKind, DataTypeName,
         DefsUses, Format, FormatCond, FormatParams, IllegalChecks, Isa, IsaExtension,
         IsaExtensionPatterns, IsaVersionPatterns, IsaVersionSet, OpcodeLookupTable, OpcodePattern,
-        cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
+        TagName, cfg_attribute_single_arch_tokens, cfg_attribute_tokens,
     },
     util::str::snake_to_pascal_case,
 };
@@ -40,9 +40,9 @@ impl Opcodes {
         }
     }
 
-    pub fn parse_fns_tokens(&self, isa: &Isa) -> TokenStream {
-        let parse_fns = self.iter().map(|o| o.parse_fns_tokens(isa));
-        quote!(#(#parse_fns)*)
+    pub fn parse_fns_tokens(&self, isa: &Isa) -> Result<TokenStream> {
+        let parse_fns = self.iter().map(|o| o.parse_fns_tokens(isa)).collect::<Result<Vec<_>>>()?;
+        Ok(quote!(#(#parse_fns)*))
     }
 
     pub fn write_impl_tokens(&self, isa: &Isa) -> TokenStream {
@@ -153,6 +153,8 @@ impl Opcodes {
 pub struct Opcode {
     mnemonic: String,
     description: String,
+    #[serde(default)]
+    tags: Vec<TagName>,
     params: IndexMap<OpcodeParamName, DataTypeName>,
     format: OpcodeFormat,
     #[serde(default)]
@@ -171,11 +173,20 @@ impl Opcode {
         &self.mnemonic
     }
 
+    pub fn tags(&self) -> &[TagName] {
+        &self.tags
+    }
+
     pub fn params(&self) -> &IndexMap<OpcodeParamName, DataTypeName> {
         &self.params
     }
 
     pub fn validate(&self, isa: &Isa) -> Result<()> {
+        for tag_name in &self.tags {
+            isa.tags().get(tag_name).ok_or_else(|| {
+                anyhow!("Tag '{}' not found for opcode '{}'", tag_name.0, self.mnemonic)
+            })?;
+        }
         for (param, type_name) in self.params.iter() {
             isa.types().get(type_name).ok_or_else(|| {
                 anyhow!(
@@ -223,17 +234,41 @@ impl Opcode {
         Ident::new(&name, Span::call_site())
     }
 
-    fn parse_fns_tokens(&self, isa: &Isa) -> TokenStream {
-        let arm_parse_fns = self.arm.iter().enumerate().map(|(i, encoding)| {
-            encoding.parse_fn_tokens(self.parse_fn_ident(Arch::Arm, i), self, isa, Arch::Arm)
-        });
-        let thumb_parse_fns = self.thumb.iter().enumerate().map(|(i, encoding)| {
-            encoding.parse_fn_tokens(self.parse_fn_ident(Arch::Thumb, i), self, isa, Arch::Thumb)
-        });
-        quote! {
+    fn parse_fns_tokens(&self, isa: &Isa) -> Result<TokenStream> {
+        let arm_parse_fns = self
+            .arm
+            .iter()
+            .enumerate()
+            .map(|(i, encoding)| {
+                encoding
+                    .parse_fn_tokens(self.parse_fn_ident(Arch::Arm, i), self, isa, Arch::Arm)
+                    .with_context(|| {
+                        format!(
+                            "Failed to generate parse function for ARM encoding {i} of opcode '{}'",
+                            self.mnemonic
+                        )
+                    })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let thumb_parse_fns = self
+            .thumb
+            .iter()
+            .enumerate()
+            .map(|(i, encoding)| {
+                encoding
+                    .parse_fn_tokens(self.parse_fn_ident(Arch::Thumb, i), self, isa, Arch::Thumb)
+                    .with_context(|| {
+                        format!(
+                            "Failed to generate parse function for Thumb encoding {i} of opcode '{}'",
+                            self.mnemonic
+                        )
+                    })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(quote! {
             #(#arm_parse_fns)*
             #(#thumb_parse_fns)*
-        }
+        })
     }
 
     fn format_params(&self, isa: &Isa) -> FormatParams {
@@ -393,7 +428,7 @@ impl Opcode {
         self.params.values().any(|type_name| type_name == data_type.name())
     }
 
-    fn cfg_attribute_tokens(&self, isa: &Isa) -> Option<TokenStream> {
+    pub fn cfg_attribute_tokens(&self, isa: &Isa) -> Option<TokenStream> {
         let arm_versions = self.versions(isa, Arch::Arm);
         let thumb_versions = self.versions(isa, Arch::Thumb);
         let arm_extensions = self.extensions(isa, Arch::Arm);
@@ -465,7 +500,7 @@ impl OpcodeEncoding {
         opcode: &Opcode,
         isa: &Isa,
         arch: Arch,
-    ) -> TokenStream {
+    ) -> Result<TokenStream> {
         let ins_size = Literal::u32_unsuffixed(self.pattern.combined().size() / 8);
         let illegal_value = match arch {
             Arch::Arm => quote!(Some(Ins::Illegal)),
@@ -473,40 +508,46 @@ impl OpcodeEncoding {
         };
         let illegal_checks = self.illegal.checks_tokens(Some(illegal_value.clone()));
 
-        let params = opcode.params().iter().map(|(param_name, type_name)| {
-            let data_type = isa.types().get(type_name).unwrap();
-            let value = self.get_param(param_name);
-            let parse_expr = if let Some(value) = value {
-                value.parse_expr_tokens(isa, data_type)
-            } else {
-                data_type.default_expr_tokens(isa).unwrap_or_else(|| {
-                    panic!(
-                        "Missing value for parameter '{}' in opcode encoding '{}'",
-                        param_name.0, fn_ident
-                    )
-                })
-            };
+        let params = opcode
+            .params()
+            .iter()
+            .map(|(param_name, type_name)| {
+                let data_type = isa.types().get(type_name).unwrap();
+                let value = self.get_param(param_name);
+                let parse_expr = if let Some(value) = value {
+                    value.parse_expr_tokens(isa, data_type).with_context(|| {
+                        format!("Failed to generate parse function for param '{param_name}'")
+                    })?
+                } else {
+                    data_type.default_expr_tokens(isa).unwrap_or_else(|| {
+                        panic!(
+                            "Missing value for parameter '{}' in opcode encoding '{}'",
+                            param_name.0, fn_ident
+                        )
+                    })
+                };
 
-            let name_ident = Ident::new(&param_name.0, Span::call_site());
-            if data_type.can_be_illegal(isa)
-                && matches!(
-                    value,
-                    Some(
-                        OpcodeParamValue::Bits(_)
-                            | OpcodeParamValue::Const(_)
-                            | OpcodeParamValue::Expr(_)
+                let name_ident = Ident::new(&param_name.0, Span::call_site());
+                if data_type.can_be_illegal(isa)
+                    && matches!(
+                        value,
+                        Some(
+                            OpcodeParamValue::Bits(_)
+                                | OpcodeParamValue::Const(_)
+                                | OpcodeParamValue::Expr(_)
+                        )
                     )
-                )
-            {
-                quote! {
-                    let Some(#name_ident) = #parse_expr else {
-                        return #illegal_value;
-                    };
+                {
+                    Ok(quote! {
+                        let Some(#name_ident) = #parse_expr else {
+                            return #illegal_value;
+                        };
+                    })
+                } else {
+                    Ok(quote!(let #name_ident = #parse_expr;))
                 }
-            } else {
-                quote!(let #name_ident = #parse_expr;)
-            }
-        });
+            })
+            .collect::<Result<Vec<_>>>()?;
         let variant_ident = Ident::new(&snake_to_pascal_case(opcode.mnemonic()), Span::call_site());
         let param_names = opcode.params.keys().map(|k| k.as_ident());
 
@@ -568,7 +609,7 @@ impl OpcodeEncoding {
 
         let cfg = self.cfg_attribute_tokens(isa, arch);
 
-        quote! {
+        Ok(quote! {
             #cfg
             fn #fn_ident(value: u32, pc: u32, options: &Options) -> #return_type {
                 #version_check
@@ -578,7 +619,7 @@ impl OpcodeEncoding {
                 #(#params)*
                 Some(#return_value)
             }
-        }
+        })
     }
 
     pub fn pattern(&self) -> &OpcodePattern {
@@ -614,18 +655,18 @@ pub enum OpcodeParamValue {
     Struct(IndexMap<String, OpcodeParamValue>),
 }
 impl OpcodeParamValue {
-    pub fn parse_expr_tokens(&self, isa: &Isa, data_type: &DataType) -> TokenStream {
+    pub fn parse_expr_tokens(&self, isa: &Isa, data_type: &DataType) -> Result<TokenStream> {
         match self {
             OpcodeParamValue::Bits(bit_range) => {
-                data_type.parse_expr_tokens(isa, Some(bit_range.shift_mask_tokens(None)))
+                Ok(data_type.parse_expr_tokens(isa, Some(bit_range.shift_mask_tokens(None))))
             }
             OpcodeParamValue::Const(value) => {
                 let literal = Literal::u32_unsuffixed(*value).into_token_stream();
-                data_type.parse_expr_tokens(isa, Some(literal))
+                Ok(data_type.parse_expr_tokens(isa, Some(literal)))
             }
             OpcodeParamValue::Expr(expr) => {
                 let expr = expr.as_tokens(Ident::new("value", Span::call_site()));
-                data_type.parse_expr_tokens(isa, Some(expr))
+                Ok(data_type.parse_expr_tokens(isa, Some(expr)))
             }
             OpcodeParamValue::Enum(variant, value) => {
                 let inner_type = data_type.canonical(isa);
@@ -644,9 +685,9 @@ impl OpcodeParamValue {
             }
             OpcodeParamValue::Struct(params) => {
                 let DataTypeKind::Struct(data_type_struct) = data_type.kind() else {
-                    panic!();
+                    bail!("Expected data type to be struct");
                 };
-                data_type_struct.param_tokens(isa, data_type.name(), params)
+                Ok(data_type_struct.param_tokens(isa, data_type.name(), params)?)
             }
         }
     }

@@ -116,7 +116,10 @@ impl Opcode {
             })
         });
 
+        let cfg = self.cfg_attribute_tokens(isa);
+
         Some(quote! {
+            #cfg
             Ins::#variant_ident { #(#param_names),* } => {
                 #(#opcode_defs)*
                 #(#params_defs)*
@@ -141,7 +144,10 @@ impl Opcode {
             })
         });
 
+        let cfg = self.cfg_attribute_tokens(isa);
+
         Some(quote! {
+            #cfg
             Ins::#variant_ident { #(#param_names),* } => {
                 #(#opcode_uses)*
                 #(#params_uses)*
@@ -230,7 +236,9 @@ impl DataType {
         if defs_fn.is_none() && uses_fn.is_none() {
             None
         } else {
+            let cfg = self.cfg_attribute_tokens(isa);
             Some(quote! {
+                #cfg
                 impl #type_ident {
                     #defs_fn
                     #uses_fn

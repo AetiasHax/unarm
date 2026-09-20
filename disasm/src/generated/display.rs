@@ -136,6 +136,11 @@ pub trait FormatIns: core::fmt::Write {
         op2.write(self)?;
         Ok(())
     }
+    ///Immediate second operand
+    fn write_op2_imm(&mut self, op2_imm: Op2Imm) -> core::fmt::Result {
+        op2_imm.write(self)?;
+        Ok(())
+    }
     ///Register shifted by another register
     fn write_shift_reg(&mut self, shift_reg: ShiftReg) -> core::fmt::Result {
         shift_reg.write(self)?;
@@ -645,11 +650,11 @@ impl FormatValue for StatusFields {
         if *f {
             formatter.write_str("f")?;
         }
-        if *x {
-            formatter.write_str("x")?;
-        }
         if *s {
             formatter.write_str("s")?;
+        }
+        if *x {
+            formatter.write_str("x")?;
         }
         if *c {
             formatter.write_str("c")?;
@@ -822,8 +827,7 @@ impl FormatValue for Op2 {
     {
         match self {
             Self::Imm(imm) => {
-                formatter.write_str("#")?;
-                formatter.write_uimm(*imm)?;
+                formatter.write_op2_imm(*imm)?;
             }
             Self::ShiftReg(shift_reg) => {
                 formatter.write_shift_reg(*shift_reg)?;
@@ -832,6 +836,17 @@ impl FormatValue for Op2 {
                 formatter.write_shift_imm(*shift_imm)?;
             }
         }
+        Ok(())
+    }
+}
+impl FormatValue for Op2Imm {
+    fn write<F>(&self, formatter: &mut F) -> core::fmt::Result
+    where
+        F: FormatIns + ?Sized,
+    {
+        let Self { imm, rotate_imm } = self;
+        formatter.write_str("#")?;
+        formatter.write_uimm(*imm)?;
         Ok(())
     }
 }

@@ -11,9 +11,7 @@ use crate::*;
 impl BranchTarget {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Self {
-        Self {
-            addr: pc.wrapping_add((value)),
-        }
+        Self { addr: (value) }
     }
 }
 impl Cond {
@@ -94,9 +92,9 @@ impl Op2 {
     #[inline(always)]
     pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
         if (value & 0x2000000) == 0x2000000 {
-            Some(Self::Imm(((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1)))
+            Some(Self::Imm(Op2Imm::parse((value), pc)))
         } else if (value & 0x2000090) == 0x10 {
-            Some(Self::ShiftReg(ShiftReg::parse((value), pc)?))
+            Some(Self::ShiftReg(ShiftReg::parse((value), pc)))
         } else if (value & 0x2000010) == 0x0 {
             Some(Self::ShiftImm(ShiftImm::parse((value), pc)))
         } else {
@@ -104,26 +102,23 @@ impl Op2 {
         }
     }
 }
+impl Op2Imm {
+    #[inline(always)]
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
+            imm: ((value) & 0xff).rotate_right((((value) >> 8) & 0xf) << 1),
+            rotate_imm: (((value) >> 8) & 0xf) << 1,
+        }
+    }
+}
 impl ShiftReg {
     #[inline(always)]
-    pub(crate) fn parse(value: u32, pc: u32) -> Option<Self> {
-        if value & 0xf == 0xf {
-            return None;
-        }
-        if value & 0xf00 == 0xf00 {
-            return None;
-        }
-        if value & 0xf000 == 0xf000 {
-            return None;
-        }
-        if value & 0xf0000 == 0xf0000 {
-            return None;
-        }
-        Some(Self {
+    pub(crate) fn parse(value: u32, pc: u32) -> Self {
+        Self {
             rm: Reg::parse(((value) & 0xf), pc),
             shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
             rs: Reg::parse((((value) >> 8) & 0xf), pc),
-        })
+        }
     }
 }
 impl ShiftImm {
@@ -132,7 +127,13 @@ impl ShiftImm {
         Self {
             rm: Reg::parse(((value) & 0xf), pc),
             shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
-            imm: (((value) >> 7) & 0x1f),
+            imm: if (((value) >> 7) & 0x1f) != 0 {
+                (((value) >> 7) & 0x1f)
+            } else if (((value) >> 5) & 0x3) == 1 || (((value) >> 5) & 0x3) == 2 {
+                32
+            } else {
+                0
+            },
         }
     }
 }
@@ -470,6 +471,11 @@ impl Default for Cond {
 impl Default for ShiftOp {
     fn default() -> Self {
         Self::Lsl
+    }
+}
+impl Default for Op2Imm {
+    fn default() -> Self {
+        Self { imm: 0, rotate_imm: 0 }
     }
 }
 #[cfg(any(feature = "v6", feature = "v6k"))]
@@ -1843,7 +1849,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x401 | 0x404 | 0x411 | 0x414 | 0x421 | 0x424 | 0x431 | 0x434 => {
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
-            if let Some(ins) = parse_arm_cps_0(ins, pc, options) {
+            if (ins & 0xfff10020) == 0xf1000000
+                && let Some(ins) = parse_arm_cps_0(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -2359,7 +2367,9 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         }
         0x500 | 0x510 | 0x520 | 0x530 => {
             #[cfg(feature = "arm")]
-            if let Some(ins) = parse_arm_mrs_0(ins, pc, options) {
+            if (ins & 0xfb002f0) == 0x1000000
+                && let Some(ins) = parse_arm_mrs_0(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -5856,30 +5866,58 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
         | 0x2164 | 0x2165 | 0x2166 | 0x2167 | 0x2168 | 0x2169 | 0x216a | 0x216b | 0x216c
         | 0x216d | 0x216e | 0x216f | 0x2170 | 0x2171 | 0x2172 | 0x2173 | 0x2174 | 0x2175
         | 0x2176 | 0x2177 | 0x2178 | 0x2179 | 0x217a | 0x217b | 0x217c | 0x217d | 0x217e
-        | 0x217f | 0x2340 | 0x2341 | 0x2342 | 0x2343 | 0x2344 | 0x2345 | 0x2346 | 0x2347
-        | 0x2348 | 0x2349 | 0x234a | 0x234b | 0x234c | 0x234d | 0x234e | 0x234f | 0x2350
-        | 0x2351 | 0x2352 | 0x2353 | 0x2354 | 0x2355 | 0x2356 | 0x2357 | 0x2358 | 0x2359
-        | 0x235a | 0x235b | 0x235c | 0x235d | 0x235e | 0x235f | 0x2360 | 0x2361 | 0x2362
-        | 0x2363 | 0x2364 | 0x2365 | 0x2366 | 0x2367 | 0x2368 | 0x2369 | 0x236a | 0x236b
-        | 0x236c | 0x236d | 0x236e | 0x236f | 0x2370 | 0x2371 | 0x2372 | 0x2373 | 0x2374
-        | 0x2375 | 0x2376 | 0x2377 | 0x2378 | 0x2379 | 0x237a | 0x237b | 0x237c | 0x237d
-        | 0x237e | 0x237f | 0x2540 | 0x2541 | 0x2542 | 0x2543 | 0x2544 | 0x2545 | 0x2546
-        | 0x2547 | 0x2548 | 0x2549 | 0x254a | 0x254b | 0x254c | 0x254d | 0x254e | 0x254f
-        | 0x2550 | 0x2551 | 0x2552 | 0x2553 | 0x2554 | 0x2555 | 0x2556 | 0x2557 | 0x2558
-        | 0x2559 | 0x255a | 0x255b | 0x255c | 0x255d | 0x255e | 0x255f | 0x2560 | 0x2561
-        | 0x2562 | 0x2563 | 0x2564 | 0x2565 | 0x2566 | 0x2567 | 0x2568 | 0x2569 | 0x256a
-        | 0x256b | 0x256c | 0x256d | 0x256e | 0x256f | 0x2570 | 0x2571 | 0x2572 | 0x2573
-        | 0x2574 | 0x2575 | 0x2576 | 0x2577 | 0x2578 | 0x2579 | 0x257a | 0x257b | 0x257c
-        | 0x257d | 0x257e | 0x257f | 0x2740 | 0x2741 | 0x2742 | 0x2743 | 0x2744 | 0x2745
-        | 0x2746 | 0x2747 | 0x2748 | 0x2749 | 0x274a | 0x274b | 0x274c | 0x274d | 0x274e
-        | 0x274f | 0x2750 | 0x2751 | 0x2752 | 0x2753 | 0x2754 | 0x2755 | 0x2756 | 0x2757
-        | 0x2758 | 0x2759 | 0x275a | 0x275b | 0x275c | 0x275d | 0x275e | 0x275f | 0x2760
-        | 0x2761 | 0x2762 | 0x2763 | 0x2764 | 0x2765 | 0x2766 | 0x2767 | 0x2768 | 0x2769
-        | 0x276a | 0x276b | 0x276c | 0x276d | 0x276e | 0x276f | 0x2770 | 0x2771 | 0x2772
-        | 0x2773 | 0x2774 | 0x2775 | 0x2776 | 0x2777 | 0x2778 | 0x2779 | 0x277a | 0x277b
-        | 0x277c | 0x277d | 0x277e | 0x277f => {
+        | 0x217f | 0x21c0 | 0x21c1 | 0x21c2 | 0x21c3 | 0x21c4 | 0x21c5 | 0x21c6 | 0x21c7
+        | 0x21c8 | 0x21c9 | 0x21ca | 0x21cb | 0x21cc | 0x21cd | 0x21ce | 0x21cf | 0x21d0
+        | 0x21d1 | 0x21d2 | 0x21d3 | 0x21d4 | 0x21d5 | 0x21d6 | 0x21d7 | 0x21d8 | 0x21d9
+        | 0x21da | 0x21db | 0x21dc | 0x21dd | 0x21de | 0x21df | 0x21e0 | 0x21e1 | 0x21e2
+        | 0x21e3 | 0x21e4 | 0x21e5 | 0x21e6 | 0x21e7 | 0x21e8 | 0x21e9 | 0x21ea | 0x21eb
+        | 0x21ec | 0x21ed | 0x21ee | 0x21ef | 0x21f0 | 0x21f1 | 0x21f2 | 0x21f3 | 0x21f4
+        | 0x21f5 | 0x21f6 | 0x21f7 | 0x21f8 | 0x21f9 | 0x21fa | 0x21fb | 0x21fc | 0x21fd
+        | 0x21fe | 0x21ff | 0x2340 | 0x2341 | 0x2342 | 0x2343 | 0x2344 | 0x2345 | 0x2346
+        | 0x2347 | 0x2348 | 0x2349 | 0x234a | 0x234b | 0x234c | 0x234d | 0x234e | 0x234f
+        | 0x2350 | 0x2351 | 0x2352 | 0x2353 | 0x2354 | 0x2355 | 0x2356 | 0x2357 | 0x2358
+        | 0x2359 | 0x235a | 0x235b | 0x235c | 0x235d | 0x235e | 0x235f | 0x2360 | 0x2361
+        | 0x2362 | 0x2363 | 0x2364 | 0x2365 | 0x2366 | 0x2367 | 0x2368 | 0x2369 | 0x236a
+        | 0x236b | 0x236c | 0x236d | 0x236e | 0x236f | 0x2370 | 0x2371 | 0x2372 | 0x2373
+        | 0x2374 | 0x2375 | 0x2376 | 0x2377 | 0x2378 | 0x2379 | 0x237a | 0x237b | 0x237c
+        | 0x237d | 0x237e | 0x237f | 0x23c0 | 0x23c1 | 0x23c2 | 0x23c3 | 0x23c4 | 0x23c5
+        | 0x23c6 | 0x23c7 | 0x23c8 | 0x23c9 | 0x23ca | 0x23cb | 0x23cc | 0x23cd | 0x23ce
+        | 0x23cf | 0x23d0 | 0x23d1 | 0x23d2 | 0x23d3 | 0x23d4 | 0x23d5 | 0x23d6 | 0x23d7
+        | 0x23d8 | 0x23d9 | 0x23da | 0x23db | 0x23dc | 0x23dd | 0x23de | 0x23df | 0x23e0
+        | 0x23e1 | 0x23e2 | 0x23e3 | 0x23e4 | 0x23e5 | 0x23e6 | 0x23e7 | 0x23e8 | 0x23e9
+        | 0x23ea | 0x23eb | 0x23ec | 0x23ed | 0x23ee | 0x23ef | 0x23f0 | 0x23f1 | 0x23f2
+        | 0x23f3 | 0x23f4 | 0x23f5 | 0x23f6 | 0x23f7 | 0x23f8 | 0x23f9 | 0x23fa | 0x23fb
+        | 0x23fc | 0x23fd | 0x23fe | 0x23ff | 0x2540 | 0x2541 | 0x2542 | 0x2543 | 0x2544
+        | 0x2545 | 0x2546 | 0x2547 | 0x2548 | 0x2549 | 0x254a | 0x254b | 0x254c | 0x254d
+        | 0x254e | 0x254f | 0x2550 | 0x2551 | 0x2552 | 0x2553 | 0x2554 | 0x2555 | 0x2556
+        | 0x2557 | 0x2558 | 0x2559 | 0x255a | 0x255b | 0x255c | 0x255d | 0x255e | 0x255f
+        | 0x2560 | 0x2561 | 0x2562 | 0x2563 | 0x2564 | 0x2565 | 0x2566 | 0x2567 | 0x2568
+        | 0x2569 | 0x256a | 0x256b | 0x256c | 0x256d | 0x256e | 0x256f | 0x2570 | 0x2571
+        | 0x2572 | 0x2573 | 0x2574 | 0x2575 | 0x2576 | 0x2577 | 0x2578 | 0x2579 | 0x257a
+        | 0x257b | 0x257c | 0x257d | 0x257e | 0x257f | 0x25c0 | 0x25c1 | 0x25c2 | 0x25c3
+        | 0x25c4 | 0x25c5 | 0x25c6 | 0x25c7 | 0x25c8 | 0x25c9 | 0x25ca | 0x25cb | 0x25cc
+        | 0x25cd | 0x25ce | 0x25cf | 0x25d0 | 0x25d1 | 0x25d2 | 0x25d3 | 0x25d4 | 0x25d5
+        | 0x25d6 | 0x25d7 | 0x25d8 | 0x25d9 | 0x25da | 0x25db | 0x25dc | 0x25dd | 0x25de
+        | 0x25df | 0x25e0 | 0x25e1 | 0x25e2 | 0x25e3 | 0x25e4 | 0x25e5 | 0x25e6 | 0x25e7
+        | 0x25e8 | 0x25e9 | 0x25ea | 0x25eb | 0x25ec | 0x25ed | 0x25ee | 0x25ef | 0x25f0
+        | 0x25f1 | 0x25f2 | 0x25f3 | 0x25f4 | 0x25f5 | 0x25f6 | 0x25f7 | 0x25f8 | 0x25f9
+        | 0x25fa | 0x25fb | 0x25fc | 0x25fd | 0x25fe | 0x25ff | 0x2740 | 0x2741 | 0x2742
+        | 0x2743 | 0x2744 | 0x2745 | 0x2746 | 0x2747 | 0x2748 | 0x2749 | 0x274a | 0x274b
+        | 0x274c | 0x274d | 0x274e | 0x274f | 0x2750 | 0x2751 | 0x2752 | 0x2753 | 0x2754
+        | 0x2755 | 0x2756 | 0x2757 | 0x2758 | 0x2759 | 0x275a | 0x275b | 0x275c | 0x275d
+        | 0x275e | 0x275f | 0x2760 | 0x2761 | 0x2762 | 0x2763 | 0x2764 | 0x2765 | 0x2766
+        | 0x2767 | 0x2768 | 0x2769 | 0x276a | 0x276b | 0x276c | 0x276d | 0x276e | 0x276f
+        | 0x2770 | 0x2771 | 0x2772 | 0x2773 | 0x2774 | 0x2775 | 0x2776 | 0x2777 | 0x2778
+        | 0x2779 | 0x277a | 0x277b | 0x277c | 0x277d | 0x277e | 0x277f | 0x27c0 | 0x27c1
+        | 0x27c2 | 0x27c3 | 0x27c4 | 0x27c5 | 0x27c6 | 0x27c7 | 0x27c8 | 0x27c9 | 0x27ca
+        | 0x27cb | 0x27cc | 0x27cd | 0x27ce | 0x27cf | 0x27d0 | 0x27d1 | 0x27d2 | 0x27d3
+        | 0x27d4 | 0x27d5 | 0x27d6 | 0x27d7 | 0x27d8 | 0x27d9 | 0x27da | 0x27db | 0x27dc
+        | 0x27dd | 0x27de | 0x27df | 0x27e0 | 0x27e1 | 0x27e2 | 0x27e3 | 0x27e4 | 0x27e5
+        | 0x27e6 | 0x27e7 | 0x27e8 | 0x27e9 | 0x27ea | 0x27eb | 0x27ec | 0x27ed | 0x27ee
+        | 0x27ef | 0x27f0 | 0x27f1 | 0x27f2 | 0x27f3 | 0x27f4 | 0x27f5 | 0x27f6 | 0x27f7
+        | 0x27f8 | 0x27f9 | 0x27fa | 0x27fb | 0x27fc | 0x27fd | 0x27fe | 0x27ff => {
             #[cfg(feature = "arm")]
-            if (ins & 0xe708000) == 0x8500000
+            if (ins & 0xe508000) == 0x8500000
                 && let Some(ins) = parse_arm_ldm_1(ins, pc, options)
             {
                 return ins;
@@ -5888,40 +5926,6 @@ pub fn parse_arm(ins: u32, pc: u32, options: &Options) -> Ins {
             if (ins & 0xe508000) == 0x8508000
                 && let Some(ins) = parse_arm_ldm_2(ins, pc, options)
             {
-                return ins;
-            }
-        }
-        0x21c0 | 0x21c1 | 0x21c2 | 0x21c3 | 0x21c4 | 0x21c5 | 0x21c6 | 0x21c7 | 0x21c8
-        | 0x21c9 | 0x21ca | 0x21cb | 0x21cc | 0x21cd | 0x21ce | 0x21cf | 0x21d0 | 0x21d1
-        | 0x21d2 | 0x21d3 | 0x21d4 | 0x21d5 | 0x21d6 | 0x21d7 | 0x21d8 | 0x21d9 | 0x21da
-        | 0x21db | 0x21dc | 0x21dd | 0x21de | 0x21df | 0x21e0 | 0x21e1 | 0x21e2 | 0x21e3
-        | 0x21e4 | 0x21e5 | 0x21e6 | 0x21e7 | 0x21e8 | 0x21e9 | 0x21ea | 0x21eb | 0x21ec
-        | 0x21ed | 0x21ee | 0x21ef | 0x21f0 | 0x21f1 | 0x21f2 | 0x21f3 | 0x21f4 | 0x21f5
-        | 0x21f6 | 0x21f7 | 0x21f8 | 0x21f9 | 0x21fa | 0x21fb | 0x21fc | 0x21fd | 0x21fe
-        | 0x21ff | 0x23c0 | 0x23c1 | 0x23c2 | 0x23c3 | 0x23c4 | 0x23c5 | 0x23c6 | 0x23c7
-        | 0x23c8 | 0x23c9 | 0x23ca | 0x23cb | 0x23cc | 0x23cd | 0x23ce | 0x23cf | 0x23d0
-        | 0x23d1 | 0x23d2 | 0x23d3 | 0x23d4 | 0x23d5 | 0x23d6 | 0x23d7 | 0x23d8 | 0x23d9
-        | 0x23da | 0x23db | 0x23dc | 0x23dd | 0x23de | 0x23df | 0x23e0 | 0x23e1 | 0x23e2
-        | 0x23e3 | 0x23e4 | 0x23e5 | 0x23e6 | 0x23e7 | 0x23e8 | 0x23e9 | 0x23ea | 0x23eb
-        | 0x23ec | 0x23ed | 0x23ee | 0x23ef | 0x23f0 | 0x23f1 | 0x23f2 | 0x23f3 | 0x23f4
-        | 0x23f5 | 0x23f6 | 0x23f7 | 0x23f8 | 0x23f9 | 0x23fa | 0x23fb | 0x23fc | 0x23fd
-        | 0x23fe | 0x23ff | 0x25c0 | 0x25c1 | 0x25c2 | 0x25c3 | 0x25c4 | 0x25c5 | 0x25c6
-        | 0x25c7 | 0x25c8 | 0x25c9 | 0x25ca | 0x25cb | 0x25cc | 0x25cd | 0x25ce | 0x25cf
-        | 0x25d0 | 0x25d1 | 0x25d2 | 0x25d3 | 0x25d4 | 0x25d5 | 0x25d6 | 0x25d7 | 0x25d8
-        | 0x25d9 | 0x25da | 0x25db | 0x25dc | 0x25dd | 0x25de | 0x25df | 0x25e0 | 0x25e1
-        | 0x25e2 | 0x25e3 | 0x25e4 | 0x25e5 | 0x25e6 | 0x25e7 | 0x25e8 | 0x25e9 | 0x25ea
-        | 0x25eb | 0x25ec | 0x25ed | 0x25ee | 0x25ef | 0x25f0 | 0x25f1 | 0x25f2 | 0x25f3
-        | 0x25f4 | 0x25f5 | 0x25f6 | 0x25f7 | 0x25f8 | 0x25f9 | 0x25fa | 0x25fb | 0x25fc
-        | 0x25fd | 0x25fe | 0x25ff | 0x27c0 | 0x27c1 | 0x27c2 | 0x27c3 | 0x27c4 | 0x27c5
-        | 0x27c6 | 0x27c7 | 0x27c8 | 0x27c9 | 0x27ca | 0x27cb | 0x27cc | 0x27cd | 0x27ce
-        | 0x27cf | 0x27d0 | 0x27d1 | 0x27d2 | 0x27d3 | 0x27d4 | 0x27d5 | 0x27d6 | 0x27d7
-        | 0x27d8 | 0x27d9 | 0x27da | 0x27db | 0x27dc | 0x27dd | 0x27de | 0x27df | 0x27e0
-        | 0x27e1 | 0x27e2 | 0x27e3 | 0x27e4 | 0x27e5 | 0x27e6 | 0x27e7 | 0x27e8 | 0x27e9
-        | 0x27ea | 0x27eb | 0x27ec | 0x27ed | 0x27ee | 0x27ef | 0x27f0 | 0x27f1 | 0x27f2
-        | 0x27f3 | 0x27f4 | 0x27f5 | 0x27f6 | 0x27f7 | 0x27f8 | 0x27f9 | 0x27fa | 0x27fb
-        | 0x27fc | 0x27fd | 0x27fe | 0x27ff => {
-            #[cfg(feature = "arm")]
-            if let Some(ins) = parse_arm_ldm_2(ins, pc, options) {
                 return ins;
             }
         }
@@ -9901,7 +9905,9 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
         }
         0x11c | 0x11d => {
             #[cfg(feature = "thumb")]
-            if let Some(ins) = parse_thumb_bx_0(ins, pc, options) {
+            if (ins & 0xff87) == 0x4700
+                && let Some(ins) = parse_thumb_bx_0(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -9918,7 +9924,9 @@ pub fn parse_thumb(ins: u32, pc: u32, options: &Options) -> (Ins, u32) {
                     )
                 )
             )]
-            if let Some(ins) = parse_thumb_blx_1(ins, pc, options) {
+            if (ins & 0xff87) == 0x4780
+                && let Some(ins) = parse_thumb_blx_1(ins, pc, options)
+            {
                 return ins;
             }
         }
@@ -10586,7 +10594,7 @@ pub fn parse_arm_with_discriminant(
         }
         23 => {
             #[cfg(feature = "arm")]
-            if (ins & 0xe708000) == 0x8500000
+            if (ins & 0xe508000) == 0x8500000
                 && let Some(ins) = parse_arm_ldm_1(ins, pc, options)
             {
                 return ins;
@@ -14225,7 +14233,10 @@ fn parse_thumb_add_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::Imm(((value) >> 6) & 0x7);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) >> 6) & 0x7,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14264,7 +14275,10 @@ fn parse_thumb_add_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14389,7 +14403,10 @@ fn parse_thumb_add_4(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::Imm(((value) & 0xff) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0xff) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14428,7 +14445,10 @@ fn parse_thumb_add_5(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::Imm(((value) & 0x7f) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0x7f) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14553,7 +14573,10 @@ fn parse_thumb_add_8(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(15, pc);
-    let op2 = Op2::Imm(((value) & 0xff) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0xff) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Add {
             s,
@@ -14743,7 +14766,10 @@ fn parse_arm_b_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let target = BranchTarget::parse(
-        ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+        pc
+            .wrapping_add(
+                ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+            ),
         pc,
     );
     Some(Ins::B { cond, target })
@@ -14774,7 +14800,10 @@ fn parse_thumb_b_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)>
     }
     let cond = Cond::parse(((value) >> 8) & 0xf, pc);
     let target = BranchTarget::parse(
-        ((((((value) & 0xff) << 1) as i32) << 23 >> 23) as u32).wrapping_add(4),
+        pc
+            .wrapping_add(
+                ((((((value) & 0xff) << 1) as i32) << 23 >> 23) as u32).wrapping_add(4),
+            ),
         pc,
     );
     Some((Ins::B { cond, target }, 2))
@@ -14802,7 +14831,10 @@ fn parse_thumb_b_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)>
     }
     let cond = Cond::default();
     let target = BranchTarget::parse(
-        ((((((value) & 0x7ff) << 1) as i32) << 20 >> 20) as u32).wrapping_add(4),
+        pc
+            .wrapping_add(
+                ((((((value) & 0x7ff) << 1) as i32) << 20 >> 20) as u32).wrapping_add(4),
+            ),
         pc,
     );
     Some((Ins::B { cond, target }, 2))
@@ -14945,7 +14977,10 @@ fn parse_arm_bl_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     }
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let target = BranchTarget::parse(
-        ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+        pc
+            .wrapping_add(
+                ((((((value) & 0xffffff) << 2) as i32) << 6 >> 6) as u32).wrapping_add(8),
+            ),
         pc,
     );
     Some(Ins::Bl { cond, target })
@@ -14973,9 +15008,12 @@ fn parse_thumb_bl_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32)
     }
     let cond = Cond::default();
     let target = BranchTarget::parse(
-        (((((((value) & 0x7ff) << 12) | ((((value) >> 16) & 0x7ff) << 1)) as i32) << 9
-            >> 9) as u32)
-            .wrapping_add(4),
+        pc
+            .wrapping_add(
+                (((((((value) & 0x7ff) << 12) | ((((value) >> 16) & 0x7ff) << 1)) as i32)
+                    << 9 >> 9) as u32)
+                    .wrapping_add(4),
+            ),
         pc,
     );
     Some((Ins::Bl { cond, target }, 4))
@@ -15013,9 +15051,12 @@ fn parse_arm_blx_0(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let cond = Cond::default();
     let target = BlxTarget::Direct(
         BranchTarget::parse(
-            (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1)) as i32)
-                << 6 >> 6) as u32)
-                .wrapping_add(8),
+            pc
+                .wrapping_add(
+                    (((((((value) & 0xffffff) << 2) | ((((value) >> 24) & 0x1) << 1))
+                        as i32) << 6 >> 6) as u32)
+                        .wrapping_add(8),
+                ),
             pc,
         ),
     );
@@ -15094,9 +15135,12 @@ fn parse_thumb_blx_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let target = BlxTarget::Direct(
         BranchTarget::parse(
-            (((((((value) & 0x7ff) << 12) | ((((value) >> 17) & 0x3ff) << 2)) as i32)
-                << 9 >> 9) as u32)
-                .wrapping_add(4),
+            (pc & !3)
+                .wrapping_add(
+                    (((((((value) & 0x7ff) << 12) | ((((value) >> 17) & 0x3ff) << 2))
+                        as i32) << 9 >> 9) as u32)
+                        .wrapping_add(4),
+                ),
             pc,
         ),
     );
@@ -15431,7 +15475,10 @@ fn parse_thumb_cmp_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     }
     let cond = Cond::default();
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((Ins::Cmp { cond, rn, op2 }, 2))
 }
 #[cfg(feature = "thumb")]
@@ -15711,7 +15758,7 @@ fn parse_arm_ldm_1(value: u32, pc: u32, options: &Options) -> Option<Ins> {
     let mode = LdmStmMode::parse(((value) >> 23) & 0x3, pc);
     let cond = Cond::parse(((value) >> 28) & 0xf, pc);
     let rn = Reg::parse(((value) >> 16) & 0xf, pc);
-    let writeback = (0) != 0;
+    let writeback = (((value) >> 21) & 0x1) != 0;
     let regs = RegList::parse((value) & 0x7fff);
     let user_mode = (1) != 0;
     Some(Ins::Ldm {
@@ -16790,7 +16837,10 @@ fn parse_thumb_mov_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let thumb = (1) != 0;
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Mov {
             s,
@@ -18015,7 +18065,7 @@ fn parse_thumb_rsb_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::Imm(0);
+    let op2 = Op2::Imm(Op2Imm { imm: 0, rotate_imm: 0 });
     Some((Ins::Rsb { s, cond, rd, rn, op2 }, 2))
 }
 #[cfg(feature = "arm")]
@@ -19506,7 +19556,10 @@ fn parse_thumb_sub_0(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse((value) & 0x7, pc);
     let rn = Reg::parse(((value) >> 3) & 0x7, pc);
-    let op2 = Op2::Imm(((value) >> 6) & 0x7);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) >> 6) & 0x7,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Sub {
             s,
@@ -19545,7 +19598,10 @@ fn parse_thumb_sub_1(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(((value) >> 8) & 0x7, pc);
     let rn = Reg::parse(((value) >> 8) & 0x7, pc);
-    let op2 = Op2::Imm((value) & 0xff);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: (value) & 0xff,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Sub {
             s,
@@ -19627,7 +19683,10 @@ fn parse_thumb_sub_3(value: u32, pc: u32, options: &Options) -> Option<(Ins, u32
     let cond = Cond::default();
     let rd = Reg::parse(13, pc);
     let rn = Reg::parse(13, pc);
-    let op2 = Op2::Imm(((value) & 0x7f) << 2);
+    let op2 = Op2::Imm(Op2Imm {
+        imm: ((value) & 0x7f) << 2,
+        rotate_imm: 0,
+    });
     Some((
         Ins::Sub {
             s,

@@ -1,19 +1,45 @@
-use crate::{
-    CoReg, Dreg, DregIndex, DregList, Fpscr, Reg, RegList, Sreg, SregList, StatusFields, StatusReg,
-};
+use crate::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DefUseArgument {
     Reg(Reg),
+    #[cfg(all(
+        feature = "arm",
+        feature = "vfp_v2",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    ))]
     Sreg(Sreg),
+    #[cfg(all(
+        feature = "arm",
+        feature = "vfp_v2",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    ))]
     Dreg(Dreg),
     RegList(RegList),
+    #[cfg(all(
+        feature = "vfp_v2",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    ))]
     SregList(SregList),
+    #[cfg(all(
+        feature = "vfp_v2",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    ))]
     DregList(DregList),
+    #[cfg(all(
+        feature = "arm",
+        feature = "vfp_v2",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    ))]
     DregIndex(DregIndex),
     CoReg(CoReg),
     StatusReg(StatusReg),
     StatusFields(StatusFields),
+    #[cfg(all(
+        feature = "arm",
+        feature = "vfp_v2",
+        any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+    ))]
     Fpscr(Fpscr),
 }
 
@@ -58,8 +84,8 @@ pub struct DefsUsesIntoIter {
 }
 
 impl IntoIterator for DefsUses {
-    type Item = DefUseArgument;
     type IntoIter = DefsUsesIntoIter;
+    type Item = DefUseArgument;
 
     fn into_iter(self) -> Self::IntoIter {
         DefsUsesIntoIter { args: self.args, len: self.len, pos: 0 }
@@ -81,27 +107,51 @@ impl Iterator for DefsUsesIntoIter {
 }
 
 macro_rules! into_def_use_impl {
-    ( $( $ty:ident ),+ ) => {
-        $(
-            impl From<$ty> for DefUseArgument {
-                fn from(value: $ty) -> DefUseArgument {
-                    DefUseArgument::$ty(value)
-                }
+    ( $ty:ident ) => {
+        impl From<$ty> for DefUseArgument {
+            fn from(value: $ty) -> DefUseArgument {
+                DefUseArgument::$ty(value)
             }
-        )+
+        }
     };
 }
 
-into_def_use_impl!(
-    Reg,
-    Sreg,
-    Dreg,
-    RegList,
-    SregList,
-    DregList,
-    DregIndex,
-    CoReg,
-    StatusReg,
-    StatusFields,
-    Fpscr
-);
+into_def_use_impl!(Reg);
+#[cfg(all(
+    feature = "arm",
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
+into_def_use_impl!(Sreg);
+#[cfg(all(
+    feature = "arm",
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
+into_def_use_impl!(Dreg);
+into_def_use_impl!(RegList);
+#[cfg(all(
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
+into_def_use_impl!(SregList);
+#[cfg(all(
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
+into_def_use_impl!(DregList);
+#[cfg(all(
+    feature = "arm",
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
+into_def_use_impl!(DregIndex);
+into_def_use_impl!(CoReg);
+into_def_use_impl!(StatusReg);
+into_def_use_impl!(StatusFields);
+#[cfg(all(
+    feature = "arm",
+    feature = "vfp_v2",
+    any(feature = "v5te", feature = "v5tej", feature = "v6", feature = "v6k")
+))]
+into_def_use_impl!(Fpscr);
