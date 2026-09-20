@@ -13410,9 +13410,9 @@ pub fn parse_arm_with_discriminant(
                 return ins;
             }
         }
-        233 => return Ins::Byte(ins as u8),
+        233 => return Ins::Word(ins),
         234 => return Ins::HalfWord(ins as u16),
-        235 => return Ins::Word(ins),
+        235 => return Ins::Byte(ins as u8),
         _ => {}
     };
     Ins::Illegal
@@ -14113,9 +14113,9 @@ pub fn parse_thumb_with_discriminant(
                 return ins;
             }
         }
-        233 => return Ins::Byte(ins as u8),
+        233 => return Ins::Word(ins),
         234 => return Ins::HalfWord(ins as u16),
-        235 => return Ins::Word(ins),
+        235 => return Ins::Byte(ins as u8),
         _ => {}
     };
     Ins::Illegal

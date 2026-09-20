@@ -116,9 +116,9 @@ impl Opcodes {
         let num_opcodes = self.0.len();
 
         // See Opcodes::ins_enum_tokens
-        let id_byte = Literal::usize_unsuffixed(num_opcodes);
+        let id_word = Literal::usize_unsuffixed(num_opcodes);
         let id_halfword = Literal::usize_unsuffixed(num_opcodes + 1);
-        let id_word = Literal::usize_unsuffixed(num_opcodes + 2);
+        let id_byte = Literal::usize_unsuffixed(num_opcodes + 2);
 
         let cases = self.0.iter().enumerate().filter_map(|(discriminant, opcode)| {
             opcode.parse_with_discriminant_case(isa, discriminant as u16, arch)
@@ -137,9 +137,9 @@ impl Opcodes {
             pub fn #fn_ident(ins: u32, discriminant: u16, pc: u32, options: &Options) -> Ins {
                 match discriminant {
                     #(#cases),*,
-                    #id_byte => return Ins::Byte(ins as u8),
-                    #id_halfword => return Ins::HalfWord(ins as u16),
                     #id_word => return Ins::Word(ins),
+                    #id_halfword => return Ins::HalfWord(ins as u16),
+                    #id_byte => return Ins::Byte(ins as u8),
                     _ => {},
                 };
                 Ins::Illegal
