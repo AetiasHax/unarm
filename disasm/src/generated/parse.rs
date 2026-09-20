@@ -127,7 +127,13 @@ impl ShiftImm {
         Self {
             rm: Reg::parse(((value) & 0xf), pc),
             shift_op: ShiftOp::parse((((value) >> 5) & 0x3), pc),
-            imm: (((value) >> 7) & 0x1f),
+            imm: if (((value) >> 7) & 0x1f) != 0 {
+                (((value) >> 7) & 0x1f)
+            } else if (((value) >> 5) & 0x3) == 1 || (((value) >> 5) & 0x3) == 2 {
+                32
+            } else {
+                0
+            },
         }
     }
 }

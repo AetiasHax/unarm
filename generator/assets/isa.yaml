@@ -418,7 +418,8 @@ types:
       kind: !type [shift_op, bits(5..7)]
     - name: imm
       description: Immediate to shift by
-      kind: !type [uimm, bits(7..12)]
+      # lsr/asr shifts by 32 if immediate is 0
+      kind: !type [uimm, "if bits(7..12) != 0 { bits(7..12) } else if bits(5..7) == 1 || bits(5..7) == 2 { 32 } else { 0 }"]
     uses:
     - !always field(rm)
 - name: op2_shift
