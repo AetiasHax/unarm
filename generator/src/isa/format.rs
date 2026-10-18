@@ -219,6 +219,8 @@ enum FormatFragment {
     DerefStart,
     DerefEnd,
     ImmPrefix,
+    Rrx,
+    Ror,
     Param(String),
 }
 
@@ -237,6 +239,8 @@ impl FormatFragment {
             FormatFragment::DerefStart => quote!(#formatter.write_deref_start()?;),
             FormatFragment::DerefEnd => quote!(#formatter.write_deref_end()?;),
             FormatFragment::ImmPrefix => quote!(#formatter.write_imm_prefix()?;),
+            FormatFragment::Rrx => quote!(#formatter.write_rrx()?;),
+            FormatFragment::Ror => quote!(#formatter.write_shift_op(ShiftOp::Ror)?;),
             FormatFragment::Param(param_name) => {
                 let Some(param) = params.get(param_name) else {
                     panic!("Parameter {param_name} in format does not exist");
@@ -266,6 +270,8 @@ impl FromStr for FragmentsFormat {
             split(fragments, s, "[", FormatFragment::DerefStart)?;
             split(fragments, s, "]", FormatFragment::DerefEnd)?;
             split(fragments, s, "#", FormatFragment::ImmPrefix)?;
+            split(fragments, s, "rrx", FormatFragment::Rrx)?;
+            split(fragments, s, "ror", FormatFragment::Ror)?;
             fragments.push(FormatFragment::Text(s.to_string()));
             ControlFlow::Continue(())
         }

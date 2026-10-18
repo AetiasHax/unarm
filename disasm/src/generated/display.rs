@@ -27,6 +27,9 @@ pub trait FormatIns: core::fmt::Write {
     fn write_reg_list_end(&mut self) -> core::fmt::Result {
         self.write_str("}")
     }
+    fn write_rrx(&mut self) -> core::fmt::Result {
+        self.write_str("rrx")
+    }
     ///Mnemonic suffix, updates status flags when present
     fn write_s(&mut self, s: bool) -> core::fmt::Result {
         if s {
@@ -891,7 +894,7 @@ impl FormatValue for ShiftImm {
             if *imm == 0 && *shift_op == ShiftOp::Ror {
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("rrx")?;
+                formatter.write_rrx()?;
             } else {
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
@@ -1073,7 +1076,7 @@ impl FormatValue for LdrStrOffset {
                         formatter.write_subtract(*subtract)?;
                         formatter.write_reg(*rm)?;
                         formatter.write_separator()?;
-                        formatter.write_str("rrx")?;
+                        formatter.write_rrx()?;
                     } else {
                         formatter.write_subtract(*subtract)?;
                         formatter.write_reg(*rm)?;
@@ -2214,17 +2217,17 @@ impl Ins {
             }
             Ins::Ror { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_s(*s)?;
                     formatter.write_cond(*cond)?;
                 } else {
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_cond(*cond)?;
                 }
             }
             #[cfg(feature = "arm")]
             Ins::Rrx { s, cond, rd, rm } => {
-                formatter.write_str("rrx")?;
+                formatter.write_rrx()?;
                 formatter.write_s(*s)?;
                 formatter.write_cond(*cond)?;
             }
@@ -5770,7 +5773,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -5786,7 +5789,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -5802,7 +5805,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -5816,7 +5819,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -5830,7 +5833,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -5844,7 +5847,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -6123,7 +6126,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -6139,7 +6142,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -6155,7 +6158,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -6169,7 +6172,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -6183,7 +6186,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
@@ -6197,7 +6200,7 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
                     formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;

@@ -95,6 +95,10 @@ impl DataTypes {
                     self.write_str("}")
                 }
 
+                fn write_rrx(&mut self) -> core::fmt::Result {
+                    self.write_str("rrx")
+                }
+
                 #(#data_types)*
 
                 fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
