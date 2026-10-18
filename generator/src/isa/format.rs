@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::Debug,
+    ops::ControlFlow,
     str::FromStr,
 };
 
@@ -215,6 +216,8 @@ enum FormatFragment {
     Text(String),
     Space,
     Separator,
+    DerefStart,
+    DerefEnd,
     Param(String),
 }
 
@@ -230,6 +233,8 @@ impl FormatFragment {
             FormatFragment::Text(text) => quote!(#formatter.write_str(#text)?;),
             FormatFragment::Space => quote!(#formatter.write_space()?;),
             FormatFragment::Separator => quote!(#formatter.write_separator()?;),
+            FormatFragment::DerefStart => quote!(#formatter.write_deref_start()?;),
+            FormatFragment::DerefEnd => quote!(#formatter.write_deref_end()?;),
             FormatFragment::Param(param_name) => {
                 let Some(param) = params.get(param_name) else {
                     panic!("Parameter {param_name} in format does not exist");
@@ -249,17 +254,32 @@ impl FromStr for FragmentsFormat {
         let mut token = String::new();
         let mut parsing_param = false;
 
-        fn push_str_fragments(fragments: &mut Vec<FormatFragment>, s: &str) {
-            if let Some((left, right)) = s.split_once(", ") {
-                push_str_fragments(fragments, left);
-                fragments.push(FormatFragment::Separator);
-                push_str_fragments(fragments, right);
-            } else if let Some((left, right)) = s.split_once(" ") {
-                push_str_fragments(fragments, left);
-                fragments.push(FormatFragment::Space);
-                push_str_fragments(fragments, right);
-            } else if !s.is_empty() {
-                fragments.push(FormatFragment::Text(s.to_string()))
+        fn push_str_fragments(fragments: &mut Vec<FormatFragment>, s: &str) -> ControlFlow<()> {
+            if s.is_empty() {
+                return ControlFlow::Continue(());
+            }
+
+            split(fragments, s, ", ", FormatFragment::Separator)?;
+            split(fragments, s, " ", FormatFragment::Space)?;
+            split(fragments, s, "[", FormatFragment::DerefStart)?;
+            split(fragments, s, "]", FormatFragment::DerefEnd)?;
+            fragments.push(FormatFragment::Text(s.to_string()));
+            ControlFlow::Continue(())
+        }
+
+        fn split(
+            fragments: &mut Vec<FormatFragment>,
+            s: &str,
+            substring: &str,
+            fragment: FormatFragment,
+        ) -> ControlFlow<()> {
+            if let Some((left, right)) = s.split_once(substring) {
+                let _ = push_str_fragments(fragments, left);
+                fragments.push(fragment);
+                let _ = push_str_fragments(fragments, right);
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
             }
         }
 
@@ -267,7 +287,7 @@ impl FromStr for FragmentsFormat {
             match ch {
                 '(' => {
                     if !token.is_empty() {
-                        push_str_fragments(&mut fragments, &token);
+                        let _ = push_str_fragments(&mut fragments, &token);
                         token = String::new();
                     }
                     parsing_param = true;
@@ -290,7 +310,7 @@ impl FromStr for FragmentsFormat {
             if parsing_param {
                 fragments.push(FormatFragment::Param(token));
             } else {
-                push_str_fragments(&mut fragments, &token);
+                let _ = push_str_fragments(&mut fragments, &token);
             }
         }
         Ok(Self { fragments })

@@ -12,6 +12,12 @@ pub trait FormatIns: core::fmt::Write {
     fn write_separator(&mut self) -> core::fmt::Result {
         self.write_str(", ")
     }
+    fn write_deref_start(&mut self) -> core::fmt::Result {
+        self.write_str("[")
+    }
+    fn write_deref_end(&mut self) -> core::fmt::Result {
+        self.write_str("]")
+    }
     ///Mnemonic suffix, updates status flags when present
     fn write_s(&mut self, s: bool) -> core::fmt::Result {
         if s {
@@ -951,26 +957,26 @@ impl FormatValue for AddrLdcStc {
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_str("#")?;
                 formatter.write_simm(*offset)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_wb(*writeback)?;
             }
             Self::Post { rn, offset } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_separator()?;
                 formatter.write_str("#")?;
                 formatter.write_simm(*offset)?;
             }
             Self::Unidx { rn, option } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_separator()?;
                 formatter.write_str("{")?;
                 formatter.write_uimm(*option)?;
@@ -1011,11 +1017,11 @@ impl FormatValue for AddrLdrStr {
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_ldr_str_offset(*offset)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_wb(*writeback)?;
             }
             Self::Post(addr_ldr_str_post) => {
@@ -1031,9 +1037,9 @@ impl FormatValue for AddrLdrStrPost {
         F: FormatIns + ?Sized,
     {
         let Self { rn, offset } = self;
-        formatter.write_str("[")?;
+        formatter.write_deref_start()?;
         formatter.write_reg(*rn)?;
-        formatter.write_str("]")?;
+        formatter.write_deref_end()?;
         formatter.write_separator()?;
         formatter.write_ldr_str_offset(*offset)?;
         Ok(())
@@ -1081,17 +1087,17 @@ impl FormatValue for AddrMiscLoad {
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_misc_load_offset(*offset)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_wb(*writeback)?;
             }
             Self::Post { rn, offset } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_separator()?;
                 formatter.write_misc_load_offset(*offset)?;
             }
@@ -1466,9 +1472,9 @@ impl FormatValue for DregIndex {
         let Self { dreg, index } = self;
         if formatter.options().ual {
             formatter.write_dreg(*dreg)?;
-            formatter.write_str("[")?;
+            formatter.write_deref_start()?;
             formatter.write_uimm(*index)?;
-            formatter.write_str("]")?;
+            formatter.write_deref_end()?;
         } else {
             formatter.write_dreg(*dreg)?;
         }
@@ -4605,18 +4611,18 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexb { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexd { cond, rd, rd2, rn } => {
@@ -4625,18 +4631,18 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rd2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexh { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             Ins::Ldrh { cond, rd, addr } => {
                 formatter.write_space()?;
@@ -5650,9 +5656,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexb { cond, rd, rm, rn } => {
@@ -5661,9 +5667,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexd { cond, rd, rm, rm2, rn } => {
@@ -5674,9 +5680,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexh { cond, rd, rm, rn } => {
@@ -5685,9 +5691,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             Ins::Strh { cond, rd, addr } => {
                 formatter.write_space()?;
@@ -5728,9 +5734,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rd2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(feature = "arm")]
             Ins::Swpb { cond, rd, rd2, rn } => {
@@ -5739,9 +5745,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rd2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtab { cond, rd, rn, rm, rotate } => {

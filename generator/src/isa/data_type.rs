@@ -75,6 +75,14 @@ impl DataTypes {
                     self.write_str(", ")
                 }
 
+                fn write_deref_start(&mut self) -> core::fmt::Result {
+                    self.write_str("[")
+                }
+
+                fn write_deref_end(&mut self) -> core::fmt::Result {
+                    self.write_str("]")
+                }
+
                 #(#data_types)*
 
                 fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {
