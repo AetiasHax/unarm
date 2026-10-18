@@ -83,6 +83,18 @@ impl DataTypes {
                     self.write_str("]")
                 }
 
+                fn write_imm_prefix(&mut self) -> core::fmt::Result {
+                    self.write_str("#")
+                }
+
+                fn write_reg_list_start(&mut self) -> core::fmt::Result {
+                    self.write_str("{")
+                }
+
+                fn write_reg_list_end(&mut self) -> core::fmt::Result {
+                    self.write_str("}")
+                }
+
                 #(#data_types)*
 
                 fn write_ins(&mut self, ins: &Ins) -> core::fmt::Result {

@@ -38,7 +38,7 @@ impl RegList {
     where
         F: FormatIns + ?Sized,
     {
-        formatter.write_str("{")?;
+        formatter.write_reg_list_start()?;
         let mut iter = self.iter();
         if let Some(reg) = iter.next() {
             formatter.write_reg(reg)?;
@@ -47,7 +47,7 @@ impl RegList {
             formatter.write_separator()?;
             formatter.write_reg(reg)?;
         }
-        formatter.write_str("}")?;
+        formatter.write_reg_list_end()?;
         Ok(())
     }
 }
@@ -94,7 +94,7 @@ impl SregList {
     where
         F: FormatIns + ?Sized,
     {
-        formatter.write_str("{")?;
+        formatter.write_reg_list_start()?;
         let mut iter = self.iter();
         if let Some(reg) = iter.next() {
             formatter.write_sreg(reg)?;
@@ -103,7 +103,7 @@ impl SregList {
             formatter.write_separator()?;
             formatter.write_sreg(reg)?;
         }
-        formatter.write_str("}")?;
+        formatter.write_reg_list_end()?;
         Ok(())
     }
 }
@@ -150,7 +150,7 @@ impl DregList {
     where
         F: FormatIns + ?Sized,
     {
-        formatter.write_str("{")?;
+        formatter.write_reg_list_start()?;
         let mut iter = self.iter();
         if let Some(reg) = iter.next() {
             formatter.write_dreg(reg)?;
@@ -159,7 +159,7 @@ impl DregList {
             formatter.write_separator()?;
             formatter.write_dreg(reg)?;
         }
-        formatter.write_str("}")?;
+        formatter.write_reg_list_end()?;
         Ok(())
     }
 }
