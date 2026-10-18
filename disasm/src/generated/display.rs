@@ -12,6 +12,24 @@ pub trait FormatIns: core::fmt::Write {
     fn write_separator(&mut self) -> core::fmt::Result {
         self.write_str(", ")
     }
+    fn write_deref_start(&mut self) -> core::fmt::Result {
+        self.write_str("[")
+    }
+    fn write_deref_end(&mut self) -> core::fmt::Result {
+        self.write_str("]")
+    }
+    fn write_imm_prefix(&mut self) -> core::fmt::Result {
+        self.write_str("#")
+    }
+    fn write_reg_list_start(&mut self) -> core::fmt::Result {
+        self.write_str("{")
+    }
+    fn write_reg_list_end(&mut self) -> core::fmt::Result {
+        self.write_str("}")
+    }
+    fn write_rrx(&mut self) -> core::fmt::Result {
+        self.write_str("rrx")
+    }
     ///Mnemonic suffix, updates status flags when present
     fn write_s(&mut self, s: bool) -> core::fmt::Result {
         if s {
@@ -410,7 +428,7 @@ impl FormatValue for BranchTarget {
         F: FormatIns + ?Sized,
     {
         let Self { addr } = self;
-        formatter.write_str("#")?;
+        formatter.write_imm_prefix()?;
         formatter.write_uimm(*addr)?;
         Ok(())
     }
@@ -670,7 +688,7 @@ impl FormatValue for MsrOp2 {
     {
         match self {
             Self::Imm(imm) => {
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
             }
             Self::Reg(reg) => {
@@ -845,7 +863,7 @@ impl FormatValue for Op2Imm {
         F: FormatIns + ?Sized,
     {
         let Self { imm, rotate_imm } = self;
-        formatter.write_str("#")?;
+        formatter.write_imm_prefix()?;
         formatter.write_uimm(*imm)?;
         Ok(())
     }
@@ -876,13 +894,13 @@ impl FormatValue for ShiftImm {
             if *imm == 0 && *shift_op == ShiftOp::Ror {
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("rrx")?;
+                formatter.write_rrx()?;
             } else {
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
                 formatter.write_shift_op(*shift_op)?;
                 formatter.write_space()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
             }
         }
@@ -896,7 +914,7 @@ impl FormatValue for Op2Shift {
     {
         match self {
             Self::Imm(imm) => {
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
             }
             Self::Reg(reg) => {
@@ -951,26 +969,26 @@ impl FormatValue for AddrLdcStc {
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_simm(*offset)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_wb(*writeback)?;
             }
             Self::Post { rn, offset } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_simm(*offset)?;
             }
             Self::Unidx { rn, option } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_separator()?;
                 formatter.write_str("{")?;
                 formatter.write_uimm(*option)?;
@@ -1011,11 +1029,11 @@ impl FormatValue for AddrLdrStr {
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_ldr_str_offset(*offset)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_wb(*writeback)?;
             }
             Self::Post(addr_ldr_str_post) => {
@@ -1031,9 +1049,9 @@ impl FormatValue for AddrLdrStrPost {
         F: FormatIns + ?Sized,
     {
         let Self { rn, offset } = self;
-        formatter.write_str("[")?;
+        formatter.write_deref_start()?;
         formatter.write_reg(*rn)?;
-        formatter.write_str("]")?;
+        formatter.write_deref_end()?;
         formatter.write_separator()?;
         formatter.write_ldr_str_offset(*offset)?;
         Ok(())
@@ -1046,7 +1064,7 @@ impl FormatValue for LdrStrOffset {
     {
         match self {
             Self::Imm(offset) => {
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_simm(*offset)?;
             }
             Self::Reg { subtract, rm, shift_op, imm } => {
@@ -1058,14 +1076,14 @@ impl FormatValue for LdrStrOffset {
                         formatter.write_subtract(*subtract)?;
                         formatter.write_reg(*rm)?;
                         formatter.write_separator()?;
-                        formatter.write_str("rrx")?;
+                        formatter.write_rrx()?;
                     } else {
                         formatter.write_subtract(*subtract)?;
                         formatter.write_reg(*rm)?;
                         formatter.write_separator()?;
                         formatter.write_shift_op(*shift_op)?;
                         formatter.write_space()?;
-                        formatter.write_str("#")?;
+                        formatter.write_imm_prefix()?;
                         formatter.write_uimm(*imm)?;
                     }
                 }
@@ -1081,17 +1099,17 @@ impl FormatValue for AddrMiscLoad {
     {
         match self {
             Self::Pre { rn, offset, writeback } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
                 formatter.write_separator()?;
                 formatter.write_misc_load_offset(*offset)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_wb(*writeback)?;
             }
             Self::Post { rn, offset } => {
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
                 formatter.write_separator()?;
                 formatter.write_misc_load_offset(*offset)?;
             }
@@ -1106,7 +1124,7 @@ impl FormatValue for MiscLoadOffset {
     {
         match self {
             Self::Imm(offset) => {
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_simm(*offset)?;
             }
             Self::Reg { subtract, rm } => {
@@ -1419,7 +1437,8 @@ impl FormatValue for VcmpF32Op2 {
     {
         match self {
             Self::Zero => {
-                formatter.write_str("#0.0")?;
+                formatter.write_imm_prefix()?;
+                formatter.write_str("0.0")?;
             }
             Self::Reg(sm) => {
                 formatter.write_sreg(*sm)?;
@@ -1442,7 +1461,8 @@ impl FormatValue for VcmpF64Op2 {
     {
         match self {
             Self::Zero => {
-                formatter.write_str("#0.0")?;
+                formatter.write_imm_prefix()?;
+                formatter.write_str("0.0")?;
             }
             Self::Reg(dm) => {
                 formatter.write_dreg(*dm)?;
@@ -1466,9 +1486,9 @@ impl FormatValue for DregIndex {
         let Self { dreg, index } = self;
         if formatter.options().ual {
             formatter.write_dreg(*dreg)?;
-            formatter.write_str("[")?;
+            formatter.write_deref_start()?;
             formatter.write_uimm(*index)?;
-            formatter.write_str("]")?;
+            formatter.write_deref_end()?;
         } else {
             formatter.write_dreg(*dreg)?;
         }
@@ -2197,17 +2217,17 @@ impl Ins {
             }
             Ins::Ror { s, thumb, cond, rd, rn, op2 } => {
                 if formatter.options().ual {
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_s(*s)?;
                     formatter.write_cond(*cond)?;
                 } else {
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_cond(*cond)?;
                 }
             }
             #[cfg(feature = "arm")]
             Ins::Rrx { s, cond, rd, rm } => {
-                formatter.write_str("rrx")?;
+                formatter.write_rrx()?;
                 formatter.write_s(*s)?;
                 formatter.write_cond(*cond)?;
             }
@@ -4359,7 +4379,7 @@ impl Ins {
             )]
             Ins::Bkpt { imm } => {
                 formatter.write_space()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
             }
             Ins::Bl { cond, target } => {
@@ -4408,7 +4428,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc1)?;
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crd)?;
@@ -4417,7 +4437,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
@@ -4436,7 +4456,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc1)?;
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crd)?;
@@ -4445,7 +4465,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
@@ -4484,7 +4504,7 @@ impl Ins {
             Ins::Cps { effect, aif, mode } => {
                 formatter.write_space()?;
                 if *effect == CpsEffect::SetMode {
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*mode)?;
                 } else {
                     if *mode == 0 {
@@ -4492,7 +4512,7 @@ impl Ins {
                     } else {
                         formatter.write_aif_flags(*aif)?;
                         formatter.write_separator()?;
-                        formatter.write_str("#")?;
+                        formatter.write_imm_prefix()?;
                         formatter.write_uimm(*mode)?;
                     }
                 }
@@ -4502,7 +4522,7 @@ impl Ins {
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Dbg { cond, option } => {
                 formatter.write_space()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*option)?;
             }
             Ins::Eor { s, thumb, cond, rd, rn, op2 } => {
@@ -4605,18 +4625,18 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexb { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexd { cond, rd, rd2, rn } => {
@@ -4625,18 +4645,18 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rd2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Ldrexh { cond, rd, rn } => {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             Ins::Ldrh { cond, rd, addr } => {
                 formatter.write_space()?;
@@ -4696,7 +4716,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc1)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4705,7 +4725,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
@@ -4724,7 +4744,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc1)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4733,7 +4753,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
@@ -4751,7 +4771,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4765,7 +4785,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4796,7 +4816,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc1)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4805,7 +4825,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
@@ -4824,7 +4844,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc1)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4833,7 +4853,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_co_reg(*crm)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc2)?;
             }
             #[cfg(
@@ -4851,7 +4871,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4865,7 +4885,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_coproc(*coproc)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*opc)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rd)?;
@@ -4943,7 +4963,7 @@ impl Ins {
                     formatter.write_separator()?;
                     formatter.write_shift_op(*shift_op)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*shift)?;
                 } else {}
             }
@@ -4958,7 +4978,7 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_shift_op(*shift_op)?;
                 formatter.write_space()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*shift)?;
             }
             #[cfg(
@@ -5512,7 +5532,7 @@ impl Ins {
                 formatter.write_reg(*rn)?;
                 formatter.write_wb(*writeback)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*mode)?;
             }
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
@@ -5520,7 +5540,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
                 formatter.write_separator()?;
                 formatter.write_shift_imm(*op2)?;
@@ -5530,7 +5550,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
@@ -5650,9 +5670,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexb { cond, rd, rm, rn } => {
@@ -5661,9 +5681,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexd { cond, rd, rm, rm2, rn } => {
@@ -5674,9 +5694,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", feature = "v6k"))]
             Ins::Strexh { cond, rd, rm, rn } => {
@@ -5685,9 +5705,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rm)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             Ins::Strh { cond, rd, addr } => {
                 formatter.write_space()?;
@@ -5718,7 +5738,7 @@ impl Ins {
             }
             Ins::Svc { cond, imm } => {
                 formatter.write_space()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
             }
             #[cfg(feature = "arm")]
@@ -5728,9 +5748,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rd2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(feature = "arm")]
             Ins::Swpb { cond, rd, rd2, rn } => {
@@ -5739,9 +5759,9 @@ impl Ins {
                 formatter.write_separator()?;
                 formatter.write_reg(*rd2)?;
                 formatter.write_separator()?;
-                formatter.write_str("[")?;
+                formatter.write_deref_start()?;
                 formatter.write_reg(*rn)?;
-                formatter.write_str("]")?;
+                formatter.write_deref_end()?;
             }
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
             Ins::Sxtab { cond, rd, rn, rm, rotate } => {
@@ -5753,9 +5773,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -5769,9 +5789,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -5785,9 +5805,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -5799,9 +5819,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -5813,9 +5833,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -5827,9 +5847,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -5885,7 +5905,7 @@ impl Ins {
             )]
             Ins::Udf { imm } => {
                 formatter.write_space()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
             }
             #[cfg(all(feature = "arm", any(feature = "v6", feature = "v6k")))]
@@ -6054,7 +6074,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
                 formatter.write_separator()?;
                 formatter.write_shift_imm(*op2)?;
@@ -6064,7 +6084,7 @@ impl Ins {
                 formatter.write_space()?;
                 formatter.write_reg(*rd)?;
                 formatter.write_separator()?;
-                formatter.write_str("#")?;
+                formatter.write_imm_prefix()?;
                 formatter.write_uimm(*imm)?;
                 formatter.write_separator()?;
                 formatter.write_reg(*rn)?;
@@ -6106,9 +6126,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -6122,9 +6142,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -6138,9 +6158,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -6152,9 +6172,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -6166,9 +6186,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
@@ -6180,9 +6200,9 @@ impl Ins {
                 formatter.write_reg(*rm)?;
                 if *rotate != 0 {
                     formatter.write_separator()?;
-                    formatter.write_str("ror")?;
+                    formatter.write_shift_op(ShiftOp::Ror)?;
                     formatter.write_space()?;
-                    formatter.write_str("#")?;
+                    formatter.write_imm_prefix()?;
                     formatter.write_uimm(*rotate)?;
                 } else {}
             }
